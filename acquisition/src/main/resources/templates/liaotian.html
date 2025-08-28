@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>信息发布平台</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <style type="text/tailwindcss">
+        @theme {
+            --color-primary: #4F46E5;
+            --color-secondary: #10B981;
+            --color-light: #F9FAFB;
+            --color-dark: #1F2937;
+            --color-gray: #6B7280;
+            --font-inter: 'Inter', sans-serif;
+        }
+
+        @utility smooth-transition {
+            transition: all 0.3s ease-in-out;
+        }
+
+        @utility card-shadow {
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        @utility card-shadow-hover {
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        body {
+            font-family: var(--font-inter);
+            background-color: #F3F4F6;
+        }
+
+        .message-card {
+            transform-origin: top center;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .new-message {
+            animation: pulse 1.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { background-color: rgba(79, 70, 229, 0.05); }
+            50% { background-color: rgba(79, 70, 229, 0.15); }
+        }
+
+        .copy-success {
+            animation: success-pulse 1.5s ease-in-out;
+        }
+
+        @keyframes success-pulse {
+            0%, 100% { background-color: rgba(16, 185, 129, 0.1); }
+            50% { background-color: rgba(16, 185, 129, 0.3); }
+        }
+
+        /* 桌面端固定宽度并居中 */
+        @screen lg {
+            .app-container {
+                max-width: 420px; /* 与典型手机宽度相近 */
+                margin: 0 auto;
+                box-shadow: 0 0 20px rgba(0,0,0,0.1);
+                min-height: 100vh;
+                position: relative;
+                background-color: white;
+            }
+
+            .content-container {
+                padding: 16px;
+                padding-bottom: 80px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+<!-- 应用容器 - 桌面端固定宽度 -->
+<div class="app-container">
+    <!-- 信息列表 -->
+    <main class="content-container">
+        <div id="message-list" class="space-y-4">
+            <!-- 消息卡片将通过JS动态生成 -->
+        </div>
+    </main>
+
+</div>
+
+<script>
+    // 日期格式化函数
+    Date.prototype.Format = function (fmt) {
+        var o = {
+            "M+": this.getMonth() + 1, // 月份
+            "d+": this.getDate(), // 日
+            "h+": this.getHours(), // 小时
+            "m+": this.getMinutes(), // 分
+            "s+": this.getSeconds(), // 秒
+            "q+": Math.floor((this.getMonth() + 3) / 3), // 季度
+            "S": this.getMilliseconds() // 毫秒
+        };
+        if (/(y+)/.test(fmt))
+            fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+        for (var k in o)
+            if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+        return fmt;
+    }
+
+    // 最大消息数量限制
+    const MAX_MESSAGES = 100;
+
+    // 模拟数据
+    const messages = [
+        {
+            id: 1,
+            title: "系统开始抓取数据",
+            content: "请耐心等待.....",
+            author: "系统管理员",
+            time: "现在"
+        }
+    ];
+let aid = location.href.split("id=")[1].split("&");
+    if (aid != null) {
+        let url="/system/v1.0.0/roomUser/query?" +
+            "sortField=room_user_time&" +
+            "sortType=desc&" +
+            "field=room_user_sex&" +
+            "symbol=1&value=1&" +
+            "montage=1&" +
+            "field=room_user_type&" +
+            "symbol=1&" +
+            "value=2&" +
+            "montage=1&" +
+            "field=room_user_aid&" +
+            "symbol=1&" +
+            "value="+aid+"&" +
+            "montage=1&" +
+            "page=1&" +
+            "limit=50";
+        let res = await fetch(url);
+        console.log(res)
+    }
+    //
+
+
+    // 生成唯一ID
+    function generateId() {
+        return Math.floor(Date.now() * Math.random());
+    }
+
+    // 获取当前时间字符串
+    function getCurrentTime() {
+        return new Date().Format("yyyy-MM-dd hh:mm:ss");
+    }
+
+    // 创建单个消息卡片
+    function createMessageCard(message, isNew = false) {
+        const messageCard = document.createElement('div');
+
+        // 为每条消息添加不同的背景色，增强视觉区分
+        const bgColor = isNew ? 'bg-white' : (messages.indexOf(message) % 2 === 0 ? 'bg-white' : 'bg-gray-50');
+
+        messageCard.className = `message-card ${bgColor} rounded-xl overflow-hidden card-shadow smooth-transition hover:card-shadow-hover ${isNew ? 'new-message' : 'fade-in'}`;
+        messageCard.style.animationDelay = isNew ? '0ms' : `${messages.indexOf(message) * 50}ms`;
+        messageCard.innerHTML = `
+        <div class="p-4">
+          <div class="flex justify-between items-start mb-2">
+            <span class="text-xs text-gray">${message.time}</span>
+          </div>
+          <h3 class="font-semibold text-dark mb-2">${message.title}</h3>
+          <p class="text-gray-600 mb-3">${message.content}</p>
+          <div class="flex justify-between items-center">
+            <div class="flex items-center">
+              <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray mr-2">
+                <i class="fas fa-user text-xs"></i>
+              </div>
+              <span class="text-sm text-gray">${message.author}</span>
+            </div>
+            <button class="copy-btn px-3 py-1 rounded-full bg-primary text-white text-xs smooth-transition hover:opacity-90">
+              <i class="fas fa-copy mr-1"></i>复制内容
+            </button>
+          </div>
+        </div>
+      `;
+
+        // 添加复制按钮事件
+        const copyBtn = messageCard.querySelector('.copy-btn');
+        copyBtn.addEventListener('click', () => {
+            let arr1 = message.content.split("用户ID:");
+            let arr2 = null;
+            let msg = null;
+            if (arr1.length >= 2) {
+                arr2 = arr1[1].split(" ");
+                msg = arr2[0];
+            } else {
+                msg = message.content;
+            }
+            copyMessageContent(msg, copyBtn);
+        });
+
+        return messageCard;
+    }
+
+    // 复制消息内容到剪贴板
+    function copyMessageContent(textToCopy, button) {
+        // 创建临时元素用于选中文本
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+
+        // 尝试使用现代剪贴板API
+        navigator.clipboard.writeText(textToCopy)
+            .then(() => {
+                // 显示复制成功状态
+                button.innerHTML = '<i class="fas fa-check mr-1"></i>已复制';
+                button.classList.add('copy-success');
+            })
+            .catch(err => {
+                console.error('现代剪贴板API失败，尝试传统方法: ', err);
+
+                // 传统的选中文本复制方法
+                textArea.select();
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        button.innerHTML = '<i class="fas fa-check mr-1"></i>已复制';
+                        button.classList.add('copy-success');
+                    } else {
+                        console.error('传统复制方法也失败了');
+                        alert('复制失败，请长按消息内容手动选择复制');
+                    }
+                } catch (e) {
+                    console.error('无法执行复制命令: ', e);
+                    alert('复制失败，请长按消息内容手动选择复制');
+                }
+            })
+            .finally(() => {
+                // 移除临时元素
+                document.body.removeChild(textArea);
+
+                // 2秒后恢复原状
+                setTimeout(() => {
+                    button.innerHTML = '<i class="fas fa-copy mr-1"></i>复制内容';
+                    button.classList.remove('copy-success');
+                }, 2000);
+            });
+    }
+
+    // 渲染消息列表
+    function renderMessages(messages) {
+        const messageList = document.getElementById('message-list');
+        messageList.innerHTML = '';
+
+        messages.forEach(message => {
+            const card = createMessageCard(message);
+            messageList.appendChild(card);
+        });
+    }
+
+    // 添加新消息（不刷新整个列表）
+    function addNewMessage(content) {
+        if (!content.trim()) {
+            alert('请输入消息内容');
+            return;
+        }
+
+        // 创建新消息对象
+        const newMessage = {
+            id: generateId(),
+            title: '新消息',
+            content: content,
+            author: "系统管理员",
+            time: getCurrentTime()
+        };
+
+        // 检查消息数量是否超过限制
+        if (messages.length >= MAX_MESSAGES) {
+            // 移除最旧的消息
+            const removedMessage = messages.pop();
+            // 从DOM中移除对应的卡片
+            const messageList = document.getElementById('message-list');
+            const lastCard = messageList.lastElementChild;
+            if (lastCard) {
+                // 添加淡出动画
+                lastCard.style.transition = 'opacity 0.5s ease-out';
+                lastCard.style.opacity = '0';
+
+                // 动画结束后移除元素
+                setTimeout(() => {
+                    messageList.removeChild(lastCard);
+                }, 500);
+            }
+        }
+
+        // 将新消息添加到列表开头
+        messages.unshift(newMessage);
+
+        // 创建新消息卡片并添加到列表顶部
+        const messageList = document.getElementById('message-list');
+        const newCard = createMessageCard(newMessage, true);
+
+        // 如果列表中已有消息，将新消息插入到最前面
+        if (messageList.firstChild) {
+            messageList.insertBefore(newCard, messageList.firstChild);
+        } else {
+            messageList.appendChild(newCard);
+        }
+
+        // 滚动到最新消息
+  /*      scrollToLatestMessage();
+*/
+        // 更新其他消息的背景色
+        updateMessageBackgrounds();
+
+        // 1秒后移除高亮效果
+        setTimeout(() => {
+            newCard.classList.remove('new-message');
+        }, 1000);
+    }
+
+    // 更新消息背景色
+    function updateMessageBackgrounds() {
+        const messageCards = document.querySelectorAll('.message-card:not(.new-message)');
+        messageCards.forEach((card, index) => {
+            const bgColor = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+            card.classList.remove('bg-white', 'bg-gray-50');
+            card.classList.add(bgColor);
+        });
+    }
+
+    // 滚动到最新消息
+    function scrollToLatestMessage() {
+        const messageList = document.getElementById('message-list');
+        const firstMessage = messageList.firstElementChild;
+
+        if (firstMessage) {
+            // 平滑滚动到顶部
+            firstMessage.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    }
+
+    // 页面加载时渲染消息
+    document.addEventListener('DOMContentLoaded', () => {
+        renderMessages(messages);
+
+        // 初始化添加一些测试消息
+        for (let i = 0; i < 50; i++) {
+            addNewMessage("房间名称:几把大集合 " +
+                "用户名称:小几把 " +
+                "用户ID:123456 " +
+                "今日消费:1000 <br/>" +
+                "广告信息");
+        }
+
+        // 定时添加新消息，模拟实时更新
+        setInterval(() => {
+            addNewMessage("房间名称:几把大集合 " +
+                "用户名称:小几把 " +
+                "用户ID:123456 " +
+                "今日消费:1000 <br/>" +
+                "广告信息");
+        }, 5000);
+
+        // 窗口大小改变时重新计算布局
+        window.addEventListener('resize', () => {
+            // 如果是新添加的消息还在动画中，重新调整滚动位置
+            const newMessages = document.querySelectorAll('.new-message');
+            if (newMessages.length > 0) {
+                scrollToLatestMessage();
+            }
+        });
+    });
+</script>
+</body>
+</html>
