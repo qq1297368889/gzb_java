@@ -105,6 +105,8 @@ public class ServerTest {
      * 测试dao层性能
      */
     public static void dao_test() throws Exception {
+        System.setProperty("file.encoding", "UTF-8");
+        System.setProperty("this.dir", Tools.getProjectRoot(ServerTest.class));
         Log log = new LogImpl();
         //必须传递路径给框架
         SysLogDao dao = new SysLogDaoImpl();
@@ -119,11 +121,11 @@ public class ServerTest {
             dao.save(sysLog);
         }
         long end = System.currentTimeMillis();
-        log.d("插入 1000 单条 同步 耗时", (end - start) + "");
+        log.d("单条插入 1000 jdbc 同步 耗时", (end - start) + "");
 
         List<SysLog> list = new ArrayList<>();
         start = System.currentTimeMillis();
-        for (int i = 0; i < 1000000; i++) {
+        for (int i = 0; i < 100000; i++) {
             //随机获取一个16位字符串
             sysLog.setSysLogSql(Tools.getRandomString(16))
                     .setSysLogMs(Tools.getRandomLong(10000, 100))
@@ -131,11 +133,11 @@ public class ServerTest {
             list.add(sysLog);
         }
         end = System.currentTimeMillis();
-        log.d("批量插入 100000 单条 组装 耗时", (end - start) + "");
+        log.d("批量插入 100000 组装 耗时", (end - start) + "");
         start = System.currentTimeMillis();
         dao.saveBatch(list);
         end = System.currentTimeMillis();
-        log.d("批量插入 100000 单条 插入 耗时", (end - start) + "");
+        log.d("批量插入 100000 插入 耗时", (end - start) + "");
 
 
         start = System.currentTimeMillis();
@@ -147,7 +149,7 @@ public class ServerTest {
             dao.saveAsync(sysLog);
         }
         end = System.currentTimeMillis();
-        log.d("插入 100000 单条 异步 耗时", (end - start) + "", "实际耗时在后台");
+        log.d("单条插入 100000 异步 耗时", (end - start) + "", "实际耗时在后台");
 
         Tools.sleep(1000 * 10);//等待后台线程执行
     }

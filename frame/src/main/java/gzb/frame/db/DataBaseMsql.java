@@ -300,8 +300,7 @@ public class DataBaseMsql implements DataBase {
                             connection.setAutoCommit(false);
                             runSqlBatch(en.getKey(), asyEntity.list, connection);
                         } catch (Exception e) {
-                            e.printStackTrace();
-                            log.e(e, "DataBaseMsql.startAsyncThread 执行异常:sql:" + en.getKey() + ",\n data:" + asyEntity.list.size());
+                            log.e(e, "DataBaseMsql.startAsyncThread 执行异常:sql:" + en.getKey() + ",\n data:" + asyEntity.list.toString());
                         } finally {
                             connection.setAutoCommit(true);
                             connection.close();
