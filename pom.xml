@@ -1,0 +1,170 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>gzb</groupId>
+    <artifactId>gzb_java</artifactId>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+
+    <name>gzb_java</name>
+    <description>多模块项目父级</description>
+
+    <!-- 统一管理依赖版本 -->
+    <properties>
+        <java.version>1.8</java.version>
+        <java.encoding>UTF-8</java.encoding>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <project.build.sourceEncoding>${java.encoding}</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>${java.encoding}</project.reporting.outputEncoding>
+        <maven.compiler.encoding>${java.encoding}</maven.compiler.encoding>
+
+        <!-- 依赖版本管理 -->
+        <thaiopensource.version>20091111</thaiopensource.version>
+        <gson.version>2.10.1</gson.version>
+        <mysql-connector.version>8.0.33</mysql-connector.version>
+        <hikaricp.version>4.0.3</hikaricp.version>
+        <tomcat.version>9.0.99</tomcat.version>
+        <javaparser.version>3.26.3</javaparser.version>
+        <groovy.version>4.0.26</groovy.version>
+        <redis.version>2.9.0</redis.version>
+        <maven.shade.plugin.version>3.4.1</maven.shade.plugin.version>
+        <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
+        <tess4j.tess4j.version>5.9.0</tess4j.tess4j.version>
+        <!-- 其他依赖版本 -->
+    </properties>
+    <!-- 定义所有模块共享的依赖 -->
+    <dependencyManagement>
+        <dependencies>
+            <!--这个JAR会缺少 很奇怪 加上-->
+            <dependency>
+                <groupId>com.thaiopensource</groupId>
+                <artifactId>jing</artifactId>
+                <version>${thaiopensource.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <!-- JSON处理 -->
+            <dependency>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>${gson.version}</version>
+                <scope>compile</scope>
+            </dependency>
+
+            <!-- 文字识别库 -->
+            <dependency>
+                <groupId>net.sourceforge.tess4j</groupId>
+                <artifactId>tess4j</artifactId>
+                <version>${tess4j.tess4j.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <!-- 数据库相关 -->
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${mysql-connector.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>${hikaricp.version}</version>
+                <scope>compile</scope>
+            </dependency>
+
+            <!-- Tomcat 内嵌核心库 -->
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-core</artifactId>
+                <version>${tomcat.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <!-- Tomcat websocket支持 -->
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-websocket</artifactId>
+                <version>${tomcat.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <!-- 支持 JSP（可选） -->
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-jasper</artifactId>
+                <version>${tomcat.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <!-- redis -->
+            <dependency>
+                <groupId>redis.clients</groupId>
+                <artifactId>jedis</artifactId>
+                <version>${redis.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <!-- groovy -->
+            <dependency>
+                <groupId>org.apache.groovy</groupId>
+                <artifactId>groovy-all</artifactId>
+                <version>${groovy.version}</version>
+                <type>pom</type>
+                <scope>compile</scope>
+            </dependency>
+
+            <!-- 抽象语法树解析库 javaparser -->
+            <dependency>
+                <groupId>com.github.javaparser</groupId>
+                <artifactId>javaparser-core</artifactId>
+                <version>${javaparser.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <!-- 其他公共依赖 -->
+        </dependencies>
+    </dependencyManagement>
+
+    <!-- 插件管理 -->
+<!--    <build>
+        <pluginManagement>
+            <plugins>
+                &lt;!&ndash; 用于打包可执行JAR &ndash;&gt;
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>${maven.shade.plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>shade</goal>
+                            </goals>
+                            <configuration>
+                                <transformers>
+                                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                        <mainClass>gzb.start.Start</mainClass> &lt;!&ndash; 默认主类，各模块可覆盖 &ndash;&gt;
+                                    </transformer>
+                                </transformers>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven.compiler.plugin.version}</version>
+                    <configuration>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>-->
+    <!-- 定义项目模块 -->
+    <modules>
+        <module>frame</module>
+        <module>acquisition</module>
+        <module>verify</module>
+        <module>authorization_system</module>
+        <!-- 其他业务模块 -->
+    </modules>
+</project>

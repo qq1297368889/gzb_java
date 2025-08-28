@@ -1,0 +1,2145 @@
+2025-08-27 19:00:00.944 error 99 gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:210): "编译错误" | java.lang.Exception: 编译失败：
+找不到符号
+  符号:   类 SqlTools
+  位置: 程序包 com.authorizationSystem
+程序包com.authorizationSystem.dao不存在
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:87)
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:48)
+	at gzb.frame.factory.ClassLoad.compileJavaClassCode(ClassLoad.java:35)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:208)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+ | org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
+Script_b6f081ce55bc4932325e15df76a75f44.groovy: 2: unable to resolve class com.authorizationSystem.SqlTools
+ @ line 2, column 1.
+   import com.authorizationSystem.SqlTools;
+   ^
+
+1 error
+
+	at org.codehaus.groovy.control.ErrorCollector.failIfErrors(ErrorCollector.java:292)
+	at org.codehaus.groovy.control.CompilationUnit$ISourceUnitOperation.doPhaseOperation(CompilationUnit.java:910)
+	at org.codehaus.groovy.control.CompilationUnit.processPhaseOperations(CompilationUnit.java:692)
+	at org.codehaus.groovy.control.CompilationUnit.compile(CompilationUnit.java:666)
+	at groovy.lang.GroovyClassLoader.doParseClass(GroovyClassLoader.java:365)
+	at groovy.lang.GroovyClassLoader.lambda$parseClass$2(GroovyClassLoader.java:314)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.compute(StampedCommonCache.java:163)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.getAndPut(StampedCommonCache.java:154)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:314)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:298)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:263)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:278)
+	at gzb.frame.factory.ClassLoad.compileGroovyClassCode(ClassLoad.java:27)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:202)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:00:00.944 error 99 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:299): "loadFiles" | java.lang.NullPointerException: Cannot invoke "java.lang.Class.getName()" because "aClass" is null
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:278)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:00:04.219 error 99 gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:210): "编译错误" | java.lang.Exception: 编译失败：
+找不到符号
+  符号:   类 SqlTools
+  位置: 程序包 com.authorizationSystem
+程序包com.authorizationSystem.dao不存在
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:87)
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:48)
+	at gzb.frame.factory.ClassLoad.compileJavaClassCode(ClassLoad.java:35)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:208)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+ | org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
+Script_b6f081ce55bc4932325e15df76a75f44.groovy: 2: unable to resolve class com.authorizationSystem.SqlTools
+ @ line 2, column 1.
+   import com.authorizationSystem.SqlTools;
+   ^
+
+1 error
+
+	at org.codehaus.groovy.control.ErrorCollector.failIfErrors(ErrorCollector.java:292)
+	at org.codehaus.groovy.control.CompilationUnit$ISourceUnitOperation.doPhaseOperation(CompilationUnit.java:910)
+	at org.codehaus.groovy.control.CompilationUnit.processPhaseOperations(CompilationUnit.java:692)
+	at org.codehaus.groovy.control.CompilationUnit.compile(CompilationUnit.java:666)
+	at groovy.lang.GroovyClassLoader.doParseClass(GroovyClassLoader.java:365)
+	at groovy.lang.GroovyClassLoader.lambda$parseClass$2(GroovyClassLoader.java:314)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.compute(StampedCommonCache.java:163)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.getAndPut(StampedCommonCache.java:154)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:314)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:298)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:263)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:278)
+	at gzb.frame.factory.ClassLoad.compileGroovyClassCode(ClassLoad.java:27)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:202)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:00:04.219 error 99 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:299): "loadFiles" | java.lang.NullPointerException: Cannot invoke "java.lang.Class.getName()" because "aClass" is null
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:278)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:00:07.497 error 99 gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:210): "编译错误" | java.lang.Exception: 编译失败：
+找不到符号
+  符号:   类 SqlTools
+  位置: 程序包 com.authorizationSystem
+程序包com.authorizationSystem.dao不存在
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:87)
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:48)
+	at gzb.frame.factory.ClassLoad.compileJavaClassCode(ClassLoad.java:35)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:208)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+ | org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
+Script_b6f081ce55bc4932325e15df76a75f44.groovy: 2: unable to resolve class com.authorizationSystem.SqlTools
+ @ line 2, column 1.
+   import com.authorizationSystem.SqlTools;
+   ^
+
+1 error
+
+	at org.codehaus.groovy.control.ErrorCollector.failIfErrors(ErrorCollector.java:292)
+	at org.codehaus.groovy.control.CompilationUnit$ISourceUnitOperation.doPhaseOperation(CompilationUnit.java:910)
+	at org.codehaus.groovy.control.CompilationUnit.processPhaseOperations(CompilationUnit.java:692)
+	at org.codehaus.groovy.control.CompilationUnit.compile(CompilationUnit.java:666)
+	at groovy.lang.GroovyClassLoader.doParseClass(GroovyClassLoader.java:365)
+	at groovy.lang.GroovyClassLoader.lambda$parseClass$2(GroovyClassLoader.java:314)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.compute(StampedCommonCache.java:163)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.getAndPut(StampedCommonCache.java:154)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:314)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:298)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:263)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:278)
+	at gzb.frame.factory.ClassLoad.compileGroovyClassCode(ClassLoad.java:27)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:202)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:00:07.497 error 99 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:299): "loadFiles" | java.lang.NullPointerException: Cannot invoke "java.lang.Class.getName()" because "aClass" is null
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:278)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:00:10.772 error 99 gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:210): "编译错误" | java.lang.Exception: 编译失败：
+找不到符号
+  符号:   类 SqlTools
+  位置: 程序包 com.authorizationSystem
+程序包com.authorizationSystem.dao不存在
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:87)
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:48)
+	at gzb.frame.factory.ClassLoad.compileJavaClassCode(ClassLoad.java:35)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:208)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+ | org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
+Script_b6f081ce55bc4932325e15df76a75f44.groovy: 2: unable to resolve class com.authorizationSystem.SqlTools
+ @ line 2, column 1.
+   import com.authorizationSystem.SqlTools;
+   ^
+
+1 error
+
+	at org.codehaus.groovy.control.ErrorCollector.failIfErrors(ErrorCollector.java:292)
+	at org.codehaus.groovy.control.CompilationUnit$ISourceUnitOperation.doPhaseOperation(CompilationUnit.java:910)
+	at org.codehaus.groovy.control.CompilationUnit.processPhaseOperations(CompilationUnit.java:692)
+	at org.codehaus.groovy.control.CompilationUnit.compile(CompilationUnit.java:666)
+	at groovy.lang.GroovyClassLoader.doParseClass(GroovyClassLoader.java:365)
+	at groovy.lang.GroovyClassLoader.lambda$parseClass$2(GroovyClassLoader.java:314)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.compute(StampedCommonCache.java:163)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.getAndPut(StampedCommonCache.java:154)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:314)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:298)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:263)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:278)
+	at gzb.frame.factory.ClassLoad.compileGroovyClassCode(ClassLoad.java:27)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:202)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:00:10.772 error 99 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:299): "loadFiles" | java.lang.NullPointerException: Cannot invoke "java.lang.Class.getName()" because "aClass" is null
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:278)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:00:14.054 error 99 gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:210): "编译错误" | java.lang.Exception: 编译失败：
+找不到符号
+  符号:   类 SqlTools
+  位置: 程序包 com.authorizationSystem
+程序包com.authorizationSystem.dao不存在
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:87)
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:48)
+	at gzb.frame.factory.ClassLoad.compileJavaClassCode(ClassLoad.java:35)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:208)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+ | org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
+Script_b6f081ce55bc4932325e15df76a75f44.groovy: 2: unable to resolve class com.authorizationSystem.SqlTools
+ @ line 2, column 1.
+   import com.authorizationSystem.SqlTools;
+   ^
+
+1 error
+
+	at org.codehaus.groovy.control.ErrorCollector.failIfErrors(ErrorCollector.java:292)
+	at org.codehaus.groovy.control.CompilationUnit$ISourceUnitOperation.doPhaseOperation(CompilationUnit.java:910)
+	at org.codehaus.groovy.control.CompilationUnit.processPhaseOperations(CompilationUnit.java:692)
+	at org.codehaus.groovy.control.CompilationUnit.compile(CompilationUnit.java:666)
+	at groovy.lang.GroovyClassLoader.doParseClass(GroovyClassLoader.java:365)
+	at groovy.lang.GroovyClassLoader.lambda$parseClass$2(GroovyClassLoader.java:314)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.compute(StampedCommonCache.java:163)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.getAndPut(StampedCommonCache.java:154)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:314)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:298)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:263)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:278)
+	at gzb.frame.factory.ClassLoad.compileGroovyClassCode(ClassLoad.java:27)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:202)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:00:14.054 error 99 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:299): "loadFiles" | java.lang.NullPointerException: Cannot invoke "java.lang.Class.getName()" because "aClass" is null
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:278)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:00:17.331 error 99 gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:210): "编译错误" | java.lang.Exception: 编译失败：
+找不到符号
+  符号:   类 SqlTools
+  位置: 程序包 com.authorizationSystem
+程序包com.authorizationSystem.dao不存在
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:87)
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:48)
+	at gzb.frame.factory.ClassLoad.compileJavaClassCode(ClassLoad.java:35)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:208)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+ | org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
+Script_b6f081ce55bc4932325e15df76a75f44.groovy: 2: unable to resolve class com.authorizationSystem.SqlTools
+ @ line 2, column 1.
+   import com.authorizationSystem.SqlTools;
+   ^
+
+1 error
+
+	at org.codehaus.groovy.control.ErrorCollector.failIfErrors(ErrorCollector.java:292)
+	at org.codehaus.groovy.control.CompilationUnit$ISourceUnitOperation.doPhaseOperation(CompilationUnit.java:910)
+	at org.codehaus.groovy.control.CompilationUnit.processPhaseOperations(CompilationUnit.java:692)
+	at org.codehaus.groovy.control.CompilationUnit.compile(CompilationUnit.java:666)
+	at groovy.lang.GroovyClassLoader.doParseClass(GroovyClassLoader.java:365)
+	at groovy.lang.GroovyClassLoader.lambda$parseClass$2(GroovyClassLoader.java:314)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.compute(StampedCommonCache.java:163)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.getAndPut(StampedCommonCache.java:154)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:314)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:298)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:263)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:278)
+	at gzb.frame.factory.ClassLoad.compileGroovyClassCode(ClassLoad.java:27)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:202)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:00:17.332 error 99 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:299): "loadFiles" | java.lang.NullPointerException: Cannot invoke "java.lang.Class.getName()" because "aClass" is null
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:278)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:04:53.940 error 1 gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:210): "编译错误" | java.lang.Exception: 编译失败：
+找不到符号
+  符号:   类 Application
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 Application
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 Application
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 Application
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 Application
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 Application
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 Application
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 Application
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationCode
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationCode
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationCode
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationCode
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationCode
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationCode
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationCode
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationCode
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationRechargeCard
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationRechargeCard
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationRechargeCard
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationRechargeCard
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationRechargeCard
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationRechargeCard
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationRechargeCard
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationRechargeCard
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationUi
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationUi
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationUi
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationUi
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationUi
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationUi
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationUi
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationUi
+  位置: 类 com.authorizationSystem.SqlTools
+程序包com.authorizationSystem.entity不存在
+找不到符号
+  符号:   类 Application
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 Application
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 Application
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 Application
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationCode
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationCode
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationCode
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationCode
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationRechargeCard
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationRechargeCard
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationRechargeCard
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationRechargeCard
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationUi
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationUi
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationUi
+  位置: 类 com.authorizationSystem.SqlTools
+找不到符号
+  符号:   类 ApplicationUi
+  位置: 类 com.authorizationSystem.SqlTools
+
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:87)
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:48)
+	at gzb.frame.factory.ClassLoad.compileJavaClassCode(ClassLoad.java:35)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:208)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:284)
+	at gzb.frame.factory.ClassFactory.init(ClassFactory.java:65)
+	at gzb.frame.factory.ClassFactory.<init>(ClassFactory.java:45)
+	at gzb.frame.factory.ClassFactory.<clinit>(ClassFactory.java:34)
+	at gzb.tools.Tools.loadApiPre(Tools.java:341)
+	at gzb.tools.Tools.updateMapping(Tools.java:198)
+	at gzb.frame.generate.GenerateJavaCode.generateCode(GenerateJavaCode.java:55)
+	at gzb.start.AutoCode.main(AutoCode.java:18)
+ | org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 26: unable to resolve class Application
+ @ line 26, column 43.
+   tatic SqlTemplate toSelectSql(Applicatio
+                                 ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 33: unable to resolve class Application
+ @ line 33, column 43.
+   tatic SqlTemplate toSelectSql(Applicatio
+                                 ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 53: unable to resolve class Application
+ @ line 53, column 38.
+       public static SqlTemplate toSave(Application application,java.lang.Long applicationId) {
+                                        ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 123: unable to resolve class Application
+ @ line 123, column 40.
+       public static SqlTemplate toUpdate(Application application) {
+                                          ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 180: unable to resolve class Application
+ @ line 180, column 40.
+       public static SqlTemplate toDelete(Application application,boolean selectId) {
+                                          ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 190: unable to resolve class Application
+ @ line 190, column 39.
+       public static void getSelectWhere(Application application,boolean where,boolean and, StringBuilder sb, List<Object> list, boolean selectId) {
+                                         ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 241: unable to resolve class Application
+ @ line 241, column 5.
+       public static Application asApplication(Map<String,String[]> requestData){
+       ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 242: unable to resolve class Application
+ @ line 242, column 14.
+           List<Application> list=asListApplication(requestData,1);
+                ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 248: unable to resolve class Application
+ @ line 248, column 24.
+       public static List<Application> asListApplication(Map<String,String[]> requestData,Integer max){
+                          ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 321: unable to resolve class Application
+ @ line 321, column 14.
+           List<Application> list=new ArrayList<>(size);
+                ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 323: unable to resolve class Application
+ @ line 323, column 25.
+               Application application=new Application();
+                           ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 323: unable to resolve class Application
+ @ line 323, column 37.
+               Application application=new Application();
+                                       ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 361: unable to resolve class ApplicationCode
+ @ line 361, column 43.
+   tatic SqlTemplate toSelectSql(Applicatio
+                                 ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 368: unable to resolve class ApplicationCode
+ @ line 368, column 43.
+   tatic SqlTemplate toSelectSql(Applicatio
+                                 ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 388: unable to resolve class ApplicationCode
+ @ line 388, column 38.
+       public static SqlTemplate toSave(ApplicationCode applicationCode,java.lang.Long applicationCodeId) {
+                                        ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 430: unable to resolve class ApplicationCode
+ @ line 430, column 40.
+       public static SqlTemplate toUpdate(ApplicationCode applicationCode) {
+                                          ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 459: unable to resolve class ApplicationCode
+ @ line 459, column 40.
+       public static SqlTemplate toDelete(ApplicationCode applicationCode,boolean selectId) {
+                                          ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 469: unable to resolve class ApplicationCode
+ @ line 469, column 39.
+       public static void getSelectWhere(ApplicationCode applicationCode,boolean where,boolean and, StringBuilder sb, List<Object> list, boolean selectId) {
+                                         ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 492: unable to resolve class ApplicationCode
+ @ line 492, column 5.
+       public static ApplicationCode asApplicationCode(Map<String,String[]> requestData){
+       ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 493: unable to resolve class ApplicationCode
+ @ line 493, column 14.
+           List<ApplicationCode> list=asListApplicationCode(requestData,1);
+                ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 499: unable to resolve class ApplicationCode
+ @ line 499, column 24.
+       public static List<ApplicationCode> asListApplicationCode(Map<String,String[]> requestData,Integer max){
+                          ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 530: unable to resolve class ApplicationCode
+ @ line 530, column 14.
+           List<ApplicationCode> list=new ArrayList<>(size);
+                ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 532: unable to resolve class ApplicationCode
+ @ line 532, column 29.
+               ApplicationCode applicationCode=new ApplicationCode();
+                               ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 532: unable to resolve class ApplicationCode
+ @ line 532, column 45.
+   plicationCode applicationCode=new Applic
+                                 ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 549: unable to resolve class ApplicationRechargeCard
+ @ line 549, column 43.
+   tatic SqlTemplate toSelectSql(Applicatio
+                                 ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 556: unable to resolve class ApplicationRechargeCard
+ @ line 556, column 43.
+   tatic SqlTemplate toSelectSql(Applicatio
+                                 ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 576: unable to resolve class ApplicationRechargeCard
+ @ line 576, column 38.
+       public static SqlTemplate toSave(ApplicationRechargeCard applicationRechargeCard,java.lang.Long applicationRechargeCardId) {
+                                        ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 642: unable to resolve class ApplicationRechargeCard
+ @ line 642, column 40.
+       public static SqlTemplate toUpdate(ApplicationRechargeCard applicationRechargeCard) {
+                                          ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 695: unable to resolve class ApplicationRechargeCard
+ @ line 695, column 40.
+       public static SqlTemplate toDelete(ApplicationRechargeCard applicationRechargeCard,boolean selectId) {
+                                          ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 705: unable to resolve class ApplicationRechargeCard
+ @ line 705, column 39.
+       public static void getSelectWhere(ApplicationRechargeCard applicationRechargeCard,boolean where,boolean and, StringBuilder sb, List<Object> list, boolean selectId) {
+                                         ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 752: unable to resolve class ApplicationRechargeCard
+ @ line 752, column 5.
+       public static ApplicationRechargeCard asApplicationRechargeCard(Map<String,String[]> requestData){
+       ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 753: unable to resolve class ApplicationRechargeCard
+ @ line 753, column 14.
+           List<ApplicationRechargeCard> list=asListApplicationRechargeCard(requestData,1);
+                ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 759: unable to resolve class ApplicationRechargeCard
+ @ line 759, column 24.
+       public static List<ApplicationRechargeCard> asListApplicationRechargeCard(Map<String,String[]> requestData,Integer max){
+                          ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 826: unable to resolve class ApplicationRechargeCard
+ @ line 826, column 14.
+           List<ApplicationRechargeCard> list=new ArrayList<>(size);
+                ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 828: unable to resolve class ApplicationRechargeCard
+ @ line 828, column 37.
+               ApplicationRechargeCard applicationRechargeCard=new ApplicationRechargeCard();
+                                       ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 828: unable to resolve class ApplicationRechargeCard
+ @ line 828, column 61.
+   eCard applicationRechargeCard=new Applic
+                                 ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 863: unable to resolve class ApplicationUi
+ @ line 863, column 43.
+   tatic SqlTemplate toSelectSql(Applicatio
+                                 ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 870: unable to resolve class ApplicationUi
+ @ line 870, column 43.
+   tatic SqlTemplate toSelectSql(Applicatio
+                                 ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 890: unable to resolve class ApplicationUi
+ @ line 890, column 38.
+       public static SqlTemplate toSave(ApplicationUi applicationUi,java.lang.Long applicationUiId) {
+                                        ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 932: unable to resolve class ApplicationUi
+ @ line 932, column 40.
+       public static SqlTemplate toUpdate(ApplicationUi applicationUi) {
+                                          ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 961: unable to resolve class ApplicationUi
+ @ line 961, column 40.
+       public static SqlTemplate toDelete(ApplicationUi applicationUi,boolean selectId) {
+                                          ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 971: unable to resolve class ApplicationUi
+ @ line 971, column 39.
+       public static void getSelectWhere(ApplicationUi applicationUi,boolean where,boolean and, StringBuilder sb, List<Object> list, boolean selectId) {
+                                         ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 994: unable to resolve class ApplicationUi
+ @ line 994, column 5.
+       public static ApplicationUi asApplicationUi(Map<String,String[]> requestData){
+       ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 995: unable to resolve class ApplicationUi
+ @ line 995, column 14.
+           List<ApplicationUi> list=asListApplicationUi(requestData,1);
+                ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 1001: unable to resolve class ApplicationUi
+ @ line 1001, column 24.
+       public static List<ApplicationUi> asListApplicationUi(Map<String,String[]> requestData,Integer max){
+                          ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 1032: unable to resolve class ApplicationUi
+ @ line 1032, column 14.
+           List<ApplicationUi> list=new ArrayList<>(size);
+                ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 1034: unable to resolve class ApplicationUi
+ @ line 1034, column 27.
+               ApplicationUi applicationUi=new ApplicationUi();
+                             ^
+
+Script_93e433cfc6190d8186f7239ba6398fe7.groovy: 1034: unable to resolve class ApplicationUi
+ @ line 1034, column 41.
+     ApplicationUi applicationUi=new Applic
+                                 ^
+
+48 errors
+
+	at org.codehaus.groovy.control.ErrorCollector.failIfErrors(ErrorCollector.java:292)
+	at org.codehaus.groovy.control.CompilationUnit$ISourceUnitOperation.doPhaseOperation(CompilationUnit.java:910)
+	at org.codehaus.groovy.control.CompilationUnit.processPhaseOperations(CompilationUnit.java:692)
+	at org.codehaus.groovy.control.CompilationUnit.compile(CompilationUnit.java:666)
+	at groovy.lang.GroovyClassLoader.doParseClass(GroovyClassLoader.java:365)
+	at groovy.lang.GroovyClassLoader.lambda$parseClass$2(GroovyClassLoader.java:314)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.compute(StampedCommonCache.java:163)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.getAndPut(StampedCommonCache.java:154)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:314)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:298)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:263)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:278)
+	at gzb.frame.factory.ClassLoad.compileGroovyClassCode(ClassLoad.java:27)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:202)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:284)
+	at gzb.frame.factory.ClassFactory.init(ClassFactory.java:65)
+	at gzb.frame.factory.ClassFactory.<init>(ClassFactory.java:45)
+	at gzb.frame.factory.ClassFactory.<clinit>(ClassFactory.java:34)
+	at gzb.tools.Tools.loadApiPre(Tools.java:341)
+	at gzb.tools.Tools.updateMapping(Tools.java:198)
+	at gzb.frame.generate.GenerateJavaCode.generateCode(GenerateJavaCode.java:55)
+	at gzb.start.AutoCode.main(AutoCode.java:18)
+
+2025-08-27 19:04:53.945 error 1 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:304): "loadFiles" | java.lang.NullPointerException: Cannot invoke "java.lang.Class.getName()" because "aClass" is null
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:298)
+	at gzb.frame.factory.ClassFactory.init(ClassFactory.java:65)
+	at gzb.frame.factory.ClassFactory.<init>(ClassFactory.java:45)
+	at gzb.frame.factory.ClassFactory.<clinit>(ClassFactory.java:34)
+	at gzb.tools.Tools.loadApiPre(Tools.java:341)
+	at gzb.tools.Tools.updateMapping(Tools.java:198)
+	at gzb.frame.generate.GenerateJavaCode.generateCode(GenerateJavaCode.java:55)
+	at gzb.start.AutoCode.main(AutoCode.java:18)
+
+2025-08-27 19:04:54.671 error 99 gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:210): "编译错误" | java.lang.Exception: 编译失败：
+找不到符号
+  符号:   类 SqlTools
+  位置: 程序包 com.authorizationSystem
+程序包com.authorizationSystem.dao不存在
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:87)
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:48)
+	at gzb.frame.factory.ClassLoad.compileJavaClassCode(ClassLoad.java:35)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:208)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+ | org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
+Script_b6f081ce55bc4932325e15df76a75f44.groovy: 2: unable to resolve class com.authorizationSystem.SqlTools
+ @ line 2, column 1.
+   import com.authorizationSystem.SqlTools;
+   ^
+
+1 error
+
+	at org.codehaus.groovy.control.ErrorCollector.failIfErrors(ErrorCollector.java:292)
+	at org.codehaus.groovy.control.CompilationUnit$ISourceUnitOperation.doPhaseOperation(CompilationUnit.java:910)
+	at org.codehaus.groovy.control.CompilationUnit.processPhaseOperations(CompilationUnit.java:692)
+	at org.codehaus.groovy.control.CompilationUnit.compile(CompilationUnit.java:666)
+	at groovy.lang.GroovyClassLoader.doParseClass(GroovyClassLoader.java:365)
+	at groovy.lang.GroovyClassLoader.lambda$parseClass$2(GroovyClassLoader.java:314)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.compute(StampedCommonCache.java:163)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.getAndPut(StampedCommonCache.java:154)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:314)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:298)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:263)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:278)
+	at gzb.frame.factory.ClassLoad.compileGroovyClassCode(ClassLoad.java:27)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:202)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:04:54.672 error 99 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:299): "loadFiles" | java.lang.NullPointerException: Cannot invoke "java.lang.Class.getName()" because "aClass" is null
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:278)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:04:57.955 error 99 gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:210): "编译错误" | java.lang.Exception: 编译失败：
+找不到符号
+  符号:   类 SqlTools
+  位置: 程序包 com.authorizationSystem
+程序包com.authorizationSystem.dao不存在
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:87)
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:48)
+	at gzb.frame.factory.ClassLoad.compileJavaClassCode(ClassLoad.java:35)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:208)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+ | org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
+Script_b6f081ce55bc4932325e15df76a75f44.groovy: 2: unable to resolve class com.authorizationSystem.SqlTools
+ @ line 2, column 1.
+   import com.authorizationSystem.SqlTools;
+   ^
+
+1 error
+
+	at org.codehaus.groovy.control.ErrorCollector.failIfErrors(ErrorCollector.java:292)
+	at org.codehaus.groovy.control.CompilationUnit$ISourceUnitOperation.doPhaseOperation(CompilationUnit.java:910)
+	at org.codehaus.groovy.control.CompilationUnit.processPhaseOperations(CompilationUnit.java:692)
+	at org.codehaus.groovy.control.CompilationUnit.compile(CompilationUnit.java:666)
+	at groovy.lang.GroovyClassLoader.doParseClass(GroovyClassLoader.java:365)
+	at groovy.lang.GroovyClassLoader.lambda$parseClass$2(GroovyClassLoader.java:314)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.compute(StampedCommonCache.java:163)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.getAndPut(StampedCommonCache.java:154)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:314)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:298)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:263)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:278)
+	at gzb.frame.factory.ClassLoad.compileGroovyClassCode(ClassLoad.java:27)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:202)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:04:57.955 error 99 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:299): "loadFiles" | java.lang.NullPointerException: Cannot invoke "java.lang.Class.getName()" because "aClass" is null
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:278)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:05:01.235 error 99 gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:210): "编译错误" | java.lang.Exception: 编译失败：
+找不到符号
+  符号:   类 SqlTools
+  位置: 程序包 com.authorizationSystem
+程序包com.authorizationSystem.dao不存在
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:87)
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:48)
+	at gzb.frame.factory.ClassLoad.compileJavaClassCode(ClassLoad.java:35)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:208)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+ | org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
+Script_b6f081ce55bc4932325e15df76a75f44.groovy: 2: unable to resolve class com.authorizationSystem.SqlTools
+ @ line 2, column 1.
+   import com.authorizationSystem.SqlTools;
+   ^
+
+1 error
+
+	at org.codehaus.groovy.control.ErrorCollector.failIfErrors(ErrorCollector.java:292)
+	at org.codehaus.groovy.control.CompilationUnit$ISourceUnitOperation.doPhaseOperation(CompilationUnit.java:910)
+	at org.codehaus.groovy.control.CompilationUnit.processPhaseOperations(CompilationUnit.java:692)
+	at org.codehaus.groovy.control.CompilationUnit.compile(CompilationUnit.java:666)
+	at groovy.lang.GroovyClassLoader.doParseClass(GroovyClassLoader.java:365)
+	at groovy.lang.GroovyClassLoader.lambda$parseClass$2(GroovyClassLoader.java:314)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.compute(StampedCommonCache.java:163)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.getAndPut(StampedCommonCache.java:154)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:314)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:298)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:263)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:278)
+	at gzb.frame.factory.ClassLoad.compileGroovyClassCode(ClassLoad.java:27)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:202)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:05:01.235 error 99 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:299): "loadFiles" | java.lang.NullPointerException: Cannot invoke "java.lang.Class.getName()" because "aClass" is null
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:278)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:05:04.552 error 99 gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:210): "编译错误" | java.lang.Exception: 编译失败：
+找不到符号
+  符号:   类 SqlTools
+  位置: 程序包 com.authorizationSystem
+程序包com.authorizationSystem.dao不存在
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:87)
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:48)
+	at gzb.frame.factory.ClassLoad.compileJavaClassCode(ClassLoad.java:35)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:208)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+ | org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
+Script_b6f081ce55bc4932325e15df76a75f44.groovy: 2: unable to resolve class com.authorizationSystem.SqlTools
+ @ line 2, column 1.
+   import com.authorizationSystem.SqlTools;
+   ^
+
+1 error
+
+	at org.codehaus.groovy.control.ErrorCollector.failIfErrors(ErrorCollector.java:292)
+	at org.codehaus.groovy.control.CompilationUnit$ISourceUnitOperation.doPhaseOperation(CompilationUnit.java:910)
+	at org.codehaus.groovy.control.CompilationUnit.processPhaseOperations(CompilationUnit.java:692)
+	at org.codehaus.groovy.control.CompilationUnit.compile(CompilationUnit.java:666)
+	at groovy.lang.GroovyClassLoader.doParseClass(GroovyClassLoader.java:365)
+	at groovy.lang.GroovyClassLoader.lambda$parseClass$2(GroovyClassLoader.java:314)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.compute(StampedCommonCache.java:163)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.getAndPut(StampedCommonCache.java:154)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:314)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:298)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:263)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:278)
+	at gzb.frame.factory.ClassLoad.compileGroovyClassCode(ClassLoad.java:27)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:202)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:05:04.553 error 99 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:299): "loadFiles" | java.lang.NullPointerException: Cannot invoke "java.lang.Class.getName()" because "aClass" is null
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:278)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:05:07.831 error 99 gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:210): "编译错误" | java.lang.Exception: 编译失败：
+找不到符号
+  符号:   类 SqlTools
+  位置: 程序包 com.authorizationSystem
+程序包com.authorizationSystem.dao不存在
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:87)
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:48)
+	at gzb.frame.factory.ClassLoad.compileJavaClassCode(ClassLoad.java:35)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:208)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+ | org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
+Script_b6f081ce55bc4932325e15df76a75f44.groovy: 2: unable to resolve class com.authorizationSystem.SqlTools
+ @ line 2, column 1.
+   import com.authorizationSystem.SqlTools;
+   ^
+
+1 error
+
+	at org.codehaus.groovy.control.ErrorCollector.failIfErrors(ErrorCollector.java:292)
+	at org.codehaus.groovy.control.CompilationUnit$ISourceUnitOperation.doPhaseOperation(CompilationUnit.java:910)
+	at org.codehaus.groovy.control.CompilationUnit.processPhaseOperations(CompilationUnit.java:692)
+	at org.codehaus.groovy.control.CompilationUnit.compile(CompilationUnit.java:666)
+	at groovy.lang.GroovyClassLoader.doParseClass(GroovyClassLoader.java:365)
+	at groovy.lang.GroovyClassLoader.lambda$parseClass$2(GroovyClassLoader.java:314)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.compute(StampedCommonCache.java:163)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.getAndPut(StampedCommonCache.java:154)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:314)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:298)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:263)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:278)
+	at gzb.frame.factory.ClassLoad.compileGroovyClassCode(ClassLoad.java:27)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:202)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:05:07.831 error 99 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:299): "loadFiles" | java.lang.NullPointerException: Cannot invoke "java.lang.Class.getName()" because "aClass" is null
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:278)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:05:11.107 error 99 gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:210): "编译错误" | java.lang.Exception: 编译失败：
+找不到符号
+  符号:   类 SqlTools
+  位置: 程序包 com.authorizationSystem
+程序包com.authorizationSystem.dao不存在
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:87)
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:48)
+	at gzb.frame.factory.ClassLoad.compileJavaClassCode(ClassLoad.java:35)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:208)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+ | org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
+Script_b6f081ce55bc4932325e15df76a75f44.groovy: 2: unable to resolve class com.authorizationSystem.SqlTools
+ @ line 2, column 1.
+   import com.authorizationSystem.SqlTools;
+   ^
+
+1 error
+
+	at org.codehaus.groovy.control.ErrorCollector.failIfErrors(ErrorCollector.java:292)
+	at org.codehaus.groovy.control.CompilationUnit$ISourceUnitOperation.doPhaseOperation(CompilationUnit.java:910)
+	at org.codehaus.groovy.control.CompilationUnit.processPhaseOperations(CompilationUnit.java:692)
+	at org.codehaus.groovy.control.CompilationUnit.compile(CompilationUnit.java:666)
+	at groovy.lang.GroovyClassLoader.doParseClass(GroovyClassLoader.java:365)
+	at groovy.lang.GroovyClassLoader.lambda$parseClass$2(GroovyClassLoader.java:314)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.compute(StampedCommonCache.java:163)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.getAndPut(StampedCommonCache.java:154)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:314)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:298)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:263)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:278)
+	at gzb.frame.factory.ClassLoad.compileGroovyClassCode(ClassLoad.java:27)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:202)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:05:11.108 error 99 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:299): "loadFiles" | java.lang.NullPointerException: Cannot invoke "java.lang.Class.getName()" because "aClass" is null
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:278)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:05:14.395 error 99 gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:210): "编译错误" | java.lang.Exception: 编译失败：
+找不到符号
+  符号:   类 SqlTools
+  位置: 程序包 com.authorizationSystem
+程序包com.authorizationSystem.dao不存在
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:87)
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:48)
+	at gzb.frame.factory.ClassLoad.compileJavaClassCode(ClassLoad.java:35)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:208)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+ | org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
+Script_b6f081ce55bc4932325e15df76a75f44.groovy: 2: unable to resolve class com.authorizationSystem.SqlTools
+ @ line 2, column 1.
+   import com.authorizationSystem.SqlTools;
+   ^
+
+1 error
+
+	at org.codehaus.groovy.control.ErrorCollector.failIfErrors(ErrorCollector.java:292)
+	at org.codehaus.groovy.control.CompilationUnit$ISourceUnitOperation.doPhaseOperation(CompilationUnit.java:910)
+	at org.codehaus.groovy.control.CompilationUnit.processPhaseOperations(CompilationUnit.java:692)
+	at org.codehaus.groovy.control.CompilationUnit.compile(CompilationUnit.java:666)
+	at groovy.lang.GroovyClassLoader.doParseClass(GroovyClassLoader.java:365)
+	at groovy.lang.GroovyClassLoader.lambda$parseClass$2(GroovyClassLoader.java:314)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.compute(StampedCommonCache.java:163)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.getAndPut(StampedCommonCache.java:154)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:314)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:298)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:263)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:278)
+	at gzb.frame.factory.ClassLoad.compileGroovyClassCode(ClassLoad.java:27)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:202)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:05:14.395 error 99 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:299): "loadFiles" | java.lang.NullPointerException: Cannot invoke "java.lang.Class.getName()" because "aClass" is null
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:278)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:05:17.675 error 99 gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:210): "编译错误" | java.lang.Exception: 编译失败：
+找不到符号
+  符号:   类 SqlTools
+  位置: 程序包 com.authorizationSystem
+程序包com.authorizationSystem.dao不存在
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:87)
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:48)
+	at gzb.frame.factory.ClassLoad.compileJavaClassCode(ClassLoad.java:35)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:208)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+ | org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
+Script_b6f081ce55bc4932325e15df76a75f44.groovy: 2: unable to resolve class com.authorizationSystem.SqlTools
+ @ line 2, column 1.
+   import com.authorizationSystem.SqlTools;
+   ^
+
+1 error
+
+	at org.codehaus.groovy.control.ErrorCollector.failIfErrors(ErrorCollector.java:292)
+	at org.codehaus.groovy.control.CompilationUnit$ISourceUnitOperation.doPhaseOperation(CompilationUnit.java:910)
+	at org.codehaus.groovy.control.CompilationUnit.processPhaseOperations(CompilationUnit.java:692)
+	at org.codehaus.groovy.control.CompilationUnit.compile(CompilationUnit.java:666)
+	at groovy.lang.GroovyClassLoader.doParseClass(GroovyClassLoader.java:365)
+	at groovy.lang.GroovyClassLoader.lambda$parseClass$2(GroovyClassLoader.java:314)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.compute(StampedCommonCache.java:163)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.getAndPut(StampedCommonCache.java:154)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:314)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:298)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:263)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:278)
+	at gzb.frame.factory.ClassLoad.compileGroovyClassCode(ClassLoad.java:27)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:202)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:05:17.675 error 99 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:299): "loadFiles" | java.lang.NullPointerException: Cannot invoke "java.lang.Class.getName()" because "aClass" is null
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:278)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:05:20.954 error 99 gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:210): "编译错误" | java.lang.Exception: 编译失败：
+找不到符号
+  符号:   类 SqlTools
+  位置: 程序包 com.authorizationSystem
+程序包com.authorizationSystem.dao不存在
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:87)
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:48)
+	at gzb.frame.factory.ClassLoad.compileJavaClassCode(ClassLoad.java:35)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:208)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+ | org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
+Script_b6f081ce55bc4932325e15df76a75f44.groovy: 2: unable to resolve class com.authorizationSystem.SqlTools
+ @ line 2, column 1.
+   import com.authorizationSystem.SqlTools;
+   ^
+
+1 error
+
+	at org.codehaus.groovy.control.ErrorCollector.failIfErrors(ErrorCollector.java:292)
+	at org.codehaus.groovy.control.CompilationUnit$ISourceUnitOperation.doPhaseOperation(CompilationUnit.java:910)
+	at org.codehaus.groovy.control.CompilationUnit.processPhaseOperations(CompilationUnit.java:692)
+	at org.codehaus.groovy.control.CompilationUnit.compile(CompilationUnit.java:666)
+	at groovy.lang.GroovyClassLoader.doParseClass(GroovyClassLoader.java:365)
+	at groovy.lang.GroovyClassLoader.lambda$parseClass$2(GroovyClassLoader.java:314)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.compute(StampedCommonCache.java:163)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.getAndPut(StampedCommonCache.java:154)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:314)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:298)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:263)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:278)
+	at gzb.frame.factory.ClassLoad.compileGroovyClassCode(ClassLoad.java:27)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:202)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:05:20.954 error 99 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:299): "loadFiles" | java.lang.NullPointerException: Cannot invoke "java.lang.Class.getName()" because "aClass" is null
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:278)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:05:24.245 error 99 gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:210): "编译错误" | java.lang.Exception: 编译失败：
+找不到符号
+  符号:   类 SqlTools
+  位置: 程序包 com.authorizationSystem
+程序包com.authorizationSystem.dao不存在
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:87)
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:48)
+	at gzb.frame.factory.ClassLoad.compileJavaClassCode(ClassLoad.java:35)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:208)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+ | org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
+Script_b6f081ce55bc4932325e15df76a75f44.groovy: 2: unable to resolve class com.authorizationSystem.SqlTools
+ @ line 2, column 1.
+   import com.authorizationSystem.SqlTools;
+   ^
+
+1 error
+
+	at org.codehaus.groovy.control.ErrorCollector.failIfErrors(ErrorCollector.java:292)
+	at org.codehaus.groovy.control.CompilationUnit$ISourceUnitOperation.doPhaseOperation(CompilationUnit.java:910)
+	at org.codehaus.groovy.control.CompilationUnit.processPhaseOperations(CompilationUnit.java:692)
+	at org.codehaus.groovy.control.CompilationUnit.compile(CompilationUnit.java:666)
+	at groovy.lang.GroovyClassLoader.doParseClass(GroovyClassLoader.java:365)
+	at groovy.lang.GroovyClassLoader.lambda$parseClass$2(GroovyClassLoader.java:314)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.compute(StampedCommonCache.java:163)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.getAndPut(StampedCommonCache.java:154)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:314)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:298)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:263)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:278)
+	at gzb.frame.factory.ClassLoad.compileGroovyClassCode(ClassLoad.java:27)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:202)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:05:24.245 error 99 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:299): "loadFiles" | java.lang.NullPointerException: Cannot invoke "java.lang.Class.getName()" because "aClass" is null
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:278)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:05:27.767 error 99 gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:210): "编译错误" | java.lang.Exception: 编译失败：
+找不到符号
+  符号:   类 SqlTools
+  位置: 程序包 com.authorizationSystem
+程序包com.authorizationSystem.dao不存在
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:87)
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:48)
+	at gzb.frame.factory.ClassLoad.compileJavaClassCode(ClassLoad.java:35)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:208)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+ | org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
+Script_b6f081ce55bc4932325e15df76a75f44.groovy: 2: unable to resolve class com.authorizationSystem.SqlTools
+ @ line 2, column 1.
+   import com.authorizationSystem.SqlTools;
+   ^
+
+1 error
+
+	at org.codehaus.groovy.control.ErrorCollector.failIfErrors(ErrorCollector.java:292)
+	at org.codehaus.groovy.control.CompilationUnit$ISourceUnitOperation.doPhaseOperation(CompilationUnit.java:910)
+	at org.codehaus.groovy.control.CompilationUnit.processPhaseOperations(CompilationUnit.java:692)
+	at org.codehaus.groovy.control.CompilationUnit.compile(CompilationUnit.java:666)
+	at groovy.lang.GroovyClassLoader.doParseClass(GroovyClassLoader.java:365)
+	at groovy.lang.GroovyClassLoader.lambda$parseClass$2(GroovyClassLoader.java:314)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.compute(StampedCommonCache.java:163)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.getAndPut(StampedCommonCache.java:154)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:314)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:298)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:263)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:278)
+	at gzb.frame.factory.ClassLoad.compileGroovyClassCode(ClassLoad.java:27)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:202)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:05:27.767 error 99 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:299): "loadFiles" | java.lang.NullPointerException: Cannot invoke "java.lang.Class.getName()" because "aClass" is null
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:278)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:05:31.046 error 99 gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:210): "编译错误" | java.lang.Exception: 编译失败：
+找不到符号
+  符号:   类 SqlTools
+  位置: 程序包 com.authorizationSystem
+程序包com.authorizationSystem.dao不存在
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   类 ApplicationDao
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+找不到符号
+  符号:   变量 SqlTools
+  位置: 类 com.authorizationSystem.entity.Application
+
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:87)
+	at gzb.frame.factory.ClassLoad.compileJavaCode(ClassLoad.java:48)
+	at gzb.frame.factory.ClassLoad.compileJavaClassCode(ClassLoad.java:35)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:208)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+ | org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
+Script_b6f081ce55bc4932325e15df76a75f44.groovy: 2: unable to resolve class com.authorizationSystem.SqlTools
+ @ line 2, column 1.
+   import com.authorizationSystem.SqlTools;
+   ^
+
+1 error
+
+	at org.codehaus.groovy.control.ErrorCollector.failIfErrors(ErrorCollector.java:292)
+	at org.codehaus.groovy.control.CompilationUnit$ISourceUnitOperation.doPhaseOperation(CompilationUnit.java:910)
+	at org.codehaus.groovy.control.CompilationUnit.processPhaseOperations(CompilationUnit.java:692)
+	at org.codehaus.groovy.control.CompilationUnit.compile(CompilationUnit.java:666)
+	at groovy.lang.GroovyClassLoader.doParseClass(GroovyClassLoader.java:365)
+	at groovy.lang.GroovyClassLoader.lambda$parseClass$2(GroovyClassLoader.java:314)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.compute(StampedCommonCache.java:163)
+	at org.codehaus.groovy.runtime.memoize.StampedCommonCache.getAndPut(StampedCommonCache.java:154)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:314)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:298)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:263)
+	at groovy.lang.GroovyClassLoader.parseClass(GroovyClassLoader.java:278)
+	at gzb.frame.factory.ClassLoad.compileGroovyClassCode(ClassLoad.java:27)
+	at gzb.frame.factory.ClassFactory.compileClassCode(ClassFactory.java:202)
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:277)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2025-08-27 19:05:31.047 error 99 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:299): "loadFiles" | java.lang.NullPointerException: Cannot invoke "java.lang.Class.getName()" because "aClass" is null
+	at gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:278)
+	at gzb.frame.factory.ClassFactory.lambda$init$0(ClassFactory.java:71)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+

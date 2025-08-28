@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>文件上传测试</title>
+</head>
+<body>
+
+<h1>上传文件到 //test/t02</h1>
+
+<form action="/test/t02" method="POST" enctype="multipart/form-data">
+  <div>
+    <label for="fileUpload">选择要上传的文件:</label>
+    <input type="file" id="fileUpload" name="file">
+  </div>
+  <br>
+  <button type="submit">上传</button>
+</form>
+
+<p>请注意：此表单仅用于测试上传功能，实际的文件保存逻辑需要在服务器端实现。</p>
+
+</body>
+</html>
