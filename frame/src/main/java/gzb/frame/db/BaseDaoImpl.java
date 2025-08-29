@@ -60,8 +60,8 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
 
         this.dataBase= DataBaseFactory.getDataBase(dbName);
     }
-    public void init(String dbName, String ip, String port, String acc, String pwd, String clz, Boolean auto, Integer threadMax, Integer overtime, Integer asyncSleep) throws Exception {
-        this.dataBase= DataBaseFactory.getDataBase(dbName,ip,port,acc,pwd,clz,auto,threadMax,overtime,asyncSleep);
+    public void init(String dbName, String ip, String port, String acc, String pwd, String clz, Boolean auto, Integer threadMax, Integer overtime, Integer asyncSleep,Integer asyBatch) throws Exception {
+        this.dataBase= DataBaseFactory.getDataBase(dbName,ip,port,acc,pwd,clz,auto,threadMax,overtime,asyncSleep,asyBatch);
     }
     public int runSql(List<T> list, boolean autoId, int sqlType, int async, Connection connection) throws Exception {
         Map<String, List<Object[]>> sqlMap = new HashMap<>();

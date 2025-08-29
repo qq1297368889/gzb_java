@@ -32,11 +32,6 @@ public class BasicController {
     @RequestMapping("/test/test1")
     @ResponseBody
     public String hello(String name) {
-/*        StackTraceElement[] stackTrace = new Throwable().getStackTrace();
-        for (StackTraceElement stackTraceElement : stackTrace) {
-            System.out.println(stackTraceElement.getClassName());
-        }
-        System.out.println(stackTrace.length);*/
         return "{\"code\":\"1\"\"name\":\""+name+"\"}";
     }
 

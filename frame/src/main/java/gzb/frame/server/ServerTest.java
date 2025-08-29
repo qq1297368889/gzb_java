@@ -24,9 +24,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class ServerTest {
-    static int open = 0;
-    static int serverPid = 8700;
-
     public static void main(String[] args) throws Exception {
 
         System.setProperty("file.encoding", "UTF-8");
@@ -36,7 +33,7 @@ public class ServerTest {
         action_test(300000, 3,
                 20260, 27876,
                 "自研框架", "spring",
-                url1, url2);
+                url1, url2,"\"code\":\"1\"".getBytes("UTF-8"));
 
     }
 
@@ -165,6 +162,7 @@ public class ServerTest {
      * @param server2Name 压测服务器2名称
      * @param server1Url 压测服务器1请求地址
      * @param server2Url 压测服务器2请求地址
+     * @param sucContain 响应结果包含该内容 说明请求成功 否则视为 异常响应
      */
     public static void action_test(
             int testNum, int thrMax,
@@ -172,7 +170,7 @@ public class ServerTest {
             , String server1Name
             , String server2Name
             , String server1Url
-            , String server2Url) throws IOException, InterruptedException {
+            , String server2Url,byte[] sucContain) throws IOException, InterruptedException {
         if (server1Name==null) {
             server1Name="server1";
         }
@@ -186,23 +184,24 @@ public class ServerTest {
             thrMax=1;
         }
         int reqNum0 = testNum / 10 * 3;
+        System.out.println("压测线程数:"+thrMax);
         HTTPV2 http = new HTTPV2();
         if (server1Url!=null) {
-            System.out.println("这里是 " + server1Name + " 热身：" + reqNum0 + "次请求");
-            pressureTest(server1Pid, thrMax, reqNum0, http, server1Url, null, 0, null, null, null);
+            System.out.println(server1Name + " 热身：" + reqNum0 + "次请求");
+            pressureTest(server1Pid, thrMax, reqNum0, http, server1Url, null, 0, null, null, null,sucContain);
 
-            System.out.println("这里是 " + server1Name + " 实测：" + testNum + "次请求");
-            pressureTest(server1Pid, thrMax, testNum, http, server1Url, null, 0, null, null, null);
+            System.out.println(server1Name + " 实测：" + testNum + "次请求");
+            pressureTest(server1Pid, thrMax, testNum, http, server1Url, null, 0, null, null, null,sucContain);
         }
         if (server2Url!=null) {
-            System.out.println("这里是 " + server2Name + " 热身：" + reqNum0 + "次请求");
-            pressureTest(server2Pid, thrMax, reqNum0, http, server2Url, null, 0, null, null, null);
-            System.out.println("这里是 " + server2Name + " 实测：" + testNum + "次请求");
-            pressureTest(server2Pid, thrMax, testNum, http, server2Url, null, 0, null, null, null);
+            System.out.println(server2Name + " 热身：" + reqNum0 + "次请求");
+            pressureTest(server2Pid, thrMax, reqNum0, http, server2Url, null, 0, null, null, null,sucContain);
+            System.out.println(server2Name + " 实测：" + testNum + "次请求");
+            pressureTest(server2Pid, thrMax, testNum, http, server2Url, null, 0, null, null, null,sucContain);
         }
     }
 
-    public static void pressureTest(int serverPid, int threadNum, int requestNum, HTTPV2 http, String url, String data, int met, String uploadName, List<File> listFiles, Map<String, String[]> uploadData) throws InterruptedException {
+    public static void pressureTest(int serverPid, int threadNum, int requestNum, HTTPV2 http, String url, String data, int met, String uploadName, List<File> listFiles, Map<String, String[]> uploadData,byte[] sucContain) throws InterruptedException {
         try {
             http.request(new URL(url), data, met, uploadName, listFiles, uploadData);
         } catch (MalformedURLException e) {
@@ -220,12 +219,8 @@ public class ServerTest {
                 @Override
                 public void run() {
                     start.incrementAndGet(); // 原子递增
-                    while (ServerTest.open == 0) {
-                        try {
-                            sleep(1);
-                        } catch (InterruptedException e) {
-                            return;
-                        }
+                    while (open.get() == 0) {
+                        Tools.sleep(5);
                     }
                     while (!Thread.currentThread().isInterrupted()) {
                         try {
@@ -233,9 +228,8 @@ public class ServerTest {
                             try {
                                 long start = System.currentTimeMillis();
                                 bytes = http.request(new URL(url), data, met, uploadName, listFiles, uploadData).toByte();
-
                                 long end = System.currentTimeMillis();
-                                if (bytes != null && bytes.length > 0 && new String(bytes).contains("\"code\":\"1\"")) {
+                                if (bytes != null && bytes.length > 0 && Tools.bytesContains(bytes,sucContain)) {
                                     suc.incrementAndGet(); // 原子递增
                                 } else {
                                     err.incrementAndGet();
@@ -263,15 +257,13 @@ public class ServerTest {
 
         while (true) {
             if (start.get() == threadNum) {
-                Thread.sleep(10);
-                System.out.println("start->");
-                ServerTest.open = 1;
+                Tools.sleep(1000);
                 suc.set(0);
+                open.set(1);
                 break;
             }
-            Thread.sleep(10);
+            Tools.sleep(10);
         }
-        System.out.println("测试地址:"+url);
         while (true) {
             k++;
             double num = 0.0;
@@ -281,24 +273,22 @@ public class ServerTest {
                 Tools.sleep(1000);
             }
             int lao2 = suc.get();//统计 总请求数量
-            System.out.println("服务器CPU占用:" + Tools.doubleTo2(num) + "%," +
-                    "已耗时:" + k + "秒," +
-                    "成功请求数:" + (lao2) + "次," +
-                    "失败请求数:" + err.get() + "次," +
-                    "平均每秒请求数:" + (lao2 / k) + "次," +
+            System.out.println("CPU占用:" + Tools.doubleTo2(num) + "%," +
+                    "计时:" + k + "秒," +
+                    "成功数:" + (lao2) + "次," +
+                    "失败数:" + err.get() + "次," +
+                    "平均数:" + (lao2 / k) + "次," +
                     "平均耗时:" + (time.get() / (suc.get() + err.get())) + "毫秒," +
                     "总耗时:" + (time.get()) + "毫秒," +
                     "最大耗时:" + maxTime[0] + "毫秒," +
-                    "最近一秒请求数:" + (lao2 - lao) + "次");
+                    "最近一秒:" + (lao2 - lao) + "次");
             lao = lao2;
             maxTime[0] = 0;
             if (suc.get() > requestNum) {
-                System.out.println("开始结束线程");
                 for (Thread thread : list) {
                     thread.interrupt();
                     thread.join();
                 }
-                System.out.println("结束线程完毕");
                 break;
             }
         }

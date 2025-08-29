@@ -26,13 +26,13 @@ public class DataBaseFactory {
         }
     }
 
-    public static DataBase getDataBase(String dbName, String ip, String port, String acc, String pwd, String clz, Boolean auto, Integer threadMax, Integer overtime, Integer asyncSleep) throws Exception {
+    public static DataBase getDataBase(String dbName, String ip, String port, String acc, String pwd, String clz, Boolean auto, Integer threadMax, Integer overtime, Integer asyncSleep,Integer asyBatch) throws Exception {
         lock.lock();
         try {
             String key = ip + "_" + port + "_" + dbName;
             DataBase db = mapDataBase.get(key);
             if (db == null) {
-                db = new DataBaseMsql(dbName, ip, port, acc, pwd, clz, auto, threadMax, overtime, asyncSleep);
+                db = new DataBaseMsql(dbName, ip, port, acc, pwd, clz, auto, threadMax, overtime, asyncSleep,asyBatch);
                 mapDataBase.put(key, db);
             }
             return db;

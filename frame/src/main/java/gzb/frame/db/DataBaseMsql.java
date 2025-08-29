@@ -38,7 +38,7 @@ public class DataBaseMsql implements DataBase {
     public Integer threadMax = null;
     public Integer overtime = null;
     private Integer asyncSleep = null;
-    public Object[] defObjectArr = new Object[0];
+    private Integer asyBatch = null;
 
     public HikariDataSource hds = null;
     private Map<String, AsyEntity> mapAskSql = new HashMap<>();
@@ -47,10 +47,10 @@ public class DataBaseMsql implements DataBase {
 
     public DataBaseMsql(String key) throws Exception {
         readConfig(key);
-        initDataBase(name, ip, port, acc, pwd, clz, auto, threadMax, overtime, asyncSleep);
+        initDataBase(name, ip, port, acc, pwd, clz, auto, threadMax, overtime, asyncSleep,asyBatch);
     }
 
-    public DataBaseMsql(String name, String ip, String port, String acc, String pwd, String clz, Boolean auto, Integer threadMax, Integer overtime, Integer asyncSleep) throws Exception {
+    public DataBaseMsql(String name, String ip, String port, String acc, String pwd, String clz, Boolean auto, Integer threadMax, Integer overtime, Integer asyncSleep,Integer asyBatch) throws Exception {
         Config.set("db.mysql." + name + ".name", name);
         Config.set("db.mysql." + name + ".ip", ip);
         Config.set("db.mysql." + name + ".port", port);
@@ -61,12 +61,13 @@ public class DataBaseMsql implements DataBase {
         Config.set("db.mysql." + name + ".threadMax", threadMax.toString());
         Config.set("db.mysql." + name + ".overtime", overtime.toString());
         Config.set("db.mysql." + name + ".asyncSleep", asyncSleep.toString());
+        Config.set("db.mysql." + name + ".asy.batch", asyBatch.toString());
         Config.set("db.mysql." + name + ".url", url);
 
-        initDataBase(name, ip, port, acc, pwd, clz, auto, threadMax, overtime, asyncSleep);
+        initDataBase(name, ip, port, acc, pwd, clz, auto, threadMax, overtime, asyncSleep,asyBatch);
     }
 
-    private void initDataBase(String name, String ip, String port, String acc, String pwd, String clz, Boolean auto, Integer threadMax, Integer overtime, Integer asyncSleep) throws SQLException {
+    private void initDataBase(String name, String ip, String port, String acc, String pwd, String clz, Boolean auto, Integer threadMax, Integer overtime, Integer asyncSleep,Integer asyBatch) throws SQLException {
         try {
             if (name != null) {
                 this.name = name;
@@ -79,6 +80,8 @@ public class DataBaseMsql implements DataBase {
                 this.threadMax = threadMax;
                 this.overtime = overtime;
                 this.asyncSleep = asyncSleep;
+                this.asyBatch = asyBatch;
+
                 this.url = "jdbc:mysql://" + this.ip + ":" + this.port + "/" + this.name + "?" +
                         "autoReconnect=" + this.auto + "&" +
                         "useUnicode=true&" +
@@ -261,6 +264,8 @@ public class DataBaseMsql implements DataBase {
         this.threadMax = Config.getInteger("db.mysql." + name + ".threadMax", Tools.getCPUNum() * 2);
         this.overtime = Config.getInteger("db.mysql." + name + ".overtime", 3000);
         this.asyncSleep = Config.getInteger("db.mysql." + name + ".asyncSleep", 50);
+        this.asyBatch = Config.getInteger("db.mysql." + name + ".asy.batch", 200);
+
         this.url = Config.get("db.mysql." + name + ".url", "jdbc:mysql://" + this.ip + ":" + this.port + "/" + this.name + "?" +
                 "autoReconnect=" + this.auto + "&" +
                 "useUnicode=true&" +
@@ -915,7 +920,7 @@ public class DataBaseMsql implements DataBase {
     // autoCommit    true的话 自动提交sql     false的话 自己手动提交 connection.setAutoCommit(true false);
     public int runSqlBatch(String sql, List<Object[]> list_parameter, Connection connection, boolean autoCommit) throws Exception {
         //  只有在 debug环境下 执行 带日志输出的 批量执行   LogThread.lvConfig.get(0) != 2表示 debug级别 不显示 也不输出
-        if (LogThread.lvConfig[0] == 2) {
+        if (LogThread.lvConfig[0] != 2) {
             return runSqlBatch01(sql, list_parameter, connection, autoCommit);
         }
         int allRow = 0;
@@ -941,8 +946,13 @@ public class DataBaseMsql implements DataBase {
                     ps.setObject(i + 1, parameter[i]);
                 }
                 ps.addBatch();
-                if ((j + 1) % 200 == 0 || j + 1 == list_parameter.size()) {
+                if ((j + 1) % asyBatch == 0 || j + 1 == list_parameter.size()) {
                     int[] rows = ps.executeBatch();
+                    for (int i = 0; i < rows.length; i++) {
+                        if (rows[i]==-3) {
+                            log.e("SQL执行失败：" ,Arrays.toString(list_parameter.get(j - (20-i))));
+                        }
+                    }
                     if (autoCommit) {
                         connection.commit();
                     }
@@ -1022,8 +1032,13 @@ public class DataBaseMsql implements DataBase {
                 sb.append("}");
                 ps.addBatch();
                 b = System.currentTimeMillis();
-                if ((j + 1) % 200 == 0 || j + 1 == list_parameter.size()) {
+                if ((j + 1) % asyBatch == 0 || j + 1 == list_parameter.size()) {
                     int[] rows = ps.executeBatch();
+                    for (int i = 0; i < rows.length; i++) {
+                        if (rows[i]==-3) {
+                            log.e("SQL执行失败：" ,Arrays.toString(list_parameter.get(j - (20-i))));
+                        }
+                    }
                     if (autoCommit) {
                         connection.commit();
                     }
@@ -1050,8 +1065,8 @@ public class DataBaseMsql implements DataBase {
             } else {
                 this.close(null, rs, ps);
             }
-            log.d(sb);
         }
+        log.d(sb);
         return allRow;
     }
 

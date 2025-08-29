@@ -39,7 +39,29 @@ public class Tools {
     public static int[] arr = {7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2};
     public static int[] arrCheck = {1, 0, 88, 9, 8, 7, 6, 5, 4, 3, 2};
     static Random random = new Random(new Date().getTime() + 100);
-
+    /**
+     * 从一个大byte[]中寻找一个小byte[]
+     * 大bytes
+     * 小arr
+     */
+    public static boolean bytesContains(byte[] bytes, byte[] arr) {
+        if (bytes == null || arr == null || arr.length == 0 || bytes.length < arr.length) {
+            return false;
+        }
+        for (int i = 0; i <= bytes.length - arr.length; i++) {
+            boolean found = true;
+            for (int j = 0; j < arr.length; j++) {
+                if (bytes[i + j] != arr[j]) {
+                    found = false;
+                    break;
+                }
+            }
+            if (found) {
+                return true;
+            }
+        }
+        return false;
+    }
     /**
      * Unicode转字符串
      * 例如：输入 "\\u4f60\\u597d" 返回 "你好"
