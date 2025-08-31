@@ -4,7 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="cfcea2d9-5a46-41f0-8ef3-1c3fe61c7bed" name="更改" comment="增加功能-001  08 31 B" />
+    <list default="true" id="cfcea2d9-5a46-41f0-8ef3-1c3fe61c7bed" name="更改" comment="1.0.0">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -33,6 +35,7 @@
       </GitPushTagMode>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="SIGN_OFF_COMMIT" value="true" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
@@ -58,42 +61,43 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;E:/codes_20220814/java/gzb_java/test001/src/main/java/gzb&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;onboarding.tips.debug.path&quot;: &quot;E:/codes_20220814/java/gzb_java/test001/src/main/java/gzb/Main.java&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;项目&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.github.copilot.settings.ApplicationConfigurable&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;,
-    &quot;应用程序.Application.executor&quot;: &quot;Run&quot;,
-    &quot;应用程序.Auto.executor&quot;: &quot;Run&quot;,
-    &quot;应用程序.AutoCode.executor&quot;: &quot;Run&quot;,
-    &quot;应用程序.BaseDaoImpl.executor&quot;: &quot;Run&quot;,
-    &quot;应用程序.BaseDaoImpl2.executor&quot;: &quot;Run&quot;,
-    &quot;应用程序.Main.executor&quot;: &quot;Run&quot;,
-    &quot;应用程序.ResultImpl (1).executor&quot;: &quot;Run&quot;,
-    &quot;应用程序.ResultImpl.executor&quot;: &quot;Run&quot;,
-    &quot;应用程序.ServerTest.executor&quot;: &quot;Run&quot;,
-    &quot;应用程序.Start.executor&quot;: &quot;Run&quot;,
-    &quot;应用程序.Test.executor&quot;: &quot;Run&quot;,
-    &quot;应用程序.TestAction.executor&quot;: &quot;Run&quot;,
-    &quot;应用程序.TestServerQPS.executor&quot;: &quot;Run&quot;,
-    &quot;应用程序.TestSpringMvcApplication.executor&quot;: &quot;Run&quot;,
-    &quot;应用程序.Test_250830.executor&quot;: &quot;Run&quot;,
-    &quot;应用程序.gzb.AutoCode.executor&quot;: &quot;Run&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "master",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "E:/codes_20220814/java/gzb_java_git_c",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "onboarding.tips.debug.path": "E:/codes_20220814/java/gzb_java/test001/src/main/java/gzb/Main.java",
+    "project.structure.last.edited": "项目",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "com.github.copilot.settings.ApplicationConfigurable",
+    "vue.rearranger.settings.migration": "true",
+    "应用程序.Application.executor": "Run",
+    "应用程序.Auto.executor": "Run",
+    "应用程序.AutoCode.executor": "Run",
+    "应用程序.BaseDaoImpl.executor": "Run",
+    "应用程序.BaseDaoImpl2.executor": "Run",
+    "应用程序.Main.executor": "Run",
+    "应用程序.ResultImpl (1).executor": "Run",
+    "应用程序.ResultImpl.executor": "Run",
+    "应用程序.ServerTest.executor": "Run",
+    "应用程序.Start.executor": "Run",
+    "应用程序.Test.executor": "Run",
+    "应用程序.TestAction.executor": "Run",
+    "应用程序.TestServerQPS.executor": "Run",
+    "应用程序.TestSpringMvcApplication.executor": "Run",
+    "应用程序.Test_250830.executor": "Run",
+    "应用程序.gzb.AutoCode.executor": "Run",
+    "应用程序.gzb.Start.executor": "Run"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="E:\codes_20220814\java\gzb_java\test001\src\main\java\gzb" />
@@ -194,6 +198,9 @@
     </attachedChunks>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="应用程序级" UseSingleDictionary="true" transferred="true" />
+  <component name="StructureViewState">
+    <option name="selectedTab" value="逻辑" />
+  </component>
   <component name="SvnConfiguration">
     <configuration>C:\Users\Administrator\AppData\Roaming\Subversion</configuration>
   </component>
@@ -214,6 +221,7 @@
       <workItem from="1756644588587" duration="1313000" />
       <workItem from="1756645972821" duration="6891000" />
       <workItem from="1756652876170" duration="768000" />
+      <workItem from="1756653675742" duration="810000" />
     </task>
     <task id="LOCAL-00001" summary="1">
       <option name="closed" value="true" />
@@ -287,7 +295,15 @@
       <option name="project" value="LOCAL" />
       <updated>1756653414777</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="1.0.0">
+      <option name="closed" value="true" />
+      <created>1756653988961</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1756653988961</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -326,7 +342,8 @@
     <MESSAGE value="更新-整理-25-08-31" />
     <MESSAGE value="增加功能-001  08 31" />
     <MESSAGE value="增加功能-001  08 31 B" />
-    <option name="LAST_COMMIT_MESSAGE" value="增加功能-001  08 31 B" />
+    <MESSAGE value="1.0.0" />
+    <option name="LAST_COMMIT_MESSAGE" value="1.0.0" />
     <option name="NON_MODAL_COMMIT_POSTPONE_SLOW_CHECKS" value="false" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
