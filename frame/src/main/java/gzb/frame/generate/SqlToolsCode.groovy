@@ -66,10 +66,8 @@ public class SqlToolsCode extends Base {
                     "    }\n" +
                     "\n" +
                     "    //插入 可以指定id  不指定自动生成\n" +
-                    "    public static SqlTemplate toSave(${tableInfo.nameHumpUpperCase} ${tableInfo.nameHumpLowerCase},${tableInfo.idType} ${tableInfo.idHumpLowerCase}) {\n" +
-                    "        if (${tableInfo.idHumpLowerCase} > 0L) {\n" +
-                    "            ${tableInfo.nameHumpLowerCase}.set${tableInfo.idHumpUpperCase}(${tableInfo.idHumpLowerCase});\n" +
-                    "        } else {\n" +
+                    "    public static SqlTemplate toSave(${tableInfo.nameHumpUpperCase} ${tableInfo.nameHumpLowerCase}) {\n" +
+                    "        if (${tableInfo.nameHumpLowerCase}.get${tableInfo.idHumpUpperCase}()==null || ${tableInfo.nameHumpLowerCase}.get${tableInfo.idHumpUpperCase}() < 1L) {\n" +
                     "            ${tableInfo.nameHumpLowerCase}.set${tableInfo.idHumpUpperCase}(OnlyId.getDistributed());\n" +
                     "        }\n" +
                     "        StringBuilder sb = new StringBuilder(\"insert into ${tableInfo.name}(\");\n" +

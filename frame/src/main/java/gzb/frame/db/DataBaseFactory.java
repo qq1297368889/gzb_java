@@ -11,13 +11,13 @@ public class DataBaseFactory {
     public static Lock lock = new ReentrantLock();
     public static Map<String, DataBase> mapDataBase = new ConcurrentHashMap<>();
 
-    public static DataBase getDataBase(String dbName) throws Exception {
+    public static DataBase getDataBase(String dbKey) throws Exception {
         lock.lock();
         try {
-            String key = Config.get("db.mysql." + dbName + ".ip") + "_" + Config.get("db.mysql." + dbName + ".port") + "_" + Config.get("db.mysql." + dbName + ".name");
+            String key = Config.get("db.mysql." + dbKey + ".ip") + "_" + Config.get("db.mysql." + dbKey + ".port") + "_" + Config.get("db.mysql." + dbKey + ".name");
             DataBase db = mapDataBase.get(key);
             if (db == null) {
-                db = new DataBaseMsql(dbName);
+                db = new DataBaseMsql(dbKey);
                 mapDataBase.put(key, db);
             }
             return db;
@@ -51,7 +51,7 @@ public class DataBaseFactory {
         }
     }
 
-    public static DataBase remove(String dbName, String ip, String port, String acc, String pwd, String clz, Boolean auto, Integer threadMax, Integer overtime, Integer asyncSleep) throws Exception {
+    public static DataBase remove(String dbName, String ip, String port) throws Exception {
         lock.lock();
         try {
             String key = ip + "_" + port + "_" + dbName;

@@ -4,13 +4,19 @@ import gzb.entity.SqlTemplate;
 import gzb.tools.*;
 import com.frame.dao.SysLogDao;
 import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import gzb.frame.annotation.EntityAttribute;
-
+import gzb.tools.json.JsonSerializable;
+import gzb.tools.json.Result;
+import gzb.tools.json.ResultImpl;
 @EntityAttribute(name="sys_log",desc="sysLog")
-public class SysLog implements Serializable{
+public class SysLog implements Serializable, JsonSerializable{
+    private static final long serialVersionUID = 1000L;
+    private static final String dataName= Config.get("json.entity.data","data");
     @EntityAttribute(key=true,size = 19,name="sys_log_id",desc="sysLogId")
     private java.lang.Long sysLogId;
     @EntityAttribute(key=false,size = 19,name="sys_log_time",desc="sysLogTime")
@@ -20,41 +26,25 @@ public class SysLog implements Serializable{
     @EntityAttribute(key=false,size = 536870911,name="sys_log_sql",desc="sysLogSql")
     private java.lang.String sysLogSql;
     private List<?> list;
-    public SysLog() {}
-
-    public SysLog(JSON gzbMap) {
-        this(new GzbMap().setMap(gzbMap.map));
-    }
+   public SysLog() {}
 
     public SysLog(GzbMap gzbMap) {
-        String str=null;
-        str=gzbMap.getString("sysLogId");
-        if (str!=null && !str.isEmpty()) {
-            setSysLogId(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysLogTime");
-        if (str!=null && !str.isEmpty()) {
-            setSysLogTime(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysLogMs");
-        if (str!=null && !str.isEmpty()) {
-            setSysLogMs(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysLogSql");
-        if (str!=null && !str.isEmpty()) {
-            setSysLogSql(java.lang.String.valueOf(str));
-        }
+        this(gzbMap.map);
     }
 
     public SysLog(Map<String, Object> map) {
-        this(new GzbMap().setMap(map));
+        Result result = new ResultImpl(map);
+        loadJson(result);
     }
 
     public SysLog(String jsonString) {
-        this(new GzbMap().setMap(new JSON().loadMap(jsonString).map));
+        Result result = new ResultImpl(jsonString);
+        loadJson(result);
     }
 
-
+    public SysLog(ResultSet resultSet) throws SQLException {
+        loadJson(resultSet);
+    }
     public int save(SysLogDao sysLogDao) throws Exception {
         return sysLogDao.save(this);
     }
@@ -96,13 +86,13 @@ public class SysLog implements Serializable{
     }
 
     //查询语句 可选项 排序
-    public SqlTemplate toSelectSql(String sortField, String sortType, int size, boolean selectId) {
+    public SqlTemplate toSelectSql(String sortField, String sortType, Integer size, Boolean selectId) {
         return SqlTools.toSelectSql(this,sortField, sortType, size, selectId);
     }
 
     //插入 可以指定id  不指定自动生成
-    public SqlTemplate toSave(java.lang.Long actCodeId) {
-        return SqlTools.toSave(this,actCodeId);
+    public SqlTemplate toSave() {
+        return SqlTools.toSave(this);
     }
 
     //根据id修改 高级需求请手动写sql
@@ -111,7 +101,7 @@ public class SysLog implements Serializable{
     }
 
     //删除 可以根据id或其他参数 但是请注意非id删除的性能问题
-    public SqlTemplate toDelete(boolean selectId) {
+    public SqlTemplate toDelete(Boolean selectId) {
         return SqlTools.toDelete(this,selectId);
     }
 
@@ -120,16 +110,53 @@ public class SysLog implements Serializable{
         return toJson().toString();
     }
 
-    public JSON toJson() {
-        JSON json = new JSON();
-        json.put("sysLogId", getSysLogId());
-        json.put("sysLogTime", getSysLogTime());
-        json.put("sysLogMs", getSysLogMs());
-        json.put("sysLogSql", getSysLogSql());
-        json.put("data", getList());
-        return json;
+    public Result toJson() {
+        Result result=new ResultImpl();
+        result.set("sysLogId", sysLogId);
+        result.set("sysLogTime", sysLogTime);
+        result.set("sysLogMs", sysLogMs);
+        result.set("sysLogSql", sysLogSql);
+        result.set(dataName, list);
+        return result;
     }
 
+    @Override
+    public void loadJson(String json) {
+        Result result=new ResultImpl(json);
+         loadJson(result);
+    }
+    public void loadJson(Result result) {
+        this.sysLogId=result.getLong("sysLogId", null);
+        this.sysLogTime=result.getString("sysLogTime", null);
+        this.sysLogMs=result.getLong("sysLogMs", null);
+        this.sysLogSql=result.getString("sysLogSql", null);
+        Object obj = result.get(dataName,null);
+        if (obj instanceof List) {
+            this.list=(List<?>)obj;
+        }
+    }
+    public void loadJson(ResultSet resultSet) throws SQLException {
+        //ResultSetMetaData rsMetaData = resultSet.getMetaData();
+        String temp=null;
+        while (resultSet.next()) {
+            temp=resultSet.getString("sys_log_id");
+            if (temp!=null) {
+                this.sysLogId=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_log_time");
+            if (temp!=null) {
+                this.sysLogTime=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_log_ms");
+            if (temp!=null) {
+                this.sysLogMs=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_log_sql");
+            if (temp!=null) {
+                this.sysLogSql=java.lang.String.valueOf(temp);
+            }
+        }
+    }
     public java.lang.Long getSysLogId() {
         return sysLogId;
     }

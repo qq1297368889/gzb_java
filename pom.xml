@@ -163,8 +163,8 @@
     <modules>
         <module>frame</module>
         <module>acquisition</module>
-        <module>verify</module>
         <module>authorization_system</module>
+        <module>test001</module>
         <!-- 其他业务模块 -->
     </modules>
 </project>

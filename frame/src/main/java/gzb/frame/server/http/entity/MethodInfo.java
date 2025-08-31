@@ -17,6 +17,7 @@ public class MethodInfo {
     DecoratorOpen decoratorOpen;
     ThreadInterval threadInterval;
     Limitation limitation;
+    Transaction transaction;
     Semaphore semaphore=null;
     private Method method;
     private Class[]TypeClass;
@@ -28,6 +29,14 @@ public class MethodInfo {
 
     public void setSemaphore(Semaphore semaphore) {
         this.semaphore = semaphore;
+    }
+
+    public Transaction getTransaction() {
+        return transaction;
+    }
+
+    public void setTransaction(Transaction transaction) {
+        this.transaction = transaction;
     }
 
     public Limitation getLimitation() {
@@ -137,6 +146,7 @@ public class MethodInfo {
     @Override
     public String toString() {
         return "MethodInfo{" +
+                "transaction=" + transaction +
                 "getMapping=" + getMapping +
                 ", postMapping=" + postMapping +
                 ", putMapping=" + putMapping +

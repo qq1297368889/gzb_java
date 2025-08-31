@@ -30,7 +30,7 @@ public class Handle {
             long start = System.currentTimeMillis();
             classFactory.init();
             DataBase dataBase=null;
-            String name = Config.get("db.frame.name", "frame");
+            String name = Config.get("db.frame.key", "frame");
             try {
                 dataBase = DataBaseFactory.getDataBase(name);
             } catch (Exception e) {
@@ -38,7 +38,7 @@ public class Handle {
             }
             log.d("加载权限信息",name,Tools.loadApiInfo(dataBase));
             long end = System.currentTimeMillis();
-            log.d("类编译加载耗时："+(end-start));
+            log.d("类编译加载耗时：",(end-start));
         } catch (Exception e) {
             log.e("Handle.static 出错", e);
         }

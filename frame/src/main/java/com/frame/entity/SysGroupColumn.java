@@ -4,13 +4,19 @@ import gzb.entity.SqlTemplate;
 import gzb.tools.*;
 import com.frame.dao.SysGroupColumnDao;
 import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import gzb.frame.annotation.EntityAttribute;
-
+import gzb.tools.json.JsonSerializable;
+import gzb.tools.json.Result;
+import gzb.tools.json.ResultImpl;
 @EntityAttribute(name="sys_group_column",desc="sysGroupColumn")
-public class SysGroupColumn implements Serializable{
+public class SysGroupColumn implements Serializable, JsonSerializable{
+    private static final long serialVersionUID = 1000L;
+    private static final String dataName= Config.get("json.entity.data","data");
     @EntityAttribute(key=true,size = 19,name="sys_group_column_id",desc="sysGroupColumnId")
     private java.lang.Long sysGroupColumnId;
     @EntityAttribute(key=false,size = 255,name="sys_group_column_key",desc="sysGroupColumnKey")
@@ -40,81 +46,25 @@ public class SysGroupColumn implements Serializable{
     @EntityAttribute(key=false,size = 19,name="sys_group_column_gid",desc="sysGroupColumnGid")
     private java.lang.Long sysGroupColumnGid;
     private List<?> list;
-    public SysGroupColumn() {}
-
-    public SysGroupColumn(JSON gzbMap) {
-        this(new GzbMap().setMap(gzbMap.map));
-    }
+   public SysGroupColumn() {}
 
     public SysGroupColumn(GzbMap gzbMap) {
-        String str=null;
-        str=gzbMap.getString("sysGroupColumnId");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupColumnId(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupColumnKey");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupColumnKey(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupColumnName");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupColumnName(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupColumnTable");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupColumnTable(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupColumnEdit");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupColumnEdit(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupColumnUpdate");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupColumnUpdate(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupColumnSave");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupColumnSave(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupColumnQuery");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupColumnQuery(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupColumnSaveDef");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupColumnSaveDef(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupColumnUpdateDef");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupColumnUpdateDef(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupColumnQuerySymbol");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupColumnQuerySymbol(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupColumnQueryMontage");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupColumnQueryMontage(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupColumnQueryDef");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupColumnQueryDef(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupColumnGid");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupColumnGid(java.lang.Long.valueOf(str));
-        }
+        this(gzbMap.map);
     }
 
     public SysGroupColumn(Map<String, Object> map) {
-        this(new GzbMap().setMap(map));
+        Result result = new ResultImpl(map);
+        loadJson(result);
     }
 
     public SysGroupColumn(String jsonString) {
-        this(new GzbMap().setMap(new JSON().loadMap(jsonString).map));
+        Result result = new ResultImpl(jsonString);
+        loadJson(result);
     }
 
-
+    public SysGroupColumn(ResultSet resultSet) throws SQLException {
+        loadJson(resultSet);
+    }
     public int save(SysGroupColumnDao sysGroupColumnDao) throws Exception {
         return sysGroupColumnDao.save(this);
     }
@@ -156,13 +106,13 @@ public class SysGroupColumn implements Serializable{
     }
 
     //查询语句 可选项 排序
-    public SqlTemplate toSelectSql(String sortField, String sortType, int size, boolean selectId) {
+    public SqlTemplate toSelectSql(String sortField, String sortType, Integer size, Boolean selectId) {
         return SqlTools.toSelectSql(this,sortField, sortType, size, selectId);
     }
 
     //插入 可以指定id  不指定自动生成
-    public SqlTemplate toSave(java.lang.Long actCodeId) {
-        return SqlTools.toSave(this,actCodeId);
+    public SqlTemplate toSave() {
+        return SqlTools.toSave(this);
     }
 
     //根据id修改 高级需求请手动写sql
@@ -171,7 +121,7 @@ public class SysGroupColumn implements Serializable{
     }
 
     //删除 可以根据id或其他参数 但是请注意非id删除的性能问题
-    public SqlTemplate toDelete(boolean selectId) {
+    public SqlTemplate toDelete(Boolean selectId) {
         return SqlTools.toDelete(this,selectId);
     }
 
@@ -180,26 +130,113 @@ public class SysGroupColumn implements Serializable{
         return toJson().toString();
     }
 
-    public JSON toJson() {
-        JSON json = new JSON();
-        json.put("sysGroupColumnId", getSysGroupColumnId());
-        json.put("sysGroupColumnKey", getSysGroupColumnKey());
-        json.put("sysGroupColumnName", getSysGroupColumnName());
-        json.put("sysGroupColumnTable", getSysGroupColumnTable());
-        json.put("sysGroupColumnEdit", getSysGroupColumnEdit());
-        json.put("sysGroupColumnUpdate", getSysGroupColumnUpdate());
-        json.put("sysGroupColumnSave", getSysGroupColumnSave());
-        json.put("sysGroupColumnQuery", getSysGroupColumnQuery());
-        json.put("sysGroupColumnSaveDef", getSysGroupColumnSaveDef());
-        json.put("sysGroupColumnUpdateDef", getSysGroupColumnUpdateDef());
-        json.put("sysGroupColumnQuerySymbol", getSysGroupColumnQuerySymbol());
-        json.put("sysGroupColumnQueryMontage", getSysGroupColumnQueryMontage());
-        json.put("sysGroupColumnQueryDef", getSysGroupColumnQueryDef());
-        json.put("sysGroupColumnGid", getSysGroupColumnGid());
-        json.put("data", getList());
-        return json;
+    public Result toJson() {
+        Result result=new ResultImpl();
+        result.set("sysGroupColumnId", sysGroupColumnId);
+        result.set("sysGroupColumnKey", sysGroupColumnKey);
+        result.set("sysGroupColumnName", sysGroupColumnName);
+        result.set("sysGroupColumnTable", sysGroupColumnTable);
+        result.set("sysGroupColumnEdit", sysGroupColumnEdit);
+        result.set("sysGroupColumnUpdate", sysGroupColumnUpdate);
+        result.set("sysGroupColumnSave", sysGroupColumnSave);
+        result.set("sysGroupColumnQuery", sysGroupColumnQuery);
+        result.set("sysGroupColumnSaveDef", sysGroupColumnSaveDef);
+        result.set("sysGroupColumnUpdateDef", sysGroupColumnUpdateDef);
+        result.set("sysGroupColumnQuerySymbol", sysGroupColumnQuerySymbol);
+        result.set("sysGroupColumnQueryMontage", sysGroupColumnQueryMontage);
+        result.set("sysGroupColumnQueryDef", sysGroupColumnQueryDef);
+        result.set("sysGroupColumnGid", sysGroupColumnGid);
+        result.set(dataName, list);
+        return result;
     }
 
+    @Override
+    public void loadJson(String json) {
+        Result result=new ResultImpl(json);
+         loadJson(result);
+    }
+    public void loadJson(Result result) {
+        this.sysGroupColumnId=result.getLong("sysGroupColumnId", null);
+        this.sysGroupColumnKey=result.getString("sysGroupColumnKey", null);
+        this.sysGroupColumnName=result.getString("sysGroupColumnName", null);
+        this.sysGroupColumnTable=result.getLong("sysGroupColumnTable", null);
+        this.sysGroupColumnEdit=result.getLong("sysGroupColumnEdit", null);
+        this.sysGroupColumnUpdate=result.getLong("sysGroupColumnUpdate", null);
+        this.sysGroupColumnSave=result.getLong("sysGroupColumnSave", null);
+        this.sysGroupColumnQuery=result.getLong("sysGroupColumnQuery", null);
+        this.sysGroupColumnSaveDef=result.getString("sysGroupColumnSaveDef", null);
+        this.sysGroupColumnUpdateDef=result.getString("sysGroupColumnUpdateDef", null);
+        this.sysGroupColumnQuerySymbol=result.getLong("sysGroupColumnQuerySymbol", null);
+        this.sysGroupColumnQueryMontage=result.getLong("sysGroupColumnQueryMontage", null);
+        this.sysGroupColumnQueryDef=result.getString("sysGroupColumnQueryDef", null);
+        this.sysGroupColumnGid=result.getLong("sysGroupColumnGid", null);
+        Object obj = result.get(dataName,null);
+        if (obj instanceof List) {
+            this.list=(List<?>)obj;
+        }
+    }
+    public void loadJson(ResultSet resultSet) throws SQLException {
+        //ResultSetMetaData rsMetaData = resultSet.getMetaData();
+        String temp=null;
+        while (resultSet.next()) {
+            temp=resultSet.getString("sys_group_column_id");
+            if (temp!=null) {
+                this.sysGroupColumnId=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_column_key");
+            if (temp!=null) {
+                this.sysGroupColumnKey=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_column_name");
+            if (temp!=null) {
+                this.sysGroupColumnName=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_column_table");
+            if (temp!=null) {
+                this.sysGroupColumnTable=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_column_edit");
+            if (temp!=null) {
+                this.sysGroupColumnEdit=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_column_update");
+            if (temp!=null) {
+                this.sysGroupColumnUpdate=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_column_save");
+            if (temp!=null) {
+                this.sysGroupColumnSave=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_column_query");
+            if (temp!=null) {
+                this.sysGroupColumnQuery=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_column_save_def");
+            if (temp!=null) {
+                this.sysGroupColumnSaveDef=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_column_update_def");
+            if (temp!=null) {
+                this.sysGroupColumnUpdateDef=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_column_query_symbol");
+            if (temp!=null) {
+                this.sysGroupColumnQuerySymbol=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_column_query_montage");
+            if (temp!=null) {
+                this.sysGroupColumnQueryMontage=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_column_query_def");
+            if (temp!=null) {
+                this.sysGroupColumnQueryDef=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_column_gid");
+            if (temp!=null) {
+                this.sysGroupColumnGid=java.lang.Long.valueOf(temp);
+            }
+        }
+    }
     public java.lang.Long getSysGroupColumnId() {
         return sysGroupColumnId;
     }

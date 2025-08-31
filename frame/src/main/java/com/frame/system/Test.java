@@ -1,4 +1,4 @@
-package com.frame.controller.system;
+package com.frame.system;
 
 import gzb.frame.annotation.Controller;
 import gzb.frame.annotation.GetMapping;

@@ -1,4 +1,4 @@
-package com.frame.controller.system;
+package com.frame.system;
 
 import gzb.frame.db.DataBase;
 import gzb.frame.db.DataBaseFactory;
@@ -10,7 +10,7 @@ public class BaseAction {
     public static DataBase dataBase;
 
     static {
-        String name = Config.get("db.frame.name", "frame");
+        String name = Config.get("db.frame.key", "frame");
         try {
             dataBase = DataBaseFactory.getDataBase(name);
         } catch (Exception e) {

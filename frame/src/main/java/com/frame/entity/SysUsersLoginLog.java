@@ -4,13 +4,19 @@ import gzb.entity.SqlTemplate;
 import gzb.tools.*;
 import com.frame.dao.SysUsersLoginLogDao;
 import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import gzb.frame.annotation.EntityAttribute;
-
+import gzb.tools.json.JsonSerializable;
+import gzb.tools.json.Result;
+import gzb.tools.json.ResultImpl;
 @EntityAttribute(name="sys_users_login_log",desc="sysUsersLoginLog")
-public class SysUsersLoginLog implements Serializable{
+public class SysUsersLoginLog implements Serializable, JsonSerializable{
+    private static final long serialVersionUID = 1000L;
+    private static final String dataName= Config.get("json.entity.data","data");
     @EntityAttribute(key=true,size = 19,name="sys_users_login_log_id",desc="sysUsersLoginLogId")
     private java.lang.Long sysUsersLoginLogId;
     @EntityAttribute(key=false,size = 100,name="sys_users_login_log_ip",desc="sysUsersLoginLogIp")
@@ -26,53 +32,25 @@ public class SysUsersLoginLog implements Serializable{
     @EntityAttribute(key=false,size = 100,name="sys_users_login_log_mac",desc="sysUsersLoginLogMac")
     private java.lang.String sysUsersLoginLogMac;
     private List<?> list;
-    public SysUsersLoginLog() {}
-
-    public SysUsersLoginLog(JSON gzbMap) {
-        this(new GzbMap().setMap(gzbMap.map));
-    }
+   public SysUsersLoginLog() {}
 
     public SysUsersLoginLog(GzbMap gzbMap) {
-        String str=null;
-        str=gzbMap.getString("sysUsersLoginLogId");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersLoginLogId(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysUsersLoginLogIp");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersLoginLogIp(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysUsersLoginLogDesc");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersLoginLogDesc(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysUsersLoginLogTime");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersLoginLogTime(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysUsersLoginLogUid");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersLoginLogUid(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysUsersLoginLogToken");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersLoginLogToken(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysUsersLoginLogMac");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersLoginLogMac(java.lang.String.valueOf(str));
-        }
+        this(gzbMap.map);
     }
 
     public SysUsersLoginLog(Map<String, Object> map) {
-        this(new GzbMap().setMap(map));
+        Result result = new ResultImpl(map);
+        loadJson(result);
     }
 
     public SysUsersLoginLog(String jsonString) {
-        this(new GzbMap().setMap(new JSON().loadMap(jsonString).map));
+        Result result = new ResultImpl(jsonString);
+        loadJson(result);
     }
 
-
+    public SysUsersLoginLog(ResultSet resultSet) throws SQLException {
+        loadJson(resultSet);
+    }
     public int save(SysUsersLoginLogDao sysUsersLoginLogDao) throws Exception {
         return sysUsersLoginLogDao.save(this);
     }
@@ -114,13 +92,13 @@ public class SysUsersLoginLog implements Serializable{
     }
 
     //查询语句 可选项 排序
-    public SqlTemplate toSelectSql(String sortField, String sortType, int size, boolean selectId) {
+    public SqlTemplate toSelectSql(String sortField, String sortType, Integer size, Boolean selectId) {
         return SqlTools.toSelectSql(this,sortField, sortType, size, selectId);
     }
 
     //插入 可以指定id  不指定自动生成
-    public SqlTemplate toSave(java.lang.Long actCodeId) {
-        return SqlTools.toSave(this,actCodeId);
+    public SqlTemplate toSave() {
+        return SqlTools.toSave(this);
     }
 
     //根据id修改 高级需求请手动写sql
@@ -129,7 +107,7 @@ public class SysUsersLoginLog implements Serializable{
     }
 
     //删除 可以根据id或其他参数 但是请注意非id删除的性能问题
-    public SqlTemplate toDelete(boolean selectId) {
+    public SqlTemplate toDelete(Boolean selectId) {
         return SqlTools.toDelete(this,selectId);
     }
 
@@ -138,19 +116,71 @@ public class SysUsersLoginLog implements Serializable{
         return toJson().toString();
     }
 
-    public JSON toJson() {
-        JSON json = new JSON();
-        json.put("sysUsersLoginLogId", getSysUsersLoginLogId());
-        json.put("sysUsersLoginLogIp", getSysUsersLoginLogIp());
-        json.put("sysUsersLoginLogDesc", getSysUsersLoginLogDesc());
-        json.put("sysUsersLoginLogTime", getSysUsersLoginLogTime());
-        json.put("sysUsersLoginLogUid", getSysUsersLoginLogUid());
-        json.put("sysUsersLoginLogToken", getSysUsersLoginLogToken());
-        json.put("sysUsersLoginLogMac", getSysUsersLoginLogMac());
-        json.put("data", getList());
-        return json;
+    public Result toJson() {
+        Result result=new ResultImpl();
+        result.set("sysUsersLoginLogId", sysUsersLoginLogId);
+        result.set("sysUsersLoginLogIp", sysUsersLoginLogIp);
+        result.set("sysUsersLoginLogDesc", sysUsersLoginLogDesc);
+        result.set("sysUsersLoginLogTime", sysUsersLoginLogTime);
+        result.set("sysUsersLoginLogUid", sysUsersLoginLogUid);
+        result.set("sysUsersLoginLogToken", sysUsersLoginLogToken);
+        result.set("sysUsersLoginLogMac", sysUsersLoginLogMac);
+        result.set(dataName, list);
+        return result;
     }
 
+    @Override
+    public void loadJson(String json) {
+        Result result=new ResultImpl(json);
+         loadJson(result);
+    }
+    public void loadJson(Result result) {
+        this.sysUsersLoginLogId=result.getLong("sysUsersLoginLogId", null);
+        this.sysUsersLoginLogIp=result.getString("sysUsersLoginLogIp", null);
+        this.sysUsersLoginLogDesc=result.getString("sysUsersLoginLogDesc", null);
+        this.sysUsersLoginLogTime=result.getString("sysUsersLoginLogTime", null);
+        this.sysUsersLoginLogUid=result.getLong("sysUsersLoginLogUid", null);
+        this.sysUsersLoginLogToken=result.getString("sysUsersLoginLogToken", null);
+        this.sysUsersLoginLogMac=result.getString("sysUsersLoginLogMac", null);
+        Object obj = result.get(dataName,null);
+        if (obj instanceof List) {
+            this.list=(List<?>)obj;
+        }
+    }
+    public void loadJson(ResultSet resultSet) throws SQLException {
+        //ResultSetMetaData rsMetaData = resultSet.getMetaData();
+        String temp=null;
+        while (resultSet.next()) {
+            temp=resultSet.getString("sys_users_login_log_id");
+            if (temp!=null) {
+                this.sysUsersLoginLogId=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_users_login_log_ip");
+            if (temp!=null) {
+                this.sysUsersLoginLogIp=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_users_login_log_desc");
+            if (temp!=null) {
+                this.sysUsersLoginLogDesc=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_users_login_log_time");
+            if (temp!=null) {
+                this.sysUsersLoginLogTime=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_users_login_log_uid");
+            if (temp!=null) {
+                this.sysUsersLoginLogUid=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_users_login_log_token");
+            if (temp!=null) {
+                this.sysUsersLoginLogToken=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_users_login_log_mac");
+            if (temp!=null) {
+                this.sysUsersLoginLogMac=java.lang.String.valueOf(temp);
+            }
+        }
+    }
     public java.lang.Long getSysUsersLoginLogId() {
         return sysUsersLoginLogId;
     }

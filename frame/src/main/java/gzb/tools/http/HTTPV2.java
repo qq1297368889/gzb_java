@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 public class HTTPV2 {
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36";
     private static final String ACCEPT = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9";
@@ -131,6 +132,15 @@ public class HTTPV2 {
         return request(url, data, met, null, null, null);
     }
 
+    /**
+     * met:
+     * 0 GET
+     * 1 POST
+     * 11 POST BYTE
+     * 12 POST FILE
+     * 2 PUT
+     * 3 DELETE
+     */
     public HTTPV2 request(URL url, String data, int met, String uploadName, List<File> listFiles, Map<String, String[]> map) {
         HttpURLConnection conn = null;
         URLConnection conn0 = null;
@@ -146,6 +156,12 @@ public class HTTPV2 {
             conn.setDefaultUseCaches(false);
             conn.setReadTimeout(READ_TIMEOUT);
             conn.setRequestProperty(CONNECTION_KEEP_ALIVE, "true");
+            if (met==11) {
+                if (headers==null) {
+                    headers=new HashMap<>();
+                }
+                headers.put("content-type","application/json;charset=UTF-8");
+            }
             if (headers != null) {
                 for (Map.Entry<String, String> entry : headers.entrySet()) {
                     conn.addRequestProperty(entry.getKey(), entry.getValue());
@@ -155,6 +171,7 @@ public class HTTPV2 {
             if (cookie != null && !cookie.isEmpty()) {
                 conn.setRequestProperty(COOKIE_HEADER, cookie);
             }
+
 
             switch (met) {
                 case 1: // POST

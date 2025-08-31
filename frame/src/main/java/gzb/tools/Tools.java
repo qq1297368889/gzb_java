@@ -1,15 +1,16 @@
 package gzb.tools;
 
+import com.google.gson.Gson;
 import gzb.entity.PagingEntity;
 import gzb.entity.TableInfo;
 import gzb.entity.UploadEntity;
 import gzb.frame.db.DataBase;
-import gzb.frame.factory.ClassFactory;
 import gzb.frame.server.http.Handle;
 import gzb.start.Application;
 import gzb.tools.http.HTTP;
 import gzb.tools.img.DrawmageUtil;
 import gzb.tools.img.GifCaptcha;
+import gzb.tools.json.JsonSerializable;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -22,7 +23,6 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.*;
-import java.nio.file.Files;
 import java.security.CodeSource;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -34,11 +34,210 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public class Tools {
+    private static Map<String, String> humpMap = new HashMap<>();
     public static String[] ss1 = "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm0123456789".split("|");
     public static Lock lock = new ReentrantLock();
     public static int[] arr = {7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2};
     public static int[] arrCheck = {1, 0, 88, 9, 8, 7, 6, 5, 4, 3, 2};
-    static Random random = new Random(new Date().getTime() + 100);
+    public static Random random = new Random(new Date().getTime() + 100);
+
+    public static String getName(String name) {
+        if (name == null) {
+            return null;
+        }
+        String nameHump = humpMap.get(name);
+        if (nameHump != null) {
+            return nameHump;
+        }
+        String[] arr1 = name.split("_");
+        String n = arr1[0];
+        for (int i = 1; i < arr1.length; i++) {
+            char[] chars = arr1[i].toCharArray();
+            for (int i1 = 0; i1 < chars.length; i1++) {
+                if (i1 == 0) {
+                    n += String.valueOf(chars[i1]).toUpperCase();
+                } else {
+                    n += String.valueOf(chars[i1]).toLowerCase();
+                }
+            }
+        }
+        humpMap.put(name, n);
+        return n;
+    }
+
+
+    public static int textLength(Object obj) {
+        if (obj == null) {
+            return -1;
+        }
+        return obj.toString().length();
+    }
+
+    public static Map<String, Object> jsonToMap(String json) {
+        if (json==null) {
+            return new HashMap<>();
+        }
+        Gson gson = new Gson();
+        return gson.fromJson(json, Map.class);
+    }
+
+    // Modify your main toJson method to call objectToJson
+    public static String toJson(Object obj) {
+        if (obj == null) {
+            return "null";
+        }
+        if (obj instanceof JsonSerializable) {
+            return ((JsonSerializable) obj).toJson().toString();
+        }
+        if (obj instanceof GzbMap) {
+            return obj.toString();
+        }
+        if (obj instanceof CharSequence) {
+            return "\"" + escapeJsonString(obj.toString()) + "\"";
+        }
+        if (obj instanceof Character) {
+            return "\"" + escapeJsonString(String.valueOf(obj)) + "\"";
+        }
+        if (obj instanceof Exception) {
+            return "\"" + escapeJsonString(getExceptionInfo((Exception) obj)) + "\"";
+        }
+        if (obj instanceof Number || obj instanceof Boolean) {
+            return obj.toString();
+        }
+        if (obj instanceof Map) {
+            return mapToJson((Map<?, ?>) obj);
+        }
+        if (obj instanceof Iterable) {
+            return iterableToJson((Iterable<?>) obj);
+        }
+        if (obj.getClass().isArray()) {
+            return arrayToJson(obj);
+        }
+        return obj.toString(); //JDK9+会出问题 我用高版本jdk 但是只想用8语法  没有其他方法解决 所以直接返回tostring
+        //return objectToJson(obj);
+    }
+
+    private static String objectToJson(Object obj) {
+        List<String> keyValuePairs = new ArrayList<>();
+        Class<?> clazz = obj.getClass();
+        Field[] fields = clazz.getDeclaredFields();
+        for (Field field : fields) {
+            try {
+                if (field.getName().equals("serialVersionUID")) {
+                    continue; // Skip this specific field
+                }
+                field.setAccessible(true);
+                Object value = field.get(obj);
+                if (value!=null) {
+                    String key = "\"" + field.getName() + "\"";
+                    String jsonValue = toJson(value);
+                    keyValuePairs.add(key + ":" + jsonValue);
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+        return "{" + String.join(",", keyValuePairs) + "}";
+    }
+
+    // Helper method to serialize a Map
+    public static String mapToJson(Map<?, ?> map) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        if (map != null) {
+            boolean first = true;
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                if (entry.getKey() != null && entry.getValue() != null) {
+                    if (!first) {
+                        sb.append(",");
+                    }
+                    first = false;
+                    sb.append("\"").append(escapeJsonString((entry.getKey().toString()))).append("\":");
+                    sb.append(toJson(entry.getValue()));
+                }
+
+            }
+        }
+        sb.append("}");
+        return sb.toString();
+    }
+
+    // Helper method to serialize an Iterable (e.g., List, Set)
+    public static String iterableToJson(Iterable<?> iterable) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        if (iterable != null) {
+            boolean first = true;
+            for (Object obj : iterable) {
+                if (!first) {
+                    sb.append(",");
+                }
+                first = false;
+                sb.append(toJson(obj));
+            }
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    // Helper method to serialize an Array
+    public static String arrayToJson(Object array) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        int length = java.lang.reflect.Array.getLength(array);
+        for (int i = 0; i < length; i++) {
+            if (i > 0) {
+                sb.append(",");
+            }
+            sb.append(toJson(java.lang.reflect.Array.get(array, i)));
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    // Helper method to escape special JSON characters
+    public static String escapeJsonString(String str) {
+        if (str == null) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            switch (c) {
+                case '"':
+                    sb.append("\\\"");
+                    break;
+                case '\\':
+                    sb.append("\\\\");
+                    break;
+                case '\b':
+                    sb.append("\\b");
+                    break;
+                case '\f':
+                    sb.append("\\f");
+                    break;
+                case '\n':
+                    sb.append("\\n");
+                    break;
+                case '\r':
+                    sb.append("\\r");
+                    break;
+                case '\t':
+                    sb.append("\\t");
+                    break;
+                default:
+                    // Control characters below ASCII 32 need to be escaped
+                    if (c < ' ') {
+                        sb.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        sb.append(c);
+                    }
+                    break;
+            }
+        }
+        return sb.toString();
+    }
+
     /**
      * 从一个大byte[]中寻找一个小byte[]
      * 大bytes
@@ -62,6 +261,7 @@ public class Tools {
         }
         return false;
     }
+
     /**
      * Unicode转字符串
      * 例如：输入 "\\u4f60\\u597d" 返回 "你好"
@@ -361,7 +561,7 @@ public class Tools {
                 "WHERE NOT EXISTS (SELECT 1 FROM sys_permission WHERE sys_permission_name = ?)";
         Object[] objects = null;
         int x = 0;
-        if (Handle.classFactory.mapClass.mapping0==null || Handle.classFactory.mapClass.mapping0.isEmpty()) {
+        if (Handle.classFactory.mapClass.mapping0 == null || Handle.classFactory.mapClass.mapping0.isEmpty()) {
             return 0;
         }
         for (Map.Entry<String, Object[]> stringEntry : Handle.classFactory.mapClass.mapping0.entrySet()) {
@@ -438,265 +638,6 @@ public class Tools {
             }
 
         }
-    }
-
-    public static String toJson(Object obj) {
-        if (obj == null) {
-            return "{}";
-        }
-        Class<?> clazz = obj.getClass();
-        if (isPrimitiveOrWrapper(clazz) || clazz == String.class) {
-            return formatValue(obj);
-        }
-        if (clazz.isArray()) {
-            return arrayToJson(obj);
-        }
-        return objectToJson(obj);
-    }
-
-    public static int textLength(Object obj) {
-        if (obj == null) {
-            return 0;
-        }
-        int size = obj.toString().length();
-        if (obj instanceof Double || obj instanceof Float) {
-            return size - 1;
-        }
-        return size;
-    }
-
-    private static boolean isPrimitiveOrWrapper(Class<?> clazz) {
-        return clazz.isPrimitive() ||
-                clazz == Boolean.class ||
-                clazz == Byte.class ||
-                clazz == Character.class ||
-                clazz == Short.class ||
-                clazz == Integer.class ||
-                clazz == Long.class ||
-                clazz == Float.class ||
-                clazz == Double.class;
-    }
-
-    private static String formatValue(Object value) {
-        if (value instanceof String) {
-            return "\"" + value.toString().replace("\"", "\\\"") + "\"";
-        }
-        return value.toString();
-    }
-
-    private static String arrayToJson(Object array) {
-        List<String> elements = new ArrayList<>();
-        int length = Array.getLength(array);
-        for (int i = 0; i < length; i++) {
-            Object element = Array.get(array, i);
-            elements.add(toJson(element));
-        }
-        return "[" + String.join(",", elements) + "]";
-    }
-
-    private static String objectToJson(Object obj) {
-        List<String> keyValuePairs = new ArrayList<>();
-        Class<?> clazz = obj.getClass();
-        Field[] fields = clazz.getDeclaredFields();
-        for (Field field : fields) {
-            field.setAccessible(true);
-            try {
-                Object value = field.get(obj);
-                String key = "\"" + field.getName() + "\"";
-                String jsonValue = toJson(value);
-                keyValuePairs.add(key + ":" + jsonValue);
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
-        }
-        return "{" + String.join(",", keyValuePairs) + "}";
-    }
-
-    public static void jsonObjectArrayToJson(Object[] log, StringBuilder sb, String spx) {
-        if (log == null) {
-            sb.append("null"); // 添加 null 占位符
-            return;
-        }
-        for (int i = 0; i < log.length; i++) {
-            if (log[i] == null) {
-                sb.append("null"); // 添加 null 占位符
-            } else if (log[i].getClass().isArray()) {
-                jsonArrayToJson(log[i], sb);
-            } else {
-                if (log[i] instanceof Exception) {
-                    String errMsg = Tools.getExceptionInfo((Exception) log[i]);
-                    sb.append(errMsg);
-                } else if (log[i] instanceof Map) {
-                    jsonMapToJson((Map<?, ?>) log[i], sb);
-                } else if (log[i] instanceof List) {
-                    jsonArrayToJson(((List) log[i]).toArray(), sb);
-                } else if (log[i] instanceof String) {
-                    sb.append("\"");
-                    sb.append(log[i]);
-                    sb.append("\"");
-                } else {
-                    sb.append(log[i]);
-                }
-            }
-
-
-            if (i < log.length - 1) {
-                sb.append(spx);
-            }
-        }
-    }
-
-    public static void jsonArrayToJson(Object array, StringBuilder sb) {
-        sb.append("[");
-        if (array instanceof Object[]) {
-            Object[] objArray = (Object[]) array;
-            jsonObjectArrayToJson(objArray, sb, ", ");
-        } else if (array instanceof int[]) {
-            int[] intArray = (int[]) array;
-            for (int i = 0; i < intArray.length; i++) {
-                sb.append(intArray[i]);
-                if (i < intArray.length - 1) {
-                    sb.append(", ");
-                }
-            }
-        } else if (array instanceof long[]) {
-            long[] longArray = (long[]) array;
-            for (int i = 0; i < longArray.length; i++) {
-                sb.append(longArray[i]);
-                if (i < longArray.length - 1) {
-                    sb.append(", ");
-                }
-            }
-        } else if (array instanceof double[]) {
-            double[] doubleArray = (double[]) array;
-            for (int i = 0; i < doubleArray.length; i++) {
-                sb.append(doubleArray[i]);
-                if (i < doubleArray.length - 1) {
-                    sb.append(", ");
-                }
-            }
-        } else if (array instanceof float[]) {
-            float[] floatArray = (float[]) array;
-            for (int i = 0; i < floatArray.length; i++) {
-                sb.append(floatArray[i]);
-                if (i < floatArray.length - 1) {
-                    sb.append(", ");
-                }
-            }
-        } else if (array instanceof boolean[]) {
-            boolean[] booleanArray = (boolean[]) array;
-            for (int i = 0; i < booleanArray.length; i++) {
-                sb.append(booleanArray[i]);
-                if (i < booleanArray.length - 1) {
-                    sb.append(", ");
-                }
-            }
-        } else if (array instanceof char[]) {
-            char[] charArray = (char[]) array;
-            for (int i = 0; i < charArray.length; i++) {
-                sb.append("'");
-                sb.append(charArray[i]);
-                sb.append("'");
-                if (i < charArray.length - 1) {
-                    sb.append(", ");
-                }
-            }
-        } else if (array instanceof byte[]) {
-            byte[] byteArray = (byte[]) array;
-            for (int i = 0; i < byteArray.length; i++) {
-                sb.append(byteArray[i]);
-                if (i < byteArray.length - 1) {
-                    sb.append(", ");
-                }
-            }
-        } else if (array instanceof short[]) {
-            short[] shortArray = (short[]) array;
-            for (int i = 0; i < shortArray.length; i++) {
-                sb.append(shortArray[i]);
-                if (i < shortArray.length - 1) {
-                    sb.append(", ");
-                }
-            }
-        } else {
-            sb.append(array);
-        }
-        sb.append("]");
-    }
-
-    public static String jsonMapToJson(Map<?, ?> map, StringBuilder sb) {
-        if (map == null) {
-            return "null";
-        }
-        sb.append("{");
-        boolean first = true;
-        for (Map.Entry<?, ?> entry : map.entrySet()) {
-            if (!first) {
-                sb.append(",");
-            }
-            Object key = entry.getKey();
-            Object value = entry.getValue();
-
-            // 处理键，确保键用双引号包裹
-            sb.append("\"");
-            escapeJson(key.toString(), sb);
-            sb.append("\":");
-            // 处理值
-            if (value == null) {
-                sb.append("null");
-            } else if (value instanceof String) {
-                sb.append("\"");
-                escapeJson(value.toString(), sb);
-                sb.append("\"");
-            } else if (value instanceof List) {
-                jsonArrayToJson(((List) value).toArray(), sb);
-            } else if (value instanceof Map) {
-                sb.append(jsonMapToJson((Map<?, ?>) value, sb));
-            } else if (value.getClass().isArray()) {
-                jsonArrayToJson(value, sb);
-            } else {
-                sb.append(value.toString());
-            }
-            first = false;
-        }
-        sb.append("}");
-        return sb.toString();
-    }
-
-    public static String escapeJson(String input, StringBuilder escaped) {
-        for (char c : input.toCharArray()) {
-            switch (c) {
-                case '"':
-                    escaped.append("\\\"");
-                    break;
-                case '\\':
-                    escaped.append("\\\\");
-                    break;
-                case '\b':
-                    escaped.append("\\b");
-                    break;
-                case '\f':
-                    escaped.append("\\f");
-                    break;
-                case '\n':
-                    escaped.append("\\n");
-                    break;
-                case '\r':
-                    escaped.append("\\r");
-                    break;
-                case '\t':
-                    escaped.append("\\t");
-                    break;
-                default:
-                /*    if (c < 32 || c > 126) {
-                        // 处理非 ASCII 字符
-                        escaped.append(String.format("\\u%04x", (int) c));
-                    } else {
-                        escaped.append(c);
-                    }*/
-                    escaped.append(c);
-            }
-        }
-        return escaped.toString();
     }
 
     //首字母转大写
@@ -1284,8 +1225,10 @@ public class Tools {
         }
         return arr;
     }
+
     /**
      * 获取指定 Windows 进程的 CPU 占用率。
+     *
      * @param processName 进程名，例如 "chrome.exe"
      * @return CPU 占用百分比（0-100），如果未找到进程或发生错误则返回 -1。
      */
@@ -1343,14 +1286,6 @@ public class Tools {
         return n;
     }
 
-    public static String replaceJsonString(String input) {
-        if (input == null) {
-            return null;
-        }
-        StringBuilder sb = new StringBuilder();
-        escapeJson(input, sb);
-        return sb.toString();
-    }
 
     public static String replaceAll(String str) {
         String[] arr1 = new String[]{"\r", "\n", "\t"};
@@ -1367,6 +1302,12 @@ public class Tools {
     public static String replaceAll(String str, String[] arr1, String[] arr2) {
         for (int i = 0; i < arr1.length; i++) {
             str = str.replaceAll(arr1[i], arr2[i]);
+        }
+        return str;
+    }
+    public static String replaceAll(String str, String str1, String str2) {
+        while (str.contains(str1)) {
+            str = str.replaceAll(str1, str2);
         }
         return str;
     }

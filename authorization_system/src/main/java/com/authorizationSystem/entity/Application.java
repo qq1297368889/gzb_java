@@ -4,13 +4,19 @@ import gzb.entity.SqlTemplate;
 import gzb.tools.*;
 import com.authorizationSystem.dao.ApplicationDao;
 import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import gzb.frame.annotation.EntityAttribute;
-
+import gzb.tools.json.JsonSerializable;
+import gzb.tools.json.Result;
+import gzb.tools.json.ResultImpl;
 @EntityAttribute(name="application",desc="application")
-public class Application implements Serializable{
+public class Application implements Serializable, JsonSerializable{
+    private static final long serialVersionUID = 1000L;
+    private static final String dataName= Config.get("json.entity.data","data");
     @EntityAttribute(key=true,size = 19,name="application_id",desc="applicationId")
     private java.lang.Long applicationId;
     @EntityAttribute(key=false,size = 100,name="application_name",desc="applicationName")
@@ -34,69 +40,25 @@ public class Application implements Serializable{
     @EntityAttribute(key=false,size = 19,name="application_sell",desc="applicationSell")
     private java.lang.Long applicationSell;
     private List<?> list;
-    public Application() {}
-
-    public Application(JSON gzbMap) {
-        this(new GzbMap().setMap(gzbMap.map));
-    }
+   public Application() {}
 
     public Application(GzbMap gzbMap) {
-        String str=null;
-        str=gzbMap.getString("applicationId");
-        if (str!=null && !str.isEmpty()) {
-            setApplicationId(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("applicationName");
-        if (str!=null && !str.isEmpty()) {
-            setApplicationName(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("applicationDesc");
-        if (str!=null && !str.isEmpty()) {
-            setApplicationDesc(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("applicationState");
-        if (str!=null && !str.isEmpty()) {
-            setApplicationState(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("applicationType");
-        if (str!=null && !str.isEmpty()) {
-            setApplicationType(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("applicationPwd");
-        if (str!=null && !str.isEmpty()) {
-            setApplicationPwd(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("applicationIv");
-        if (str!=null && !str.isEmpty()) {
-            setApplicationIv(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("applicationUid");
-        if (str!=null && !str.isEmpty()) {
-            setApplicationUid(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("applicationCid");
-        if (str!=null && !str.isEmpty()) {
-            setApplicationCid(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("applicationUiid");
-        if (str!=null && !str.isEmpty()) {
-            setApplicationUiid(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("applicationSell");
-        if (str!=null && !str.isEmpty()) {
-            setApplicationSell(java.lang.Long.valueOf(str));
-        }
+        this(gzbMap.map);
     }
 
     public Application(Map<String, Object> map) {
-        this(new GzbMap().setMap(map));
+        Result result = new ResultImpl(map);
+        loadJson(result);
     }
 
     public Application(String jsonString) {
-        this(new GzbMap().setMap(new JSON().loadMap(jsonString).map));
+        Result result = new ResultImpl(jsonString);
+        loadJson(result);
     }
 
-
+    public Application(ResultSet resultSet) throws SQLException {
+        loadJson(resultSet);
+    }
     public int save(ApplicationDao applicationDao) throws Exception {
         return applicationDao.save(this);
     }
@@ -138,13 +100,13 @@ public class Application implements Serializable{
     }
 
     //查询语句 可选项 排序
-    public SqlTemplate toSelectSql(String sortField, String sortType, int size, boolean selectId) {
+    public SqlTemplate toSelectSql(String sortField, String sortType, Integer size, Boolean selectId) {
         return SqlTools.toSelectSql(this,sortField, sortType, size, selectId);
     }
 
     //插入 可以指定id  不指定自动生成
-    public SqlTemplate toSave(java.lang.Long actCodeId) {
-        return SqlTools.toSave(this,actCodeId);
+    public SqlTemplate toSave() {
+        return SqlTools.toSave(this);
     }
 
     //根据id修改 高级需求请手动写sql
@@ -153,7 +115,7 @@ public class Application implements Serializable{
     }
 
     //删除 可以根据id或其他参数 但是请注意非id删除的性能问题
-    public SqlTemplate toDelete(boolean selectId) {
+    public SqlTemplate toDelete(Boolean selectId) {
         return SqlTools.toDelete(this,selectId);
     }
 
@@ -162,23 +124,95 @@ public class Application implements Serializable{
         return toJson().toString();
     }
 
-    public JSON toJson() {
-        JSON json = new JSON();
-        json.put("applicationId", getApplicationId());
-        json.put("applicationName", getApplicationName());
-        json.put("applicationDesc", getApplicationDesc());
-        json.put("applicationState", getApplicationState());
-        json.put("applicationType", getApplicationType());
-        json.put("applicationPwd", getApplicationPwd());
-        json.put("applicationIv", getApplicationIv());
-        json.put("applicationUid", getApplicationUid());
-        json.put("applicationCid", getApplicationCid());
-        json.put("applicationUiid", getApplicationUiid());
-        json.put("applicationSell", getApplicationSell());
-        json.put("data", getList());
-        return json;
+    public Result toJson() {
+        Result result=new ResultImpl();
+        result.set("applicationId", applicationId);
+        result.set("applicationName", applicationName);
+        result.set("applicationDesc", applicationDesc);
+        result.set("applicationState", applicationState);
+        result.set("applicationType", applicationType);
+        result.set("applicationPwd", applicationPwd);
+        result.set("applicationIv", applicationIv);
+        result.set("applicationUid", applicationUid);
+        result.set("applicationCid", applicationCid);
+        result.set("applicationUiid", applicationUiid);
+        result.set("applicationSell", applicationSell);
+        result.set(dataName, list);
+        return result;
     }
 
+    @Override
+    public void loadJson(String json) {
+        Result result=new ResultImpl(json);
+         loadJson(result);
+    }
+    public void loadJson(Result result) {
+        this.applicationId=result.getLong("applicationId", null);
+        this.applicationName=result.getString("applicationName", null);
+        this.applicationDesc=result.getString("applicationDesc", null);
+        this.applicationState=result.getLong("applicationState", null);
+        this.applicationType=result.getLong("applicationType", null);
+        this.applicationPwd=result.getString("applicationPwd", null);
+        this.applicationIv=result.getString("applicationIv", null);
+        this.applicationUid=result.getLong("applicationUid", null);
+        this.applicationCid=result.getLong("applicationCid", null);
+        this.applicationUiid=result.getLong("applicationUiid", null);
+        this.applicationSell=result.getLong("applicationSell", null);
+        Object obj = result.get(dataName,null);
+        if (obj instanceof List) {
+            this.list=(List<?>)obj;
+        }
+    }
+    public void loadJson(ResultSet resultSet) throws SQLException {
+        //ResultSetMetaData rsMetaData = resultSet.getMetaData();
+        String temp=null;
+        while (resultSet.next()) {
+            temp=resultSet.getString("application_id");
+            if (temp!=null) {
+                this.applicationId=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("application_name");
+            if (temp!=null) {
+                this.applicationName=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("application_desc");
+            if (temp!=null) {
+                this.applicationDesc=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("application_state");
+            if (temp!=null) {
+                this.applicationState=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("application_type");
+            if (temp!=null) {
+                this.applicationType=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("application_pwd");
+            if (temp!=null) {
+                this.applicationPwd=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("application_iv");
+            if (temp!=null) {
+                this.applicationIv=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("application_uid");
+            if (temp!=null) {
+                this.applicationUid=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("application_cid");
+            if (temp!=null) {
+                this.applicationCid=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("application_uiid");
+            if (temp!=null) {
+                this.applicationUiid=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("application_sell");
+            if (temp!=null) {
+                this.applicationSell=java.lang.Long.valueOf(temp);
+            }
+        }
+    }
     public java.lang.Long getApplicationId() {
         return applicationId;
     }

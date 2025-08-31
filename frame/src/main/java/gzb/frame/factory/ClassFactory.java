@@ -2,6 +2,8 @@ package gzb.frame.factory;
 
 import gzb.entity.ThreadInfo;
 import gzb.frame.annotation.*;
+import gzb.frame.db.BaseDao;
+import gzb.frame.generate.Base;
 import gzb.frame.server.http.RequestReadAll;
 import gzb.frame.server.http.constant.Constant;
 import gzb.frame.server.http.entity.*;
@@ -36,7 +38,6 @@ public class ClassFactory {
     public int serverState = 0;
     public Lock lockInterval = new ReentrantLock();
     public ThreadPool threadPool = new ThreadPool(10, 0);
-
 
 
     public void init() {
@@ -132,13 +133,13 @@ public class ClassFactory {
                                 if (!methodInfo.getThreadInterval().async()) {
                                     threadPool.execute0(() -> {
                                         try {
-                                            finalMethodInfo.getMethod().invoke(object, list.toArray());
+                                            callMet(object, finalMethodInfo, list.toArray());
                                         } catch (Exception e) {
                                             throw new RuntimeException(e);
                                         }
                                     });
                                 } else {
-                                    finalMethodInfo.getMethod().invoke(object, list.toArray());
+                                    callMet(object, finalMethodInfo, list.toArray());
                                 }
                             }
                         } catch (InterruptedException e) {
@@ -262,18 +263,18 @@ public class ClassFactory {
                     } else {
 
                         aClass = compileClassCode(code);
-                        if (aClass==null) {
+                        if (aClass == null) {
                             log.d("更新类 编译失败", null, file.getPath());
-                        }else{
+                        } else {
                             log.d("更新类 编译成功", aClass.getName(), file.getPath());
                         }
                     }
                 } else {
 
                     aClass = compileClassCode(code);
-                    if (aClass==null) {
+                    if (aClass == null) {
                         log.d("新类 编译失败", null, file.getPath());
-                    }else{
+                    } else {
                         log.d("新类 编译成功", aClass.getName(), file.getPath());
                     }
 
@@ -380,7 +381,7 @@ public class ClassFactory {
 
     //传入对象 给对象的所有类变量进行注入 如果是接口那么 mapObject.get(类变量类型全名) 能取出对应实现类对象 如果是null说明不存在  如果存在就注入进去
     //传入对象 给对象的所有类变量进行注入 如果不是接口那么 mapObject.get(类变量类型全名) 能取出对应实现类对象 如果是null说明不存在  如果存在就注入进去
-    public boolean injectClass(Object object, Object[] data, Map<String, Object> mapObjectAll) throws IllegalAccessException {
+    public boolean injectClass(Object object, Object[] data, Map<String, Object> mapObjectAll) throws IllegalAccessException, NoSuchMethodException, InvocationTargetException, InstantiationException {
         if (object == null) {
             return false;
         }
@@ -428,7 +429,6 @@ public class ClassFactory {
         return true;
     }
 
-
     public List<Object> getMethodParameter(Map<String, Object[]> requestDataMap, Map<String, Object> mapObject, Object[] arrayObject, Class[] TypeClass, String[] TypeName) {
         List<Object> listObject = new ArrayList<>();
         try {
@@ -447,7 +447,6 @@ public class ClassFactory {
                             }
                         }
                     }
-
                     if (paramValue == null && mapObject != null) {
                         paramValue = mapObject.get(paramType.getName());
                     }
@@ -482,7 +481,7 @@ public class ClassFactory {
                                                 Array.set(array, i, Double.parseDouble(values[i].toString()));
                                             } else if (componentType == boolean.class || componentType == Boolean.class) {
                                                 Array.set(array, i, Boolean.parseBoolean(values[i].toString()));
-                                            }else{
+                                            } else {
                                                 Array.set(array, i, values[i]);
                                             }
                                         }
@@ -504,12 +503,12 @@ public class ClassFactory {
                                 paramType != Long.class &&
                                 paramType != Float.class &&
                                 paramType != Double.class &&
-                                paramType != Character.class&&
+                                paramType != Character.class &&
                                 paramType != String.class
                                 && !paramType.isPrimitive()) {
                             Field[] fields = getCombinedFields(paramType);
                             for (Field field : fields) {
-                                Class<?>clazz=field.getType();
+                                Class<?> clazz = field.getType();
                                 Object[] strings = requestDataMap.get(field.getName());
                                 Object obj01 = null;
                                 if (field.getType().isArray()) {
@@ -531,6 +530,7 @@ public class ClassFactory {
                         }
 
                     }
+
                     listObject.add(paramValue);
                 }
             }
@@ -734,7 +734,6 @@ public class ClassFactory {
         classInfo.setListFieldInfo(readFieldInfo(aClass));
 
 
-
         loadObject(aClass, null, mapObjectAll);
         mapClassInfo.put(aClass.getName(), classInfo);
         if (classInfo.getDecorator() == null && classInfo.getController() == null) {
@@ -760,7 +759,7 @@ public class ClassFactory {
 
             }
 
-            if (classInfo.getController() != null && classInfo.getRequestMapping()!=null) {
+            if (classInfo.getController() != null && classInfo.getRequestMapping() != null) {
                 for (int j = 0; j < classInfo.getRequestMapping().value().length; j++) {
                     loadMapping(methodInfo, classInfo, j, mapping);
                 }
@@ -803,6 +802,7 @@ public class ClassFactory {
             methodInfo.setDecoratorOpen(method.getAnnotation(DecoratorOpen.class));
             methodInfo.setThreadInterval(method.getAnnotation(ThreadInterval.class));
             methodInfo.setLimitation(method.getAnnotation(Limitation.class));
+            methodInfo.setTransaction(method.getAnnotation(Transaction.class));
             if (methodInfo.getDecoratorEnd() == null
                     && methodInfo.getDecoratorOpen() == null
                     && methodInfo.getDecoratorStart() == null
@@ -812,7 +812,8 @@ public class ClassFactory {
                     && methodInfo.getPutMapping() == null
                     && methodInfo.getDeleteMapping() == null
                     && methodInfo.getThreadInterval() == null
-                    && methodInfo.getLimitation() == null) {
+                    && methodInfo.getLimitation() == null
+                    && methodInfo.getTransaction() == null) {
                 continue;
             }
             // 获取方法的名称
@@ -822,7 +823,7 @@ public class ClassFactory {
             String[] parameterTypeNames;
 
             //parameterTypeNames = ClassLoad.getParameterNames(aClass, method).toArray(new String[]{});
-            parameterTypeNames =  ClassTools.getParameterNames(method).toArray(new String[0]);
+            parameterTypeNames = ClassTools.getParameterNames(method).toArray(new String[0]);
 
             if (parameterTypeNames.length == 0 && code != null) {
                 parameterTypeNames = ClassTools.getParameterNames(code, methodName, parameterTypes).toArray(new String[]{});
@@ -837,12 +838,12 @@ public class ClassFactory {
                 startInterval(methodInfo.getThreadInterval().num(), key, aClass, mapThread, mapObjectAll, mapClassInfo);
             }
             if (methodInfo.getLimitation() != null && methodInfo.getLimitation().value() > 0) {
-                mapClass.semaphoreMap.put(key,new Semaphore(methodInfo.getLimitation().value()));
-            }else{
+                mapClass.semaphoreMap.put(key, new Semaphore(methodInfo.getLimitation().value()));
+            } else {
                 mapClass.semaphoreMap.remove(key);
             }
             //调试用
-           // log.d(methodInfo.getMethod().getName());
+            // log.d(methodInfo.getMethod().getName());
             if (methodInfo.getMethod().getName().equals("t02")) {
                 log.d("methodInfo", methodInfo);
             }
@@ -980,7 +981,7 @@ public class ClassFactory {
         RunRes runRes = new RunRes();
         runRes.setStart(System.nanoTime());
         runRes.setState(500);
-        Semaphore semaphore=null;
+        Semaphore semaphore = null;
         try {
             String url = Tools.webPathFormat(httpUrl);//Tools.webPathFormat(request.getRequestURI());
             Object[] info1 = mapClass.mapping0.get(url + "-" + requestMethod);
@@ -1027,13 +1028,13 @@ public class ClassFactory {
                 runRes.setState(404);
                 return runRes;
             }
-            if (methodInfo.getLimitation()!=null && methodInfo.getLimitation().value() > 0) {
+            if (methodInfo.getLimitation() != null && methodInfo.getLimitation().value() > 0) {
                 semaphore = mapClass.semaphoreMap.get(key);
-                if (semaphore!=null) {
-                    boolean state=semaphore.tryAcquire();
+                if (semaphore != null) {
+                    boolean state = semaphore.tryAcquire();
                     if (!state) {
-                        semaphore=null;
-                        response.setHeader("Content-Type","application/json;charset=UTF-8");
+                        semaphore = null;
+                        response.setHeader("Content-Type", "application/json;charset=UTF-8");
                         runRes.setEnd(System.nanoTime()).setMsg("请求量超过限流阈值，请稍后重试");
                         runRes.setData(new JSONResult().fail("请求量超过限流阈值，请稍后重试").toString());
                         runRes.setState(200);
@@ -1056,17 +1057,16 @@ public class ClassFactory {
             listObject.add(new JSONResult());
             /// 注入 请求参数
             listObject.add(requestDataMap);
-            /// 注入 默认数据库
-            Object[] arrayObject = listObject.toArray();
-            injectClass(obj01, arrayObject, mapClass.mapObjectAll0);
+
+            injectClass(obj01, listObject.toArray(), mapClass.mapObjectAll0);
             List<Object> listParameter = null;
             if (methodInfo.getDecoratorOpen() != null && methodInfo.getDecoratorOpen().value()) {
                 List<RunRes> list = decCall(1, url, listObject, requestDataMap, null,
                         mapClass.mapDecorator0, mapClass.mapClassInfo0, mapClass.mapObjectAll0);
                 for (RunRes res : list) {
-                    if (res==null) {
+                    if (res == null) {
                         if (response != null) {
-                            response.setHeader("Content-Type","application/json;charset=UTF-8");
+                            response.setHeader("Content-Type", "application/json;charset=UTF-8");
                         }
                         runRes.setEnd(System.nanoTime()).setMsg("请求被拦截");
                         runRes.setData(new JSONResult().fail("请求被拦截").toString());
@@ -1083,19 +1083,19 @@ public class ClassFactory {
                 }
             }
             listParameter = getMethodParameter(requestDataMap, mapClass.mapObjectAll0, listObject.toArray(), types, methodInfo.getTypeName());
-
-
-            Object res1 = methodInfo.getMethod().invoke(obj01, listParameter.toArray());
+            Object res1 = callMet(obj01, methodInfo, listParameter.toArray());
             listObject.add(res1);
             if (methodInfo.getDecoratorOpen() != null && methodInfo.getDecoratorOpen().value()) {
                 List<RunRes> list = decCall(2, url, listObject, requestDataMap, res1, mapClass.mapDecorator0, mapClass.mapClassInfo0, mapClass.mapObjectAll0);
                 for (RunRes res : list) {
-                    if (res == null || res.getState() != 200) {
-                        runRes.setEnd(System.nanoTime()).setMsg("请求被[end]装饰器拦截");
-                        runRes.setState(400);
-                        return runRes;
+                    if (res != null) {
+                        if (res.getState() != 200) {
+                            runRes.setEnd(System.nanoTime()).setMsg("请求被[end]装饰器拦截");
+                            runRes.setState(400);
+                            return runRes;
+                        }
+                        res1 = res.getData();
                     }
-                    res1 = runRes.getData();
                 }
             }
             runRes.setData(res1);
@@ -1103,22 +1103,74 @@ public class ClassFactory {
             runRes.setEnd(System.nanoTime()).setMsg("请求成功");
             return runRes;
         } catch (Exception e) {
-            log.e("webRequest un err", e);
+            log.e("框架执行错误", e);
             if (response != null) {
-                response.setHeader("Content-Type","application/json;charset=UTF-8");
+                response.setHeader("Content-Type", "application/json;charset=UTF-8");
             }
             runRes.setEnd(System.nanoTime()).setMsg("没找到对应请求处理端点");
             runRes.setData(new JSONResult().fail("没找到对应请求处理端点").toString());
             runRes.setState(200);
             return runRes;
-        }finally {
-            if (semaphore!=null) {
+        } finally {
+            if (semaphore != null) {
                 semaphore.release();
             }
         }
     }
 
-    public List<RunRes> decCall(int type, String url, List<Object> listObject, Map<String, Object[]> requestDataMap, Object resData, Map<String, String> mapDecorator, Map<String, ClassInfo> mapClassInfo, Map<String, Object> mapObjectAll) {
+    public Object callMet(Object obj, MethodInfo methodInfo, Object[] paras) throws Exception {
+        log.d(paras);
+        boolean openTransaction = methodInfo.getTransaction() != null && methodInfo.getTransaction().value();
+        Object res01 = null;
+        if (openTransaction && paras != null) {
+            for (int i = 0; i < paras.length; i++) {
+                if (paras[i] instanceof BaseDao) {
+                    BaseDao baseDao1 = (BaseDao) paras[i];
+                    BaseDao baseDao2 = (BaseDao) paras[i].getClass().getDeclaredConstructor().newInstance();
+                    baseDao2.openTransaction();
+                    baseDao2.setDataBase(baseDao1.getDataBase());
+                    paras[i] = baseDao2;
+                }
+            }
+        }
+        try {
+            res01 = methodInfo.getMethod().invoke(obj, paras);
+            if (openTransaction && paras != null) {
+                for (Object para : paras) {
+                    if (para instanceof BaseDao) {
+                        BaseDao baseDao2 = (BaseDao) para;
+                        baseDao2.commit();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            if (openTransaction && paras != null) {
+                for (Object para : paras) {
+                    if (para instanceof BaseDao) {
+                        BaseDao baseDao2 = (BaseDao) para;
+                        baseDao2.rollback();
+                    }
+                }
+            }
+            log.e("调用控制器错误", e);
+        } finally {
+            if (openTransaction && paras != null) {
+                for (Object para : paras) {
+                    if (para instanceof BaseDao) {
+                        BaseDao baseDao2 = (BaseDao) para;
+                        baseDao2.endTransaction();
+                    }
+                }
+            }
+        }
+
+        return res01;
+
+    }
+
+    public List<RunRes> decCall(int type, String url, List<Object> listObject, Map<String, Object[]> requestDataMap,
+                                Object resData, Map<String, String> mapDecorator, Map<String, ClassInfo> mapClassInfo, Map<String, Object> mapObjectAll) {
+
         List<RunRes> list = new ArrayList<>();
         for (Map.Entry<String, String> entry1 : mapDecorator.entrySet()) {
             String name = entry1.getValue();
@@ -1128,10 +1180,10 @@ public class ClassFactory {
                 MethodInfo methodInfo = entry2.getValue();
                 boolean res1;
                 String decUrl = null;
-                if (type == 1 && methodInfo.getDecoratorStart() != null && methodInfo.getDecoratorStart().value() != null && methodInfo.getDecoratorStart().value().length() > 0) {
+                if (type == 1 && methodInfo.getDecoratorStart() != null && methodInfo.getDecoratorStart().value() != null && !methodInfo.getDecoratorStart().value().isEmpty()) {
                     decUrl = methodInfo.getDecoratorStart().value();
                     if (methodInfo.getDecoratorStart().type()) {
-                        res1 = url.indexOf(decUrl) > -1;
+                        res1 = url.contains(decUrl);
                     } else {
                         res1 = url.startsWith(decUrl);
                     }
@@ -1140,17 +1192,16 @@ public class ClassFactory {
                     }
 
                     next = false;
-                } else if (type == 2 && methodInfo.getDecoratorEnd() != null && methodInfo.getDecoratorEnd().value() != null && methodInfo.getDecoratorEnd().value().length() > 0) {
+                } else if (type == 2 && methodInfo.getDecoratorEnd() != null && methodInfo.getDecoratorEnd().value() != null && !methodInfo.getDecoratorEnd().value().isEmpty()) {
                     decUrl = methodInfo.getDecoratorEnd().value();
                     if (methodInfo.getDecoratorEnd().type()) {
-                        res1 = url.indexOf(decUrl) > -1;
+                        res1 = url.contains(decUrl);
                     } else {
                         res1 = url.startsWith(decUrl);
                     }
                     if (methodInfo.getDecoratorEnd().turn()) {
-                        res1 = res1 == false;
+                        res1 = !res1;
                     }
-
                     next = false;
                 } else {
                     res1 = false;
@@ -1171,13 +1222,14 @@ public class ClassFactory {
                                 methodInfo.getTypeName()).toArray();
                         listObject.remove(listObject.size() - 1);
                         if (type == 1) {
-                            runRes = (RunRes) methodInfo.getMethod().invoke(obj01, objects);
+                            runRes = (RunRes) callMet(obj01, methodInfo, objects);
+
                             runRes.setEnd(System.nanoTime());
                             if (runRes.getMsg() != null && runRes.getMsg().equals("system")) {
                                 runRes.setMsg(null);
                             }
-                        } else if (type == 2) {
-                            runRes = (RunRes) methodInfo.getMethod().invoke(obj01, objects);
+                        } else {
+                            runRes = (RunRes) callMet(obj01, methodInfo, objects);
                             runRes.setEnd(System.nanoTime());
                             if (runRes.getMsg() != null && runRes.getMsg().equals("system")) {
                                 runRes.setMsg(null);
@@ -1208,7 +1260,7 @@ public class ClassFactory {
         List<String> header = new ArrayList<>();
         if (requestMapping != null) {
             for (int i = 0; i < requestMapping.header().length; i++) {
-                if (requestMapping.header()[i].length() > 0) {
+                if (!requestMapping.header()[i].isEmpty()) {
                     header.add(requestMapping.header()[i]);
                 }
             }
@@ -1216,7 +1268,7 @@ public class ClassFactory {
         }
         if (methodInfo.getRequestMapping() != null) {
             for (int i = 0; i < methodInfo.getRequestMapping().header().length; i++) {
-                if (methodInfo.getRequestMapping().header()[i].length() > 0) {
+                if (!methodInfo.getRequestMapping().header()[i].isEmpty()) {
                     header.add(methodInfo.getRequestMapping().header()[i]);
                 }
             }
@@ -1224,7 +1276,7 @@ public class ClassFactory {
         }
         if (methodInfo.getGetMapping() != null) {
             for (int i = 0; i < methodInfo.getGetMapping().header().length; i++) {
-                if (methodInfo.getGetMapping().header()[i].length() > 0) {
+                if (!methodInfo.getGetMapping().header()[i].isEmpty()) {
                     header.add(methodInfo.getGetMapping().header()[i]);
                 }
             }
@@ -1232,7 +1284,7 @@ public class ClassFactory {
         }
         if (methodInfo.getPostMapping() != null) {
             for (int i = 0; i < methodInfo.getPostMapping().header().length; i++) {
-                if (methodInfo.getPostMapping().header()[i].length() > 0) {
+                if (!methodInfo.getPostMapping().header()[i].isEmpty()) {
                     header.add(methodInfo.getPostMapping().header()[i]);
                 }
             }
@@ -1240,7 +1292,7 @@ public class ClassFactory {
         }
         if (methodInfo.getPutMapping() != null) {
             for (int i = 0; i < methodInfo.getPutMapping().header().length; i++) {
-                if (methodInfo.getPutMapping().header()[i].length() > 0) {
+                if (!methodInfo.getPutMapping().header()[i].isEmpty()) {
                     header.add(methodInfo.getPutMapping().header()[i]);
                 }
             }
@@ -1248,21 +1300,21 @@ public class ClassFactory {
         }
         if (methodInfo.getDeleteMapping() != null) {
             for (int i = 0; i < methodInfo.getDeleteMapping().header().length; i++) {
-                if (methodInfo.getDeleteMapping().header()[i].length() > 0) {
+                if (!methodInfo.getDeleteMapping().header()[i].isEmpty()) {
                     header.add(methodInfo.getDeleteMapping().header()[i]);
                 }
             }
             crossDomain = methodInfo.getDeleteMapping().crossDomain();
         }
         for (int i = 0; i < header.size(); i++) {
-            if (header.get(i).length() > 0) {
+            if (!header.get(i).isEmpty()) {
                 String[] ss1 = header.get(i).split(":", 2);
                 if (ss1.length == 2) {
                     response.setHeader(ss1[0].trim(), ss1[1].trim());
                 }
             }
         }
-        if (crossDomain.length() > 0) {
+        if (!crossDomain.isEmpty()) {
             // 如果没有传递域名，则允许所有域名进行跨域访问
             response.setHeader("Access-Control-Allow-Origin", requestMapping.crossDomain());
             // 允许的请求方法

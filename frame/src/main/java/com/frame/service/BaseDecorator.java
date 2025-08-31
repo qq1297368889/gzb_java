@@ -1,11 +1,8 @@
 package com.frame.service;
 
-import com.frame.controller.system.BaseAction;
+import com.frame.system.BaseAction;
 import com.frame.entity.SysUsers;
-import gzb.frame.annotation.Controller;
-import gzb.frame.annotation.Decorator;
-import gzb.frame.annotation.DecoratorStart;
-import gzb.frame.annotation.Service;
+import gzb.frame.annotation.*;
 import gzb.frame.server.http.entity.RunRes;
 import gzb.tools.*;
 import gzb.tools.session.Session;
@@ -15,6 +12,11 @@ import java.util.List;
 
 @Decorator
 public class BaseDecorator {
+    @DecoratorEnd("/system/")
+    public RunRes testEnd(RunRes runRes) {
+        runRes.setState(200);
+        return runRes;
+    }
 
     //验证例子
     @DecoratorStart("/system/")

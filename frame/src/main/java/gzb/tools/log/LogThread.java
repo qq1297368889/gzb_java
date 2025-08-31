@@ -144,7 +144,16 @@ public class LogThread {
             }
         }
         sb.append(": ");
-        Tools.jsonObjectArrayToJson(log, sb, " | ");
+        for (int i = 0; i < log.length; i++) {
+            if (log[i] instanceof Exception) {
+                sb.append(Tools.getExceptionInfo((Exception) log[i]));
+            }else{
+                sb.append(Tools.toJson(log[i]));
+            }
+            if (i<log.length-1) {
+                sb.append(" | ");
+            }
+        }
   /*      System.out.println("类名: " + element.getClassName() +
                 ", 方法名: " + element.getMethodName() +
                 ", 文件名: " + element.getFileName() +

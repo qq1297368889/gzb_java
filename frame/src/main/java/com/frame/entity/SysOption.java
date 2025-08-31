@@ -4,13 +4,19 @@ import gzb.entity.SqlTemplate;
 import gzb.tools.*;
 import com.frame.dao.SysOptionDao;
 import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import gzb.frame.annotation.EntityAttribute;
-
+import gzb.tools.json.JsonSerializable;
+import gzb.tools.json.Result;
+import gzb.tools.json.ResultImpl;
 @EntityAttribute(name="sys_option",desc="sysOption")
-public class SysOption implements Serializable{
+public class SysOption implements Serializable, JsonSerializable{
+    private static final long serialVersionUID = 1000L;
+    private static final String dataName= Config.get("json.entity.data","data");
     @EntityAttribute(key=true,size = 19,name="sys_option_id",desc="sysOptionId")
     private java.lang.Long sysOptionId;
     @EntityAttribute(key=false,size = 255,name="sys_option_key",desc="sysOptionKey")
@@ -22,45 +28,25 @@ public class SysOption implements Serializable{
     @EntityAttribute(key=false,size = 19,name="sys_option_state",desc="sysOptionState")
     private java.lang.Long sysOptionState;
     private List<?> list;
-    public SysOption() {}
-
-    public SysOption(JSON gzbMap) {
-        this(new GzbMap().setMap(gzbMap.map));
-    }
+   public SysOption() {}
 
     public SysOption(GzbMap gzbMap) {
-        String str=null;
-        str=gzbMap.getString("sysOptionId");
-        if (str!=null && !str.isEmpty()) {
-            setSysOptionId(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysOptionKey");
-        if (str!=null && !str.isEmpty()) {
-            setSysOptionKey(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysOptionTitle");
-        if (str!=null && !str.isEmpty()) {
-            setSysOptionTitle(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysOptionValue");
-        if (str!=null && !str.isEmpty()) {
-            setSysOptionValue(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysOptionState");
-        if (str!=null && !str.isEmpty()) {
-            setSysOptionState(java.lang.Long.valueOf(str));
-        }
+        this(gzbMap.map);
     }
 
     public SysOption(Map<String, Object> map) {
-        this(new GzbMap().setMap(map));
+        Result result = new ResultImpl(map);
+        loadJson(result);
     }
 
     public SysOption(String jsonString) {
-        this(new GzbMap().setMap(new JSON().loadMap(jsonString).map));
+        Result result = new ResultImpl(jsonString);
+        loadJson(result);
     }
 
-
+    public SysOption(ResultSet resultSet) throws SQLException {
+        loadJson(resultSet);
+    }
     public int save(SysOptionDao sysOptionDao) throws Exception {
         return sysOptionDao.save(this);
     }
@@ -102,13 +88,13 @@ public class SysOption implements Serializable{
     }
 
     //查询语句 可选项 排序
-    public SqlTemplate toSelectSql(String sortField, String sortType, int size, boolean selectId) {
+    public SqlTemplate toSelectSql(String sortField, String sortType, Integer size, Boolean selectId) {
         return SqlTools.toSelectSql(this,sortField, sortType, size, selectId);
     }
 
     //插入 可以指定id  不指定自动生成
-    public SqlTemplate toSave(java.lang.Long actCodeId) {
-        return SqlTools.toSave(this,actCodeId);
+    public SqlTemplate toSave() {
+        return SqlTools.toSave(this);
     }
 
     //根据id修改 高级需求请手动写sql
@@ -117,7 +103,7 @@ public class SysOption implements Serializable{
     }
 
     //删除 可以根据id或其他参数 但是请注意非id删除的性能问题
-    public SqlTemplate toDelete(boolean selectId) {
+    public SqlTemplate toDelete(Boolean selectId) {
         return SqlTools.toDelete(this,selectId);
     }
 
@@ -126,17 +112,59 @@ public class SysOption implements Serializable{
         return toJson().toString();
     }
 
-    public JSON toJson() {
-        JSON json = new JSON();
-        json.put("sysOptionId", getSysOptionId());
-        json.put("sysOptionKey", getSysOptionKey());
-        json.put("sysOptionTitle", getSysOptionTitle());
-        json.put("sysOptionValue", getSysOptionValue());
-        json.put("sysOptionState", getSysOptionState());
-        json.put("data", getList());
-        return json;
+    public Result toJson() {
+        Result result=new ResultImpl();
+        result.set("sysOptionId", sysOptionId);
+        result.set("sysOptionKey", sysOptionKey);
+        result.set("sysOptionTitle", sysOptionTitle);
+        result.set("sysOptionValue", sysOptionValue);
+        result.set("sysOptionState", sysOptionState);
+        result.set(dataName, list);
+        return result;
     }
 
+    @Override
+    public void loadJson(String json) {
+        Result result=new ResultImpl(json);
+         loadJson(result);
+    }
+    public void loadJson(Result result) {
+        this.sysOptionId=result.getLong("sysOptionId", null);
+        this.sysOptionKey=result.getString("sysOptionKey", null);
+        this.sysOptionTitle=result.getString("sysOptionTitle", null);
+        this.sysOptionValue=result.getString("sysOptionValue", null);
+        this.sysOptionState=result.getLong("sysOptionState", null);
+        Object obj = result.get(dataName,null);
+        if (obj instanceof List) {
+            this.list=(List<?>)obj;
+        }
+    }
+    public void loadJson(ResultSet resultSet) throws SQLException {
+        //ResultSetMetaData rsMetaData = resultSet.getMetaData();
+        String temp=null;
+        while (resultSet.next()) {
+            temp=resultSet.getString("sys_option_id");
+            if (temp!=null) {
+                this.sysOptionId=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_option_key");
+            if (temp!=null) {
+                this.sysOptionKey=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_option_title");
+            if (temp!=null) {
+                this.sysOptionTitle=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_option_value");
+            if (temp!=null) {
+                this.sysOptionValue=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_option_state");
+            if (temp!=null) {
+                this.sysOptionState=java.lang.Long.valueOf(temp);
+            }
+        }
+    }
     public java.lang.Long getSysOptionId() {
         return sysOptionId;
     }

@@ -17,34 +17,33 @@ public class GzbCacheRedis implements GzbCache {
 
     static Log log = new LogImpl(GzbCacheRedis.class);
 
-    private static JedisPool jedisPool = null;
+    public JedisPool jedisPool = null;
 
-    static {
+    public GzbCacheRedis() {
+        this(Config.get("db.cache.key","redis1"));
+    }
+    public GzbCacheRedis(String key) {
         try {
             JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
-            String ip = Config.get("db.redis.ip", "127.0.0.1");
-            Integer port = Config.getInteger("db.redis.port", 6379);
-            String pwd = Config.get("db.redis.pwd", "ASHaxf129736#$_*?.");
-            Integer maxIdle = Config.getInteger("db.redis.maxIdle", 10);
-            Integer maxTotal = Config.getInteger("db.redis.maxTotal", 10);
-            Integer overtime = Config.getInteger("db.redis.overtime", 5000);
-            Integer dataBase = Config.getInteger("db.redis.dataBase", 0);
+            String ip = Config.get("db.redis." + key + ".ip", "127.0.0.1");
+            Integer port = Config.getInteger("db.redis." + key + ".port", 6379);
+            String pwd = Config.get("db.redis." + key + ".pwd", "123456");
+            Integer maxIdle = Config.getInteger("db.redis." + key + ".maxIdle", 10);
+            Integer maxTotal = Config.getInteger("db.redis." + key + ".maxTotal", 10);
+            Integer overtime = Config.getInteger("db.redis." + key + ".overtime", 5000);
+            Integer index = Config.getInteger("db.redis." + key + ".index", 0);
             jedisPoolConfig.setMaxTotal(maxTotal);
             jedisPoolConfig.setMaxIdle(maxIdle);
             jedisPool = new JedisPool(
                     jedisPoolConfig,
                     ip,
                     port,
-                    overtime, pwd, dataBase);
-
+                    overtime, pwd, index);
             log.i("redis,初始化成功");
         } catch (Exception e) {
-            e.printStackTrace();
             log.e(e, "redis,初始化失败");
         }
-
     }
-
 
 
     public int getIncr(String key) {

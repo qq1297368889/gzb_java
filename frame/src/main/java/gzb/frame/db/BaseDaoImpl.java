@@ -6,30 +6,66 @@ import gzb.entity.SqlTemplate;
 import gzb.frame.annotation.EntityAttribute;
 import gzb.frame.annotation.Service;
 import gzb.tools.GzbMap;
-import gzb.tools.JSONResult; 
+import gzb.tools.JSONResult;
+import gzb.tools.Tools;
+import gzb.tools.log.Log;
+import gzb.tools.log.LogImpl;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
 @Service
 public abstract class BaseDaoImpl<T> implements BaseDao<T> {
     public static void main(String[] args) throws Exception {
-        BaseDao baseDao = new BaseDaoImpl(){};
-        SqlTemplate sqlTemplate = new SysUsers().toSelectSql();
-        List<GzbMap> list = baseDao.getDataBase().selectGzbMap(sqlTemplate.getSql(),sqlTemplate.getObjects());
-        for (GzbMap gzbMap : list) {
-            System.out.println(gzbMap);
-            System.out.println(gzbMap.getString("sysUsersId"));
-            System.out.println(gzbMap.getString("sysUsersId","1"));
-            System.out.println(gzbMap.getLong("sysUsersId"));
-            System.out.println(gzbMap.getLong("sysUsersId", 1L));
-        }
+        String path = Tools.getProjectRoot(BaseDaoImpl2.class);
+        System.setProperty("file.encoding", "UTF-8");
+        System.setProperty("this.dir", path);
+        BaseDao<SysUsers> dao = new BaseDaoImpl<SysUsers>() {
+
+        };
+        dao.setDataBase(new DataBaseMsql("frame"));
+        System.out.println(dao.count("select * from sys_users",null));
+        dao.save(new SysUsers().setSysUsersAcc("acc001").setSysUsersPwd("pwd001"));
+        System.out.println(dao.count("select * from sys_users",null));
+        SysUsers sysUsers=dao.find(new SysUsers().setSysUsersAcc("acc001"));
+        System.out.println(sysUsers);
+        dao.update(sysUsers.setSysUsersPwd("pwd000005"));
+        System.out.println(dao.count("select * from sys_users",null));
+        dao.delete(sysUsers);
+        System.out.println(dao.count("select * from sys_users",null));
+
+        System.out.println("事务开启");
+        dao.openTransaction();
+        dao.save(new SysUsers().setSysUsersAcc("acc001").setSysUsersPwd("pwd001"));
+        System.out.println(dao.count("select * from sys_users",null));
+        dao.commit();
+        System.out.println(dao.count("select * from sys_users",null));
+        SysUsers sysUsers2=dao.find(new SysUsers().setSysUsersAcc("acc001"));
+        dao.delete(sysUsers2);
+        System.out.println(dao.count("select * from sys_users",null));
+        System.out.println("关闭后再次尝试 回滚");
+        dao.openTransaction();
+        dao.save(new SysUsers().setSysUsersAcc("acc001").setSysUsersPwd("pwd001"));
+        System.out.println(dao.count("select * from sys_users",null));
+        dao.rollback();
+        System.out.println(dao.count("select * from sys_users",null));
+        System.out.println("翻页函数测试");
+        System.out.println(dao.queryPage("select * from sys_users",null,null,null,1,10,100,100));
+        System.out.println(dao.queryPage("select * from sys_users",null,null,null,2,10,100,100));
     }
+
     public T t;
-    public DataBase dataBase;
+    private DataBase dataBase = null;
+    private final Log log = new LogImpl();
+    private boolean autoCommit = true;
+    Connection connection_class = null;
+
     public BaseDaoImpl() {
         try {
             // 获取当前类的泛型父类
@@ -49,442 +85,461 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
                 }
             }
         } catch (Exception e) {
-            // 捕获并处理可能出现的异常
-            e.printStackTrace();
+          log.e(e);
         }
     }
-    public void init(DataBase dataBase) throws Exception {
-        this.dataBase= dataBase;
-    }
-    public void init(String dbName) throws Exception {
 
-        this.dataBase= DataBaseFactory.getDataBase(dbName);
-    }
-    public void init(String dbName, String ip, String port, String acc, String pwd, String clz, Boolean auto, Integer threadMax, Integer overtime, Integer asyncSleep,Integer asyBatch) throws Exception {
-        this.dataBase= DataBaseFactory.getDataBase(dbName,ip,port,acc,pwd,clz,auto,threadMax,overtime,asyncSleep,asyBatch);
-    }
-    public int runSql(List<T> list, boolean autoId, int sqlType, int async, Connection connection) throws Exception {
-        Map<String, List<Object[]>> sqlMap = new HashMap<>();
-        for (T t1 : list) {
-            SqlTemplate sqlTemplate = null;
-            if (sqlType == 1) {
-                sqlTemplate = dataBase.toSave(t1, autoId);
-            } else if (sqlType == 2) {
-                sqlTemplate = dataBase.toUpdate(t1);
-            } else if (sqlType == 3) {
-                sqlTemplate = dataBase.toDelete(t1);
-            } else {
-                continue;
-            }
-            List<Object[]> listObject = sqlMap.get(sqlTemplate.getSql());
-            if (listObject == null) {
-                listObject = new ArrayList<>();
-                sqlMap.put(sqlTemplate.getSql(),listObject);
-            }
-            listObject.add(sqlTemplate.getObjects());
-        }
-        int row = 0;
-        for (Iterator<Map.Entry<String, List<Object[]>>> it = sqlMap.entrySet().iterator(); it.hasNext(); ) {
-            Map.Entry<String, List<Object[]>> en = it.next();
-            if (async == 1) {
-                if (connection == null) {
-                    row += dataBase.runSqlBatch(en.getKey(), en.getValue());
-                } else {
-                    row += dataBase.runSqlBatch(en.getKey(), en.getValue(), connection);
-                }
-            } else if (async == 2) {
-                row += dataBase.runSqlAsyncBatch(en.getKey(), en.getValue());
-            }
-        }
-        return row;
-    }
+    public void init(String key) throws Exception {
 
-    //数据 list  是否自动给id autoId sql类型 sqlType  是否异步 async
-    public int runSql(List<T> list, boolean autoId, int sqlType, int async) throws Exception {
-        return runSql(list, autoId, sqlType, async, null);
+        this.dataBase=DataBaseFactory.getDataBase(key);
     }
-
-
     @Override
     public DataBase getDataBase() {
-        return dataBase;
+        return this.dataBase;
     }
 
     @Override
     public void setDataBase(DataBase dataBase) {
         this.dataBase = dataBase;
     }
+    public JSONResult queryPage(String sql, Object[] objects, String sortField, String sortType, Integer page, Integer size, int maxPage, int maxSize) throws Exception {
+        JSONResult jsonResult = new JSONResult();
+        int count=count(sql,objects);
+        if (count<=(page-1)*size) {
+            return jsonResult.paging(new ArrayList<>(), page, size, count);
+        }
+        if (size>maxSize) {
+            size=maxSize;
+        }
+        if (page>maxPage) {
+            page=maxPage;
+        }
+        List<T> list=query(sql,objects,sortField,sortType,page,size);
+        return jsonResult.paging(list,page,size,count);
+    }
+    public JSONResult queryPage(T t, String sortField, String sortType, Integer page, Integer size, int maxPage, int maxSize) throws Exception {
+        if (t==null) {
+            return null;
+        }
+        SqlTemplate sqlTemplate = (SqlTemplate) t.getClass()
+                .getMethod("toSelectSql", String.class, String.class, Integer.class, Boolean.class)
+                .invoke(t, null, null, 0, false);
+        return queryPage(sqlTemplate.getSql(), sqlTemplate.getObjects(), sortField, sortType, page, size, maxPage, maxSize);
+    }
+    @Override
+    public int count(String sql, Object[] params) throws Exception {
+        String[]arr1=sql.split(" from ");
+        String countSql="select COUNT(*) as select_count from "+arr1[1];
+        List<GzbMap> list= getDataBase().selectGzbMap(countSql,params,false);
+        if (list!=null && list.size() == 1) {
+            return list.get(0).getInteger("select_count",0);
+        }
+        return 0;
+    }
 
     @Override
-    public T find(String sql, Object[] objects) throws Exception {
-        List<T> list = query(sql, objects);
-        if (list == null || list.size() != 1) {
+    public List<T> query(String sql, Object[] objects) {
+        if (t==null) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder(sql);
+        List<T> list = new ArrayList<>();
+        long[] times = new long[5];
+        ResultSet rs = null;
+        PreparedStatement ps = null;
+        if (objects == null) {
+            objects = Tools.toArray();
+        }
+        times[0] = System.currentTimeMillis();
+        Connection connection = getConnection();
+        try {
+            times[1] = System.currentTimeMillis();
+            ps = connection.prepareStatement(sql);
+            sb.append(" data:[");
+            for (int i = 0; i < objects.length; i++) {
+                ps.setObject(i + 1, objects[i]);
+                sb.append(objects[i]);
+                if (i < objects.length - 1) {
+                    sb.append(",");
+                }
+            }
+            sb.append("]");
+            rs = ps.executeQuery();
+            times[2] = System.currentTimeMillis();
+            list.add((T) t.getClass().getDeclaredConstructor(ResultSet.class).newInstance(rs));
+            times[3] = System.currentTimeMillis();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            close(connection, rs, ps);
+            times[4] = System.currentTimeMillis();
+            sb.append(",[连接：").append(times[1] - times[0]).append("ms]");
+            sb.append(",[执行：").append(times[2] - times[1]).append("ms]");
+            sb.append(",[组装：").append(times[3] - times[2]).append("ms]");
+            sb.append(",[耗时：").append(times[4] - times[0]).append("ms]");
+            if (times[4] - times[0] > 200) {
+                log.w(sb);
+            } else {
+                log.d(sb);
+            }
+        }
+        return list;
+    }
+
+    @Override
+    public List<T> query(String sql, Object[] params, String sortField, String sortType, int page, int size) {
+        if (t==null) {
+            return null;
+        }
+        String pageSql = sql.toLowerCase();
+        if (pageSql.endsWith(";")) {
+            pageSql = pageSql.substring(0, pageSql.length() - 1);
+        }
+        if (sortField != null && sortType != null) {
+            pageSql += " order by " + sortField + " " + sortType;
+        }
+        if (page > 0 && size > 0) {
+            pageSql += " limit " + ((page - 1) * size) + "," + size;
+        }
+        return query(pageSql, params);
+    }
+
+    @Override
+    public List<T> query(T t) throws Exception {
+        if (t==null) {
+            return null;
+        }
+        SqlTemplate sqlTemplate = (SqlTemplate) t.getClass()
+                .getMethod("toSelectSql", String.class, String.class, Integer.class, Boolean.class)
+                .invoke(t, null, null, 0, false);
+        return query(sqlTemplate.getSql(), sqlTemplate.getObjects());
+    }
+
+    @Override
+    public List<T> query(T t, String sortField, String sortType) throws Exception {
+        if (t==null) {
+            return null;
+        }
+        SqlTemplate sqlTemplate = (SqlTemplate) t.getClass()
+                .getMethod("toSelectSql", String.class, String.class, Integer.class, Boolean.class)
+                .invoke(t, null, null, 0, false);
+        return query(sqlTemplate.getSql(), sqlTemplate.getObjects(), sortField, sortType, 0, 0);
+    }
+
+    @Override
+    public List<T> query(T t, String sortField, String sortType, int page, int size) throws Exception {
+        if (t==null) {
+            return null;
+        }
+        SqlTemplate sqlTemplate = (SqlTemplate) t.getClass()
+                .getMethod("toSelectSql", String.class, String.class, Integer.class, Boolean.class)
+                .invoke(t, null, null, 0, false);
+        return query(sqlTemplate.getSql(), sqlTemplate.getObjects(), sortField, sortType, page, size);
+    }
+    @Override
+    public List<T> query(T t, int page, int size) throws Exception {
+        if (t==null) {
+            return null;
+        }
+        SqlTemplate sqlTemplate = (SqlTemplate) t.getClass()
+                .getMethod("toSelectSql", String.class, String.class, Integer.class, Boolean.class)
+                .invoke(t, null, null, 0, false);
+        return query(sqlTemplate.getSql(), sqlTemplate.getObjects(), null, null, page, size);
+    }
+
+    @Override
+    public T find(String sql, Object... params) throws Exception {
+        if (t==null) {
+            return null;
+        }
+        List<T> list = query(sql, params, null, null, 1, 2);
+        if (list.size() != 1) {
             return null;
         }
         return list.get(0);
     }
 
-
-    @Override
-    public List<T> query(String sql, Object[] objects) throws Exception {
-        return query(sql, objects,null,null, 0, 0);
-    }
-
-    @Override
-    public List<T> query(String sql, Object[] objects, Integer page, Integer size) throws Exception {
-        return query(sql, objects,null,null, page, size);
-    }
-
-    @Override
-    public List<T> query(String sql, Object[] objects, String sortField, String sortType, Integer page, Integer size) throws Exception {
-        List<GzbMap> listGzbMap;
-        if (sql.toLowerCase().indexOf(" order ") == -1 && sql.toLowerCase().indexOf(" limit ") == -1) {
-            StringBuilder sb = new StringBuilder(sql);
-            if (sortField == null) {
-                EntityClassInfo entityClassInfo = dataBase.getEntityInfo(t);
-                EntityAttribute entityAttributeClass = entityClassInfo.fields.get(entityClassInfo.keyIndex).getDeclaredAnnotation(EntityAttribute.class);
-                sortField = entityAttributeClass.name();
-            }
-            sb.append(" order by ").append(sortField).append(" ").append(sortType == null ? "asc" : sortType);
-            listGzbMap = dataBase.selectGzbMap(sb.toString(), objects);
-        } else {
-            listGzbMap = dataBase.selectGzbMap(sql, objects);
-        }
-        int start = 0;
-        if (page == null || page < 1) {
-            page = 1;
-        }
-        if (page > 1) {
-            start = (page - 1) * size;
-        }
-        List<T> listThis = new ArrayList<>();
-        for (int i = start; i < listGzbMap.size(); i++) {
-            listThis.add((T)t.getClass().getDeclaredConstructor(GzbMap.class).newInstance(listGzbMap.get(i)));
-            if (listThis.size() == size) {
-                break;
-            }
-        }
-        return listThis;
-    }
-
-    @Override
-    public JSONResult queryPage(String sql, Object[] objects, Integer page, Integer size, int maxPage, int maxSize) throws Exception {
-        return queryPage(sql, objects, null, null, page, size, maxPage, maxSize);
-    }
-
-    @Override
-    public JSONResult queryPage(String sql, Object[] objects, String sortField, String sortType, Integer page, Integer size, int maxPage, int maxSize) throws Exception {
-        if (t == null) {
-            return null;
-        }
-        List<GzbMap> listGzbMap;
-        if (sql.toLowerCase().indexOf(" order ") == -1 && sql.toLowerCase().indexOf(" limit ") == -1) {
-            StringBuilder sb = new StringBuilder(sql);
-            if (sortField == null) {
-                EntityClassInfo entityClassInfo = dataBase.getEntityInfo(t);
-                EntityAttribute entityAttributeClass = entityClassInfo.fields.get(entityClassInfo.keyIndex).getDeclaredAnnotation(EntityAttribute.class);
-                sortField = entityAttributeClass.name();
-            }
-            sb.append(" order by ").append(sortField).append(" ").append(sortType == null ? "asc" : sortType);
-            listGzbMap = dataBase.selectGzbMap(sb.toString(), objects);
-        } else {
-            listGzbMap = dataBase.selectGzbMap(sql, objects);
-        }
-
-        List<T> listThis = new ArrayList<>();
-        for (int i = 0; i < listGzbMap.size(); i++) {
-            listThis.add((T)t.getClass().getDeclaredConstructor(GzbMap.class).newInstance(listGzbMap.get(i)));
-        }
-        return new JSONResult().paging(listThis,page, size,maxPage,maxSize);
-    }
-
-    @Override
-    public int save(String sql, Object[] objects) throws Exception {
-        return dataBase.runSql(sql, objects);
-    }
-
-
-    @Override
-    public int update(String sql, Object[] objects) throws Exception {
-        return dataBase.runSql(sql, objects);
-    }
-
-    @Override
-    public int delete(String sql, Object[] objects) throws Exception {
-        return dataBase.runSql(sql, objects);
-    }
-
-    @Override
-    public int saveAsync(String sql, Object[] objects) {
-        return dataBase.runSqlAsync(sql, objects);
-    }
-
-
-    @Override
-    public int updateAsync(String sql, Object[] objects) {
-        return dataBase.runSqlAsync(sql, objects);
-    }
-
-    @Override
-    public int deleteAsync(String sql, Object[] objects) {
-        return dataBase.runSqlAsync(sql, objects);
-    }
-
-    @Override
-    public int saveBatch(String sql, List<Object[]> list) throws Exception {
-        return dataBase.runSqlBatch(sql, list);
-    }
-
-
-    @Override
-    public int updateBatch(String sql, List<Object[]> list) throws Exception {
-        return dataBase.runSqlBatch(sql, list);
-    }
-
-    @Override
-    public int deleteBatch(String sql, List<Object[]> list) throws Exception {
-        return dataBase.runSqlBatch(sql, list);
-    }
-
-    @Override
-    public int saveBatchAsync(String sql, List<Object[]> list) {
-        return dataBase.runSqlAsyncBatch(sql, list);
-    }
-
-    @Override
-    public int updateBatchAsync(String sql, List<Object[]> list) {
-        return dataBase.runSqlAsyncBatch(sql, list);
-    }
-
-    @Override
-    public int deleteBatchAsync(String sql, List<Object[]> list) {
-        return dataBase.runSqlAsyncBatch(sql, list);
-    }
-
     @Override
     public T find(T t) throws Exception {
-        SqlTemplate sqlTemplate = dataBase.toSelect(t, 1, 2, null, null);
-        return find(sqlTemplate.getSql(), sqlTemplate.getObjects());
-    }
-
-    @Override
-    public List<T> query(T t) throws Exception {
-        SqlTemplate sqlTemplate = dataBase.toSelect(t, 1, 0, null, null);
-        return query(sqlTemplate.getSql(), sqlTemplate.getObjects());
-    }
-
-    @Override
-    public List<T> query(T t, Integer page, Integer size) throws Exception {
-        return query(t, null, null, page, size);
-    }
-
-    @Override
-    public List<T> query(T t, String sortField, String sortType, Integer page, Integer size) throws Exception {
-        SqlTemplate sqlTemplate = dataBase.toSelect(t, 1, 0, sortField, sortType);
-        return query(sqlTemplate.getSql(), sqlTemplate.getObjects(), page, size);
-    }
-
-    @Override
-    public JSONResult queryPage(T t, String sortField, String sortType, Integer page, Integer size, int maxPage, int maxSize) throws Exception {
-        t= t==null ? this.t:t;
-        SqlTemplate sqlTemplate = dataBase.toSelect(t, 1, 0, sortField, sortType);
-        return queryPage(sqlTemplate.getSql(), sqlTemplate.getObjects(), page, size, maxPage, maxSize);
+        if (t==null) {
+            return null;
+        }
+        SqlTemplate sqlTemplate = (SqlTemplate) t.getClass()
+                .getMethod("toSelectSql", String.class, String.class, Integer.class, Boolean.class)
+                .invoke(t, null, null, 0, false);
+        List<T> list = query(sqlTemplate.getSql(), sqlTemplate.getObjects(), null, null, 1, 2);
+        if (list.size() != 1) {
+            return null;
+        }
+        return list.get(0);
     }
 
     @Override
     public int save(T t) throws Exception {
-        if (t == null) {
+        if (t==null) {
             return -1;
         }
-        SqlTemplate sqlTemplate = dataBase.toSave(t);
-        return save(sqlTemplate.getSql(), sqlTemplate.getObjects());
-    }
-
-    @Override
-    public int save(T t, boolean autoId) throws Exception {
-        if (t == null) {
-            return -1;
-        }
-        SqlTemplate sqlTemplate = dataBase.toSave(t, autoId);
-        return save(sqlTemplate.getSql(), sqlTemplate.getObjects());
+        SqlTemplate sqlTemplate = (SqlTemplate) t.getClass()
+                .getMethod("toSave")
+                .invoke(t);
+        return execute(sqlTemplate.getSql(), sqlTemplate.getObjects());
     }
 
     @Override
     public int update(T t) throws Exception {
-        if (t == null) {
+        if (t==null) {
             return -1;
         }
-        SqlTemplate sqlTemplate = dataBase.toUpdate(t);
-        return update(sqlTemplate.getSql(), sqlTemplate.getObjects());
+        SqlTemplate sqlTemplate = (SqlTemplate) t.getClass()
+                .getMethod("toUpdate")
+                .invoke(t);
+        return execute(sqlTemplate.getSql(), sqlTemplate.getObjects());
     }
 
     @Override
     public int delete(T t) throws Exception {
-        if (t == null) {
+        if (t==null) {
             return -1;
         }
-        SqlTemplate sqlTemplate = dataBase.toDelete(t);
-        return delete(sqlTemplate.getSql(), sqlTemplate.getObjects());
-    }
-
-    @Override
-    public int saveAsync(T t) throws Exception {
-        if (t == null) {
-            return -1;
-        }
-        SqlTemplate sqlTemplate = dataBase.toSave(t);
-        return saveAsync(sqlTemplate.getSql(), sqlTemplate.getObjects());
-    }
-
-    @Override
-    public int saveAsync(T t, boolean autoId) throws Exception {
-        if (t == null) {
-            return -1;
-        }
-        SqlTemplate sqlTemplate = dataBase.toSave(t, autoId);
-        return saveAsync(sqlTemplate.getSql(), sqlTemplate.getObjects());
-    }
-
-    @Override
-    public int updateAsync(T t) {
-        if (t == null) {
-            return -1;
-        }
-        SqlTemplate sqlTemplate = dataBase.toUpdate(t);
-        return updateAsync(sqlTemplate.getSql(), sqlTemplate.getObjects());
-    }
-
-    @Override
-    public int deleteAsync(T t) {
-        if (t == null) {
-            return -1;
-        }
-        SqlTemplate sqlTemplate = dataBase.toDelete(t);
-        return deleteAsync(sqlTemplate.getSql(), sqlTemplate.getObjects());
+        SqlTemplate sqlTemplate = (SqlTemplate) t.getClass()
+                .getMethod("toDelete", Boolean.class)
+                .invoke(t, true);
+        return execute(sqlTemplate.getSql(), sqlTemplate.getObjects());
     }
 
     @Override
     public int saveBatch(List<T> list) throws Exception {
-        return saveBatch(list, true);
-    }
-
-    @Override
-    public int saveBatch(List<T> list, boolean autoId) throws Exception {
-        return runSql(list, autoId, 1, 1);
+        String sql = null;
+        List<Object[]> data = new ArrayList<>();
+        for (int i = 0; i < list.size(); i++) {
+            SqlTemplate sqlTemplate = (SqlTemplate) t.getClass()
+                    .getMethod("toSave")
+                    .invoke(t);
+            sql = sqlTemplate.getSql();
+            data.add(sqlTemplate.getObjects());
+        }
+        return executeBatch(sql, data);
     }
 
     @Override
     public int updateBatch(List<T> list) throws Exception {
-        return runSql(list, false, 2, 1);
+        String sql = null;
+        List<Object[]> data = new ArrayList<>();
+        for (int i = 0; i < list.size(); i++) {
+            SqlTemplate sqlTemplate = (SqlTemplate) t.getClass()
+                    .getMethod("toUpdate")
+                    .invoke(t);
+            sql = sqlTemplate.getSql();
+            data.add(sqlTemplate.getObjects());
+        }
+        return executeBatch(sql, data);
     }
 
     @Override
     public int deleteBatch(List<T> list) throws Exception {
-        return runSql(list, false, 3, 1);
+        String sql = null;
+        List<Object[]> data = new ArrayList<>();
+        for (int i = 0; i < list.size(); i++) {
+            SqlTemplate sqlTemplate = (SqlTemplate) t.getClass()
+                    .getMethod("toDelete", Boolean.class)
+                    .invoke(t, true);
+            sql = sqlTemplate.getSql();
+            data.add(sqlTemplate.getObjects());
+        }
+        return executeBatch(sql, data);
     }
 
     @Override
-    public int saveBatchAsync(List<T> list) throws Exception {
-        return saveBatchAsync(list, true);
-    }
-
-    @Override
-    public int saveBatchAsync(List<T> list, boolean autoId) throws Exception {
-        return runSql(list, autoId, 1, 2);
-    }
-
-    @Override
-    public int updateBatchAsync(List<T> list) throws Exception {
-        return runSql(list, false, 2, 2);
-    }
-
-    @Override
-    public int deleteBatchAsync(List<T> list) throws Exception {
-        return runSql(list, false, 3, 2);
-    }
-
-    @Override
-    public int save(String sql, Object[] objects, Connection connection) throws Exception {
-        return dataBase.runSql(sql, objects, connection);
-    }
-
-    @Override
-    public int update(String sql, Object[] objects, Connection connection) throws Exception {
-        return dataBase.runSql(sql, objects, connection);
-    }
-
-    @Override
-    public int delete(String sql, Object[] objects, Connection connection) throws Exception {
-        return dataBase.runSql(sql, objects, connection);
-    }
-
-    @Override
-    public int saveBatch(String sql, List<Object[]> list, Connection connection) throws Exception {
-        return dataBase.runSqlBatch(sql, list, connection);
-    }
-
-    @Override
-    public int updateBatch(String sql, List<Object[]> list, Connection connection) throws Exception {
-        return dataBase.runSqlBatch(sql, list, connection);
-    }
-
-    @Override
-    public int deleteBatch(String sql, List<Object[]> list, Connection connection) throws Exception {
-        return dataBase.runSqlBatch(sql, list, connection);
-    }
-
-    @Override
-    public int save(T t, Connection connection) throws Exception {
-        if (t == null) {
+    public int saveAsync(T t) throws Exception {
+        if (t==null) {
             return -1;
         }
-        return save(t, true, connection);
+        SqlTemplate sqlTemplate = (SqlTemplate) t.getClass()
+                .getMethod("toSave")
+                .invoke(t);
+        return executeAsync(sqlTemplate.getSql(), sqlTemplate.getObjects());
     }
 
     @Override
-    public int save(T t, boolean autoId, Connection connection) throws Exception {
-        if (t == null) {
+    public int updateAsync(T t) throws Exception {
+        if (t==null) {
             return -1;
         }
-        SqlTemplate sqlTemplate = dataBase.toSave(t, autoId);
-        return dataBase.runSql(sqlTemplate.getSql(), sqlTemplate.getObjects(), connection);
+        SqlTemplate sqlTemplate = (SqlTemplate) t.getClass()
+                .getMethod("toUpdate")
+                .invoke(t);
+        return executeAsync(sqlTemplate.getSql(), sqlTemplate.getObjects());
     }
 
     @Override
-    public int update(T t, Connection connection) throws Exception {
-        if (t == null) {
+    public int deleteAsync(T t) throws Exception {
+        if (t==null) {
             return -1;
         }
-        SqlTemplate sqlTemplate = dataBase.toUpdate(t);
-        return dataBase.runSql(sqlTemplate.getSql(), sqlTemplate.getObjects(), connection);
+        SqlTemplate sqlTemplate = (SqlTemplate) t.getClass()
+                .getMethod("toDelete", Boolean.class)
+                .invoke(t, true);
+        return executeAsync(sqlTemplate.getSql(), sqlTemplate.getObjects());
     }
 
     @Override
-    public int delete(T t, Connection connection) throws Exception {
-        if (t == null) {
+    public int execute(String sql, Object[] params) throws Exception {
+        List<Object[]> paramsList = new ArrayList<>();
+        paramsList.add(params);
+        return executeBatch(sql, paramsList, 1);
+    }
+
+    @Override
+    public int executeBatch(String sql, List<Object[]> params) throws Exception {
+        return executeBatch(sql, params, 1000);
+    }
+
+    @Override
+    public int executeBatch(String sql, List<Object[]> params, int batch) throws Exception {
+        int allRow = 0;
+        ResultSet rs = null;
+        PreparedStatement ps = null;
+        if (sql == null || params == null) {
             return -1;
         }
-        SqlTemplate sqlTemplate = dataBase.toDelete(t);
-        return dataBase.runSql(sqlTemplate.getSql(), sqlTemplate.getObjects(), connection);
+        Connection connection = getConnection();
+        connection.setAutoCommit(false);
+        if (sql.endsWith(";")) {
+            sql = sql.split(";")[0];
+        }
+        try {
+            ps = connection.prepareStatement(sql);
+            for (int j = 0; j < params.size(); j++) {
+                Object[] parameter = params.get(j);
+                if (parameter == null) {
+                    continue;
+                }
+                for (int i = 0; i < parameter.length; i++) {
+                    ps.setObject(i + 1, parameter[i]);
+                }
+                ps.addBatch();
+
+                if ((j + 1) % batch == 0 || j + 1 == params.size()) {
+                    int[] rows = ps.executeBatch();
+                    for (int i = 0; i < rows.length; i++) {
+                        if (rows[i] == -3) {
+                            log.e("SQL执行失败：", Arrays.toString(params.get(j - (20 - i))));
+                        }
+                    }
+                    allRow += rows.length;
+                    if (autoCommit) {
+                        connection.commit();
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            connection.rollback();
+            StringBuilder stringBuilder1 = new StringBuilder(sql);
+            stringBuilder1.append(" -> data:[");
+            for (int j = 0; j < params.size(); j++) {
+                Object[] parameter = params.get(j);
+                if (parameter == null) {
+                    continue;
+                }
+                stringBuilder1.append("{");
+                for (int i = 0; i < parameter.length; i++) {
+                    stringBuilder1.append(parameter[i]);
+                    if (i != parameter.length - 1) {
+                        stringBuilder1.append(",");
+                    }
+                }
+                stringBuilder1.append("}");
+                if (j + 1 < params.size()) {
+                    stringBuilder1.append(",");
+                }
+            }
+            stringBuilder1.append("]");
+            log.e(e, "异常：" + stringBuilder1);
+            throw e;
+        } catch (Exception e) {
+            log.e(e, "Exception 非SQL异常");
+            throw e;
+        } finally {
+            if (autoCommit) {
+                close(connection, rs, ps);
+            } else {
+                close(null, rs, ps);
+            }
+        }
+        return allRow;
+
     }
 
     @Override
-    public int saveBatch(List<T> list, Connection connection) throws Exception {
-        return saveBatch(list,true, connection);
+    public int executeAsync(String sql, Object[] params) throws Exception {
+        return dataBase.runSqlAsync(sql, params);
+    }
+    //关闭链接 非自动提交状态例外
+    public void close(Connection connection, ResultSet resultSet, PreparedStatement preparedStatement) {
+        if (resultSet != null) {
+            try {
+                resultSet.close();
+            } catch (SQLException e) {
+                log.e(e);
+            }
+        }
+        if (preparedStatement != null) {
+            try {
+                preparedStatement.close();
+            } catch (SQLException e) {
+                log.e(e);
+            }
+        }
+        if (connection != null) {
+            try {
+                if (autoCommit) {
+                    connection.setAutoCommit(true);
+                    connection.close();
+                    connection_class=null;
+                }
+            } catch (SQLException e) {
+                log.e(e);
+            }
+        }
+    }
+    //获取链接 非自动提交状态 会重复获取同一个
+    public Connection getConnection(){
+        if (autoCommit) {
+            return dataBase.getConnection();
+        } else {
+            if (connection_class == null) {
+                connection_class = dataBase.getConnection();
+                try {
+                    connection_class.setAutoCommit(autoCommit);
+                } catch (SQLException e) {
+                    log.e(e);
+                }
+            }
+        }
+        return connection_class;
     }
 
-    @Override
-    public int saveBatch(List<T> list, boolean autoId, Connection connection) throws Exception {
-        return runSql(list, autoId, 1, 1, connection);
+    //开启事务 主要是框架内部调用 当然 也可以手动
+    public void openTransaction() {
+        autoCommit = false;
     }
 
-    @Override
-    public int updateBatch(List<T> list, Connection connection) throws Exception {
-        return runSql(list, false, 2, 1, connection);
+    //关闭事务 主要是框架内部调用 当然 也可以手动
+    public void endTransaction() {
+        autoCommit=true;
+        close(connection_class,null,null);
     }
 
-    @Override
-    public int deleteBatch(List<T> list, Connection connection) throws Exception {
-        return runSql(list, false, 3, 1, connection);
+    //提交并且关闭事务  同时也会归还连接 主要是框架内部调用 当然 也可以手动
+    public void commit() throws SQLException {
+        connection_class.commit();
     }
+
+    //回滚并且关闭事务  同时也会归还连接 主要是框架内部调用 当然 也可以手动
+    public void rollback() throws SQLException {
+        connection_class.rollback();
+    }
+
+
+
 }

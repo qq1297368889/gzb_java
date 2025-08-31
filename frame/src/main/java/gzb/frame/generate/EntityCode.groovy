@@ -18,45 +18,44 @@ class EntityCode extends Base {
                     "import gzb.tools.*;\n" +
                     "import ${this.pkg}.${tableInfo.dbNameLowerCase}.dao.${tableInfo.nameUpperCase}Dao;\n" +
                     "import java.io.Serializable;\n" +
+                    "import java.sql.ResultSet;\n" +
+                    "import java.sql.SQLException;\n" +
                     "import java.util.ArrayList;\n" +
                     "import java.util.List;\n" +
                     "import java.util.Map;\n" +
                     "import gzb.frame.annotation.EntityAttribute;\n" +
-                    "\n" +
+                    "import gzb.tools.json.JsonSerializable;\n" +
+                    "import gzb.tools.json.Result;\n" +
+                    "import gzb.tools.json.ResultImpl;\n" +
                     "@EntityAttribute(name=\"${tableInfo.name}\",desc=\"${tableInfo.nameHumpLowerCase}\")\n" +
-                    "public class ${tableInfo.nameUpperCase} implements Serializable{\n";
+                    "public class ${tableInfo.nameUpperCase} implements Serializable, JsonSerializable{\n" +
+                    "    private static final long serialVersionUID = 1000L;\n" +
+                    "    private static final String dataName= Config.get(\"json.entity.data\",\"data\");\n";
             for (int i = 0; i < tableInfo.columnNames.size(); i++) {
                 code += "    @EntityAttribute(key=${tableInfo.columnNames.get(i).equals(tableInfo.id)},size = ${tableInfo.columnSize.get(i)}," +
                         "name=\"${tableInfo.columnNames.get(i)}\",desc=\"${tableInfo.columnNamesHumpLowerCase.get(i)}\")\n" +
                         "    private ${tableInfo.columnTypes.get(i)} ${tableInfo.columnNamesHumpLowerCase.get(i)};\n";
             }
             code += "    private List<?> list;\n" +
-                    "    public ${tableInfo.nameUpperCase}() {}\n" +
-                    "\n" +
-                    "    public ${tableInfo.nameUpperCase}(JSON gzbMap) {\n" +
-                    "        this(new GzbMap().setMap(gzbMap.map));\n" +
-                    "    }\n" +
+                    "   public ${tableInfo.nameUpperCase}() {}\n" +
                     "\n" +
                     "    public ${tableInfo.nameUpperCase}(GzbMap gzbMap) {\n" +
-                    "        String str=null;\n";
-
-            for (int i = 0; i < tableInfo.columnNames.size(); i++) {
-                code += "        str=gzbMap.getString(\"${tableInfo.columnNamesHumpLowerCase.get(i)}\");\n" +
-                        "        if (str!=null && !str.isEmpty()) {\n" +
-                        "            set${tableInfo.columnNamesHumpUpperCase.get(i)}(${tableInfo.columnTypes.get(i)}.valueOf(str));\n" +
-                        "        }\n";
-            }
-            code += "    }\n" +
+                    "        this(gzbMap.map);\n" +
+                    "    }\n" +
                     "\n" +
                     "    public ${tableInfo.nameUpperCase}(Map<String, Object> map) {\n" +
-                    "        this(new GzbMap().setMap(map));\n" +
+                    "        Result result = new ResultImpl(map);\n" +
+                    "        loadJson(result);\n" +
                     "    }\n" +
                     "\n" +
                     "    public ${tableInfo.nameUpperCase}(String jsonString) {\n" +
-                    "        this(new GzbMap().setMap(new JSON().loadMap(jsonString).map));\n" +
+                    "        Result result = new ResultImpl(jsonString);\n" +
+                    "        loadJson(result);\n" +
                     "    }\n" +
                     "\n" +
-                    "\n" +
+                    "    public ${tableInfo.nameUpperCase}(ResultSet resultSet) throws SQLException {\n" +
+                    "        loadJson(resultSet);\n" +
+                    "    }\n" +
                     "    public int save(${tableInfo.nameUpperCase}Dao ${tableInfo.nameHumpLowerCase}Dao) throws Exception {\n" +
                     "        return ${tableInfo.nameHumpLowerCase}Dao.save(this);\n" +
                     "    }\n" +
@@ -98,13 +97,13 @@ class EntityCode extends Base {
                     "    }\n" +
                     "\n" +
                     "    //查询语句 可选项 排序\n" +
-                    "    public SqlTemplate toSelectSql(String sortField, String sortType, int size, boolean selectId) {\n" +
+                    "    public SqlTemplate toSelectSql(String sortField, String sortType, Integer size, Boolean selectId) {\n" +
                     "        return SqlTools.toSelectSql(this,sortField, sortType, size, selectId);\n" +
                     "    }\n" +
                     "\n" +
                     "    //插入 可以指定id  不指定自动生成\n" +
-                    "    public SqlTemplate toSave(java.lang.Long actCodeId) {\n" +
-                    "        return SqlTools.toSave(this,actCodeId);\n" +
+                    "    public SqlTemplate toSave() {\n" +
+                    "        return SqlTools.toSave(this);\n" +
                     "    }\n" +
                     "\n" +
                     "    //根据id修改 高级需求请手动写sql\n" +
@@ -113,7 +112,7 @@ class EntityCode extends Base {
                     "    }\n" +
                     "\n" +
                     "    //删除 可以根据id或其他参数 但是请注意非id删除的性能问题\n" +
-                    "    public SqlTemplate toDelete(boolean selectId) {\n" +
+                    "    public SqlTemplate toDelete(Boolean selectId) {\n" +
                     "        return SqlTools.toDelete(this,selectId);\n" +
                     "    }\n" +
                     "\n" +
@@ -122,15 +121,61 @@ class EntityCode extends Base {
                     "        return toJson().toString();\n" +
                     "    }\n" +
                     "\n" +
-                    "    public JSON toJson() {\n" +
-                    "        JSON json = new JSON();\n";
+                    "    public Result toJson() {\n" +
+                    "        Result result=new ResultImpl();\n";
             for (int i = 0; i < tableInfo.columnNames.size(); i++) {
-                code += "        json.put(\"${tableInfo.columnNamesHumpLowerCase.get(i)}\", get${tableInfo.columnNamesHumpUpperCase.get(i)}());\n";
+                code += "        result.set(\"${tableInfo.columnNamesHumpLowerCase.get(i)}\", ${tableInfo.columnNamesHumpLowerCase.get(i)});\n";
             }
-            code += "        json.put(\"data\", getList());\n" +
-                    "        return json;\n" +
+            code += "        result.set(dataName, list);\n" +
+                    "        return result;\n" +
                     "    }\n" +
-                    "\n";
+                    "\n" +
+                    "    @Override\n" +
+                    "    public void loadJson(String json) {\n" +
+                    "        Result result=new ResultImpl(json);\n" +
+                    "         loadJson(result);\n" +
+                    "    }\n" +
+                    "    public void loadJson(Result result) {\n";
+            for (int i = 0; i < tableInfo.columnNames.size(); i++) {
+                if (tableInfo.columnTypes.get(i).endsWith("Long")) {
+                    code += "        this.${tableInfo.columnNamesHumpLowerCase.get(i)}=result.getLong(\"${tableInfo.columnNamesHumpLowerCase.get(i)}\", null);\n";
+                } else if (tableInfo.columnTypes.get(i).endsWith("Integer")) {
+                    code += "        this.${tableInfo.columnNamesHumpLowerCase.get(i)}=result.getInteger(\"${tableInfo.columnNamesHumpLowerCase.get(i)}\", null);\n";
+                } else if (tableInfo.columnTypes.get(i).endsWith("Short")) {
+                    code += "        this.${tableInfo.columnNamesHumpLowerCase.get(i)}=result.getShort(\"${tableInfo.columnNamesHumpLowerCase.get(i)}\", null);\n";
+                } else if (tableInfo.columnTypes.get(i).endsWith("String")) {
+                    code += "        this.${tableInfo.columnNamesHumpLowerCase.get(i)}=result.getString(\"${tableInfo.columnNamesHumpLowerCase.get(i)}\", null);\n";
+                } else if (tableInfo.columnTypes.get(i).endsWith("Double")) {
+                    code += "        this.${tableInfo.columnNamesHumpLowerCase.get(i)}=result.getDouble(\"${tableInfo.columnNamesHumpLowerCase.get(i)}\", null);\n";
+                } else if (tableInfo.columnTypes.get(i).endsWith("Boolean")) {
+                    code += "        this.${tableInfo.columnNamesHumpLowerCase.get(i)}=result.getBoolean(\"${tableInfo.columnNamesHumpLowerCase.get(i)}\", null);\n";
+                } else if (tableInfo.columnTypes.get(i).endsWith("Float")) {
+                    code += "        this.${tableInfo.columnNamesHumpLowerCase.get(i)}=result.getFloat(\"${tableInfo.columnNamesHumpLowerCase.get(i)}\", null);\n";
+                } else {
+                    code += "        this.${tableInfo.columnNamesHumpLowerCase.get(i)}=result.getObject(\"${tableInfo.columnNamesHumpLowerCase.get(i)}\", null);\n";
+                }
+
+            }
+            code += "        Object obj = result.get(dataName,null);\n" +
+                    "        if (obj instanceof List) {\n" +
+                    "            this.list=(List<?>)obj;\n" +
+                    "        }\n" +
+                    "    }\n" +
+                    "    public void loadJson(ResultSet resultSet) throws SQLException {\n" +
+                    "        //ResultSetMetaData rsMetaData = resultSet.getMetaData();\n" +
+                    "        String temp=null;\n" +
+                    "        while (resultSet.next()) {\n";
+            for (int i = 0; i < tableInfo.columnNames.size(); i++) {
+                code += "            temp=resultSet.getString(\"" + tableInfo.columnNames[i] + "\");\n" +
+                        "            if (temp!=null) {\n" +
+                        "                this." + tableInfo.columnNamesHumpLowerCase[i] + "=" + tableInfo.columnTypes[i] + ".valueOf(temp);\n" +
+                        "            }\n";
+            }
+
+            code += "        }\n" +
+                    "    }\n";
+
+
             for (int i = 0; i < tableInfo.columnNames.size(); i++) {
                 code += "    public ${tableInfo.columnTypes.get(i)} get${tableInfo.columnNamesHumpUpperCase.get(i)}() {\n" +
                         "        return ${tableInfo.columnNamesHumpLowerCase.get(i)};\n" +

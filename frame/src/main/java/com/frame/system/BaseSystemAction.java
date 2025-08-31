@@ -1,4 +1,4 @@
-package com.frame.controller.system;
+package com.frame.system;
 
 import com.frame.dao.*;
 import com.frame.dao.impl.*;
@@ -6,7 +6,6 @@ import com.frame.entity.*;
 import gzb.entity.SqlTemplate;
 import gzb.frame.annotation.*;
 import gzb.frame.db.DataBase;
-import gzb.frame.db.DataBaseFactory;
 import gzb.tools.*;
 import gzb.tools.img.PicUtils;
 import gzb.tools.log.Log;
@@ -20,11 +19,22 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 
 @Controller
 @RequestMapping(value = "/system/v1.0.0/", header = "content-type:application/json;charset=UTF-8")
-public class BaseSystemAction extends BaseAction {
+public class BaseSystemAction extends BaseAction{
+
+
+    SysFileDao sysFileDao=new SysFileDaoImpl();
+    SysGroupColumnDao sysGroupColumnDao=new SysGroupColumnDaoImpl();
+    SysGroupDao sysGroupDao=new SysGroupDaoImpl();
+    SysGroupPermissionDao sysGroupPermissionDao=new SysGroupPermissionDaoImpl();
+    SysGroupTableDao sysGroupTableDao=new SysGroupTableDaoImpl();
+    SysLogDao sysLogDao=new SysLogDaoImpl();
+    SysMappingDao sysMappingDao=new SysMappingDaoImpl();
+    SysOptionDao sysOptionDao=new SysOptionDaoImpl();
+    SysPermissionDao sysPermissionDao=new SysPermissionDaoImpl();
+    SysUsersLoginLogDao sysUsersLoginLogDao=new SysUsersLoginLogDaoImpl();
 
 
     //key.system.login.image.code  验证码储存key
@@ -168,7 +178,6 @@ public class BaseSystemAction extends BaseAction {
     @GetMapping(value = "read/user/info")
     public Object readUserInfo(Session session, JSONResult res) {
         String jsonString = session.getString(Config.get("key.system.login.info"));
-        log.d(jsonString);
         return res.success("获取成功", new SysUsers(jsonString).toString());
     }
 
@@ -177,16 +186,14 @@ public class BaseSystemAction extends BaseAction {
     @DecoratorOpen
     @GetMapping(value = "update/updatePermissionAndMapping")
     public Object updatePermissionAndMapping(JSONResult res,Long sysGroupId,SysUsers sysUsers) throws Exception {
-        System.out.println(sysGroupId);
-        System.out.println(sysUsers);
         if (sysUsers==null || sysUsers.getSysUsersType() != 4) {
             return res.fail("没有合适权限操作");
         }
         if (sysGroupId==null) {
             return res.fail("必填参数为空");
         }
-
-        return res.success("权限已更新，当前权限数量为：" + Tools.updateMapping(dataBase,null,sysGroupId) + "个");
+        Tools.updateMapping(dataBase,null,sysGroupId);
+        return res.success("映射已更新");
     }
 
     /// /system/v1.0.0/authorize/permission?pid=&gid=&type=
@@ -252,11 +259,9 @@ public class BaseSystemAction extends BaseAction {
                             "ORDER BY p.sys_permission_sort DESC",
                     new Object[]{1,0}
             );
-            log.d("list1",list1.toString());
             List<SysPermission> list = new ArrayList<>(list1.size());
             for (GzbMap gzbMap : list1) {
                 SysPermission sysPermission = new SysPermission(gzbMap);
-                log.d("sysPermission",sysPermission.toString());
                 List<GzbMap> list2 = dataBase.selectGzbMap(
                         "select sys_permission.* from sys_permission where sys_permission.sys_permission_sup = ?",
                         new Object[]{sysPermission.getSysPermissionId()});
@@ -528,18 +533,6 @@ public class BaseSystemAction extends BaseAction {
         response.setHeader("Content-Length", String.valueOf(bytes.length));
         return null;
     }
-
-
-    SysFileDao sysFileDao=new SysFileDaoImpl();
-    SysGroupColumnDao sysGroupColumnDao=new SysGroupColumnDaoImpl();
-    SysGroupDao sysGroupDao=new SysGroupDaoImpl();
-    SysGroupPermissionDao sysGroupPermissionDao=new SysGroupPermissionDaoImpl();
-    SysGroupTableDao sysGroupTableDao=new SysGroupTableDaoImpl();
-    SysLogDao sysLogDao=new SysLogDaoImpl();
-    SysMappingDao sysMappingDao=new SysMappingDaoImpl();
-    SysOptionDao sysOptionDao=new SysOptionDaoImpl();
-    SysPermissionDao sysPermissionDao=new SysPermissionDaoImpl();
-    SysUsersLoginLogDao sysUsersLoginLogDao=new SysUsersLoginLogDaoImpl();
 
     /**
      * 插入数据,不能接受空数据,请至少提供一个参数,请提供 SysUsers的参数

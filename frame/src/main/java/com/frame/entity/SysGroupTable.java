@@ -4,13 +4,19 @@ import gzb.entity.SqlTemplate;
 import gzb.tools.*;
 import com.frame.dao.SysGroupTableDao;
 import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import gzb.frame.annotation.EntityAttribute;
-
+import gzb.tools.json.JsonSerializable;
+import gzb.tools.json.Result;
+import gzb.tools.json.ResultImpl;
 @EntityAttribute(name="sys_group_table",desc="sysGroupTable")
-public class SysGroupTable implements Serializable{
+public class SysGroupTable implements Serializable, JsonSerializable{
+    private static final long serialVersionUID = 1000L;
+    private static final String dataName= Config.get("json.entity.data","data");
     @EntityAttribute(key=true,size = 19,name="sys_group_table_id",desc="sysGroupTableId")
     private java.lang.Long sysGroupTableId;
     @EntityAttribute(key=false,size = 100,name="sys_group_table_key",desc="sysGroupTableKey")
@@ -30,61 +36,25 @@ public class SysGroupTable implements Serializable{
     @EntityAttribute(key=false,size = 19,name="sys_group_table_table_but_width",desc="sysGroupTableTableButWidth")
     private java.lang.Long sysGroupTableTableButWidth;
     private List<?> list;
-    public SysGroupTable() {}
-
-    public SysGroupTable(JSON gzbMap) {
-        this(new GzbMap().setMap(gzbMap.map));
-    }
+   public SysGroupTable() {}
 
     public SysGroupTable(GzbMap gzbMap) {
-        String str=null;
-        str=gzbMap.getString("sysGroupTableId");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupTableId(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupTableKey");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupTableKey(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupTableGid");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupTableGid(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupTableButSaveOpen");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupTableButSaveOpen(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupTableButDeleteOpen");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupTableButDeleteOpen(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupTableTableUpdateOpen");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupTableTableUpdateOpen(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupTableTableDeleteOpen");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupTableTableDeleteOpen(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupTableButQueryOpen");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupTableButQueryOpen(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupTableTableButWidth");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupTableTableButWidth(java.lang.Long.valueOf(str));
-        }
+        this(gzbMap.map);
     }
 
     public SysGroupTable(Map<String, Object> map) {
-        this(new GzbMap().setMap(map));
+        Result result = new ResultImpl(map);
+        loadJson(result);
     }
 
     public SysGroupTable(String jsonString) {
-        this(new GzbMap().setMap(new JSON().loadMap(jsonString).map));
+        Result result = new ResultImpl(jsonString);
+        loadJson(result);
     }
 
-
+    public SysGroupTable(ResultSet resultSet) throws SQLException {
+        loadJson(resultSet);
+    }
     public int save(SysGroupTableDao sysGroupTableDao) throws Exception {
         return sysGroupTableDao.save(this);
     }
@@ -126,13 +96,13 @@ public class SysGroupTable implements Serializable{
     }
 
     //查询语句 可选项 排序
-    public SqlTemplate toSelectSql(String sortField, String sortType, int size, boolean selectId) {
+    public SqlTemplate toSelectSql(String sortField, String sortType, Integer size, Boolean selectId) {
         return SqlTools.toSelectSql(this,sortField, sortType, size, selectId);
     }
 
     //插入 可以指定id  不指定自动生成
-    public SqlTemplate toSave(java.lang.Long actCodeId) {
-        return SqlTools.toSave(this,actCodeId);
+    public SqlTemplate toSave() {
+        return SqlTools.toSave(this);
     }
 
     //根据id修改 高级需求请手动写sql
@@ -141,7 +111,7 @@ public class SysGroupTable implements Serializable{
     }
 
     //删除 可以根据id或其他参数 但是请注意非id删除的性能问题
-    public SqlTemplate toDelete(boolean selectId) {
+    public SqlTemplate toDelete(Boolean selectId) {
         return SqlTools.toDelete(this,selectId);
     }
 
@@ -150,21 +120,83 @@ public class SysGroupTable implements Serializable{
         return toJson().toString();
     }
 
-    public JSON toJson() {
-        JSON json = new JSON();
-        json.put("sysGroupTableId", getSysGroupTableId());
-        json.put("sysGroupTableKey", getSysGroupTableKey());
-        json.put("sysGroupTableGid", getSysGroupTableGid());
-        json.put("sysGroupTableButSaveOpen", getSysGroupTableButSaveOpen());
-        json.put("sysGroupTableButDeleteOpen", getSysGroupTableButDeleteOpen());
-        json.put("sysGroupTableTableUpdateOpen", getSysGroupTableTableUpdateOpen());
-        json.put("sysGroupTableTableDeleteOpen", getSysGroupTableTableDeleteOpen());
-        json.put("sysGroupTableButQueryOpen", getSysGroupTableButQueryOpen());
-        json.put("sysGroupTableTableButWidth", getSysGroupTableTableButWidth());
-        json.put("data", getList());
-        return json;
+    public Result toJson() {
+        Result result=new ResultImpl();
+        result.set("sysGroupTableId", sysGroupTableId);
+        result.set("sysGroupTableKey", sysGroupTableKey);
+        result.set("sysGroupTableGid", sysGroupTableGid);
+        result.set("sysGroupTableButSaveOpen", sysGroupTableButSaveOpen);
+        result.set("sysGroupTableButDeleteOpen", sysGroupTableButDeleteOpen);
+        result.set("sysGroupTableTableUpdateOpen", sysGroupTableTableUpdateOpen);
+        result.set("sysGroupTableTableDeleteOpen", sysGroupTableTableDeleteOpen);
+        result.set("sysGroupTableButQueryOpen", sysGroupTableButQueryOpen);
+        result.set("sysGroupTableTableButWidth", sysGroupTableTableButWidth);
+        result.set(dataName, list);
+        return result;
     }
 
+    @Override
+    public void loadJson(String json) {
+        Result result=new ResultImpl(json);
+         loadJson(result);
+    }
+    public void loadJson(Result result) {
+        this.sysGroupTableId=result.getLong("sysGroupTableId", null);
+        this.sysGroupTableKey=result.getString("sysGroupTableKey", null);
+        this.sysGroupTableGid=result.getLong("sysGroupTableGid", null);
+        this.sysGroupTableButSaveOpen=result.getLong("sysGroupTableButSaveOpen", null);
+        this.sysGroupTableButDeleteOpen=result.getLong("sysGroupTableButDeleteOpen", null);
+        this.sysGroupTableTableUpdateOpen=result.getLong("sysGroupTableTableUpdateOpen", null);
+        this.sysGroupTableTableDeleteOpen=result.getLong("sysGroupTableTableDeleteOpen", null);
+        this.sysGroupTableButQueryOpen=result.getLong("sysGroupTableButQueryOpen", null);
+        this.sysGroupTableTableButWidth=result.getLong("sysGroupTableTableButWidth", null);
+        Object obj = result.get(dataName,null);
+        if (obj instanceof List) {
+            this.list=(List<?>)obj;
+        }
+    }
+    public void loadJson(ResultSet resultSet) throws SQLException {
+        //ResultSetMetaData rsMetaData = resultSet.getMetaData();
+        String temp=null;
+        while (resultSet.next()) {
+            temp=resultSet.getString("sys_group_table_id");
+            if (temp!=null) {
+                this.sysGroupTableId=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_table_key");
+            if (temp!=null) {
+                this.sysGroupTableKey=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_table_gid");
+            if (temp!=null) {
+                this.sysGroupTableGid=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_table_but_save_open");
+            if (temp!=null) {
+                this.sysGroupTableButSaveOpen=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_table_but_delete_open");
+            if (temp!=null) {
+                this.sysGroupTableButDeleteOpen=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_table_table_update_open");
+            if (temp!=null) {
+                this.sysGroupTableTableUpdateOpen=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_table_table_delete_open");
+            if (temp!=null) {
+                this.sysGroupTableTableDeleteOpen=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_table_but_query_open");
+            if (temp!=null) {
+                this.sysGroupTableButQueryOpen=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_table_table_but_width");
+            if (temp!=null) {
+                this.sysGroupTableTableButWidth=java.lang.Long.valueOf(temp);
+            }
+        }
+    }
     public java.lang.Long getSysGroupTableId() {
         return sysGroupTableId;
     }

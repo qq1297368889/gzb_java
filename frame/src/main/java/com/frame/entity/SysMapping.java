@@ -4,13 +4,19 @@ import gzb.entity.SqlTemplate;
 import gzb.tools.*;
 import com.frame.dao.SysMappingDao;
 import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import gzb.frame.annotation.EntityAttribute;
-
+import gzb.tools.json.JsonSerializable;
+import gzb.tools.json.Result;
+import gzb.tools.json.ResultImpl;
 @EntityAttribute(name="sys_mapping",desc="sysMapping")
-public class SysMapping implements Serializable{
+public class SysMapping implements Serializable, JsonSerializable{
+    private static final long serialVersionUID = 1000L;
+    private static final String dataName= Config.get("json.entity.data","data");
     @EntityAttribute(key=true,size = 19,name="sys_mapping_id",desc="sysMappingId")
     private java.lang.Long sysMappingId;
     @EntityAttribute(key=false,size = 255,name="sys_mapping_key",desc="sysMappingKey")
@@ -34,69 +40,25 @@ public class SysMapping implements Serializable{
     @EntityAttribute(key=false,size = 19,name="sys_mapping_sort",desc="sysMappingSort")
     private java.lang.Long sysMappingSort;
     private List<?> list;
-    public SysMapping() {}
-
-    public SysMapping(JSON gzbMap) {
-        this(new GzbMap().setMap(gzbMap.map));
-    }
+   public SysMapping() {}
 
     public SysMapping(GzbMap gzbMap) {
-        String str=null;
-        str=gzbMap.getString("sysMappingId");
-        if (str!=null && !str.isEmpty()) {
-            setSysMappingId(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysMappingKey");
-        if (str!=null && !str.isEmpty()) {
-            setSysMappingKey(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysMappingTitle");
-        if (str!=null && !str.isEmpty()) {
-            setSysMappingTitle(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysMappingVal");
-        if (str!=null && !str.isEmpty()) {
-            setSysMappingVal(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysMappingTableWidth");
-        if (str!=null && !str.isEmpty()) {
-            setSysMappingTableWidth(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysMappingSelect");
-        if (str!=null && !str.isEmpty()) {
-            setSysMappingSelect(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysMappingImage");
-        if (str!=null && !str.isEmpty()) {
-            setSysMappingImage(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysMappingFile");
-        if (str!=null && !str.isEmpty()) {
-            setSysMappingFile(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysMappingDate");
-        if (str!=null && !str.isEmpty()) {
-            setSysMappingDate(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysMappingScript");
-        if (str!=null && !str.isEmpty()) {
-            setSysMappingScript(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysMappingSort");
-        if (str!=null && !str.isEmpty()) {
-            setSysMappingSort(java.lang.Long.valueOf(str));
-        }
+        this(gzbMap.map);
     }
 
     public SysMapping(Map<String, Object> map) {
-        this(new GzbMap().setMap(map));
+        Result result = new ResultImpl(map);
+        loadJson(result);
     }
 
     public SysMapping(String jsonString) {
-        this(new GzbMap().setMap(new JSON().loadMap(jsonString).map));
+        Result result = new ResultImpl(jsonString);
+        loadJson(result);
     }
 
-
+    public SysMapping(ResultSet resultSet) throws SQLException {
+        loadJson(resultSet);
+    }
     public int save(SysMappingDao sysMappingDao) throws Exception {
         return sysMappingDao.save(this);
     }
@@ -138,13 +100,13 @@ public class SysMapping implements Serializable{
     }
 
     //查询语句 可选项 排序
-    public SqlTemplate toSelectSql(String sortField, String sortType, int size, boolean selectId) {
+    public SqlTemplate toSelectSql(String sortField, String sortType, Integer size, Boolean selectId) {
         return SqlTools.toSelectSql(this,sortField, sortType, size, selectId);
     }
 
     //插入 可以指定id  不指定自动生成
-    public SqlTemplate toSave(java.lang.Long actCodeId) {
-        return SqlTools.toSave(this,actCodeId);
+    public SqlTemplate toSave() {
+        return SqlTools.toSave(this);
     }
 
     //根据id修改 高级需求请手动写sql
@@ -153,7 +115,7 @@ public class SysMapping implements Serializable{
     }
 
     //删除 可以根据id或其他参数 但是请注意非id删除的性能问题
-    public SqlTemplate toDelete(boolean selectId) {
+    public SqlTemplate toDelete(Boolean selectId) {
         return SqlTools.toDelete(this,selectId);
     }
 
@@ -162,23 +124,95 @@ public class SysMapping implements Serializable{
         return toJson().toString();
     }
 
-    public JSON toJson() {
-        JSON json = new JSON();
-        json.put("sysMappingId", getSysMappingId());
-        json.put("sysMappingKey", getSysMappingKey());
-        json.put("sysMappingTitle", getSysMappingTitle());
-        json.put("sysMappingVal", getSysMappingVal());
-        json.put("sysMappingTableWidth", getSysMappingTableWidth());
-        json.put("sysMappingSelect", getSysMappingSelect());
-        json.put("sysMappingImage", getSysMappingImage());
-        json.put("sysMappingFile", getSysMappingFile());
-        json.put("sysMappingDate", getSysMappingDate());
-        json.put("sysMappingScript", getSysMappingScript());
-        json.put("sysMappingSort", getSysMappingSort());
-        json.put("data", getList());
-        return json;
+    public Result toJson() {
+        Result result=new ResultImpl();
+        result.set("sysMappingId", sysMappingId);
+        result.set("sysMappingKey", sysMappingKey);
+        result.set("sysMappingTitle", sysMappingTitle);
+        result.set("sysMappingVal", sysMappingVal);
+        result.set("sysMappingTableWidth", sysMappingTableWidth);
+        result.set("sysMappingSelect", sysMappingSelect);
+        result.set("sysMappingImage", sysMappingImage);
+        result.set("sysMappingFile", sysMappingFile);
+        result.set("sysMappingDate", sysMappingDate);
+        result.set("sysMappingScript", sysMappingScript);
+        result.set("sysMappingSort", sysMappingSort);
+        result.set(dataName, list);
+        return result;
     }
 
+    @Override
+    public void loadJson(String json) {
+        Result result=new ResultImpl(json);
+         loadJson(result);
+    }
+    public void loadJson(Result result) {
+        this.sysMappingId=result.getLong("sysMappingId", null);
+        this.sysMappingKey=result.getString("sysMappingKey", null);
+        this.sysMappingTitle=result.getString("sysMappingTitle", null);
+        this.sysMappingVal=result.getString("sysMappingVal", null);
+        this.sysMappingTableWidth=result.getLong("sysMappingTableWidth", null);
+        this.sysMappingSelect=result.getString("sysMappingSelect", null);
+        this.sysMappingImage=result.getString("sysMappingImage", null);
+        this.sysMappingFile=result.getString("sysMappingFile", null);
+        this.sysMappingDate=result.getString("sysMappingDate", null);
+        this.sysMappingScript=result.getString("sysMappingScript", null);
+        this.sysMappingSort=result.getLong("sysMappingSort", null);
+        Object obj = result.get(dataName,null);
+        if (obj instanceof List) {
+            this.list=(List<?>)obj;
+        }
+    }
+    public void loadJson(ResultSet resultSet) throws SQLException {
+        //ResultSetMetaData rsMetaData = resultSet.getMetaData();
+        String temp=null;
+        while (resultSet.next()) {
+            temp=resultSet.getString("sys_mapping_id");
+            if (temp!=null) {
+                this.sysMappingId=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_mapping_key");
+            if (temp!=null) {
+                this.sysMappingKey=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_mapping_title");
+            if (temp!=null) {
+                this.sysMappingTitle=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_mapping_val");
+            if (temp!=null) {
+                this.sysMappingVal=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_mapping_table_width");
+            if (temp!=null) {
+                this.sysMappingTableWidth=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_mapping_select");
+            if (temp!=null) {
+                this.sysMappingSelect=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_mapping_image");
+            if (temp!=null) {
+                this.sysMappingImage=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_mapping_file");
+            if (temp!=null) {
+                this.sysMappingFile=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_mapping_date");
+            if (temp!=null) {
+                this.sysMappingDate=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_mapping_script");
+            if (temp!=null) {
+                this.sysMappingScript=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_mapping_sort");
+            if (temp!=null) {
+                this.sysMappingSort=java.lang.Long.valueOf(temp);
+            }
+        }
+    }
     public java.lang.Long getSysMappingId() {
         return sysMappingId;
     }

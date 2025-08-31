@@ -248,7 +248,7 @@ public class JSON {
         }else{
             stringBuilder.append("\"");
 
-            stringBuilder.append(Tools.replaceJsonString(data));
+            stringBuilder.append(Tools.escapeJsonString(data));
             stringBuilder.append("\"");
         }
         stringBuilder.append(",");

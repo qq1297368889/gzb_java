@@ -4,13 +4,19 @@ import gzb.entity.SqlTemplate;
 import gzb.tools.*;
 import com.authorizationSystem.dao.ApplicationCodeDao;
 import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import gzb.frame.annotation.EntityAttribute;
-
+import gzb.tools.json.JsonSerializable;
+import gzb.tools.json.Result;
+import gzb.tools.json.ResultImpl;
 @EntityAttribute(name="application_code",desc="applicationCode")
-public class ApplicationCode implements Serializable{
+public class ApplicationCode implements Serializable, JsonSerializable{
+    private static final long serialVersionUID = 1000L;
+    private static final String dataName= Config.get("json.entity.data","data");
     @EntityAttribute(key=true,size = 19,name="application_code_id",desc="applicationCodeId")
     private java.lang.Long applicationCodeId;
     @EntityAttribute(key=false,size = 19,name="application_code_aid",desc="applicationCodeAid")
@@ -20,41 +26,25 @@ public class ApplicationCode implements Serializable{
     @EntityAttribute(key=false,size = 19,name="application_code_file",desc="applicationCodeFile")
     private java.lang.Long applicationCodeFile;
     private List<?> list;
-    public ApplicationCode() {}
-
-    public ApplicationCode(JSON gzbMap) {
-        this(new GzbMap().setMap(gzbMap.map));
-    }
+   public ApplicationCode() {}
 
     public ApplicationCode(GzbMap gzbMap) {
-        String str=null;
-        str=gzbMap.getString("applicationCodeId");
-        if (str!=null && !str.isEmpty()) {
-            setApplicationCodeId(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("applicationCodeAid");
-        if (str!=null && !str.isEmpty()) {
-            setApplicationCodeAid(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("applicationCodeTime");
-        if (str!=null && !str.isEmpty()) {
-            setApplicationCodeTime(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("applicationCodeFile");
-        if (str!=null && !str.isEmpty()) {
-            setApplicationCodeFile(java.lang.Long.valueOf(str));
-        }
+        this(gzbMap.map);
     }
 
     public ApplicationCode(Map<String, Object> map) {
-        this(new GzbMap().setMap(map));
+        Result result = new ResultImpl(map);
+        loadJson(result);
     }
 
     public ApplicationCode(String jsonString) {
-        this(new GzbMap().setMap(new JSON().loadMap(jsonString).map));
+        Result result = new ResultImpl(jsonString);
+        loadJson(result);
     }
 
-
+    public ApplicationCode(ResultSet resultSet) throws SQLException {
+        loadJson(resultSet);
+    }
     public int save(ApplicationCodeDao applicationCodeDao) throws Exception {
         return applicationCodeDao.save(this);
     }
@@ -96,13 +86,13 @@ public class ApplicationCode implements Serializable{
     }
 
     //查询语句 可选项 排序
-    public SqlTemplate toSelectSql(String sortField, String sortType, int size, boolean selectId) {
+    public SqlTemplate toSelectSql(String sortField, String sortType, Integer size, Boolean selectId) {
         return SqlTools.toSelectSql(this,sortField, sortType, size, selectId);
     }
 
     //插入 可以指定id  不指定自动生成
-    public SqlTemplate toSave(java.lang.Long actCodeId) {
-        return SqlTools.toSave(this,actCodeId);
+    public SqlTemplate toSave() {
+        return SqlTools.toSave(this);
     }
 
     //根据id修改 高级需求请手动写sql
@@ -111,7 +101,7 @@ public class ApplicationCode implements Serializable{
     }
 
     //删除 可以根据id或其他参数 但是请注意非id删除的性能问题
-    public SqlTemplate toDelete(boolean selectId) {
+    public SqlTemplate toDelete(Boolean selectId) {
         return SqlTools.toDelete(this,selectId);
     }
 
@@ -120,16 +110,53 @@ public class ApplicationCode implements Serializable{
         return toJson().toString();
     }
 
-    public JSON toJson() {
-        JSON json = new JSON();
-        json.put("applicationCodeId", getApplicationCodeId());
-        json.put("applicationCodeAid", getApplicationCodeAid());
-        json.put("applicationCodeTime", getApplicationCodeTime());
-        json.put("applicationCodeFile", getApplicationCodeFile());
-        json.put("data", getList());
-        return json;
+    public Result toJson() {
+        Result result=new ResultImpl();
+        result.set("applicationCodeId", applicationCodeId);
+        result.set("applicationCodeAid", applicationCodeAid);
+        result.set("applicationCodeTime", applicationCodeTime);
+        result.set("applicationCodeFile", applicationCodeFile);
+        result.set(dataName, list);
+        return result;
     }
 
+    @Override
+    public void loadJson(String json) {
+        Result result=new ResultImpl(json);
+         loadJson(result);
+    }
+    public void loadJson(Result result) {
+        this.applicationCodeId=result.getLong("applicationCodeId", null);
+        this.applicationCodeAid=result.getLong("applicationCodeAid", null);
+        this.applicationCodeTime=result.getString("applicationCodeTime", null);
+        this.applicationCodeFile=result.getLong("applicationCodeFile", null);
+        Object obj = result.get(dataName,null);
+        if (obj instanceof List) {
+            this.list=(List<?>)obj;
+        }
+    }
+    public void loadJson(ResultSet resultSet) throws SQLException {
+        //ResultSetMetaData rsMetaData = resultSet.getMetaData();
+        String temp=null;
+        while (resultSet.next()) {
+            temp=resultSet.getString("application_code_id");
+            if (temp!=null) {
+                this.applicationCodeId=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("application_code_aid");
+            if (temp!=null) {
+                this.applicationCodeAid=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("application_code_time");
+            if (temp!=null) {
+                this.applicationCodeTime=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("application_code_file");
+            if (temp!=null) {
+                this.applicationCodeFile=java.lang.Long.valueOf(temp);
+            }
+        }
+    }
     public java.lang.Long getApplicationCodeId() {
         return applicationCodeId;
     }

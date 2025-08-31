@@ -4,13 +4,19 @@ import gzb.entity.SqlTemplate;
 import gzb.tools.*;
 import com.authorizationSystem.dao.ApplicationUiDao;
 import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import gzb.frame.annotation.EntityAttribute;
-
+import gzb.tools.json.JsonSerializable;
+import gzb.tools.json.Result;
+import gzb.tools.json.ResultImpl;
 @EntityAttribute(name="application_ui",desc="applicationUi")
-public class ApplicationUi implements Serializable{
+public class ApplicationUi implements Serializable, JsonSerializable{
+    private static final long serialVersionUID = 1000L;
+    private static final String dataName= Config.get("json.entity.data","data");
     @EntityAttribute(key=true,size = 19,name="application_ui_id",desc="applicationUiId")
     private java.lang.Long applicationUiId;
     @EntityAttribute(key=false,size = 19,name="application_ui_aid",desc="applicationUiAid")
@@ -20,41 +26,25 @@ public class ApplicationUi implements Serializable{
     @EntityAttribute(key=false,size = 19,name="application_ui_file",desc="applicationUiFile")
     private java.lang.Long applicationUiFile;
     private List<?> list;
-    public ApplicationUi() {}
-
-    public ApplicationUi(JSON gzbMap) {
-        this(new GzbMap().setMap(gzbMap.map));
-    }
+   public ApplicationUi() {}
 
     public ApplicationUi(GzbMap gzbMap) {
-        String str=null;
-        str=gzbMap.getString("applicationUiId");
-        if (str!=null && !str.isEmpty()) {
-            setApplicationUiId(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("applicationUiAid");
-        if (str!=null && !str.isEmpty()) {
-            setApplicationUiAid(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("applicationUiTime");
-        if (str!=null && !str.isEmpty()) {
-            setApplicationUiTime(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("applicationUiFile");
-        if (str!=null && !str.isEmpty()) {
-            setApplicationUiFile(java.lang.Long.valueOf(str));
-        }
+        this(gzbMap.map);
     }
 
     public ApplicationUi(Map<String, Object> map) {
-        this(new GzbMap().setMap(map));
+        Result result = new ResultImpl(map);
+        loadJson(result);
     }
 
     public ApplicationUi(String jsonString) {
-        this(new GzbMap().setMap(new JSON().loadMap(jsonString).map));
+        Result result = new ResultImpl(jsonString);
+        loadJson(result);
     }
 
-
+    public ApplicationUi(ResultSet resultSet) throws SQLException {
+        loadJson(resultSet);
+    }
     public int save(ApplicationUiDao applicationUiDao) throws Exception {
         return applicationUiDao.save(this);
     }
@@ -96,13 +86,13 @@ public class ApplicationUi implements Serializable{
     }
 
     //查询语句 可选项 排序
-    public SqlTemplate toSelectSql(String sortField, String sortType, int size, boolean selectId) {
+    public SqlTemplate toSelectSql(String sortField, String sortType, Integer size, Boolean selectId) {
         return SqlTools.toSelectSql(this,sortField, sortType, size, selectId);
     }
 
     //插入 可以指定id  不指定自动生成
-    public SqlTemplate toSave(java.lang.Long actCodeId) {
-        return SqlTools.toSave(this,actCodeId);
+    public SqlTemplate toSave() {
+        return SqlTools.toSave(this);
     }
 
     //根据id修改 高级需求请手动写sql
@@ -111,7 +101,7 @@ public class ApplicationUi implements Serializable{
     }
 
     //删除 可以根据id或其他参数 但是请注意非id删除的性能问题
-    public SqlTemplate toDelete(boolean selectId) {
+    public SqlTemplate toDelete(Boolean selectId) {
         return SqlTools.toDelete(this,selectId);
     }
 
@@ -120,16 +110,53 @@ public class ApplicationUi implements Serializable{
         return toJson().toString();
     }
 
-    public JSON toJson() {
-        JSON json = new JSON();
-        json.put("applicationUiId", getApplicationUiId());
-        json.put("applicationUiAid", getApplicationUiAid());
-        json.put("applicationUiTime", getApplicationUiTime());
-        json.put("applicationUiFile", getApplicationUiFile());
-        json.put("data", getList());
-        return json;
+    public Result toJson() {
+        Result result=new ResultImpl();
+        result.set("applicationUiId", applicationUiId);
+        result.set("applicationUiAid", applicationUiAid);
+        result.set("applicationUiTime", applicationUiTime);
+        result.set("applicationUiFile", applicationUiFile);
+        result.set(dataName, list);
+        return result;
     }
 
+    @Override
+    public void loadJson(String json) {
+        Result result=new ResultImpl(json);
+         loadJson(result);
+    }
+    public void loadJson(Result result) {
+        this.applicationUiId=result.getLong("applicationUiId", null);
+        this.applicationUiAid=result.getLong("applicationUiAid", null);
+        this.applicationUiTime=result.getString("applicationUiTime", null);
+        this.applicationUiFile=result.getLong("applicationUiFile", null);
+        Object obj = result.get(dataName,null);
+        if (obj instanceof List) {
+            this.list=(List<?>)obj;
+        }
+    }
+    public void loadJson(ResultSet resultSet) throws SQLException {
+        //ResultSetMetaData rsMetaData = resultSet.getMetaData();
+        String temp=null;
+        while (resultSet.next()) {
+            temp=resultSet.getString("application_ui_id");
+            if (temp!=null) {
+                this.applicationUiId=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("application_ui_aid");
+            if (temp!=null) {
+                this.applicationUiAid=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("application_ui_time");
+            if (temp!=null) {
+                this.applicationUiTime=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("application_ui_file");
+            if (temp!=null) {
+                this.applicationUiFile=java.lang.Long.valueOf(temp);
+            }
+        }
+    }
     public java.lang.Long getApplicationUiId() {
         return applicationUiId;
     }

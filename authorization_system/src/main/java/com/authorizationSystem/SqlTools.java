@@ -50,10 +50,8 @@ public class SqlTools {
     }
 
     //插入 可以指定id  不指定自动生成
-    public static SqlTemplate toSave(Application application,java.lang.Long applicationId) {
-        if (applicationId > 0L) {
-            application.setApplicationId(applicationId);
-        } else {
+    public static SqlTemplate toSave(Application application) {
+        if (application.getApplicationId()==null || application.getApplicationId() < 1L) {
             application.setApplicationId(OnlyId.getDistributed());
         }
         StringBuilder sb = new StringBuilder("insert into application(");
@@ -385,10 +383,8 @@ public class SqlTools {
     }
 
     //插入 可以指定id  不指定自动生成
-    public static SqlTemplate toSave(ApplicationCode applicationCode,java.lang.Long applicationCodeId) {
-        if (applicationCodeId > 0L) {
-            applicationCode.setApplicationCodeId(applicationCodeId);
-        } else {
+    public static SqlTemplate toSave(ApplicationCode applicationCode) {
+        if (applicationCode.getApplicationCodeId()==null || applicationCode.getApplicationCodeId() < 1L) {
             applicationCode.setApplicationCodeId(OnlyId.getDistributed());
         }
         StringBuilder sb = new StringBuilder("insert into application_code(");
@@ -573,10 +569,8 @@ public class SqlTools {
     }
 
     //插入 可以指定id  不指定自动生成
-    public static SqlTemplate toSave(ApplicationRechargeCard applicationRechargeCard,java.lang.Long applicationRechargeCardId) {
-        if (applicationRechargeCardId > 0L) {
-            applicationRechargeCard.setApplicationRechargeCardId(applicationRechargeCardId);
-        } else {
+    public static SqlTemplate toSave(ApplicationRechargeCard applicationRechargeCard) {
+        if (applicationRechargeCard.getApplicationRechargeCardId()==null || applicationRechargeCard.getApplicationRechargeCardId() < 1L) {
             applicationRechargeCard.setApplicationRechargeCardId(OnlyId.getDistributed());
         }
         StringBuilder sb = new StringBuilder("insert into application_recharge_card(");
@@ -887,10 +881,8 @@ public class SqlTools {
     }
 
     //插入 可以指定id  不指定自动生成
-    public static SqlTemplate toSave(ApplicationUi applicationUi,java.lang.Long applicationUiId) {
-        if (applicationUiId > 0L) {
-            applicationUi.setApplicationUiId(applicationUiId);
-        } else {
+    public static SqlTemplate toSave(ApplicationUi applicationUi) {
+        if (applicationUi.getApplicationUiId()==null || applicationUi.getApplicationUiId() < 1L) {
             applicationUi.setApplicationUiId(OnlyId.getDistributed());
         }
         StringBuilder sb = new StringBuilder("insert into application_ui(");

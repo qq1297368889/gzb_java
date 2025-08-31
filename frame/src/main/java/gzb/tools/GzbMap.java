@@ -215,7 +215,7 @@ public class GzbMap implements Serializable {
 
     @Override
     public String toString() {
-        return new JSON().toJsonMap(map);
+        return Tools.toJson(map);
     }
 
     public Map<String, Object> getMap() {

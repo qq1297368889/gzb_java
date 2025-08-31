@@ -108,15 +108,26 @@ public class RequestReadAll {
                         stringBuffer.append(line);
                     }
                     String jsonString = stringBuffer.toString();
-                    requestData.put("body", new String[]{jsonString});
                     // 优化：使用静态Gson实例
-                    requestData.put("jsonObject", new Object[]{GSON.fromJson(jsonString, Map.class)});
+                    Map<String, Object> map=Tools.jsonToMap(jsonString);
+                    requestData.put("body", new Object[]{map});
+                    for (Map.Entry<String, Object> stringObjectEntry : map.entrySet()) {
+                        Object[]objs=requestData.get(stringObjectEntry.getKey());
+                        if (objs==null) {
+                            objs=new Object[]{stringObjectEntry.getValue()};
+                            requestData.put(stringObjectEntry.getKey(),objs);
+                        }else{
+                            Object[] newValues = Arrays.copyOf(objs, objs.length + 1);
+                            newValues[objs.length] = stringObjectEntry.getValue();
+                            requestData.put(stringObjectEntry.getKey(),newValues);
+                        }
+                    }
                 } catch (IOException e) {
-                    e.printStackTrace();
+                   log.e(e);
                 }
             }
         } catch (IOException | ServletException e) {
-            e.printStackTrace();
+            log.e(e);
         }
         return paramNames;
     }

@@ -14,12 +14,12 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class GzbCacheMap implements GzbCache {
-    public static Map<String, CacheEntity> GzbCacheMap_map = new ConcurrentHashMap<>();
-    public static Lock GzbCacheMap_lock = new ReentrantLock();
-    static Log Log = new LogImpl(GzbCacheMap.class);
+    public Map<String, CacheEntity> GzbCacheMap_map = new ConcurrentHashMap<>();
+    public Lock GzbCacheMap_lock = new ReentrantLock();
+    public static Log Log = new LogImpl(GzbCacheMap.class);
 
-    static {
-        ThreadPool.pool.startThread(1,"GzbCacheMap",new Runnable() {
+    public GzbCacheMap() {
+        ThreadPool.pool.startThread(1, "GzbCacheMap", new Runnable() {
             @Override
             public void run() {
                 while (true) {
@@ -29,7 +29,7 @@ public class GzbCacheMap implements GzbCache {
                             int TimeStamp = new DateTime().toStampInt();
                             for (Iterator<Map.Entry<String, CacheEntity>> it = GzbCacheMap_map.entrySet().iterator(); it.hasNext(); ) {
                                 Map.Entry<String, CacheEntity> en = it.next();
-                                if (en != null && en.getValue().getUseTime() + 0 > 0 && en.getValue().getUseTime() + 0 < (long)TimeStamp) {
+                                if (en != null && en.getValue().getUseTime() + 0 > 0 && en.getValue().getUseTime() + 0 < (long) TimeStamp) {
                                     Log.i("缓存删除：" + en.getKey() + ",this:" + TimeStamp + ",use:" + en.getValue().getUseTime());
                                     it.remove();
                                 }
@@ -69,7 +69,7 @@ public class GzbCacheMap implements GzbCache {
                 GzbCacheMap_lock.unlock();
             }
         }
-        if (ce.getUseTime() + 0 > 0 && ce.getUseTime() + 0 < (long)new DateTime().toStampInt()) {
+        if (ce.getUseTime() + 0 > 0 && ce.getUseTime() + 0 < (long) new DateTime().toStampInt()) {
             GzbCacheMap_map.remove(key);
             return getIncr(key);
         }
@@ -90,34 +90,34 @@ public class GzbCacheMap implements GzbCache {
 
     @Override
     public String get(String key) {
-        return get(key,0);
+        return get(key, 0);
     }
 
     @Override
     public String get(String key, int mm) {
-        Object obj=getObject(key,mm);
-        if (obj==null){
+        Object obj = getObject(key, mm);
+        if (obj == null) {
             return null;
         }
         return obj.toString();
     }
 
     @Override
-    public<T>T getObject(String key) {
-        return getObject(key,0);
+    public <T> T getObject(String key) {
+        return getObject(key, 0);
     }
 
     @Override
-    public<T>T getObject(String key, int mm) {
+    public <T> T getObject(String key, int mm) {
         CacheEntity ce = GzbCacheMap_map.get(key);
         if (ce == null) {
             return null;
         }
-        if (ce.getUseTime()>0 && ce.getUseTime() < (long)new DateTime().toStampInt()) {
+        if (ce.getUseTime() > 0 && ce.getUseTime() < (long) new DateTime().toStampInt()) {
             GzbCacheMap_map.remove(key);
             return null;
         }
-        if (mm>0){
+        if (mm > 0) {
             ce.getLock().lock();
             try {
                 ce.setUseTime(new DateTime().toStampInt() + mm);
@@ -127,32 +127,32 @@ public class GzbCacheMap implements GzbCache {
                 ce.getLock().unlock();
             }
         }
-        Object obj=ce.getVal();
-        if (obj==null){
+        Object obj = ce.getVal();
+        if (obj == null) {
             return null;
         }
-        return (T)obj;
+        return (T) obj;
     }
 
     @Override
     public void set(String key, String val) {
-        setObject(key,val);
+        setObject(key, val);
     }
 
     @Override
     public void set(String key, String val, int mm) {
-         setObject(key,val,mm);
+        setObject(key, val, mm);
     }
 
     @Override
     public void setObject(String key, Object val) {
-        setObject(key,val,0);
+        setObject(key, val, 0);
     }
 
     @Override
     public void setObject(String key, Object val, int mm) {
         CacheEntity ce = GzbCacheMap_map.get(key);
-        int useMM=mm==0?mm:new DateTime().toStampInt() + mm;
+        int useMM = mm == 0 ? mm : new DateTime().toStampInt() + mm;
         if (ce == null) {
             GzbCacheMap_lock.lock();
             try {
@@ -180,27 +180,29 @@ public class GzbCacheMap implements GzbCache {
             ce.getLock().unlock();
         }
     }
+
     @Override
     public String del(String key) {
-        Object obj=delObject(key);
-        if (obj==null){
+        Object obj = delObject(key);
+        if (obj == null) {
             return null;
         }
         return obj.toString();
     }
+
     @Override
-    public <T>T delObject(String key) {
+    public <T> T delObject(String key) {
         CacheEntity ce = GzbCacheMap_map.get(key);
         if (ce == null) {
             return null;
         }
         ce.getLock().lock();
         try {
-            Object obj=GzbCacheMap_map.remove(key).getVal();
-            if (obj==null){
+            Object obj = GzbCacheMap_map.remove(key).getVal();
+            if (obj == null) {
                 return null;
             }
-            return (T)obj;
+            return (T) obj;
         } catch (Exception e) {
             Log.e(e);
         } finally {

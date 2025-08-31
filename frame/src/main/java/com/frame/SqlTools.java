@@ -50,10 +50,8 @@ public class SqlTools {
     }
 
     //插入 可以指定id  不指定自动生成
-    public static SqlTemplate toSave(SysFile sysFile,java.lang.Long sysFileId) {
-        if (sysFileId > 0L) {
-            sysFile.setSysFileId(sysFileId);
-        } else {
+    public static SqlTemplate toSave(SysFile sysFile) {
+        if (sysFile.getSysFileId()==null || sysFile.getSysFileId() < 1L) {
             sysFile.setSysFileId(OnlyId.getDistributed());
         }
         StringBuilder sb = new StringBuilder("insert into sys_file(");
@@ -259,10 +257,8 @@ public class SqlTools {
     }
 
     //插入 可以指定id  不指定自动生成
-    public static SqlTemplate toSave(SysGroup sysGroup,java.lang.Long sysGroupId) {
-        if (sysGroupId > 0L) {
-            sysGroup.setSysGroupId(sysGroupId);
-        } else {
+    public static SqlTemplate toSave(SysGroup sysGroup) {
+        if (sysGroup.getSysGroupId()==null || sysGroup.getSysGroupId() < 1L) {
             sysGroup.setSysGroupId(OnlyId.getDistributed());
         }
         StringBuilder sb = new StringBuilder("insert into sys_group(");
@@ -468,10 +464,8 @@ public class SqlTools {
     }
 
     //插入 可以指定id  不指定自动生成
-    public static SqlTemplate toSave(SysGroupColumn sysGroupColumn,java.lang.Long sysGroupColumnId) {
-        if (sysGroupColumnId > 0L) {
-            sysGroupColumn.setSysGroupColumnId(sysGroupColumnId);
-        } else {
+    public static SqlTemplate toSave(SysGroupColumn sysGroupColumn) {
+        if (sysGroupColumn.getSysGroupColumnId()==null || sysGroupColumn.getSysGroupColumnId() < 1L) {
             sysGroupColumn.setSysGroupColumnId(OnlyId.getDistributed());
         }
         StringBuilder sb = new StringBuilder("insert into sys_group_column(");
@@ -866,10 +860,8 @@ public class SqlTools {
     }
 
     //插入 可以指定id  不指定自动生成
-    public static SqlTemplate toSave(SysGroupPermission sysGroupPermission,java.lang.Long sysGroupPermissionId) {
-        if (sysGroupPermissionId > 0L) {
-            sysGroupPermission.setSysGroupPermissionId(sysGroupPermissionId);
-        } else {
+    public static SqlTemplate toSave(SysGroupPermission sysGroupPermission) {
+        if (sysGroupPermission.getSysGroupPermissionId()==null || sysGroupPermission.getSysGroupPermissionId() < 1L) {
             sysGroupPermission.setSysGroupPermissionId(OnlyId.getDistributed());
         }
         StringBuilder sb = new StringBuilder("insert into sys_group_permission(");
@@ -1054,10 +1046,8 @@ public class SqlTools {
     }
 
     //插入 可以指定id  不指定自动生成
-    public static SqlTemplate toSave(SysGroupTable sysGroupTable,java.lang.Long sysGroupTableId) {
-        if (sysGroupTableId > 0L) {
-            sysGroupTable.setSysGroupTableId(sysGroupTableId);
-        } else {
+    public static SqlTemplate toSave(SysGroupTable sysGroupTable) {
+        if (sysGroupTable.getSysGroupTableId()==null || sysGroupTable.getSysGroupTableId() < 1L) {
             sysGroupTable.setSysGroupTableId(OnlyId.getDistributed());
         }
         StringBuilder sb = new StringBuilder("insert into sys_group_table(");
@@ -1347,10 +1337,8 @@ public class SqlTools {
     }
 
     //插入 可以指定id  不指定自动生成
-    public static SqlTemplate toSave(SysLog sysLog,java.lang.Long sysLogId) {
-        if (sysLogId > 0L) {
-            sysLog.setSysLogId(sysLogId);
-        } else {
+    public static SqlTemplate toSave(SysLog sysLog) {
+        if (sysLog.getSysLogId()==null || sysLog.getSysLogId() < 1L) {
             sysLog.setSysLogId(OnlyId.getDistributed());
         }
         StringBuilder sb = new StringBuilder("insert into sys_log(");
@@ -1535,10 +1523,8 @@ public class SqlTools {
     }
 
     //插入 可以指定id  不指定自动生成
-    public static SqlTemplate toSave(SysMapping sysMapping,java.lang.Long sysMappingId) {
-        if (sysMappingId > 0L) {
-            sysMapping.setSysMappingId(sysMappingId);
-        } else {
+    public static SqlTemplate toSave(SysMapping sysMapping) {
+        if (sysMapping.getSysMappingId()==null || sysMapping.getSysMappingId() < 1L) {
             sysMapping.setSysMappingId(OnlyId.getDistributed());
         }
         StringBuilder sb = new StringBuilder("insert into sys_mapping(");
@@ -1870,10 +1856,8 @@ public class SqlTools {
     }
 
     //插入 可以指定id  不指定自动生成
-    public static SqlTemplate toSave(SysOption sysOption,java.lang.Long sysOptionId) {
-        if (sysOptionId > 0L) {
-            sysOption.setSysOptionId(sysOptionId);
-        } else {
+    public static SqlTemplate toSave(SysOption sysOption) {
+        if (sysOption.getSysOptionId()==null || sysOption.getSysOptionId() < 1L) {
             sysOption.setSysOptionId(OnlyId.getDistributed());
         }
         StringBuilder sb = new StringBuilder("insert into sys_option(");
@@ -2079,10 +2063,8 @@ public class SqlTools {
     }
 
     //插入 可以指定id  不指定自动生成
-    public static SqlTemplate toSave(SysPermission sysPermission,java.lang.Long sysPermissionId) {
-        if (sysPermissionId > 0L) {
-            sysPermission.setSysPermissionId(sysPermissionId);
-        } else {
+    public static SqlTemplate toSave(SysPermission sysPermission) {
+        if (sysPermission.getSysPermissionId()==null || sysPermission.getSysPermissionId() < 1L) {
             sysPermission.setSysPermissionId(OnlyId.getDistributed());
         }
         StringBuilder sb = new StringBuilder("insert into sys_permission(");
@@ -2330,10 +2312,8 @@ public class SqlTools {
     }
 
     //插入 可以指定id  不指定自动生成
-    public static SqlTemplate toSave(SysUsers sysUsers,java.lang.Long sysUsersId) {
-        if (sysUsersId > 0L) {
-            sysUsers.setSysUsersId(sysUsersId);
-        } else {
+    public static SqlTemplate toSave(SysUsers sysUsers) {
+        if (sysUsers.getSysUsersId()==null || sysUsers.getSysUsersId() < 1L) {
             sysUsers.setSysUsersId(OnlyId.getDistributed());
         }
         StringBuilder sb = new StringBuilder("insert into sys_users(");
@@ -2749,10 +2729,8 @@ public class SqlTools {
     }
 
     //插入 可以指定id  不指定自动生成
-    public static SqlTemplate toSave(SysUsersLoginLog sysUsersLoginLog,java.lang.Long sysUsersLoginLogId) {
-        if (sysUsersLoginLogId > 0L) {
-            sysUsersLoginLog.setSysUsersLoginLogId(sysUsersLoginLogId);
-        } else {
+    public static SqlTemplate toSave(SysUsersLoginLog sysUsersLoginLog) {
+        if (sysUsersLoginLog.getSysUsersLoginLogId()==null || sysUsersLoginLog.getSysUsersLoginLogId() < 1L) {
             sysUsersLoginLog.setSysUsersLoginLogId(OnlyId.getDistributed());
         }
         StringBuilder sb = new StringBuilder("insert into sys_users_login_log(");

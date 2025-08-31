@@ -9,8 +9,9 @@ public class Application {
         run(Application.class);
     }
     public static void run(Class<?>aClass) throws Exception {
-        System.setProperty("file.encoding", "UTF-8");
-        System.setProperty("this.dir", Tools.getProjectRoot(aClass));
+        String path = Tools.getProjectRoot(aClass);
+        System.setProperty("file.encoding","UTF-8");
+        System.setProperty("this.dir", path);
         server.startServer();
     }
 

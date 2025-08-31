@@ -4,13 +4,19 @@ import gzb.entity.SqlTemplate;
 import gzb.tools.*;
 import com.frame.dao.SysUsersDao;
 import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import gzb.frame.annotation.EntityAttribute;
-
+import gzb.tools.json.JsonSerializable;
+import gzb.tools.json.Result;
+import gzb.tools.json.ResultImpl;
 @EntityAttribute(name="sys_users",desc="sysUsers")
-public class SysUsers implements Serializable{
+public class SysUsers implements Serializable, JsonSerializable{
+    private static final long serialVersionUID = 1000L;
+    private static final String dataName= Config.get("json.entity.data","data");
     @EntityAttribute(key=true,size = 19,name="sys_users_id",desc="sysUsersId")
     private java.lang.Long sysUsersId;
     @EntityAttribute(key=false,size = 32,name="sys_users_acc",desc="sysUsersAcc")
@@ -42,85 +48,25 @@ public class SysUsers implements Serializable{
     @EntityAttribute(key=false,size = 19,name="sys_users_group",desc="sysUsersGroup")
     private java.lang.Long sysUsersGroup;
     private List<?> list;
-    public SysUsers() {}
-
-    public SysUsers(JSON gzbMap) {
-        this(new GzbMap().setMap(gzbMap.map));
-    }
+   public SysUsers() {}
 
     public SysUsers(GzbMap gzbMap) {
-        String str=null;
-        str=gzbMap.getString("sysUsersId");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersId(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysUsersAcc");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersAcc(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysUsersPwd");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersPwd(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysUsersPhone");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersPhone(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysUsersOpenId");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersOpenId(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysUsersStatus");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersStatus(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysUsersType");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersType(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysUsersRegTime");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersRegTime(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysUsersStartTime");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersStartTime(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysUsersEndTime");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersEndTime(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysUsersPrice");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersPrice(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysUsersDesc");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersDesc(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysUsersSup");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersSup(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysUsersMail");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersMail(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysUsersGroup");
-        if (str!=null && !str.isEmpty()) {
-            setSysUsersGroup(java.lang.Long.valueOf(str));
-        }
+        this(gzbMap.map);
     }
 
     public SysUsers(Map<String, Object> map) {
-        this(new GzbMap().setMap(map));
+        Result result = new ResultImpl(map);
+        loadJson(result);
     }
 
     public SysUsers(String jsonString) {
-        this(new GzbMap().setMap(new JSON().loadMap(jsonString).map));
+        Result result = new ResultImpl(jsonString);
+        loadJson(result);
     }
 
-
+    public SysUsers(ResultSet resultSet) throws SQLException {
+        loadJson(resultSet);
+    }
     public int save(SysUsersDao sysUsersDao) throws Exception {
         return sysUsersDao.save(this);
     }
@@ -162,13 +108,13 @@ public class SysUsers implements Serializable{
     }
 
     //查询语句 可选项 排序
-    public SqlTemplate toSelectSql(String sortField, String sortType, int size, boolean selectId) {
+    public SqlTemplate toSelectSql(String sortField, String sortType, Integer size, Boolean selectId) {
         return SqlTools.toSelectSql(this,sortField, sortType, size, selectId);
     }
 
     //插入 可以指定id  不指定自动生成
-    public SqlTemplate toSave(java.lang.Long actCodeId) {
-        return SqlTools.toSave(this,actCodeId);
+    public SqlTemplate toSave() {
+        return SqlTools.toSave(this);
     }
 
     //根据id修改 高级需求请手动写sql
@@ -177,7 +123,7 @@ public class SysUsers implements Serializable{
     }
 
     //删除 可以根据id或其他参数 但是请注意非id删除的性能问题
-    public SqlTemplate toDelete(boolean selectId) {
+    public SqlTemplate toDelete(Boolean selectId) {
         return SqlTools.toDelete(this,selectId);
     }
 
@@ -186,27 +132,119 @@ public class SysUsers implements Serializable{
         return toJson().toString();
     }
 
-    public JSON toJson() {
-        JSON json = new JSON();
-        json.put("sysUsersId", getSysUsersId());
-        json.put("sysUsersAcc", getSysUsersAcc());
-        json.put("sysUsersPwd", getSysUsersPwd());
-        json.put("sysUsersPhone", getSysUsersPhone());
-        json.put("sysUsersOpenId", getSysUsersOpenId());
-        json.put("sysUsersStatus", getSysUsersStatus());
-        json.put("sysUsersType", getSysUsersType());
-        json.put("sysUsersRegTime", getSysUsersRegTime());
-        json.put("sysUsersStartTime", getSysUsersStartTime());
-        json.put("sysUsersEndTime", getSysUsersEndTime());
-        json.put("sysUsersPrice", getSysUsersPrice());
-        json.put("sysUsersDesc", getSysUsersDesc());
-        json.put("sysUsersSup", getSysUsersSup());
-        json.put("sysUsersMail", getSysUsersMail());
-        json.put("sysUsersGroup", getSysUsersGroup());
-        json.put("data", getList());
-        return json;
+    public Result toJson() {
+        Result result=new ResultImpl();
+        result.set("sysUsersId", sysUsersId);
+        result.set("sysUsersAcc", sysUsersAcc);
+        result.set("sysUsersPwd", sysUsersPwd);
+        result.set("sysUsersPhone", sysUsersPhone);
+        result.set("sysUsersOpenId", sysUsersOpenId);
+        result.set("sysUsersStatus", sysUsersStatus);
+        result.set("sysUsersType", sysUsersType);
+        result.set("sysUsersRegTime", sysUsersRegTime);
+        result.set("sysUsersStartTime", sysUsersStartTime);
+        result.set("sysUsersEndTime", sysUsersEndTime);
+        result.set("sysUsersPrice", sysUsersPrice);
+        result.set("sysUsersDesc", sysUsersDesc);
+        result.set("sysUsersSup", sysUsersSup);
+        result.set("sysUsersMail", sysUsersMail);
+        result.set("sysUsersGroup", sysUsersGroup);
+        result.set(dataName, list);
+        return result;
     }
 
+    @Override
+    public void loadJson(String json) {
+        Result result=new ResultImpl(json);
+         loadJson(result);
+    }
+    public void loadJson(Result result) {
+        this.sysUsersId=result.getLong("sysUsersId", null);
+        this.sysUsersAcc=result.getString("sysUsersAcc", null);
+        this.sysUsersPwd=result.getString("sysUsersPwd", null);
+        this.sysUsersPhone=result.getString("sysUsersPhone", null);
+        this.sysUsersOpenId=result.getString("sysUsersOpenId", null);
+        this.sysUsersStatus=result.getLong("sysUsersStatus", null);
+        this.sysUsersType=result.getLong("sysUsersType", null);
+        this.sysUsersRegTime=result.getString("sysUsersRegTime", null);
+        this.sysUsersStartTime=result.getString("sysUsersStartTime", null);
+        this.sysUsersEndTime=result.getString("sysUsersEndTime", null);
+        this.sysUsersPrice=result.getLong("sysUsersPrice", null);
+        this.sysUsersDesc=result.getString("sysUsersDesc", null);
+        this.sysUsersSup=result.getLong("sysUsersSup", null);
+        this.sysUsersMail=result.getString("sysUsersMail", null);
+        this.sysUsersGroup=result.getLong("sysUsersGroup", null);
+        Object obj = result.get(dataName,null);
+        if (obj instanceof List) {
+            this.list=(List<?>)obj;
+        }
+    }
+    public void loadJson(ResultSet resultSet) throws SQLException {
+        //ResultSetMetaData rsMetaData = resultSet.getMetaData();
+        String temp=null;
+        while (resultSet.next()) {
+            temp=resultSet.getString("sys_users_id");
+            if (temp!=null) {
+                this.sysUsersId=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_users_acc");
+            if (temp!=null) {
+                this.sysUsersAcc=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_users_pwd");
+            if (temp!=null) {
+                this.sysUsersPwd=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_users_phone");
+            if (temp!=null) {
+                this.sysUsersPhone=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_users_open_id");
+            if (temp!=null) {
+                this.sysUsersOpenId=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_users_status");
+            if (temp!=null) {
+                this.sysUsersStatus=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_users_type");
+            if (temp!=null) {
+                this.sysUsersType=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_users_reg_time");
+            if (temp!=null) {
+                this.sysUsersRegTime=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_users_start_time");
+            if (temp!=null) {
+                this.sysUsersStartTime=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_users_end_time");
+            if (temp!=null) {
+                this.sysUsersEndTime=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_users_price");
+            if (temp!=null) {
+                this.sysUsersPrice=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_users_desc");
+            if (temp!=null) {
+                this.sysUsersDesc=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_users_sup");
+            if (temp!=null) {
+                this.sysUsersSup=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_users_mail");
+            if (temp!=null) {
+                this.sysUsersMail=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_users_group");
+            if (temp!=null) {
+                this.sysUsersGroup=java.lang.Long.valueOf(temp);
+            }
+        }
+    }
     public java.lang.Long getSysUsersId() {
         return sysUsersId;
     }

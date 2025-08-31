@@ -37,20 +37,22 @@ public class DataBaseMsql implements DataBase {
     public Boolean auto = null;
     public Integer threadMax = null;
     public Integer overtime = null;
-    private Integer asyncSleep = null;
-    private Integer asyBatch = null;
-
+    public Integer asyncSleep = null;
+    public Integer asyBatch = null;
     public HikariDataSource hds = null;
     private Map<String, AsyEntity> mapAskSql = new HashMap<>();
     private Map<String, String> humpMap = new HashMap<>();
     public Map<String, String> tableInfoMap = new ConcurrentHashMap<>();
 
+    Map<Object, EntityClassInfo> mapEntityClassInfo = new ConcurrentHashMap<>();
+
+
     public DataBaseMsql(String key) throws Exception {
         readConfig(key);
-        initDataBase(name, ip, port, acc, pwd, clz, auto, threadMax, overtime, asyncSleep,asyBatch);
+        initDataBase(name, ip, port, acc, pwd, clz, auto, threadMax, overtime, asyncSleep, asyBatch);
     }
 
-    public DataBaseMsql(String name, String ip, String port, String acc, String pwd, String clz, Boolean auto, Integer threadMax, Integer overtime, Integer asyncSleep,Integer asyBatch) throws Exception {
+    public DataBaseMsql(String name, String ip, String port, String acc, String pwd, String clz, Boolean auto, Integer threadMax, Integer overtime, Integer asyncSleep, Integer asyBatch) throws Exception {
         Config.set("db.mysql." + name + ".name", name);
         Config.set("db.mysql." + name + ".ip", ip);
         Config.set("db.mysql." + name + ".port", port);
@@ -64,10 +66,10 @@ public class DataBaseMsql implements DataBase {
         Config.set("db.mysql." + name + ".asy.batch", asyBatch.toString());
         Config.set("db.mysql." + name + ".url", url);
 
-        initDataBase(name, ip, port, acc, pwd, clz, auto, threadMax, overtime, asyncSleep,asyBatch);
+        initDataBase(name, ip, port, acc, pwd, clz, auto, threadMax, overtime, asyncSleep, asyBatch);
     }
 
-    private void initDataBase(String name, String ip, String port, String acc, String pwd, String clz, Boolean auto, Integer threadMax, Integer overtime, Integer asyncSleep,Integer asyBatch) throws SQLException {
+    private void initDataBase(String name, String ip, String port, String acc, String pwd, String clz, Boolean auto, Integer threadMax, Integer overtime, Integer asyncSleep, Integer asyBatch) throws SQLException {
         try {
             if (name != null) {
                 this.name = name;
@@ -289,14 +291,14 @@ public class DataBaseMsql implements DataBase {
             while (true) {
                 try {
                     map = getList();
-                    if (map == null || map.size() == 0) {
+                    if (map == null || map.isEmpty()) {
                         Thread.sleep(asyncSleep);
                         continue;
                     }
                     for (Iterator<Map.Entry<String, AsyEntity>> it = map.entrySet().iterator(); it.hasNext(); ) {
                         en = it.next();
                         asyEntity = en.getValue();
-                        if (asyEntity == null || asyEntity.list.size() < 1) {
+                        if (asyEntity == null || asyEntity.list.isEmpty()) {
                             continue;
                         }
                         asyEntity.lock.lock();
@@ -307,8 +309,7 @@ public class DataBaseMsql implements DataBase {
                         } catch (Exception e) {
                             log.e(e, "DataBaseMsql.startAsyncThread 执行异常:sql:" + en.getKey() + ",\n data:" + asyEntity.list.toString());
                         } finally {
-                            connection.setAutoCommit(true);
-                            connection.close();
+                            close(connection, null, null);
                             asyEntity.lock.unlock();
                         }
                     }
@@ -318,26 +319,6 @@ public class DataBaseMsql implements DataBase {
             }
         });
 
-    }
-
-    private Map<String, AsyEntity> getList0() {
-        String key = "DataBaseMsql-AsyncInfo";
-        Condition condition = LockFactory.getCondition(key);
-        Map<String, AsyEntity> map = null;
-        while (true) {
-            try {
-                if (mapAskSql != null) {
-                    map = mapAskSql;
-                    mapAskSql = new HashMap<>();
-                    break;
-                } else {
-                    condition.await();
-                }
-            } catch (Exception e) {
-                log.e(e);
-            }
-        }
-        return map;
     }
 
     private Map<String, AsyEntity> getList() {
@@ -434,7 +415,6 @@ public class DataBaseMsql implements DataBase {
 
     }
 
-    Map<Object, EntityClassInfo> mapEntityClassInfo = new ConcurrentHashMap<>();
 
     @Override
     public EntityClassInfo getEntityInfo(Object t) {
@@ -691,10 +671,7 @@ public class DataBaseMsql implements DataBase {
                 list.add(tableInfo);
             }
         } finally {
-            if (ps != null) ps.close();
-            if (rs != null) rs.close();
-
-            conn.close();
+            close(conn, rs, ps);
         }
         return list;
     }
@@ -750,6 +727,9 @@ public class DataBaseMsql implements DataBase {
         return Integer.valueOf(String.valueOf(id));
     }
 
+    /**
+     * 事务开启情况 每次都获取同一个连接  close 不会归还   不开启情况 每次都会colse 且每次都会调用 hds.getConnection()
+     * */
     @Override
     public Connection getConnection() {
         try {
@@ -763,8 +743,11 @@ public class DataBaseMsql implements DataBase {
         }
     }
 
+    /**
+     * 事务开启情况 不会close 数据库连接  正常情况会close
+     * */
     @Override
-    public void close(Connection connection, ResultSet resultSet, PreparedStatement preparedStatement) {
+    public void close(Connection connection0, ResultSet resultSet, PreparedStatement preparedStatement) {
         try {
             if (resultSet != null) {
                 resultSet.close();
@@ -772,13 +755,16 @@ public class DataBaseMsql implements DataBase {
             if (preparedStatement != null) {
                 preparedStatement.close();
             }
-            if (connection != null) {
-                connection.close();
+            if (connection0 != null) {
+                connection0.setAutoCommit(true);
+                connection0.close();
             }
         } catch (Exception e) {
             log.e(e);
         }
     }
+
+
 
     @Override
     public List<GzbMap> selectGzbMap(String sql) throws Exception {
@@ -853,7 +839,7 @@ public class DataBaseMsql implements DataBase {
             }
             times[3] = System.currentTimeMillis();
         } finally {
-            this.close(connection, rs, ps);
+            close(connection, rs, ps);
             times[4] = System.currentTimeMillis();
             sb.append(",[连接：").append(times[1] - times[0]).append("ms]");
             sb.append(",[执行：").append(times[2] - times[1]).append("ms]");
@@ -921,7 +907,7 @@ public class DataBaseMsql implements DataBase {
     public int runSqlBatch(String sql, List<Object[]> list_parameter, Connection connection, boolean autoCommit) throws Exception {
         //  只有在 debug环境下 执行 带日志输出的 批量执行   LogThread.lvConfig.get(0) != 2表示 debug级别 不显示 也不输出
         if (LogThread.lvConfig[0] != 2) {
-            return runSqlBatch01(sql, list_parameter, connection, autoCommit);
+            return runSqlBatchPrintLog(sql, list_parameter, connection, autoCommit);
         }
         int allRow = 0;
         ResultSet rs = null;
@@ -949,8 +935,8 @@ public class DataBaseMsql implements DataBase {
                 if ((j + 1) % asyBatch == 0 || j + 1 == list_parameter.size()) {
                     int[] rows = ps.executeBatch();
                     for (int i = 0; i < rows.length; i++) {
-                        if (rows[i]==-3) {
-                            log.e("SQL执行失败：" ,Arrays.toString(list_parameter.get(j - (20-i))));
+                        if (rows[i] == -3) {
+                            log.e("SQL执行失败：", Arrays.toString(list_parameter.get(j - (20 - i))));
                         }
                     }
                     if (autoCommit) {
@@ -989,16 +975,16 @@ public class DataBaseMsql implements DataBase {
         } finally {
             if (autoCommit) {
                 connection.setAutoCommit(true);
-                this.close(connection, rs, ps);
+                close(connection, rs, ps);
             } else {
-                this.close(null, rs, ps);
+                close(null, rs, ps);
             }
         }
         return allRow;
     }
 
     // autoCommit    true的话 自动提交sql     false的话 自己手动提交 connection.setAutoCommit(true false);
-    public int runSqlBatch01(String sql, List<Object[]> list_parameter, Connection connection, boolean autoCommit) throws Exception {
+    public int runSqlBatchPrintLog(String sql, List<Object[]> list_parameter, Connection connection, boolean autoCommit) throws Exception {
         int allRow = 0;
         long a = 0, b = 0, c = 0;
         ResultSet rs = null;
@@ -1035,8 +1021,8 @@ public class DataBaseMsql implements DataBase {
                 if ((j + 1) % asyBatch == 0 || j + 1 == list_parameter.size()) {
                     int[] rows = ps.executeBatch();
                     for (int i = 0; i < rows.length; i++) {
-                        if (rows[i]==-3) {
-                            log.e("SQL执行失败：" ,Arrays.toString(list_parameter.get(j - (20-i))));
+                        if (rows[i] == -3) {
+                            log.e("SQL执行失败：", Arrays.toString(list_parameter.get(j - (20 - i))));
                         }
                     }
                     if (autoCommit) {
@@ -1061,9 +1047,9 @@ public class DataBaseMsql implements DataBase {
         } finally {
             if (autoCommit) {
                 connection.setAutoCommit(true);
-                this.close(connection, rs, ps);
+                close(connection, rs, ps);
             } else {
-                this.close(null, rs, ps);
+                close(null, rs, ps);
             }
         }
         log.d(sb);

@@ -4,13 +4,19 @@ import gzb.entity.SqlTemplate;
 import gzb.tools.*;
 import com.frame.dao.SysFileDao;
 import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import gzb.frame.annotation.EntityAttribute;
-
+import gzb.tools.json.JsonSerializable;
+import gzb.tools.json.Result;
+import gzb.tools.json.ResultImpl;
 @EntityAttribute(name="sys_file",desc="sysFile")
-public class SysFile implements Serializable{
+public class SysFile implements Serializable, JsonSerializable{
+    private static final long serialVersionUID = 1000L;
+    private static final String dataName= Config.get("json.entity.data","data");
     @EntityAttribute(key=true,size = 19,name="sys_file_id",desc="sysFileId")
     private java.lang.Long sysFileId;
     @EntityAttribute(key=false,size = 100,name="sys_file_path",desc="sysFilePath")
@@ -22,45 +28,25 @@ public class SysFile implements Serializable{
     @EntityAttribute(key=false,size = 100,name="sys_file_type",desc="sysFileType")
     private java.lang.String sysFileType;
     private List<?> list;
-    public SysFile() {}
-
-    public SysFile(JSON gzbMap) {
-        this(new GzbMap().setMap(gzbMap.map));
-    }
+   public SysFile() {}
 
     public SysFile(GzbMap gzbMap) {
-        String str=null;
-        str=gzbMap.getString("sysFileId");
-        if (str!=null && !str.isEmpty()) {
-            setSysFileId(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysFilePath");
-        if (str!=null && !str.isEmpty()) {
-            setSysFilePath(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysFileMd5");
-        if (str!=null && !str.isEmpty()) {
-            setSysFileMd5(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysFileTime");
-        if (str!=null && !str.isEmpty()) {
-            setSysFileTime(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysFileType");
-        if (str!=null && !str.isEmpty()) {
-            setSysFileType(java.lang.String.valueOf(str));
-        }
+        this(gzbMap.map);
     }
 
     public SysFile(Map<String, Object> map) {
-        this(new GzbMap().setMap(map));
+        Result result = new ResultImpl(map);
+        loadJson(result);
     }
 
     public SysFile(String jsonString) {
-        this(new GzbMap().setMap(new JSON().loadMap(jsonString).map));
+        Result result = new ResultImpl(jsonString);
+        loadJson(result);
     }
 
-
+    public SysFile(ResultSet resultSet) throws SQLException {
+        loadJson(resultSet);
+    }
     public int save(SysFileDao sysFileDao) throws Exception {
         return sysFileDao.save(this);
     }
@@ -102,13 +88,13 @@ public class SysFile implements Serializable{
     }
 
     //查询语句 可选项 排序
-    public SqlTemplate toSelectSql(String sortField, String sortType, int size, boolean selectId) {
+    public SqlTemplate toSelectSql(String sortField, String sortType, Integer size, Boolean selectId) {
         return SqlTools.toSelectSql(this,sortField, sortType, size, selectId);
     }
 
     //插入 可以指定id  不指定自动生成
-    public SqlTemplate toSave(java.lang.Long actCodeId) {
-        return SqlTools.toSave(this,actCodeId);
+    public SqlTemplate toSave() {
+        return SqlTools.toSave(this);
     }
 
     //根据id修改 高级需求请手动写sql
@@ -117,7 +103,7 @@ public class SysFile implements Serializable{
     }
 
     //删除 可以根据id或其他参数 但是请注意非id删除的性能问题
-    public SqlTemplate toDelete(boolean selectId) {
+    public SqlTemplate toDelete(Boolean selectId) {
         return SqlTools.toDelete(this,selectId);
     }
 
@@ -126,17 +112,59 @@ public class SysFile implements Serializable{
         return toJson().toString();
     }
 
-    public JSON toJson() {
-        JSON json = new JSON();
-        json.put("sysFileId", getSysFileId());
-        json.put("sysFilePath", getSysFilePath());
-        json.put("sysFileMd5", getSysFileMd5());
-        json.put("sysFileTime", getSysFileTime());
-        json.put("sysFileType", getSysFileType());
-        json.put("data", getList());
-        return json;
+    public Result toJson() {
+        Result result=new ResultImpl();
+        result.set("sysFileId", sysFileId);
+        result.set("sysFilePath", sysFilePath);
+        result.set("sysFileMd5", sysFileMd5);
+        result.set("sysFileTime", sysFileTime);
+        result.set("sysFileType", sysFileType);
+        result.set(dataName, list);
+        return result;
     }
 
+    @Override
+    public void loadJson(String json) {
+        Result result=new ResultImpl(json);
+         loadJson(result);
+    }
+    public void loadJson(Result result) {
+        this.sysFileId=result.getLong("sysFileId", null);
+        this.sysFilePath=result.getString("sysFilePath", null);
+        this.sysFileMd5=result.getString("sysFileMd5", null);
+        this.sysFileTime=result.getString("sysFileTime", null);
+        this.sysFileType=result.getString("sysFileType", null);
+        Object obj = result.get(dataName,null);
+        if (obj instanceof List) {
+            this.list=(List<?>)obj;
+        }
+    }
+    public void loadJson(ResultSet resultSet) throws SQLException {
+        //ResultSetMetaData rsMetaData = resultSet.getMetaData();
+        String temp=null;
+        while (resultSet.next()) {
+            temp=resultSet.getString("sys_file_id");
+            if (temp!=null) {
+                this.sysFileId=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_file_path");
+            if (temp!=null) {
+                this.sysFilePath=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_file_md5");
+            if (temp!=null) {
+                this.sysFileMd5=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_file_time");
+            if (temp!=null) {
+                this.sysFileTime=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_file_type");
+            if (temp!=null) {
+                this.sysFileType=java.lang.String.valueOf(temp);
+            }
+        }
+    }
     public java.lang.Long getSysFileId() {
         return sysFileId;
     }

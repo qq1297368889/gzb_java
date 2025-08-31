@@ -4,13 +4,19 @@ import gzb.entity.SqlTemplate;
 import gzb.tools.*;
 import com.frame.dao.SysGroupDao;
 import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import gzb.frame.annotation.EntityAttribute;
-
+import gzb.tools.json.JsonSerializable;
+import gzb.tools.json.Result;
+import gzb.tools.json.ResultImpl;
 @EntityAttribute(name="sys_group",desc="sysGroup")
-public class SysGroup implements Serializable{
+public class SysGroup implements Serializable, JsonSerializable{
+    private static final long serialVersionUID = 1000L;
+    private static final String dataName= Config.get("json.entity.data","data");
     @EntityAttribute(key=true,size = 19,name="sys_group_id",desc="sysGroupId")
     private java.lang.Long sysGroupId;
     @EntityAttribute(key=false,size = 255,name="sys_group_name",desc="sysGroupName")
@@ -22,45 +28,25 @@ public class SysGroup implements Serializable{
     @EntityAttribute(key=false,size = 19,name="sys_group_sup",desc="sysGroupSup")
     private java.lang.Long sysGroupSup;
     private List<?> list;
-    public SysGroup() {}
-
-    public SysGroup(JSON gzbMap) {
-        this(new GzbMap().setMap(gzbMap.map));
-    }
+   public SysGroup() {}
 
     public SysGroup(GzbMap gzbMap) {
-        String str=null;
-        str=gzbMap.getString("sysGroupId");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupId(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupName");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupName(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupType");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupType(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupDesc");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupDesc(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysGroupSup");
-        if (str!=null && !str.isEmpty()) {
-            setSysGroupSup(java.lang.Long.valueOf(str));
-        }
+        this(gzbMap.map);
     }
 
     public SysGroup(Map<String, Object> map) {
-        this(new GzbMap().setMap(map));
+        Result result = new ResultImpl(map);
+        loadJson(result);
     }
 
     public SysGroup(String jsonString) {
-        this(new GzbMap().setMap(new JSON().loadMap(jsonString).map));
+        Result result = new ResultImpl(jsonString);
+        loadJson(result);
     }
 
-
+    public SysGroup(ResultSet resultSet) throws SQLException {
+        loadJson(resultSet);
+    }
     public int save(SysGroupDao sysGroupDao) throws Exception {
         return sysGroupDao.save(this);
     }
@@ -102,13 +88,13 @@ public class SysGroup implements Serializable{
     }
 
     //查询语句 可选项 排序
-    public SqlTemplate toSelectSql(String sortField, String sortType, int size, boolean selectId) {
+    public SqlTemplate toSelectSql(String sortField, String sortType, Integer size, Boolean selectId) {
         return SqlTools.toSelectSql(this,sortField, sortType, size, selectId);
     }
 
     //插入 可以指定id  不指定自动生成
-    public SqlTemplate toSave(java.lang.Long actCodeId) {
-        return SqlTools.toSave(this,actCodeId);
+    public SqlTemplate toSave() {
+        return SqlTools.toSave(this);
     }
 
     //根据id修改 高级需求请手动写sql
@@ -117,7 +103,7 @@ public class SysGroup implements Serializable{
     }
 
     //删除 可以根据id或其他参数 但是请注意非id删除的性能问题
-    public SqlTemplate toDelete(boolean selectId) {
+    public SqlTemplate toDelete(Boolean selectId) {
         return SqlTools.toDelete(this,selectId);
     }
 
@@ -126,17 +112,59 @@ public class SysGroup implements Serializable{
         return toJson().toString();
     }
 
-    public JSON toJson() {
-        JSON json = new JSON();
-        json.put("sysGroupId", getSysGroupId());
-        json.put("sysGroupName", getSysGroupName());
-        json.put("sysGroupType", getSysGroupType());
-        json.put("sysGroupDesc", getSysGroupDesc());
-        json.put("sysGroupSup", getSysGroupSup());
-        json.put("data", getList());
-        return json;
+    public Result toJson() {
+        Result result=new ResultImpl();
+        result.set("sysGroupId", sysGroupId);
+        result.set("sysGroupName", sysGroupName);
+        result.set("sysGroupType", sysGroupType);
+        result.set("sysGroupDesc", sysGroupDesc);
+        result.set("sysGroupSup", sysGroupSup);
+        result.set(dataName, list);
+        return result;
     }
 
+    @Override
+    public void loadJson(String json) {
+        Result result=new ResultImpl(json);
+         loadJson(result);
+    }
+    public void loadJson(Result result) {
+        this.sysGroupId=result.getLong("sysGroupId", null);
+        this.sysGroupName=result.getString("sysGroupName", null);
+        this.sysGroupType=result.getLong("sysGroupType", null);
+        this.sysGroupDesc=result.getString("sysGroupDesc", null);
+        this.sysGroupSup=result.getLong("sysGroupSup", null);
+        Object obj = result.get(dataName,null);
+        if (obj instanceof List) {
+            this.list=(List<?>)obj;
+        }
+    }
+    public void loadJson(ResultSet resultSet) throws SQLException {
+        //ResultSetMetaData rsMetaData = resultSet.getMetaData();
+        String temp=null;
+        while (resultSet.next()) {
+            temp=resultSet.getString("sys_group_id");
+            if (temp!=null) {
+                this.sysGroupId=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_name");
+            if (temp!=null) {
+                this.sysGroupName=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_type");
+            if (temp!=null) {
+                this.sysGroupType=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_desc");
+            if (temp!=null) {
+                this.sysGroupDesc=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_group_sup");
+            if (temp!=null) {
+                this.sysGroupSup=java.lang.Long.valueOf(temp);
+            }
+        }
+    }
     public java.lang.Long getSysGroupId() {
         return sysGroupId;
     }

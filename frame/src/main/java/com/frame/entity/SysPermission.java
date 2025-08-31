@@ -4,13 +4,19 @@ import gzb.entity.SqlTemplate;
 import gzb.tools.*;
 import com.frame.dao.SysPermissionDao;
 import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import gzb.frame.annotation.EntityAttribute;
-
+import gzb.tools.json.JsonSerializable;
+import gzb.tools.json.Result;
+import gzb.tools.json.ResultImpl;
 @EntityAttribute(name="sys_permission",desc="sysPermission")
-public class SysPermission implements Serializable{
+public class SysPermission implements Serializable, JsonSerializable{
+    private static final long serialVersionUID = 1000L;
+    private static final String dataName= Config.get("json.entity.data","data");
     @EntityAttribute(key=true,size = 19,name="sys_permission_id",desc="sysPermissionId")
     private java.lang.Long sysPermissionId;
     @EntityAttribute(key=false,size = 255,name="sys_permission_name",desc="sysPermissionName")
@@ -26,53 +32,25 @@ public class SysPermission implements Serializable{
     @EntityAttribute(key=false,size = 19,name="sys_permission_sort",desc="sysPermissionSort")
     private java.lang.Long sysPermissionSort;
     private List<?> list;
-    public SysPermission() {}
-
-    public SysPermission(JSON gzbMap) {
-        this(new GzbMap().setMap(gzbMap.map));
-    }
+   public SysPermission() {}
 
     public SysPermission(GzbMap gzbMap) {
-        String str=null;
-        str=gzbMap.getString("sysPermissionId");
-        if (str!=null && !str.isEmpty()) {
-            setSysPermissionId(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysPermissionName");
-        if (str!=null && !str.isEmpty()) {
-            setSysPermissionName(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysPermissionData");
-        if (str!=null && !str.isEmpty()) {
-            setSysPermissionData(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysPermissionType");
-        if (str!=null && !str.isEmpty()) {
-            setSysPermissionType(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysPermissionDesc");
-        if (str!=null && !str.isEmpty()) {
-            setSysPermissionDesc(java.lang.String.valueOf(str));
-        }
-        str=gzbMap.getString("sysPermissionSup");
-        if (str!=null && !str.isEmpty()) {
-            setSysPermissionSup(java.lang.Long.valueOf(str));
-        }
-        str=gzbMap.getString("sysPermissionSort");
-        if (str!=null && !str.isEmpty()) {
-            setSysPermissionSort(java.lang.Long.valueOf(str));
-        }
+        this(gzbMap.map);
     }
 
     public SysPermission(Map<String, Object> map) {
-        this(new GzbMap().setMap(map));
+        Result result = new ResultImpl(map);
+        loadJson(result);
     }
 
     public SysPermission(String jsonString) {
-        this(new GzbMap().setMap(new JSON().loadMap(jsonString).map));
+        Result result = new ResultImpl(jsonString);
+        loadJson(result);
     }
 
-
+    public SysPermission(ResultSet resultSet) throws SQLException {
+        loadJson(resultSet);
+    }
     public int save(SysPermissionDao sysPermissionDao) throws Exception {
         return sysPermissionDao.save(this);
     }
@@ -114,13 +92,13 @@ public class SysPermission implements Serializable{
     }
 
     //查询语句 可选项 排序
-    public SqlTemplate toSelectSql(String sortField, String sortType, int size, boolean selectId) {
+    public SqlTemplate toSelectSql(String sortField, String sortType, Integer size, Boolean selectId) {
         return SqlTools.toSelectSql(this,sortField, sortType, size, selectId);
     }
 
     //插入 可以指定id  不指定自动生成
-    public SqlTemplate toSave(java.lang.Long actCodeId) {
-        return SqlTools.toSave(this,actCodeId);
+    public SqlTemplate toSave() {
+        return SqlTools.toSave(this);
     }
 
     //根据id修改 高级需求请手动写sql
@@ -129,7 +107,7 @@ public class SysPermission implements Serializable{
     }
 
     //删除 可以根据id或其他参数 但是请注意非id删除的性能问题
-    public SqlTemplate toDelete(boolean selectId) {
+    public SqlTemplate toDelete(Boolean selectId) {
         return SqlTools.toDelete(this,selectId);
     }
 
@@ -138,19 +116,71 @@ public class SysPermission implements Serializable{
         return toJson().toString();
     }
 
-    public JSON toJson() {
-        JSON json = new JSON();
-        json.put("sysPermissionId", getSysPermissionId());
-        json.put("sysPermissionName", getSysPermissionName());
-        json.put("sysPermissionData", getSysPermissionData());
-        json.put("sysPermissionType", getSysPermissionType());
-        json.put("sysPermissionDesc", getSysPermissionDesc());
-        json.put("sysPermissionSup", getSysPermissionSup());
-        json.put("sysPermissionSort", getSysPermissionSort());
-        json.put("data", getList());
-        return json;
+    public Result toJson() {
+        Result result=new ResultImpl();
+        result.set("sysPermissionId", sysPermissionId);
+        result.set("sysPermissionName", sysPermissionName);
+        result.set("sysPermissionData", sysPermissionData);
+        result.set("sysPermissionType", sysPermissionType);
+        result.set("sysPermissionDesc", sysPermissionDesc);
+        result.set("sysPermissionSup", sysPermissionSup);
+        result.set("sysPermissionSort", sysPermissionSort);
+        result.set(dataName, list);
+        return result;
     }
 
+    @Override
+    public void loadJson(String json) {
+        Result result=new ResultImpl(json);
+         loadJson(result);
+    }
+    public void loadJson(Result result) {
+        this.sysPermissionId=result.getLong("sysPermissionId", null);
+        this.sysPermissionName=result.getString("sysPermissionName", null);
+        this.sysPermissionData=result.getString("sysPermissionData", null);
+        this.sysPermissionType=result.getLong("sysPermissionType", null);
+        this.sysPermissionDesc=result.getString("sysPermissionDesc", null);
+        this.sysPermissionSup=result.getLong("sysPermissionSup", null);
+        this.sysPermissionSort=result.getLong("sysPermissionSort", null);
+        Object obj = result.get(dataName,null);
+        if (obj instanceof List) {
+            this.list=(List<?>)obj;
+        }
+    }
+    public void loadJson(ResultSet resultSet) throws SQLException {
+        //ResultSetMetaData rsMetaData = resultSet.getMetaData();
+        String temp=null;
+        while (resultSet.next()) {
+            temp=resultSet.getString("sys_permission_id");
+            if (temp!=null) {
+                this.sysPermissionId=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_permission_name");
+            if (temp!=null) {
+                this.sysPermissionName=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_permission_data");
+            if (temp!=null) {
+                this.sysPermissionData=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_permission_type");
+            if (temp!=null) {
+                this.sysPermissionType=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_permission_desc");
+            if (temp!=null) {
+                this.sysPermissionDesc=java.lang.String.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_permission_sup");
+            if (temp!=null) {
+                this.sysPermissionSup=java.lang.Long.valueOf(temp);
+            }
+            temp=resultSet.getString("sys_permission_sort");
+            if (temp!=null) {
+                this.sysPermissionSort=java.lang.Long.valueOf(temp);
+            }
+        }
+    }
     public java.lang.Long getSysPermissionId() {
         return sysPermissionId;
     }
