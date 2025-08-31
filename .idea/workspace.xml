@@ -5,17 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cfcea2d9-5a46-41f0-8ef3-1c3fe61c7bed" name="更改" comment="1.0.0">
-      <change afterPath="$PROJECT_DIR$/test001/application.sql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test001/src/main/java/com/authorizationSystem/api/QPSAction.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test_spring_mvc/src/main/java/gzb/test_spring_mvc/demo/QPSAction.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frame/db.rar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frame/src/main/java/gzb/frame/factory/ClassFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/frame/src/main/java/gzb/frame/factory/ClassFactory.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test001/src/main/java/com/authorizationSystem/api/DemoAction.java" beforeDir="false" afterPath="$PROJECT_DIR$/test001/src/main/java/com/authorizationSystem/api/DemoAction.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test001/src/main/java/gzb/TestServerQPS.java" beforeDir="false" afterPath="$PROJECT_DIR$/test001/src/main/java/gzb/TestServerQPS.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test_spring_mvc/src/main/java/gzb/test_spring_mvc/demo/BasicController.java" beforeDir="false" afterPath="$PROJECT_DIR$/test_spring_mvc/src/main/java/gzb/test_spring_mvc/demo/BasicController.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -232,7 +224,7 @@
       <workItem from="1756644588587" duration="1313000" />
       <workItem from="1756645972821" duration="6891000" />
       <workItem from="1756652876170" duration="768000" />
-      <workItem from="1756653675742" duration="1905000" />
+      <workItem from="1756653675742" duration="2714000" />
     </task>
     <task id="LOCAL-00001" summary="1">
       <option name="closed" value="true" />
@@ -322,7 +314,15 @@
       <option name="project" value="LOCAL" />
       <updated>1756654535071</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="1.0.0">
+      <option name="closed" value="true" />
+      <created>1756655629053</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1756655629053</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
