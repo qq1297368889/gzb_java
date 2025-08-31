@@ -109,7 +109,8 @@ public class TomcatServer {
         serverContainer = (ServerContainer) ctx.getServletContext().getAttribute(ServerContainer.class.getName());
 
         //添加默认 servlet
-        addServlet(GzbServlet.class);
+        //addServlet(Servlet2.class);//这个是/test
+        addServlet(GzbServlet.class);//这个是 /*
         //添加 ws支持
         addWebSocket("/ws3",WebSocket.class);
         System.out.println("已加载映射信息  "+Handle.classFactory.mapClass.mapping0.size()+"个");

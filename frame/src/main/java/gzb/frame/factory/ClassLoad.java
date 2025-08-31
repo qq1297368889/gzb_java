@@ -19,8 +19,6 @@ import java.util.*;
 
 public class ClassLoad {
     public static Log log = new LogImpl();
-    public static Map<Class<?>, byte[]> mapClassByte = new HashMap<Class<?>, byte[]>();
-    public static Map<Class<?>, String> mapClassCode = new HashMap<Class<?>, String>();
 
     public static Class<?> compileGroovyClassCode(String groovyCode) throws Exception {
       long start = System.currentTimeMillis();
@@ -94,8 +92,6 @@ public class ClassLoad {
 
         MemoryClassLoader classLoader = new MemoryClassLoader(classInMemory, getNewClassLoader(className, bytes));
         aClass = classLoader.loadClass(className);
-        mapClassByte.put(aClass, bytes);
-        mapClassCode.put(aClass, javaCode);
         return aClass;
     }
 

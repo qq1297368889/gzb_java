@@ -16,4 +16,8 @@ public class Test {
     public String hello(String name) throws Exception {
         return "{\"code\":\"1\"\"name3332\":\""+name+"\"}";
     }
+    @GetMapping(value = "test2")
+    public String test2(String name,Integer age,Double price) throws Exception {
+        return "{\"code\":\"1\"\"name3332\":\""+name+"\"}";
+    }
 }

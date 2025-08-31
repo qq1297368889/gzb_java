@@ -106,7 +106,7 @@ public class ClassFactory {
                         long start = System.currentTimeMillis();
                         try {
                             while (serverState != 1) {
-                                Thread.sleep(50);
+                                Thread.sleep(10);
                             }
                             ClassInfo classInfo = mapClassInfo.get(aClass.getName());
                             if (classInfo == null) {
@@ -152,9 +152,10 @@ public class ClassFactory {
                             if (methodInfo != null) {
                                 try {
                                     long mm = methodInfo.getThreadInterval().value() - (end - start);
-                                    if (mm > 0) {
-                                        Thread.sleep(methodInfo.getThreadInterval().value() - (end - start));
+                                    if (mm < 10) {
+                                        mm=10;
                                     }
+                                    Thread.sleep(mm);
                                 } catch (InterruptedException e) {
                                     log.d("InterruptedException");
                                     break;
