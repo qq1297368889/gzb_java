@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>开启单元格编辑 - 数据表格</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="/static/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="/static/layuiadmin/style/admin.css" media="all">
+
+</head>
+<body>
+<div class="layui-card">
+
+    <br>
+    <form class="layui-form" lay-filter="component-form-group">
+        <div id="save_input_gzb_c001"></div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">操作按钮</label>
+            <div class="layui-input-inline">
+                <button type="button" class="layui-btn layui-btn-danger layui-btn-radius" id="but_001">保存数据</button>
+            </div>
+            <div class="layui-input-inline">
+                <button type="button" class="layui-btn layui-btn-warm layui-btn-radius" id="but_003">清空输入</button>
+            </div>
+            <div class="layui-input-inline">
+                <button type="button" class="layui-btn layui-btn-normal layui-btn-radius" id="but_002">重置数据</button>
+            </div>
+        </div>
+        <div id="save_input_gzb_c002">
+        </div>
+    </form>
+</div>
+
+<script src='/static/layuiadmin/layui/layui.all.js'></script>
+<script src="/static/js/layui.gzb.js"></script>
+<script>
+    initSave()
+</script>
+</body>
+</html>

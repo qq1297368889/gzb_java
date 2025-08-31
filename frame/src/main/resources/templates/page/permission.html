@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title id="title1">--</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="/static/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="/static/layuiadmin/style/admin.css" media="all">
+
+</head>
+<body>
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card">
+                    <div class="layui-card-header">授权界面</div>
+                    <div class="layui-card-body">
+                        <div id="test-transfer-01"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src='/static/layuiadmin/layui/layui.all.js'></script>
+<script src="/static/js/layui.gzb.js"></script>
+<script>
+    layui.config({
+        base: '/static/layuiadmin/' //静态资源所在路径
+    }).extend({
+        index: 'lib/index' //主入口模块
+    }).use(['index', 'transfer', 'layer', 'util'], function () {
+
+        var $ = layui.$
+            , transfer = layui.transfer
+            , layer = layui.layer
+            , util = layui.util;
+        let map = gzb.getParas()
+        if (map == null) {
+            console.log("非法访问")
+        }
+        let gid = map["sysGroupId"];
+        console.log(gid)
+        let data = [];
+        let selected = [];
+        let p_type = 1;
+        $.get("/system/v1.0.0/read/permission/all", function (res) {
+            console.log(res)
+            if (!gzb.jsonVerify(res)) {
+                return;
+            }
+            if (res.data != null) {
+                for (let n1 of res.data) {
+                    data.push({"value": n1.sysPermissionId, "title": n1.sysPermissionName})
+                    if (n1.data == null) {
+                        continue;
+                    }
+                    for (let n2 of n1.data) {
+                        data.push({"value": n2.sysPermissionId, "title": n1.sysPermissionName+"->"+n2.sysPermissionName})
+                    }
+                }
+            }
+            $.get("/system/v1.0.0/read/permission/all?gid=" + gid  , function (res2) {
+                console.log(res2)
+                if (!gzb.jsonVerify(res2)) {
+                    return;
+                }
+                if (res2.data != null) {
+                    for (let n1 of res2.data) {
+                        selected.push(n1.sysPermissionId)
+                        if (n1.data == null) {
+                            continue;
+                        }
+                        for (let n2 of n1.data) {
+                            selected.push(n2.sysPermissionId)
+                        }
+                    }
+                }
+                init1(data, selected)
+            })
+        })
+
+        function init1(data, selected) {
+            console.log(data, selected)
+            let a01=window.innerWidth/10*4
+            let a02=window.innerHeight/10*9
+            if (a01 < 400) {
+                a01=400;
+            }
+            if (a02 < 400) {
+                a02=400;
+            }
+            //初始右侧数据
+            transfer.render({
+                elem: '#test-transfer-01'
+                , title: ['未获取权限', '已获取权限']  //自定义标题
+                , data: data
+                , value: selected
+                , showSearch: true
+                , width: a01 //定义宽度
+                , height: a02 //定义高度
+                , onchange: function (obj, index) {
+                    let postData = "type=" + (index === 1 ? 0 : 1) + "&gid=" + gid;
+                    for (let json of obj) {
+                        postData += "&pid=" + json["value"];
+                    }
+                    console.log(index, obj, postData)
+                    gzb.post("/system/v1.0.0/authorize/permission", postData, function (res) {
+                        gzb.jsonVerify(res, true);
+                    })
+
+                }
+            })
+        }
+
+    });
+</script>
+</body>
+</html>
