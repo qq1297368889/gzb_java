@@ -1,1 +1,0 @@
-java -jar acquisition-1.0.0.jar
