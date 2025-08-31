@@ -1119,7 +1119,6 @@ public class ClassFactory {
     }
 
     public Object callMet(Object obj, MethodInfo methodInfo, Object[] paras) throws Exception {
-        log.d(paras);
         boolean openTransaction = methodInfo.getTransaction() != null && methodInfo.getTransaction().value();
         Object res01 = null;
         if (openTransaction && paras != null) {

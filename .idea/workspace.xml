@@ -5,7 +5,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cfcea2d9-5a46-41f0-8ef3-1c3fe61c7bed" name="更改" comment="1.0.0">
+      <change afterPath="$PROJECT_DIR$/test001/application.sql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test001/src/main/java/com/authorizationSystem/api/QPSAction.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test_spring_mvc/src/main/java/gzb/test_spring_mvc/demo/QPSAction.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frame/db.rar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frame/src/main/java/gzb/frame/factory/ClassFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/frame/src/main/java/gzb/frame/factory/ClassFactory.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test001/src/main/java/com/authorizationSystem/api/DemoAction.java" beforeDir="false" afterPath="$PROJECT_DIR$/test001/src/main/java/com/authorizationSystem/api/DemoAction.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test001/src/main/java/gzb/TestServerQPS.java" beforeDir="false" afterPath="$PROJECT_DIR$/test001/src/main/java/gzb/TestServerQPS.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_spring_mvc/src/main/java/gzb/test_spring_mvc/demo/BasicController.java" beforeDir="false" afterPath="$PROJECT_DIR$/test_spring_mvc/src/main/java/gzb/test_spring_mvc/demo/BasicController.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -67,7 +78,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "git-widget-placeholder": "master",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "E:/codes_20220814/java/gzb_java_git_c",
+    "last_opened_file_path": "E:/codes_20220814/java/gzb_java/test001",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -100,11 +111,11 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="E:\codes_20220814\java\gzb_java\test001" />
       <recent name="E:\codes_20220814\java\gzb_java\test001\src\main\java\gzb" />
       <recent name="E:\codes_20220814\java\gzb_java\test001\src\main\resources" />
       <recent name="E:\codes_20220814\java\gzb_java\authorization_system" />
       <recent name="E:\codes_20220814\java\gzb_java" />
-      <recent name="E:\codes_20220814\java\gzb_java\authorization_system\src\main\resources\templates\static\layuiadmin" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="E:\codes_20220814\java\gzb_java" />
@@ -113,13 +124,13 @@
       <recent name="com.acquisition.ocr" />
     </key>
   </component>
-  <component name="RunManager" selected="应用程序.gzb.Start">
-    <configuration name="Start" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="gzb.start.Start" />
-      <module name="authorization_system" />
+  <component name="RunManager" selected="应用程序.TestServerQPS">
+    <configuration name="TestAction" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.authorizationSystem.api.TestAction" />
+      <module name="test001" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="gzb.start.*" />
+          <option name="PATTERN" value="com.authorizationSystem.api.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -127,12 +138,12 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="TestAction" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.authorizationSystem.api.TestAction" />
+    <configuration name="TestServerQPS" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="gzb.TestServerQPS" />
       <module name="test001" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="com.authorizationSystem.api.*" />
+          <option name="PATTERN" value="gzb.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -181,11 +192,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="应用程序.gzb.Start" />
+        <item itemvalue="应用程序.TestServerQPS" />
         <item itemvalue="应用程序.TestSpringMvcApplication" />
+        <item itemvalue="应用程序.gzb.Start" />
         <item itemvalue="应用程序.TestAction" />
         <item itemvalue="应用程序.gzb.AutoCode" />
-        <item itemvalue="应用程序.Start" />
       </list>
     </recent_temporary>
   </component>
@@ -221,7 +232,7 @@
       <workItem from="1756644588587" duration="1313000" />
       <workItem from="1756645972821" duration="6891000" />
       <workItem from="1756652876170" duration="768000" />
-      <workItem from="1756653675742" duration="810000" />
+      <workItem from="1756653675742" duration="1905000" />
     </task>
     <task id="LOCAL-00001" summary="1">
       <option name="closed" value="true" />
@@ -303,7 +314,15 @@
       <option name="project" value="LOCAL" />
       <updated>1756653988961</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="1.0.0">
+      <option name="closed" value="true" />
+      <created>1756654535071</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1756654535071</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

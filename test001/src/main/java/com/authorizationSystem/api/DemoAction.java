@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Controller
-@RequestMapping(value = "/test/", header = "content-type:application/json;charset=UTF-8")
+@RequestMapping(value = "/demo/", header = "content-type:application/json;charset=UTF-8")
 public class DemoAction {
     @Resource
     ApplicationDao applicationDao;

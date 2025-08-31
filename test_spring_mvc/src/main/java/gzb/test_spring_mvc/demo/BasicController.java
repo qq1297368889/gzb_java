@@ -28,12 +28,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Controller
 public class BasicController {
 
-    // http://127.0.0.1:8080/hello?name=lisi
-    @RequestMapping("/test/test1")
-    @ResponseBody
-    public String hello(String name) {
-        return "{\"code\":\"1\"\"name\":\""+name+"\"}";
-    }
 
     // http://127.0.0.1:8080/user
     @RequestMapping("/user")
