@@ -4287,7 +4287,7 @@ Caused by: java.sql.SQLException: 数据库连接失败
 	at gzb.frame.server.http.TomcatServer.startServer(TomcatServer.java:115)
 	at gzb.frame.server.http.TomcatServer.startServer(TomcatServer.java:48)
 	at gzb.start.Application.run(Application.java:15)
-	at gzb.Main.main(Main.java:7)
+	at gzb.Start.main(Main.java:7)
  | "数据库：[null]，连接失败........"
 2025-08-30 21:04:57.983 error 1 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:293): "loadFiles" | java.lang.reflect.InvocationTargetException
 	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:74)
@@ -4302,7 +4302,7 @@ Caused by: java.sql.SQLException: 数据库连接失败
 	at gzb.frame.server.http.TomcatServer.startServer(TomcatServer.java:115)
 	at gzb.frame.server.http.TomcatServer.startServer(TomcatServer.java:48)
 	at gzb.start.Application.run(Application.java:15)
-	at gzb.Main.main(Main.java:7)
+	at gzb.Start.main(Main.java:7)
 Caused by: java.lang.RuntimeException: java.sql.SQLException: 数据库连接失败
 	at com.frame.Frame.<init>(Frame.java:13)
 	at com.frame.dao.impl.SysFileDaoImpl.<init>(SysFileDaoImpl.java:7)
@@ -5173,7 +5173,7 @@ Caused by: java.sql.SQLException: 数据库连接失败
 	at gzb.frame.server.http.TomcatServer.startServer(TomcatServer.java:115)
 	at gzb.frame.server.http.TomcatServer.startServer(TomcatServer.java:48)
 	at gzb.start.Application.run(Application.java:15)
-	at gzb.Main.main(Main.java:7)
+	at gzb.Start.main(Main.java:7)
  | "数据库：[null]，连接失败........"
 2025-08-30 21:07:10.275 error 1 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:293): "loadFiles" | java.lang.reflect.InvocationTargetException
 	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:74)
@@ -5188,7 +5188,7 @@ Caused by: java.sql.SQLException: 数据库连接失败
 	at gzb.frame.server.http.TomcatServer.startServer(TomcatServer.java:115)
 	at gzb.frame.server.http.TomcatServer.startServer(TomcatServer.java:48)
 	at gzb.start.Application.run(Application.java:15)
-	at gzb.Main.main(Main.java:7)
+	at gzb.Start.main(Main.java:7)
 Caused by: java.lang.RuntimeException: java.sql.SQLException: 数据库连接失败
 	at com.authorizationSystem.AuthorizationSystem.<init>(AuthorizationSystem.java:10)
 	at com.authorizationSystem.dao.impl.ApplicationCodeDaoImpl.<init>(Script_74b93f40c76534e2ef273cb732fcd44a.groovy)
@@ -5381,7 +5381,7 @@ Caused by: java.sql.SQLException: 数据库连接失败
 	at gzb.frame.server.http.TomcatServer.startServer(TomcatServer.java:115)
 	at gzb.frame.server.http.TomcatServer.startServer(TomcatServer.java:48)
 	at gzb.start.Application.run(Application.java:15)
-	at gzb.Main.main(Main.java:7)
+	at gzb.Start.main(Main.java:7)
  | "数据库：[null]，连接失败........"
 2025-08-30 21:07:29.099 error 1 gzb.frame.factory.ClassFactory.loadFiles(ClassFactory.java:293): "loadFiles" | java.lang.reflect.InvocationTargetException
 	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:74)
@@ -5396,7 +5396,7 @@ Caused by: java.sql.SQLException: 数据库连接失败
 	at gzb.frame.server.http.TomcatServer.startServer(TomcatServer.java:115)
 	at gzb.frame.server.http.TomcatServer.startServer(TomcatServer.java:48)
 	at gzb.start.Application.run(Application.java:15)
-	at gzb.Main.main(Main.java:7)
+	at gzb.Start.main(Main.java:7)
 Caused by: java.lang.RuntimeException: java.sql.SQLException: 数据库连接失败
 	at com.authorizationSystem.AuthorizationSystem.<init>(AuthorizationSystem.java:10)
 	at com.authorizationSystem.dao.impl.ApplicationCodeDaoImpl.<init>(Script_74b93f40c76534e2ef273cb732fcd44a.groovy)

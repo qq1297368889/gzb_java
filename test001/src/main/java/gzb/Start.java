@@ -2,8 +2,8 @@ package gzb;
 
 import gzb.start.Application;
 
-public class Main {
+public class Start {
     public static void main(String[] args) throws Exception {
-        Application.run(Main.class);
+        Application.run(Start.class);
     }
 }

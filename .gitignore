@@ -36,3 +36,12 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+
+nodeimage/
+colorimage/
+acquisition/
+authorization_system/
+*.class
+*.log
+
