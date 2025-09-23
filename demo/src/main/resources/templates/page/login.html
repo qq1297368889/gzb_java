@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>登入 - 系统</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="/static/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="/static/layuiadmin/style/admin.css" media="all">
+    <link rel="stylesheet" href="/static/layuiadmin/style/login.css" media="all">
+</head>
+<body>
+
+<div class="layadmin-user-login layadmin-user-display-show" id="LAY-user-login" style="display: none;">
+
+    <div class="layadmin-user-login-main">
+        <div class="layadmin-user-login-box layadmin-user-login-header">
+            <h2>后台系统登录</h2>
+        </div>
+        <div class="layadmin-user-login-box layadmin-user-login-body layui-form">
+            <div class="layui-form-item">
+                <label class="layadmin-user-login-icon layui-icon layui-icon-username"
+                       for="LAY-user-login-username"></label>
+                <input type="text" name="username" id="LAY-user-login-username" lay-com.verify="required"
+                       placeholder="用户名"
+                       class="layui-input">
+            </div>
+            <div class="layui-form-item">
+                <label class="layadmin-user-login-icon layui-icon layui-icon-password"
+                       for="LAY-user-login-password"></label>
+                <input type="password" name="password" id="LAY-user-login-password" lay-com.verify="required"
+                       placeholder="密码" class="layui-input">
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-row">
+                    <div class="layui-col-xs7">
+                        <label class="layadmin-user-login-icon layui-icon layui-icon-vercode"
+                               for="LAY-user-login-vercode"></label>
+                        <input type="text" name="vercode" id="LAY-user-login-vercode" lay-com.verify="required"
+                               placeholder="图形验证码" class="layui-input">
+                    </div>
+                    <div class="layui-col-xs5">
+                        <div style="margin-left: 10px;"> 
+                            <img class="layadmin-user-login-codeimg" id="vercode">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="layui-form-item">
+                <button class="layui-btn layui-btn-fluid" type="button" id="LAY-user-login-submit">登入 系统</button>
+            </div>
+            
+        </div>
+    </div> 
+
+</div>
+
+<script src="/static/layuiadmin/layui/layui.all.js"></script>
+<script src="/static/js/layui.gzb.js"></script>
+<script>
+    let url_image_code = "/system/v1.0.0/image/code";
+    let url_login = "/system/v1.0.0/login";
+    let url_index_page = 'index.html?v=1.0.0.1&r=login.html';
+    layui.config({
+        base: '/static/layuiadmin/' //静态资源所在路径
+    }).extend({
+        index: 'lib/index' //主入口模块
+    }).use(['index', 'user'], function () {
+        var $ = layui.$
+            , setter = layui.setter
+            , admin = layui.admin
+            , form = layui.form
+            , router = layui.router()
+            , search = router.search;
+        $("#vercode").click(function (){
+            update_image()
+        });
+        function update_image() {
+            $("#vercode").attr("src", url_image_code + "?t=" + new Date().getTime());
+        }
+        update_image();
+        form.render();
+        $("#LAY-user-login-submit").click(function () {
+            let sysUsersAcc = $("#LAY-user-login-username").val();
+            let sysUsersPwd = $("#LAY-user-login-password").val();
+            let code = $("#LAY-user-login-vercode").val();
+            if (sysUsersAcc == null || sysUsersAcc.length < 2) {
+                gzb.msgErr("请输入 账号");
+                return;
+            }
+            if (sysUsersPwd == null || sysUsersPwd.length < 2) {
+                gzb.msgErr("请输入 密码");
+                return;
+            }
+            if (code == null || code.length < 2) {
+                gzb.msgErr("请输入 验证码");
+                return;
+            }
+            gzb.get(url_login, "sysUsersAcc=" + sysUsersAcc + "&sysUsersPwd=" + sysUsersPwd + "&code=" + code, function (res) {
+                if (!gzb.jsonVerify(res, true)) {
+                    update_image()
+                    return;
+                }
+                location.href = url_index_page;
+            }, function (res) {
+                gzb.jsonVerify(res, true)
+                update_image()
+            })
+        });
+
+    });
+</script>
+</body>
+</html>

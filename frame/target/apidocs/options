@@ -1,0 +1,26 @@
+-classpath
+'C:/Users/Administrator/.m2/repository/com/google/code/gson/gson/2.10.1/gson-2.10.1.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-all/4.1.126.Final/netty-all-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-buffer/4.1.126.Final/netty-buffer-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-codec/4.1.126.Final/netty-codec-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-codec-dns/4.1.126.Final/netty-codec-dns-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-codec-haproxy/4.1.126.Final/netty-codec-haproxy-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-codec-http/4.1.126.Final/netty-codec-http-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-codec-http2/4.1.126.Final/netty-codec-http2-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-codec-memcache/4.1.126.Final/netty-codec-memcache-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-codec-mqtt/4.1.126.Final/netty-codec-mqtt-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-codec-redis/4.1.126.Final/netty-codec-redis-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-codec-smtp/4.1.126.Final/netty-codec-smtp-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-codec-socks/4.1.126.Final/netty-codec-socks-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-codec-stomp/4.1.126.Final/netty-codec-stomp-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-codec-xml/4.1.126.Final/netty-codec-xml-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-common/4.1.126.Final/netty-common-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-handler/4.1.126.Final/netty-handler-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-transport-native-unix-common/4.1.126.Final/netty-transport-native-unix-common-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-handler-proxy/4.1.126.Final/netty-handler-proxy-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-handler-ssl-ocsp/4.1.126.Final/netty-handler-ssl-ocsp-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-resolver/4.1.126.Final/netty-resolver-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-resolver-dns/4.1.126.Final/netty-resolver-dns-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-transport/4.1.126.Final/netty-transport-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-transport-rxtx/4.1.126.Final/netty-transport-rxtx-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-transport-sctp/4.1.126.Final/netty-transport-sctp-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-transport-udt/4.1.126.Final/netty-transport-udt-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-transport-classes-epoll/4.1.126.Final/netty-transport-classes-epoll-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-transport-classes-kqueue/4.1.126.Final/netty-transport-classes-kqueue-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/io/netty/netty-resolver-dns-classes-macos/4.1.126.Final/netty-resolver-dns-classes-macos-4.1.126.Final.jar;C:/Users/Administrator/.m2/repository/com/mysql/mysql-connector-j/8.0.33/mysql-connector-j-8.0.33.jar;C:/Users/Administrator/.m2/repository/com/google/protobuf/protobuf-java/3.21.9/protobuf-java-3.21.9.jar;C:/Users/Administrator/.m2/repository/com/zaxxer/HikariCP/4.0.3/HikariCP-4.0.3.jar;C:/Users/Administrator/.m2/repository/org/slf4j/slf4j-api/2.0.0-alpha1/slf4j-api-2.0.0-alpha1.jar;C:/Users/Administrator/.m2/repository/redis/clients/jedis/3.6.3/jedis-3.6.3.jar;C:/Users/Administrator/.m2/repository/org/apache/commons/commons-pool2/2.9.0/commons-pool2-2.9.0.jar'
+-encoding
+'UTF-8'
+-protected
+-source
+'8'
+-sourcepath
+'E:/codes_20220814/java/250913_code/frame/src/main/java;E:/codes_20220814/java/250913_code/frame/target/generated-sources/annotations'
+-author
+-bottom
+'Copyright &#169; 2025. All rights reserved.'
+-charset
+'UTF-8'
+-d
+'E:/codes_20220814/java/250913_code/frame/target/apidocs'
+-docencoding
+'UTF-8'
+-doctitle
+'zero 1.0.0 API'
+-linkoffline
+'https://docs.oracle.com/javase/8/docs/api' 'E:/codes_20220814/java/250913_code/frame/target/javadoc-bundle-options'
+-use
+-version
+-windowtitle
+'zero 1.0.0 API'
