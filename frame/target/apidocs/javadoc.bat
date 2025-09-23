@@ -1,1 +1,0 @@
-cmd.exe /X /C "C:\work\graalvm-jdk-21.0.6\bin\javadoc.exe @options @packages"
