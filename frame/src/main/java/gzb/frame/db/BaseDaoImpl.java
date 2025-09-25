@@ -160,7 +160,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             for (int i = 0; i < columnCount; i++) {
                 names.add(rsMetaData.getColumnLabel(i + 1));
             }
-            if (names.size()>0) {
+            if (names.size() > 0) {
                 constructor = (Constructor<T>) t.getClass().getDeclaredConstructor(ResultSet.class, Set.class);
                 while (rs.next()) {
                     list.add(constructor.newInstance(rs, names));
@@ -596,9 +596,20 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             log.d("缓存命中", "countCache", sql, params);
             return object;
         }
-        int c01 = count(sql, params);
-        gzbCache.set(key, c01, second);
-        return c01;
+        Lock lock = LockFactory.getLock(key, second);
+        lock.lock();
+        try {
+            object = gzbCache.getInteger(key, null);
+            if (object != null) {
+                log.d("缓存命中", "countCache", sql, params);
+                return object;
+            }
+            object = count(sql, params);
+            gzbCache.set(key, object, second);
+        } finally {
+            lock.unlock();
+        }
+        return object;
     }
 
     @Override

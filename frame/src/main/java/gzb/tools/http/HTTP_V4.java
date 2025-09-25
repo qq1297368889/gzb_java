@@ -1,3 +1,4 @@
+/*
 package gzb.tools.http;
 import okhttp3.*;
 
@@ -11,10 +12,12 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+*/
 /**
  * 基于JDK8 NIO的异步HTTP客户端
  * 支持GET、POST、PUT、DELETE等方法，以及文件上传
- */
+ *//*
+
 public class HTTP_V4 {
     // 单例OkHttpClient实例，内部使用NIO
     private static final OkHttpClient client = new OkHttpClient.Builder()
@@ -23,7 +26,8 @@ public class HTTP_V4 {
             .writeTimeout(10, TimeUnit.SECONDS)
             .build();
 
-    /**
+    */
+/**
      * 异步发送HTTP请求
      * @param url 请求URL
      * @param method HTTP方法
@@ -31,7 +35,8 @@ public class HTTP_V4 {
      * @param headers 请求头
      * @param files 要上传的文件
      * @return Call对象，可用于取消请求
-     */
+     *//*
+
     public static void requestAsync(String url, String method, String data,
                         Map<String, String> headers, Map<String, List<File>> files,Callback callback) {
         // 构建请求体
@@ -75,9 +80,11 @@ public class HTTP_V4 {
         client.newCall(requestBuilder.build()).enqueue(callback);
     }
 
-    /**
+    */
+/**
      * 构建请求体，支持普通数据和文件上传
-     */
+     *//*
+
     private static RequestBody buildRequestBody(String data, Map<String, List<File>> files) {
         // 没有数据也没有文件
         if ((data == null || data.isEmpty()) && (files == null || files.isEmpty())) {
@@ -118,3 +125,4 @@ public class HTTP_V4 {
     }
 
 }
+*/

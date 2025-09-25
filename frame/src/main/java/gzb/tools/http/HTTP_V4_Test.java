@@ -1,3 +1,4 @@
+/*
 package gzb.tools.http;
 import java.util.HashMap;
 import java.util.List;
@@ -41,7 +42,8 @@ public class HTTP_V4_Test {
         }
 
         // 示例：测试POST请求（如需测试可取消注释）
-        /*
+        */
+/*
         String postUrl = "http://192.168.10.101:2082/test/post";
         String jsonData = "{\"name\":\"test\",\"value\":123}";
         System.out.println("\n发送POST请求到: " + postUrl);
@@ -52,6 +54,7 @@ public class HTTP_V4_Test {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        */
+        *//*
+
     }
-}
+}*/
