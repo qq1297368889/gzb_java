@@ -4,7 +4,6 @@ import gzb.tools.Config;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
-import io.netty.util.CharsetUtil;
 
 import java.io.File;
 import java.io.RandomAccessFile;
@@ -13,7 +12,7 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 
-public class StaticFileHandler{
+public class HTTPStaticFileHandler {
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) {
         try {
             // 1. 验证请求

@@ -247,7 +247,7 @@ public class ClassTools {
         if (names.size() != pararType.length) {
             names.clear();
         }
-        log.t("获取参数名",methodName,names);
+        log.t("获取参数名", methodName, names);
         return names;
 
     }
@@ -288,6 +288,7 @@ public class ClassTools {
         return code;
     }
 
+    static ClassLoader appClassLoader = ClassTools.class.getClassLoader();
 
     public static List<Object> getMethodParameterList(
             Map<String, List<Object>> requestDataMap,
@@ -302,12 +303,12 @@ public class ClassTools {
                 Class<?> paramType = TypeClass[n];
                 String paramName = TypeName[n];
                 String implName = null;
+                Object paramValue = null;
                 if (implNames != null) {
                     implName = implNames[n];
                 } else {
                     implName = paramType.getName();
                 }
-                Object paramValue = null;
                 try {
                     if (mapObject != null) {
                         paramValue = mapObject.get(implName);
@@ -583,7 +584,7 @@ public class ClassTools {
                 if (field.getType() == Long.class || field.getType() == Integer.class || field.getType() == Short.class || field.getType() == Byte.class
                         || field.getType() == long.class || field.getType() == int.class || field.getType() == short.class
                         || field.getType() == byte.class) {
-                    type = 2;
+                    type = 2;//不再区分 数字类型
                 } else {
                     type = 2;
                 }
@@ -1065,7 +1066,7 @@ public class ClassTools {
             return false;
         }
 
-        Field[] fields = getCombinedFields(object.getClass(),false);
+        Field[] fields = getCombinedFields(object.getClass(), false);
         for (int i = 0; i < fields.length; i++) {
             Resource resources = fields[i].getDeclaredAnnotation(Resource.class);
             Object obj1 = null;
@@ -1095,7 +1096,7 @@ public class ClassTools {
                     }
                 }
                 if (obj1 != null) {
-                    log.t("类字段注入","将",obj1,"注入到对象",object,"的类变量",fields[i].getName(),"该变量的类型为", key);
+                    log.t("类字段注入", "将", obj1, "注入到对象", object, "的类变量", fields[i].getName(), "该变量的类型为", key);
                     classInject(obj1, data, mapObjectAll);
                     fields[i].setAccessible(true);
                     fields[i].set(object, obj1);
@@ -1211,14 +1212,16 @@ public class ClassTools {
         key.append(")");
         return key.toString();
     }
+
     public static Field[] getCombinedFields(Class<?> clazz) {
-        return getCombinedFields(clazz,true);
+        return getCombinedFields(clazz, true);
     }
+
     /**
      * 获取所有类字段
      */
-    public static Field[] getCombinedFields(Class<?> clazz,boolean isCache) {
-        Field[] fields=null;
+    public static Field[] getCombinedFields(Class<?> clazz, boolean isCache) {
+        Field[] fields = null;
         if (isCache) {
             fields = mapField.get(clazz.getName());
             if (fields != null) {
@@ -1296,7 +1299,7 @@ public class ClassTools {
                 continue;
             }
             map.put(anInterface.getName(), object);
-            log.t("储存对象",anInterface.getName()," -> ",object);
+            log.t("储存对象", anInterface.getName(), " -> ", object);
         }
         map.put(clazz.getName(), object);
         if (name != null && !name.isEmpty()) {

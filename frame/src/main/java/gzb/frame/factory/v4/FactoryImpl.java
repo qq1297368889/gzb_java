@@ -68,6 +68,7 @@ public class FactoryImpl implements Factory {
         Thread thread = new Thread(() -> {
             while (true) {
                 try {
+                    List<File>listFile=new ArrayList<>();
                     String[] arr1 = classDir.split(",");
                     for (int i = 0; i < arr1.length; i++) {
                         arr1[i] = Tools.pathFormat(arr1[i].trim());
@@ -75,44 +76,52 @@ public class FactoryImpl implements Factory {
                             continue;
                         }
                         if (new File(arr1[i]).isDirectory()) {
-                            List<ClassEntity> listClassEntity = loadFolder(arr1[i], pwd, iv, mapClassEntity);
-                            if (!listClassEntity.isEmpty()) {
-                                for (ClassEntity classEntity : listClassEntity) {
-                                    loadService(classEntity, mapObject0);
-                                }
-                                for (ClassEntity classEntity : listClassEntity) {
-                                    loadControllerObject(classEntity, mapObject0);
-                                }
-                                List<DecoratorEntity> list0 = new ArrayList<>();
-                                for (ClassEntity classEntity : listClassEntity) {
-                                    loadDecorator(classEntity, list0);
-                                }
-                                for (DecoratorEntity decoratorEntity : listDecoratorEntity) {
-                                    int next = 1;
-                                    for (DecoratorEntity entity : list0) {
-                                        if (entity.classEntity.clazz.getName().equals(decoratorEntity.classEntity.clazz.getName())) {
-                                            next = 0;
-                                            break;
-                                        }
-                                    }
-                                    if (next == 1) {
-                                        list0.add(decoratorEntity);
-                                    }
-                                }
-                                listDecoratorEntity = list0;
-                                for (Map.Entry<String, Object> stringObjectEntry : mapObject0.entrySet()) {
-                                    ClassTools.classInject(stringObjectEntry.getValue(),null,mapObject0);;
-                                }
-                                for (ClassEntity classEntity : listClassEntity) {
-                                    loadThreadInterval(classEntity, mapObject0);
-                                }
-                                for (Map.Entry<String, ClassEntity> stringClassEntityEntry : mapClassEntity.entrySet()) {
-                                    ClassEntity classEntity = stringClassEntityEntry.getValue();
-                                    loadController(classEntity.clazz, mapObject0.get(classEntity.clazz.getName()), mapHttpMapping0, mapHttpMappingOld0, listDecoratorEntity);
-                                }
-                            }
+                            List<File> list = Tools.fileSub(arr1[i], 2, ".java");
+                            listFile.addAll(list);
                         } else {
                             log.w("代码目录不存在或错误", arr1[i]);
+                        }
+                    }
+                    List<ClassEntity> listClassEntity =new ArrayList<>();
+                    for (File file : listFile) {
+                        ClassEntity classEntity = loadFile(file, pwd, iv, mapClassEntity);
+                        if (classEntity != null) {
+                            listClassEntity.add(classEntity);
+                        }
+                    }
+                    if (!listClassEntity.isEmpty()) {
+                        for (ClassEntity classEntity : listClassEntity) {
+                            loadService(classEntity, mapObject0);
+                        }
+                        for (ClassEntity classEntity : listClassEntity) {
+                            loadControllerObject(classEntity, mapObject0);
+                        }
+                        List<DecoratorEntity> list0 = new ArrayList<>();
+                        for (ClassEntity classEntity : listClassEntity) {
+                            loadDecorator(classEntity, list0);
+                        }
+                        for (DecoratorEntity decoratorEntity : listDecoratorEntity) {
+                            int next = 1;
+                            for (DecoratorEntity entity : list0) {
+                                if (entity.classEntity.clazz.getName().equals(decoratorEntity.classEntity.clazz.getName())) {
+                                    next = 0;
+                                    break;
+                                }
+                            }
+                            if (next == 1) {
+                                list0.add(decoratorEntity);
+                            }
+                        }
+                        listDecoratorEntity = list0;
+                        for (Map.Entry<String, Object> stringObjectEntry : mapObject0.entrySet()) {
+                            ClassTools.classInject(stringObjectEntry.getValue(), null, mapObject0);
+                        }
+                        for (ClassEntity classEntity : listClassEntity) {
+                            loadThreadInterval(classEntity, mapObject0);
+                        }
+                        for (Map.Entry<String, ClassEntity> stringClassEntityEntry : mapClassEntity.entrySet()) {
+                            ClassEntity classEntity = stringClassEntityEntry.getValue();
+                            loadController(classEntity.clazz, mapObject0.get(classEntity.clazz.getName()), mapHttpMapping0, mapHttpMappingOld0, listDecoratorEntity);
                         }
                     }
 
@@ -128,15 +137,61 @@ public class FactoryImpl implements Factory {
         thread.start();
     }
 
+    public List<ClassEntity> loadFolder(String folder, String pwd, String iv, Map<String, ClassEntity> mapClassEntity) throws Exception {
+        List<ClassEntity> listClassEntity = new ArrayList<>();
+        File file = new File(folder);
+        if (!file.exists() || !file.isDirectory()) {
+            log.e("编译 代码目录不存在", file.getPath());
+            return listClassEntity;
+        }
+        List<File> list = Tools.fileSub(folder, 2, ".java");
+        for (File file1 : list) {
+            ClassEntity classEntity = loadFile(file1, pwd, iv, mapClassEntity);
+            if (classEntity != null) {
+                listClassEntity.add(classEntity);
+            }
+        }
+        return listClassEntity;
+    }
+
+    public ClassEntity loadFile(File file1, String pwd, String iv, Map<String, ClassEntity> mapClassEntity) throws Exception {
+        Long time = file1.lastModified();
+        String path = file1.getPath().replaceAll("\\\\", "/");
+        ClassEntity classEntity = mapClassEntity.get(path);
+        if (classEntity != null && classEntity.sign.equals(time + "")) {
+            return null;
+        } else {
+            String code;
+            if (pwd != null && iv != null) {
+                byte[] bytes = AES_CBC_128.aesDe(Tools.fileReadByte(file1), pwd, iv);
+                code = new String(bytes, Config.encoding);
+            } else {
+                code = Tools.fileReadString(file1);
+            }
+            Class<?> aClass = ClassLoad.compileJavaCode(code);
+            if (aClass == null) {
+                return null;
+            } else {
+                classEntity = new ClassEntity();
+                classEntity.sign = time + "";
+                classEntity.code = code;
+                classEntity.clazz = aClass;
+                classEntity.iv = iv;
+                classEntity.pwd = pwd;
+                classEntity.filePath = path;
+                mapClassEntity.put(classEntity.filePath, classEntity);
+                return classEntity;
+            }
+        }
+    }
+
     public Map<String, Object> getMappingMap() {
         // 先转换为原生类型，编译器会警告
         Map rawMap = mapHttpMapping0;
         // 再将原生类型转换为目标类型，编译器无法阻止
         return (Map<String, Object>) rawMap;
     }
-//request   requestLog
-/*
-    public RunRes request(Request request, Response response){
+    public RunRes request(Request request, Response response) {
         /// 函数执行 开始
         /// 初始化 开始
         RunRes runRes = new RunRes();
@@ -144,6 +199,7 @@ public class FactoryImpl implements Factory {
         String key = ClassTools.webPathFormat(request.getUri());
         String metName = request.getMethod();
         HttpMapping[] httpMappings = mapHttpMapping0.get(key);
+
         if (httpMappings == null) {
             return runRes.setState(404);
         }
@@ -167,7 +223,6 @@ public class FactoryImpl implements Factory {
             if (httpMappings[index].header != null && !httpMappings[index].header.isEmpty()) {
                 response.setHeaders(new HashMap<>(httpMappings[index].header));
             }
-
             if (httpMappings[index].isCrossDomainOrigin) {
                 String host = request.getOrigin();
                 if (host == null) {
@@ -187,14 +242,12 @@ public class FactoryImpl implements Factory {
                     }
                 }
             }
-
-
             /// 限流器 结束
             /// 请求参数获取 开始
             Map<String, List<Object>> parar = request.getParameter();
             /// 请求参数获取 结束
             /// 内置对象创建 开始
-            Object[] objects = new Object[]{runRes, request, response, request.getSession(), parar};
+            Object[] objects = new Object[]{runRes, request, response, parar};//, request.getSession()
             /// 内置对象创建 结束
             /// 装饰器(调用前) 开始
             for (DecoratorEntity decoratorEntity : httpMappings[index].start) {
@@ -214,7 +267,9 @@ public class FactoryImpl implements Factory {
                     }
                 }
             }
+
             /// 装饰器(调用前) 结束
+            //调用映射端点
             /// 调用映射端点函数 开始
             Object obj02 = httpMappings[index].httpMappingFun.call(httpMappings[index].sign, parar, mapObject0, objects, httpMappings[index].isOpenTransaction);
             runRes.setData(obj02);
@@ -245,13 +300,15 @@ public class FactoryImpl implements Factory {
             if (semaphore != null) {
                 semaphore.release();
             }
+
+            /// 函数执行 结束
+            /// 输出调试信息
         }
 
         return runRes;
     }
-*/
 
-    public RunRes request(Request request, Response response) {
+    public RunRes request0(Request request, Response response) {
         long[] times = new long[15];
         /// 函数执行 开始
         times[0] = System.nanoTime();
@@ -393,54 +450,6 @@ public class FactoryImpl implements Factory {
         }
 
         return runRes;
-    }
-
-    public List<ClassEntity> loadFolder(String folder, String pwd, String iv, Map<String, ClassEntity> mapClassEntity) throws Exception {
-        List<ClassEntity> listClassEntity = new ArrayList<>();
-        File file = new File(folder);
-        if (!file.exists() || !file.isDirectory()) {
-            log.e("编译 代码目录不存在", file.getPath());
-            return listClassEntity;
-        }
-        List<File> list = Tools.fileSub(folder, 2, ".java");
-        for (File file1 : list) {
-            ClassEntity classEntity = loadFile(file1, pwd, iv, mapClassEntity);
-            if (classEntity != null) {
-                listClassEntity.add(classEntity);
-            }
-        }
-        return listClassEntity;
-    }
-
-    public ClassEntity loadFile(File file1, String pwd, String iv, Map<String, ClassEntity> mapClassEntity) throws Exception {
-        Long time = file1.lastModified();
-        String path = file1.getPath().replaceAll("\\\\", "/");
-        ClassEntity classEntity = mapClassEntity.get(path);
-        if (classEntity != null && classEntity.sign.equals(time + "")) {
-            return null;
-        } else {
-            String code;
-            if (pwd != null && iv != null) {
-                byte[] bytes = AES_CBC_128.aesDe(Tools.fileReadByte(file1), pwd, iv);
-                code = new String(bytes, Config.encoding);
-            } else {
-                code = Tools.fileReadString(file1);
-            }
-            Class<?> aClass = ClassLoad.compileJavaCode(code);
-            if (aClass == null) {
-                return null;
-            } else {
-                classEntity = new ClassEntity();
-                classEntity.sign = time + "";
-                classEntity.code = code;
-                classEntity.clazz = aClass;
-                classEntity.iv = iv;
-                classEntity.pwd = pwd;
-                classEntity.filePath = path;
-                mapClassEntity.put(classEntity.filePath, classEntity);
-                return classEntity;
-            }
-        }
     }
 
     public Class<?> loadController(Class<?> clazz, Object object, Map<String, HttpMapping[]> mapHttpMapping, Map<String, Map<String, String>> mapHttpMappingOld,
@@ -636,14 +645,12 @@ public class FactoryImpl implements Factory {
                 } else {
                     //log.d("HTTP端点", "添加", path, met[index], httpMapping2.sign);
                 }
+                httpMapping2.header = new HashMap<>();
+                httpMapping2.header.put("content-type", ContentType.json);
                 if (headerClass != null) {
                     for (HeaderItem headerItem : headerClass.item()) {
                         if (headerItem.key().isEmpty() || headerItem.val().isEmpty()) {
                             continue;
-                        }
-                        if (httpMapping2.header == null) {
-                            httpMapping2.header = new HashMap<>();
-                            httpMapping2.header.put("content-type",ContentType.json);
                         }
                         httpMapping2.header.put(headerItem.key(), headerItem.val());
                     }
@@ -653,33 +660,20 @@ public class FactoryImpl implements Factory {
                         if (headerItem.key().isEmpty() || headerItem.val().isEmpty()) {
                             continue;
                         }
-                        if (httpMapping2.header == null) {
-                            httpMapping2.header = new HashMap<>();
-                            httpMapping2.header.put("content-type",ContentType.json);
-                        }
                         httpMapping2.header.put(headerItem.key(), headerItem.val());
                     }
                 }
 
                 if (classCrossDomain != null) {
-                    if (httpMapping2.header == null) {
-                        httpMapping2.header = new HashMap<>();
-                        httpMapping2.header.put("content-type",ContentType.json);
-                    }
                     ClassTools.generateCORSHeaders(classCrossDomain, httpMapping2.header);
                 }
                 if (metCrossDomain != null) {
-                    if (httpMapping2.header == null) {
-                        httpMapping2.header = new HashMap<>();
-                        httpMapping2.header.put("content-type",ContentType.json);
-                    }
                     ClassTools.generateCORSHeaders(metCrossDomain, httpMapping2.header);
                 }
-                if (httpMapping2.header != null) {
-                    if (httpMapping2.header.get("access-control-allow-origin") != null) {
-                        if (httpMapping2.header.get("access-control-allow-origin").equals("origin")) {
-                            httpMapping2.isCrossDomainOrigin = true;
-                        }
+
+                if (httpMapping2.header.get("access-control-allow-origin") != null) {
+                    if (httpMapping2.header.get("access-control-allow-origin").equals("origin")) {
+                        httpMapping2.isCrossDomainOrigin = true;
                     }
                 }
                 httpMappings = new HttpMapping[4];

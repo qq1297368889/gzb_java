@@ -1,6 +1,5 @@
 package gzb.tools.http;
 
-import gzb.tools.Config;
 import gzb.tools.Tools;
 
 import java.io.*;
@@ -9,7 +8,6 @@ import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,9 +37,8 @@ public class HTTP_V3 {
     }
 
     // 默认配置（保留原配置，仅移除自定义连接池）
-    private static final long DEF_TIMEOUT = 10000L;
-    private static final String DEF_CHARSET = (Config.encoding);
-    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36";
+    public static final long DEF_TIMEOUT = 10000L;
+    public static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36";
 
     // 【关键】JDK 原生 Keep-Alive 配置（静态代码块，全局生效）
 /*
@@ -66,7 +63,7 @@ public class HTTP_V3 {
 
     // 实例配置（完全保留）
     private long timeout = DEF_TIMEOUT;
-    private String charset = DEF_CHARSET;
+    private String charset = "UTF-8";
     private Map<String, String> headers = new HashMap<>();
     private boolean keepAlive = true; // 默认启用 Keep-Alive
 
@@ -230,7 +227,7 @@ public class HTTP_V3 {
         connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
 
         try (OutputStream out = connection.getOutputStream();
-             PrintWriter writer = new PrintWriter(new OutputStreamWriter(out, Charset.forName(Config.encoding)), true)) {
+             PrintWriter writer = new PrintWriter(new OutputStreamWriter(out, Charset.forName(charset)), true)) {
 
             // 写入普通表单数据
             if (data != null && !data.isEmpty()) {
@@ -348,7 +345,7 @@ public class HTTP_V3 {
         try {
             return new String(responseBytes, charset);
         } catch (UnsupportedEncodingException e) {
-            return new String(responseBytes, Charset.forName(Config.encoding));
+            return new String(responseBytes, Charset.forName(charset));
         }
     }
 

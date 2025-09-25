@@ -1,13 +1,11 @@
 package gzb.frame.netty.entity;
 
-import gzb.frame.netty.RequestParameters;
-import gzb.tools.Config;
+import gzb.frame.netty.HTTPRequestParameters;
 import gzb.tools.cache.session.Session;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.cookie.Cookie;
 
-import java.nio.charset.Charset;
 import java.util.*;
 
 public interface Request {
@@ -43,7 +41,7 @@ public interface Request {
     /**
      * 获取 参数解析对象
      */
-    public RequestParameters getRequestParameters();
+    public HTTPRequestParameters getRequestParameters();
 
     /**
      * 获取 响应对象

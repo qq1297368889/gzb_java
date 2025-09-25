@@ -26,6 +26,7 @@ import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.net.*;
+import java.nio.charset.Charset;
 import java.security.CodeSource;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -1708,6 +1709,14 @@ public class Tools {
         response.flush();
         return verCode;
     }
+    //验证码 gif 那种
+    public static byte[] getPictureCode2() {
+        GifCaptcha gifCaptcha = new GifCaptcha(140, 45, 5);
+        String verCode = gifCaptcha.text().toLowerCase();
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        gifCaptcha.out(outputStream);
+        return outputStream.toByteArray();
+    }
 
 
     public static String arrayToString(Object[] objs) {
@@ -1998,7 +2007,7 @@ public class Tools {
             out = new ByteArrayOutputStream();
             pout = new PrintStream(out);
             ex.printStackTrace(pout);
-            ret = new String(out.toByteArray());
+            ret = new String(out.toByteArray(), Charset.forName(Config.encoding));
             out.close();
         } catch (Exception e) {
             return ex.getMessage();
@@ -2092,26 +2101,31 @@ public class Tools {
      * 参数1:文本
      * 默认为 UTF-8
      */
-    public static String textToMd5(String str) throws UnsupportedEncodingException, NoSuchAlgorithmException {
-        return toMd5(str.getBytes("UTF8"));
+    public static String textToMd5(String str){
+        return toMd5(str.getBytes(Charset.forName(Config.encoding)));
     }
 
     /**
      * 获取文本MD5
      * 参数1:byte[]
      */
-    public static String toMd5(byte[] bytes) throws UnsupportedEncodingException, NoSuchAlgorithmException {
-        MessageDigest m = MessageDigest.getInstance("MD5");
-        m.update(bytes);
-        byte s[] = m.digest();
-        String result = "";
-        for (int i = 0; i < s.length; i++) {
-            result += Integer.toHexString((0x000000FF & s[i]) | 0xFFFFFF00).substring(6);
+    public static String toMd5(byte[] bytes){
+        MessageDigest m = null;
+        try {
+            m = MessageDigest.getInstance("MD5");
+            m.update(bytes);
+            byte s[] = m.digest();
+            String result = "";
+            for (int i = 0; i < s.length; i++) {
+                result += Integer.toHexString((0x000000FF & s[i]) | 0xFFFFFF00).substring(6);
+            }
+            while (result.length() < 32) {
+                result = "0" + result;
+            }
+            return result;
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
         }
-        while (result.length() < 32) {
-            result = "0" + result;
-        }
-        return result;
     }
 
 

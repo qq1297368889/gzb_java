@@ -1,5 +1,6 @@
 package gzb.tools;
 
+import gzb.tools.json.JsonSerializable;
 import gzb.tools.json.Result;
 import gzb.tools.json.ResultImpl;
 
@@ -7,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class JSONResult {
+public class JSONResult implements JsonSerializable {
 
     public static String codeText;
     public static String messageText;
@@ -28,6 +29,7 @@ public class JSONResult {
         JSONResult jsonResult = new JSONResult();
         System.out.println(jsonResult.success("true", new ArrayList<Object>()));
         System.out.println(String.class.getName());
+
     }
 
     public JSONResult() {
@@ -91,10 +93,6 @@ public class JSONResult {
         return new JSONResult()._success()._message("需要跳转").toString();
     }
 
-    @Override
-    public String toString() {
-        return json.toString();
-    }
 
     public JSONResult initJson(Integer state, String message, String stringData, List<?> data, String jump, Integer page, Integer size, Integer total) {
         json.set(codeText, state);
@@ -319,4 +317,18 @@ public class JSONResult {
         return _jump(url)._message(message)._dataMap(data);
     }
 
+    @Override
+    public Result toJson() {
+        return json;
+    }
+
+    @Override
+    public void loadJson(String json) {
+        this.json = new ResultImpl(json);
+    }
+
+    @Override
+    public String toString() {
+        return toJson().toString();
+    }
 }

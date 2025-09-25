@@ -20,7 +20,7 @@ import java.util.Set;
 public class NettyServer {
     public static Log log;
     public static Factory factory;
-    public static StaticFileHandler staticFileHandler=new StaticFileHandler();
+    public static HTTPStaticFileHandler HTTPStaticFileHandler = new HTTPStaticFileHandler();
     public static Set<String> allowedDomains;
 
 
@@ -31,7 +31,7 @@ public class NettyServer {
         if (args.length > 0) {
             port = Integer.parseInt(args[0]);
         }
-        new NettyServer().startServer(port);
+        new NettyServer().startHTTPServer(port);
     }
 
     // 负责接收连接
@@ -39,15 +39,7 @@ public class NettyServer {
     // 负责处理 I/O
     public EventLoopGroup workerGroup;
 
-    public void startServer() throws Exception {
-        startServer(Config.HTTP_PORT);
-    }
-
-    public void startServer(int port) throws Exception {
-        startServer(port, Math.max(Config.cpu / 10, 1), Config.threadNum);
-    }
-
-    public void startServer(int port, int main_thread_num, int io_thread_num) throws Exception {
+    public void init() throws Exception {
         log = Config.log;
         try {
             allowedDomains = new HashSet<String>() {{
@@ -75,7 +67,14 @@ public class NettyServer {
         } catch (Exception e) {
             log.e("服务器启动失败", e);
         }
+    }
 
+    public void startHTTPServer(int port) throws Exception {
+        startHTTPServer(port, Math.max(Config.cpu / 10, 1), Config.threadNum);
+    }
+
+    public void startHTTPServer(int port, int main_thread_num, int io_thread_num) throws Exception {
+        init();
         if (main_thread_num < 1 || io_thread_num < 1) {
             log.e("线程数错误,请重新设置", "main", main_thread_num, "io", io_thread_num);
             return;
@@ -92,7 +91,7 @@ public class NettyServer {
                     .channel(NioServerSocketChannel.class)
                     .option(ChannelOption.SO_BACKLOG, Config.maxAwaitNum)         // 待处理连接队列大小
                     .option(ChannelOption.SO_REUSEADDR, true)        // 允许地址重用
-                    .childHandler(new HttpServerInitializer())       // 自定义处理器
+                    .childHandler(new HTTPServerInitializer())       // 自定义处理器
                     .childOption(ChannelOption.TCP_NODELAY, true)    // 禁用Nagle算法
                     .childOption(ChannelOption.SO_KEEPALIVE, true)   // 启用TCP心跳保活
                     .childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000);

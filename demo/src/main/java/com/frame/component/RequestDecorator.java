@@ -54,23 +54,23 @@ public class RequestDecorator {
         log.d("登陆验证 开始");
         String data = session.getString(Config.get("key.system.login.info"));
         if (data == null) {
-            return runRes.setState(400).setData("{\"code\":\"4\",\"message\":\"未登录或登录失效\",\"\":\""+Config.get("key.system.login.page")+"\"}");
+            return runRes.setState(400).setData("{\"code\":\"4\",\"message\":\"未登录或登录失效\",\"url\":\""+Config.get("key.system.login.page")+"\"}");
         }
         SysUsers sysUsers = new SysUsers(data);
         if (sysUsers.getSysUsersId() == null) {
-            return runRes.setState(400).setData("{\"code\":\"4\",\"message\":\"未登录或登录失效\",\"\":\""+Config.get("key.system.login.page")+"\"}");
+            return runRes.setState(400).setData("{\"code\":\"4\",\"message\":\"未登录或登录失效\",\"url\":\""+Config.get("key.system.login.page")+"\"}");
         }
         List<GzbMap> list = dataBase.selectGzbMap("select * from sys_users where " +
                 "sys_users_id = ?", new Object[]{sysUsers.getSysUsersId()});
         if (list.size() != 1) {
-            return runRes.setState(400).setData("{\"code\":\"4\",\"message\":\"未登录或登录失效\",\"\":\""+Config.get("key.system.login.page")+"\"}");
+            return runRes.setState(400).setData("{\"code\":\"4\",\"message\":\"未登录或登录失效\",\"url\":\""+Config.get("key.system.login.page")+"\"}");
         }
         sysUsers = new SysUsers(list.get(0));
         //超级管理员 无需校验
         if (sysUsers.getSysUsersType() != 4L) {
             if (sysUsers.getSysUsersStatus() < 1L) {
                 session.delete();
-                return runRes.setState(400).setData("{\"code\":\"4\",\"message\":\"未登录或登录失效\",\"\":\""+Config.get("key.system.login.page")+"\"}");
+                return runRes.setState(400).setData("{\"code\":\"4\",\"message\":\"未登录或登录失效\",\"url\":\""+Config.get("key.system.login.page")+"\"}");
             }
             if (sysUsers.getSysUsersType().equals(5L)) {
                 if (sysUsers.getSysUsersStartTime() == null || sysUsers.getSysUsersEndTime() == null) {

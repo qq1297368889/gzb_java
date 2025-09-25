@@ -11,16 +11,15 @@ import gzb.frame.netty.entity.FileUploadEntity;
 import gzb.frame.netty.entity.Request;
 import gzb.frame.netty.entity.Response;
 import gzb.tools.*;
+import gzb.tools.img.GifCaptcha;
 import gzb.tools.img.PicUtils;
 import gzb.tools.json.GzbJson;
 import gzb.tools.log.Log;
 import gzb.tools.cache.session.Session;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Controller
 //@CrossDomain(allowCredentials = false)
@@ -51,27 +50,27 @@ public class SystemAction {
     }
 
     /// /system/v1.0.0/image/code
+    @Header(item = {@HeaderItem(key = "content-type", val = "image/gif")})
     @GetMapping(value = "image/code")
-    public Object image_code(Session session, Response response) {
-        try {
-            String code = Tools.getPictureCode2(response);
-            if (code.isEmpty()) {
-                session.put(Config.get("key.system.login.image.code"), "123456");
-            } else {
-                session.put(Config.get("key.system.login.image.code"), code);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            session.put(Config.get("key.system.login.image.code"), "123456");
-        }
-        return null;
+    public Object image_code(Request request) throws Exception {
+        Session session= request.getSession();
+        GifCaptcha gifCaptcha = new GifCaptcha(140, 45, 5);
+        String verCode = gifCaptcha.text().toLowerCase();
+        session.put(Config.get("key.system.login.image.code"), verCode);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        gifCaptcha.out(outputStream);
+        //Response也可以在参数上注入
+        //request.getResponse().write(outputStream.toByteArray());  //这样也可以
+        //request.getResponse().setHeader("Content-Type", "image/gif");//这样也可以
+        return outputStream.toByteArray();
     }
 
     /// 登陆
     /// /system/v1.0.0/image/code
     /// /system/v1.0.0/login?sysUsersAcc=admin&sysUsersPwd=admin&code=vkvss
     @GetMapping(value = "login")
-    public Object login(GzbJson result, SysUsers sysUsers, String mac, String code, Session session, Request request) throws Exception {
+    public Object login(GzbJson result, SysUsers sysUsers, String mac, String code, Request request) throws Exception {
+        Session session= request.getSession();
         if (sysUsers == null || sysUsers.toString().equals("{}") || sysUsers.getSysUsersAcc() == null || sysUsers.getSysUsersPwd() == null) {
             return result.fail("login 请输入账号密码");
         }
@@ -108,7 +107,8 @@ public class SystemAction {
     /// /system/v1.0.0/image/code
     /// /system/v1.0.0/reg5?sysUsersAcc=admin&sysUsersPwd=admin&code=vkvss
     @GetMapping(value = "reg5")
-    public Object reg5(GzbJson result, SysUsers sysUsers, String mac, String code, Session session, Request request) throws Exception {
+    public Object reg5(GzbJson result, SysUsers sysUsers, String mac, String code, Request request) throws Exception {
+        Session session= request.getSession();
         if (sysUsers == null || sysUsers.toString().equals("{}") || sysUsers.getSysUsersAcc() == null || sysUsers.getSysUsersPwd() == null) {
             return result.fail("注册账号 请输入账号密码");
         }
@@ -162,7 +162,8 @@ public class SystemAction {
     /// /system/v1.0.0/exit/user
     @DecoratorOpen
     @GetMapping(value = "exit/user")
-    public Object exitUser(Session session, GzbJson res) {
+    public Object exitUser(Request request, GzbJson res) {
+        Session session= request.getSession();
         session.delete();
         return res.success("登陆已失效");
     }
@@ -171,7 +172,8 @@ public class SystemAction {
     /// /system/v1.0.0/read/user/info
     @DecoratorOpen
     @GetMapping(value = "read/user/info")
-    public Object readUserInfo(Session session, GzbJson res) {
+    public Object readUserInfo(Request request, GzbJson res) {
+        Session session= request.getSession();
         String jsonString = session.getString(Config.get("key.system.login.info"));
         return res.success("获取成功", new SysUsers(jsonString).toString());
     }
@@ -226,48 +228,43 @@ public class SystemAction {
     @DecoratorOpen
     @GetMapping(value = "read/permission")
     public Object readPermission(GzbJson res,
-                                 Session session,
-                                 Long uid) throws Exception {
+                                 Request request,
+                                 Long uid,SysPermissionDao sysPermissionDao,SysUsersDao sysUsersDao) throws Exception {
+        Session session= request.getSession();
         SysUsers sysUsers0 = new SysUsers(session.getString(Config.get("key.system.login.info")));
         SysUsers sysUsers = null;
         if (uid != null) {
-            List<GzbMap> list1 = null;
+            List<SysUsers> list1 = null;
             if (sysUsers0.getSysUsersType() == 4) {
-                list1 = dataBase.selectGzbMap("select * from sys_users where sys_users_id = ?",
-                        new Object[]{uid});
+                list1 = sysUsersDao.queryCache("select * from sys_users where sys_users_id = ?",
+                        new Object[]{uid},10);
             } else {
-                list1 = dataBase.selectGzbMap("select * from sys_users where sys_users_id = ? and sys_users_sup = ?",
-                        new Object[]{uid, sysUsers0.getSysUsersId()});
+                list1 = sysUsersDao.queryCache("select * from sys_users where sys_users_id = ? and sys_users_sup = ?",
+                        new Object[]{uid, sysUsers0.getSysUsersId()},10);
             }
             if (list1.size() != 1) {
                 return res.fail("无权干预该用户权限分配");
             }
-            sysUsers = new SysUsers(list1.get(0));
+            sysUsers = list1.get(0);
         } else {
             sysUsers = sysUsers0;
         }
-        List<GzbMap> list1 = null;
+        List<SysPermission> list1 = null;
         if (sysUsers.getSysUsersType() == 4) {
-            list1 = dataBase.selectGzbMap("SELECT p.* FROM sys_permission p where sys_permission_type = ? and p.sys_permission_sup = ? " + "ORDER BY p.sys_permission_sort DESC", new Object[]{1, 0});
-            List<SysPermission> list = new ArrayList<>(list1.size());
-            for (GzbMap gzbMap : list1) {
-                SysPermission sysPermission = new SysPermission(gzbMap);
-                List<GzbMap> list2 = dataBase.selectGzbMap("select sys_permission.* from sys_permission where sys_permission.sys_permission_sup = ?", new Object[]{sysPermission.getSysPermissionId()});
-                sysPermission.setList(list2);
-                list.add(sysPermission);
+            list1 = sysPermissionDao.queryCache("SELECT p.* FROM sys_permission p where sys_permission_type = ? and p.sys_permission_sup = ? " + "ORDER BY p.sys_permission_sort DESC"
+                    , new Object[]{1, 0},10);
+            for (SysPermission sysPermission : list1) {
+                 sysPermission.setList(sysPermissionDao.queryCache(new SysPermission().setSysPermissionSup(sysPermission.getSysPermissionId()),10));
             }
-            return res.success("权限查询成功", list);
+            return res.success("权限查询成功", list1);
         } else {
-            list1 = dataBase.selectGzbMap("SELECT p.* FROM sys_permission p " + "WHERE p.sys_permission_id IN (" + "    SELECT gp.sys_group_permission_pid " + "    FROM sys_group_permission gp " + "    WHERE gp.sys_group_permission_gid = (" + "        SELECT g.sys_group_id " + "        FROM sys_group g " + "        WHERE g.sys_group_id = (" + "            SELECT u.sys_users_group " + "            FROM sys_users u " + "            WHERE u.sys_users_id = ? " + "            AND u.sys_users_status > ?" + "        )" + "    )" + ") AND p.sys_permission_sup = ? " + "ORDER BY p.sys_permission_sort DESC", new Object[]{sysUsers.getSysUsersId(), 0, 0});
+            list1 = sysPermissionDao.queryCache("SELECT p.* FROM sys_permission p " + "WHERE p.sys_permission_id IN (" + "    SELECT gp.sys_group_permission_pid " + "    FROM sys_group_permission gp " + "    WHERE gp.sys_group_permission_gid = (" + "        SELECT g.sys_group_id " + "        FROM sys_group g " + "        WHERE g.sys_group_id = (" + "            SELECT u.sys_users_group " + "            FROM sys_users u " + "            WHERE u.sys_users_id = ? " + "            AND u.sys_users_status > ?" + "        )" + "    )" + ") AND p.sys_permission_sup = ? " + "ORDER BY p.sys_permission_sort DESC", new Object[]{sysUsers.getSysUsersId(), 0, 0},10);
         }
 
         List<SysPermission> list = new ArrayList<>(list1.size());
-        for (GzbMap gzbMap : list1) {
-            SysPermission sysPermission = new SysPermission(gzbMap);
-            List<GzbMap> list2 = dataBase.selectGzbMap("select sys_permission.* from sys_permission where " + "sys_permission.sys_permission_id in " + "(select sys_group_permission_pid from sys_group_permission where sys_group_permission_gid = " + "(select sys_users.sys_users_group from sys_users where sys_users_id = ? and sys_users_status > ?" + ") " + ") " + "and sys_permission.sys_permission_sup = ?",
-                    new Object[]{sysUsers.getSysUsersId(), 0, sysPermission.getSysPermissionId()});
-            sysPermission.setList(list2);
-            list.add(sysPermission);
+        for (SysPermission sysPermission : list1) {
+            sysPermission.setList(sysPermissionDao.queryCache("select sys_permission.* from sys_permission where " + "sys_permission.sys_permission_id in " + "(select sys_group_permission_pid from sys_group_permission where sys_group_permission_gid = " + "(select sys_users.sys_users_group from sys_users where sys_users_id = ? and sys_users_status > ?" + ") " + ") " + "and sys_permission.sys_permission_sup = ?",
+                    new Object[]{sysUsers.getSysUsersId(), 0, sysPermission.getSysPermissionId()},10));
         }
         return res.success("权限查询成功", list);
     }
@@ -275,8 +272,9 @@ public class SystemAction {
     @DecoratorOpen
     @GetMapping(value = "read/permission/all")
     public Object readPermissionAll(GzbJson res,
-                                    Session session,
+                                    Request request,
                                     Long gid) throws Exception {
+        Session session= request.getSession();
         SysUsers sysUsers0 = new SysUsers(session.getString(Config.get("key.system.login.info")));
         if (sysUsers0.getSysUsersType() != 4) {
             log.w("越权访问 ", gid, sysUsers0);
@@ -326,12 +324,13 @@ public class SystemAction {
     /// read/mapping?key=sys_Users
     @DecoratorOpen
     @GetMapping(value = "read/mapping")
-    public Object readMapping(GzbJson res, Session session, String key,
+    public Object readMapping(GzbJson res,Request request, String key,
                               SysGroupDao sysGroupDao,
                               SysGroupTableDao sysGroupTableDao,
                               SysGroupColumnDao sysGroupColumnDao,
                               SysMappingDao sysMappingDao,
                               SysOptionDao sysOptionDao) throws Exception {
+        Session session= request.getSession();
         SysUsers sysUsers = new SysUsers(session.getString(Config.get("key.system.login.info")));
         if (key == null) {
             return res.fail("参数为空");
@@ -341,7 +340,6 @@ public class SystemAction {
         if (listSysGroup.size() != 1) {
             return res.fail("组信息查询失败");
         }
-        log.d("listSysGroup", listSysGroup);
         //查询表信息
         List<SysGroupTable> listSysGroupTable = sysGroupTableDao.query(new SysGroupTable().setSysGroupTableKey(key).setSysGroupTableGid(sysUsers.getSysUsersGroup()));
         if (listSysGroupTable.isEmpty()) {
@@ -349,7 +347,6 @@ public class SystemAction {
         }
         //查询列信息 sysGroupColumnDao
         List<SysGroupColumn> listSysGroupColumn = sysGroupColumnDao.query(new SysGroupColumn().setSysGroupColumnKey(key).setSysGroupColumnGid(sysUsers.getSysUsersGroup()));
-        log.d("listSysGroupColumn", listSysGroupColumn);
         if (listSysGroupColumn.isEmpty()) {
             return res.fail("列映射信息获取失败");
         }
@@ -383,7 +380,6 @@ public class SystemAction {
 
         return res.success("权限查询完成", listSysGroup);
     }
-
 
     /// /system/v1.0.0/upload?sys_Users
     @PostMapping(value = "upload")

@@ -9,7 +9,7 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 
 
-public class HttpServerInitializer extends ChannelInitializer<SocketChannel> {
+public class HTTPServerInitializer extends ChannelInitializer<SocketChannel> {
 
 
     @Override
@@ -18,14 +18,14 @@ public class HttpServerInitializer extends ChannelInitializer<SocketChannel> {
         p.addLast(new ExceptionHandler());
         // 异常处理器
         if (!NettyServer.allowedDomains.contains("0.0.0.0")) {
-            p.addLast(new DomainFilterHandler(NettyServer.allowedDomains));
+            p.addLast(new HTTPDomainFilterHandler(NettyServer.allowedDomains));
         }
         // 编解码器：将字节流转换为 HTTP 消息对象
         p.addLast(new HttpServerCodec());
         // 消息聚合器：将分段的 HTTP 消息聚合为一个完整的请求/响应
         p.addLast(new HttpObjectAggregator(1024 * 1024));
         // 请求处理器
-        p.addLast(new RequestHandlerV4());
+        p.addLast(new HTTPRequestHandlerV4());
         if (Config.maxPostSize>0) {
             p.addLast(new HttpObjectAggregator(Config.maxPostSize));
         }

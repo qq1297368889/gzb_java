@@ -6,17 +6,15 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.HttpVersion;
-import io.netty.util.CharsetUtil;
 
-import java.util.HashSet;
 import java.util.Set;
 
-public class DomainFilterHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
+public class HTTPDomainFilterHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
     // 允许的域名列表
     private final Set<String> allowedDomains;
 
-    public DomainFilterHandler(Set<String> allowedDomains) {
+    public HTTPDomainFilterHandler(Set<String> allowedDomains) {
         this.allowedDomains = allowedDomains;
     }
 

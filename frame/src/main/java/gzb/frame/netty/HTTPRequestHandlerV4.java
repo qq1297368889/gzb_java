@@ -10,7 +10,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 
 
-public class RequestHandlerV4 extends SimpleChannelInboundHandler<FullHttpRequest> {
+public class HTTPRequestHandlerV4 extends SimpleChannelInboundHandler<FullHttpRequest> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
         if (req.uri().startsWith("/text")) {
@@ -34,8 +34,9 @@ public class RequestHandlerV4 extends SimpleChannelInboundHandler<FullHttpReques
             response.sendAndFlush(runRes.getData());
         } else {
             if (runRes.getState() == 404) {
-                NettyServer.staticFileHandler.channelRead0(ctx, req);
+                NettyServer.HTTPStaticFileHandler.channelRead0(ctx, req);
             } else {
+                response.setContentType("application/json;charset=UTF-8");
                 response.setStatus(runRes.getState()).sendAndFlush(runRes.getData());
             }
         }

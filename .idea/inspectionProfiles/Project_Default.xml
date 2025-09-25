@@ -11,6 +11,7 @@
           <option value="java.lang.String" />
           <option value="java.util.List" />
           <option value="java.util.Map" />
+          <option value="java.util.Set" />
           <option value="java.util.concurrent.ConcurrentLinkedQueue" />
         </set>
       </option>

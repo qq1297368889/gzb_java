@@ -157,7 +157,7 @@ public class ResponseDefaultImpl implements Response {
     // --- Cookie Management Methods ---
 
     public Response setCookie(String key, String val, int mm) {
-        return setCookie(key, val, mm, null, "/", true, true);
+        return setCookie(key, val, mm, null, "/", true, false);
     }
 
     /**

@@ -7,17 +7,60 @@ import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http.multipart.*;
 import io.netty.util.CharsetUtil;
 
-import java.io.IOException;
+import java.io.File;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class RequestParameters {
+class TempFile {
+    public File file;
+    public Long time;
+
+    public TempFile(File file, Long time) {
+        this.file = file;
+        this.time = time;
+    }
+}
+
+public class HTTPRequestParameters {
+    private static final ConcurrentLinkedQueue<TempFile> tempFile = new ConcurrentLinkedQueue<>();
+
+    static {
+        Thread thread = new Thread(() -> {
+            int sleep0 = 1000 * 10;
+            int mm = 120 * 1000;
+            long max = 0;
+            while (true) {
+                try {
+                    TempFile tempFile1 = tempFile.peek();
+                    if (tempFile1 != null) {
+                        max = System.currentTimeMillis() - tempFile1.time;
+                        if (max >= mm) {
+                            tempFile.poll();
+                            if (tempFile1.file.exists()) {
+                                tempFile1.file.delete();
+                            }
+                        } else {
+                            Tools.sleep(mm - max);
+                            continue;
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();//这玩意不允许出错
+                }
+                Tools.sleep(sleep0);
+            }
+        });
+        thread.setName("HTTPRequestParameters.TempFile-Cleaner");
+        thread.setDaemon(true);
+        thread.start();
+    }
 
     private final FullHttpRequest request;
     private final String rawBody;
     private Map<String, List<Object>> parameters;
     public String path;
 
-    public RequestParameters(FullHttpRequest request, String rawBody) {
+    public HTTPRequestParameters(FullHttpRequest request, String rawBody) {
         this.rawBody = rawBody;
         this.request = request;
     }
@@ -66,12 +109,12 @@ public class RequestParameters {
             for (Map.Entry<String, Object> stringObjectEntry : jsonMap.entrySet()) {
                 if (stringObjectEntry.getValue() instanceof Double) {
                     continue;
-                }else{
+                } else {
 
                 }
                 List<Object> list = params.computeIfAbsent(stringObjectEntry.getKey(), k -> new ArrayList<>());
-                String val=stringObjectEntry.getValue().toString();
-                int x=val.indexOf(".");
+                String val = stringObjectEntry.getValue().toString();
+                int x = val.indexOf(".");
 
                 list.add(stringObjectEntry.getValue());
             }
@@ -104,6 +147,7 @@ public class RequestParameters {
                     params.computeIfAbsent(attribute.getName(), k -> new ArrayList<>()).add(attribute.getValue());
                 } else if (data.getHttpDataType() == InterfaceHttpData.HttpDataType.FileUpload) {
                     FileUploadEntity fileUploadEntity = new FileUploadEntity((FileUpload) data);
+                    tempFile.add(new TempFile(fileUploadEntity.getFile(), System.currentTimeMillis()));
                     params.computeIfAbsent(fileUploadEntity.getName(), k -> new ArrayList<>()).add(fileUploadEntity);
                 }
             }

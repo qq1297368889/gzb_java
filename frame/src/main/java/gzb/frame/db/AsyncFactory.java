@@ -106,58 +106,59 @@ public class AsyncFactory {
                 try {
                     connection.setAutoCommit(false);
                     preparedStatement = connection.prepareStatement(sql);
-                    List<Object[]> list = new ArrayList<>();
-                    long start = System.currentTimeMillis();
-                    long end = 0;
-                    int i = 0;
-                    int num = 0;
-                    while (true) {
-                        i++;
-                        size--;
-                        try {
-                            Object[] parameter = queue.poll();
-                            if (parameter == null) {
-                                break;
-                            }
-                            list.add(parameter);
-                            for (int i1 = 0; i1 < parameter.length; i1++) {
-                                preparedStatement.setObject(i1 + 1, parameter[i1]);
-                            }
-                            preparedStatement.addBatch();
-                            debugNum++;
-                            num++;
-                            if (i % batchSize == 0 || size == 0) {
-                                preparedStatement.executeBatch();
-                                connection.commit();
-                                end = System.currentTimeMillis();
-                                list.clear();
-                                log.d("异步批量执行SQL", num, "条", "耗时", end - start, "毫秒", sql);
-                                num = 0;
-                                start = System.currentTimeMillis();
-                            }
 
-                        } catch (SQLException e) {
-                            connection.rollback();
-                            log.e("异步批量执行SQL 失败,尝试筛选错误源", sql, e);
-                            List<Object[]> list2 = new ArrayList<>();
-                            connection.setAutoCommit(true);
-                            for (int n = 0; n < list.size(); n++) {
-                                try {
-                                    for (int k = 0; k < list.get(n).length; k++) {
-                                        preparedStatement.setObject(k + 1, list.get(n)[k]);
+                        List<Object[]> list = new ArrayList<>();
+                        long start = System.currentTimeMillis();
+                        long end = 0;
+                        int i = 0;
+                        int num = 0;
+                        while (true) {
+                            i++;
+                            size--;
+                            try {
+                                Object[] parameter = queue.poll();
+                                if (parameter == null) {
+                                    break;
+                                }
+                                list.add(parameter);
+                                for (int i1 = 0; i1 < parameter.length; i1++) {
+                                    preparedStatement.setObject(i1 + 1, parameter[i1]);
+                                }
+                                preparedStatement.addBatch();
+                                debugNum++;
+                                num++;
+                                if (i % batchSize == 0 || size == 0) {
+                                    preparedStatement.executeBatch();
+                                    connection.commit();
+                                    end = System.currentTimeMillis();
+                                    list.clear();
+                                    log.d("异步批量执行SQL", num, "条", "耗时", end - start, "毫秒", sql);
+                                    num = 0;
+                                    start = System.currentTimeMillis();
+                                }
+
+                            } catch (SQLException e) {
+                                log.e("异步批量执行SQL 失败,尝试筛选错误源", sql, e);
+                                connection.rollback();
+                                List<Object[]> list2 = new ArrayList<>();
+                                connection.setAutoCommit(true);
+                                for (int n = 0; n < list.size(); n++) {
+                                    try {
+                                        for (int k = 0; k < list.get(n).length; k++) {
+                                            preparedStatement.setObject(k + 1, list.get(n)[k]);
+                                        }
+                                        preparedStatement.execute();
+                                    } catch (Exception e2) {
+                                        list2.add(list.get(n));
                                     }
-                                    preparedStatement.execute();
-                                } catch (Exception e2) {
-                                    list2.add(list.get(n));
+                                }
+                                connection.setAutoCommit(false);
+                                if (list2.size() > 0) {
+                                    log.e("异步批量执行SQL 重试失败", sql, list2);
                                 }
                             }
-                            connection.setAutoCommit(false);
-                            if (list2.size() > 0) {
-                                log.e("异步批量执行SQL 重试失败", sql, list2);
-                            }
-                        }
 
-                    }
+                        }
                 } finally {
                     if (preparedStatement != null) {
                         preparedStatement.close();

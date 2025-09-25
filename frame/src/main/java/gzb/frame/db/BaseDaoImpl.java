@@ -3,10 +3,7 @@ package gzb.frame.db;
 import gzb.entity.SqlTemplate;
 import gzb.frame.annotation.Service;
 import gzb.frame.factory.ClassTools;
-import gzb.tools.Config;
-import gzb.tools.GzbMap;
-import gzb.tools.JSONResult;
-import gzb.tools.Tools;
+import gzb.tools.*;
 import gzb.tools.cache.Cache;
 import gzb.tools.cache.GzbCache;
 import gzb.tools.log.Log;
@@ -16,6 +13,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
 
 @Service
 public abstract class BaseDaoImpl<T> implements BaseDao<T> {
@@ -70,12 +68,14 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
     }
 
     public void setConnect(Connection connection) {
-        setConnect(connection,false);
+        setConnect(connection, false);
     }
-    public void setConnect(Connection connection,boolean openTransaction) {
-        this.autoCommit=!openTransaction;
+
+    public void setConnect(Connection connection, boolean openTransaction) {
+        this.autoCommit = !openTransaction;
         this.connection_class = connection;
     }
+
     @Override
     public DataBase getDataBase() {
         return this.dataBase;
@@ -107,7 +107,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             return null;
         }
         SqlTemplate sqlTemplate = ClassTools.toSelectSql(t);
-        if (sqlTemplate==null) {
+        if (sqlTemplate == null) {
             return null;
         }
         return queryPage(sqlTemplate.getSql(), sqlTemplate.getObjects(), sortField, sortType, page, size, maxPage, maxSize);
@@ -153,16 +153,20 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             sb.append("]");
             rs = ps.executeQuery();
             times[2] = System.currentTimeMillis();
-            Constructor<T> constructor = (Constructor<T>) t.getClass().getDeclaredConstructor(ResultSet.class,Set.class);
+            Constructor<T> constructor = null;
             ResultSetMetaData rsMetaData = rs.getMetaData();
             int columnCount = rsMetaData.getColumnCount();
-            Set<String>names=new HashSet<>();
+            Set<String> names = new HashSet<>();
             for (int i = 0; i < columnCount; i++) {
                 names.add(rsMetaData.getColumnLabel(i + 1));
             }
-            while (rs.next()) {
-                list.add(constructor.newInstance(rs,names));
+            if (names.size()>0) {
+                constructor = (Constructor<T>) t.getClass().getDeclaredConstructor(ResultSet.class, Set.class);
+                while (rs.next()) {
+                    list.add(constructor.newInstance(rs, names));
+                }
             }
+
             times[3] = System.currentTimeMillis();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -172,7 +176,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             sb.append(",[连接：").append(times[1] - times[0]).append("ms]");
             sb.append(",[执行：").append(times[2] - times[1]).append("ms]");
             sb.append(",[组装：").append(times[3] - times[2]).append("ms]");
-            log.s(sb.toString(),times[0],times[4]);
+            log.s(sb.toString(), times[0], times[4]);
         }
         return list;
     }
@@ -201,7 +205,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             return null;
         }
         SqlTemplate sqlTemplate = ClassTools.toSelectSql(t);
-        if (sqlTemplate==null) {
+        if (sqlTemplate == null) {
             return null;
         }
         return query(sqlTemplate.getSql(), sqlTemplate.getObjects());
@@ -213,7 +217,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             return null;
         }
         SqlTemplate sqlTemplate = ClassTools.toSelectSql(t);
-        if (sqlTemplate==null) {
+        if (sqlTemplate == null) {
             return null;
         }
         return query(sqlTemplate.getSql(), sqlTemplate.getObjects(), sortField, sortType, 0, 0);
@@ -225,7 +229,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             return null;
         }
         SqlTemplate sqlTemplate = ClassTools.toSelectSql(t);
-        if (sqlTemplate==null) {
+        if (sqlTemplate == null) {
             return null;
         }
         return query(sqlTemplate.getSql(), sqlTemplate.getObjects(), sortField, sortType, page, size);
@@ -237,7 +241,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             return null;
         }
         SqlTemplate sqlTemplate = ClassTools.toSelectSql(t);
-        if (sqlTemplate==null) {
+        if (sqlTemplate == null) {
             return null;
         }
         return query(sqlTemplate.getSql(), sqlTemplate.getObjects(), null, null, page, size);
@@ -261,7 +265,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             return null;
         }
         SqlTemplate sqlTemplate = ClassTools.toSelectSql(t);
-        if (sqlTemplate==null) {
+        if (sqlTemplate == null) {
             return null;
         }
         List<T> list = query(sqlTemplate.getSql(), sqlTemplate.getObjects(), null, null, 1, 2);
@@ -277,7 +281,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             return -1;
         }
         SqlTemplate sqlTemplate = ClassTools.toSaveSql(t);
-        if (sqlTemplate==null) {
+        if (sqlTemplate == null) {
             return -2;
         }
         return execute(sqlTemplate.getSql(), sqlTemplate.getObjects());
@@ -289,7 +293,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             return -1;
         }
         SqlTemplate sqlTemplate = ClassTools.toUpdateSql(t);
-        if (sqlTemplate==null) {
+        if (sqlTemplate == null) {
             return -2;
         }
         return execute(sqlTemplate.getSql(), sqlTemplate.getObjects());
@@ -301,7 +305,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             return -1;
         }
         SqlTemplate sqlTemplate = ClassTools.toDeleteSql(t);
-        if (sqlTemplate==null) {
+        if (sqlTemplate == null) {
             return -2;
         }
         return execute(sqlTemplate.getSql(), sqlTemplate.getObjects());
@@ -313,7 +317,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         List<Object[]> data = new ArrayList<>();
         for (int i = 0; i < list.size(); i++) {
             SqlTemplate sqlTemplate = ClassTools.toSaveSql(list.get(i));
-            if (sqlTemplate==null) {
+            if (sqlTemplate == null) {
                 continue;
             }
             sql = sqlTemplate.getSql();
@@ -328,7 +332,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         List<Object[]> data = new ArrayList<>();
         for (int i = 0; i < list.size(); i++) {
             SqlTemplate sqlTemplate = ClassTools.toUpdateSql(list.get(i));
-            if (sqlTemplate==null) {
+            if (sqlTemplate == null) {
                 continue;
             }
             sql = sqlTemplate.getSql();
@@ -343,7 +347,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         List<Object[]> data = new ArrayList<>();
         for (int i = 0; i < list.size(); i++) {
             SqlTemplate sqlTemplate = ClassTools.toDeleteSql(list.get(i));
-            if (sqlTemplate==null) {
+            if (sqlTemplate == null) {
                 continue;
             }
             sql = sqlTemplate.getSql();
@@ -358,7 +362,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             return -1;
         }
         SqlTemplate sqlTemplate = ClassTools.toSaveSql(t);
-        if (sqlTemplate==null) {
+        if (sqlTemplate == null) {
             return -2;
         }
         return executeAsync(sqlTemplate.getSql(), sqlTemplate.getObjects());
@@ -370,7 +374,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             return -1;
         }
         SqlTemplate sqlTemplate = ClassTools.toUpdateSql(t);
-        if (sqlTemplate==null) {
+        if (sqlTemplate == null) {
             return -2;
         }
         return executeAsync(sqlTemplate.getSql(), sqlTemplate.getObjects());
@@ -382,7 +386,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             return -1;
         }
         SqlTemplate sqlTemplate = ClassTools.toDeleteSql(t);
-        if (sqlTemplate==null) {
+        if (sqlTemplate == null) {
             return -2;
         }
         return executeAsync(sqlTemplate.getSql(), sqlTemplate.getObjects());
@@ -392,19 +396,19 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
     public int execute(String sql, Object[] params) throws Exception {
         ResultSet rs = null;
         PreparedStatement ps = null;
-        long start = 0,end = 0;
+        long start = 0, end = 0;
         if (sql == null || params == null) {
             return -1;
         }
         Connection connection = getConnect();
         try {
-            start=System.currentTimeMillis();
+            start = System.currentTimeMillis();
             ps = connection.prepareStatement(sql);
             for (int i = 0; i < params.length; i++) {
                 ps.setObject(i + 1, params[i]);
             }
-            int res=ps.executeUpdate();
-            end=System.currentTimeMillis();
+            int res = ps.executeUpdate();
+            end = System.currentTimeMillis();
             return res;
         } catch (SQLException e) {
             connection.rollback();
@@ -425,7 +429,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             } else {
                 close(null, rs, ps);
             }
-            log.s(sql,start,end);
+            log.s(sql, start, end);
         }
 
     }
@@ -587,25 +591,38 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
 
     public int countCache(String sql, Object[] params, int second) throws Exception {
         String key = toKey(sql, params);
-        Integer object = gzbCache.getInteger(key,null);
-        if (object!=null) {
-            log.d("缓存命中","countCache",sql,params);
+        Integer object = gzbCache.getInteger(key, null);
+        if (object != null) {
+            log.d("缓存命中", "countCache", sql, params);
             return object;
         }
-        int c01=count(sql,params);
+        int c01 = count(sql, params);
         gzbCache.set(key, c01, second);
         return c01;
     }
+
     @Override
     public List<T> queryCache(String sql, Object[] params, int second) {
         String key = toKey(sql, params);
-        Object object = gzbCache.getObject(key,null);
+        Object object = gzbCache.getObject(key, null);
         if (object instanceof List) {
-            log.d("缓存命中","queryCache",sql,params);
+            log.d("缓存命中", "queryCache", sql, params);
             return (List<T>) object;
         }
-        List<T> list = query(sql, params);
-        gzbCache.setObject(key, list, second);
+        List<T> list = null;
+        Lock lock = LockFactory.getLock(key, second);
+        lock.lock();
+        try {
+            object = gzbCache.getObject(key, null);
+            if (object instanceof List) {
+                log.d("缓存命中", "queryCache", sql, params);
+                return (List<T>) object;
+            }
+            list = query(sql, params);
+            gzbCache.setObject(key, list, second);
+        } finally {
+            lock.unlock();
+        }
         return list;
     }
 
@@ -624,7 +641,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (page > 0 && size > 0) {
             pageSql += " limit " + ((page - 1) * size) + "," + size;
         }
-        return queryCache(pageSql, params,second);
+        return queryCache(pageSql, params, second);
     }
 
     @Override
@@ -633,15 +650,15 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             return null;
         }
         SqlTemplate sqlTemplate = ClassTools.toSelectSql(t);
-        if (sqlTemplate==null) {
+        if (sqlTemplate == null) {
             return null;
         }
-        return queryCache(sqlTemplate.getSql(), sqlTemplate.getObjects(),second);
+        return queryCache(sqlTemplate.getSql(), sqlTemplate.getObjects(), second);
     }
 
     @Override
     public List<T> queryCache(T t, String sortField, String sortType, int second) throws Exception {
-        return queryCache(t,sortField,sortType,0,0,second);
+        return queryCache(t, sortField, sortType, 0, 0, second);
     }
 
     @Override
@@ -650,21 +667,21 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             return null;
         }
         SqlTemplate sqlTemplate = ClassTools.toSelectSql(t);
-        if (sqlTemplate==null) {
+        if (sqlTemplate == null) {
             return null;
         }
-        return queryCache(sqlTemplate.getSql(), sqlTemplate.getObjects(),sortField,sortType,page,size,second);
+        return queryCache(sqlTemplate.getSql(), sqlTemplate.getObjects(), sortField, sortType, page, size, second);
     }
 
     @Override
     public List<T> queryCache(T t, int page, int size, int second) throws Exception {
-        return queryCache(t,null,null,page,size,second);
+        return queryCache(t, null, null, page, size, second);
     }
 
     @Override
     public JSONResult queryPageCache(String sql, Object[] objects, String sortField, String sortType, Integer page, Integer size, int maxPage, int maxSize, int second) throws Exception {
         JSONResult jsonResult = new JSONResult();
-        int count = countCache(sql, objects,second);
+        int count = countCache(sql, objects, second);
         if (count <= (page - 1) * size) {
             return jsonResult.paging(new ArrayList<>(), page, size, count);
         }
@@ -674,7 +691,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (maxPage > 0 && page > maxPage) {
             page = maxPage;
         }
-        List<T> list = queryCache(sql, objects, sortField, sortType, page, size,second);
+        List<T> list = queryCache(sql, objects, sortField, sortType, page, size, second);
         return jsonResult.paging(list, page, size, count);
     }
 
@@ -684,10 +701,10 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             return null;
         }
         SqlTemplate sqlTemplate = ClassTools.toSelectSql(t);
-        if (sqlTemplate==null) {
+        if (sqlTemplate == null) {
             return null;
         }
-        return queryPageCache(sqlTemplate.getSql(), sqlTemplate.getObjects(), sortField, sortType, page, size, maxPage, maxSize,second);
+        return queryPageCache(sqlTemplate.getSql(), sqlTemplate.getObjects(), sortField, sortType, page, size, maxPage, maxSize, second);
     }
 
 

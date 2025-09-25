@@ -4,9 +4,14 @@ import gzb.tools.Config;
 import gzb.tools.DateTime;
 import gzb.tools.Queue;
 import gzb.tools.Tools;
+import gzb.tools.cache.Cache;
 import gzb.tools.thread.ThreadPool;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
 
 public class LogThread {
     public static File rootPathFile;
@@ -98,7 +103,7 @@ public class LogThread {
     }
 
 
-    private String appendLog(int index, Class<?>aClass, Object[] log) {
+    private String appendLog(int index, Class<?>aClass, Object[] log){
         Thread currentThread = Thread.currentThread();
         //String threadName = currentThread.getName();
         long threadId = currentThread.getId();
@@ -140,9 +145,19 @@ public class LogThread {
             }
         }
         sb.append(": ");
+
+
         for (int i = 0; i < log.length; i++) {
             if (log[i] instanceof Exception) {
-                sb.append(Tools.getExceptionInfo((Exception) log[i]));
+                String errMsg=Tools.getExceptionInfo((Exception) log[i]);
+                String md5= Tools.textToMd5(errMsg);
+                int num = Cache.gzbMap.getIncr("异常去重",md5);
+                if (num>1){
+                    errMsg="异常已出现 "+num+" 次,异常MD5:"+md5;
+                }else{
+                    errMsg="异常MD5:"+md5+"\r\n"+errMsg;
+                }
+                sb.append(errMsg);
             }else{
                 sb.append(Tools.toJson(log[i]));
             }

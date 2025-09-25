@@ -1,6 +1,6 @@
 package gzb.frame.netty.entity;
 
-import gzb.frame.netty.RequestParameters;
+import gzb.frame.netty.HTTPRequestParameters;
 import gzb.tools.Config;
 import gzb.tools.cache.session.Session;
 import gzb.tools.cache.session.SessionImpl;
@@ -26,7 +26,7 @@ public class RequestDefaultImpl implements Request {
     private Map<String, String> headers;
     private byte[] body;
     private Set<Cookie> cookies;
-    private RequestParameters requestParameters;
+    private HTTPRequestParameters HTTPRequestParameters;
     private FullHttpRequest request;
     private Response response;
     private Session session;
@@ -44,15 +44,9 @@ public class RequestDefaultImpl implements Request {
         this.localIp = localAddress.getAddress().getHostAddress();
         this.localPort = localAddress.getPort();
         ByteBuf content = request.content();
-        if (content.hasArray()) {
-            this.body = content.array();
-        } else {
-            this.body = new byte[content.readableBytes()];
-            content.readBytes(this.body);
-        }
-
+        this.body = new byte[content.readableBytes()];
+        content.readBytes(this.body);
         getParameter();
-        //this.response.setContentType(ContentType.html);
     }
 
     public Map<String, String> getHeaders() {
@@ -148,8 +142,8 @@ public class RequestDefaultImpl implements Request {
         return ctx;
     }
 
-    public RequestParameters getRequestParameters() {
-        return requestParameters;
+    public HTTPRequestParameters getRequestParameters() {
+        return HTTPRequestParameters;
     }
 
     public Response getResponse() {
@@ -177,13 +171,13 @@ public class RequestDefaultImpl implements Request {
     }
 
     public String[] getParameterArray(String key) {
-        if (requestParameters == null) {
+        if (HTTPRequestParameters == null) {
             getParameter();
         }
-        if (requestParameters == null) {
+        if (HTTPRequestParameters == null) {
             return null;
         }
-        List<Object> list = requestParameters.getParameters().get(key);
+        List<Object> list = HTTPRequestParameters.getParameters().get(key);
         if (list != null && !list.isEmpty()) {
             return list.toArray(new String[0]);
         }
@@ -199,10 +193,10 @@ public class RequestDefaultImpl implements Request {
     }
 
     public Map<String, List<Object>> getParameter() {
-        if (requestParameters == null) {
-            requestParameters = new RequestParameters(request, getBodyString());
+        if (HTTPRequestParameters == null) {
+            HTTPRequestParameters = new HTTPRequestParameters(request, getBodyString());
         }
-        return requestParameters.getParameters();
+        return HTTPRequestParameters.getParameters();
     }
 
     public String getOrigin() {
@@ -269,7 +263,7 @@ public class RequestDefaultImpl implements Request {
 
 
     public String getUri() {
-        return requestParameters.path;
+        return HTTPRequestParameters.path;
     }
 
     public String getMethod() {

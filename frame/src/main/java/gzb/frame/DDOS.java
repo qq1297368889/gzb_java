@@ -42,6 +42,7 @@ public class DDOS {
      * @return 测试结果 true or false
      */
     public static boolean testApi(String url, String met, String data, Map<String, String> headers, Map<String, List<File>> files, byte[] successData) {
+
         byte[] bytes = null;
         try {
             bytes = new HTTP_V3().request(url, met, data, headers, files, 1000L).asByte();
