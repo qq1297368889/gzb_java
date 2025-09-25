@@ -23,7 +23,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>gzb</groupId>
-    <artifactId>one</artifactId>
+    <artifactId>gzb.one</artifactId>
     <name>gzb.one</name>
     <version>1.0.0</version>
     <description>项目基础框架</description>

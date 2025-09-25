@@ -34,7 +34,7 @@
     <dependencies>
         <dependency>
             <groupId>gzb</groupId>
-            <artifactId>one</artifactId>
+            <artifactId>gzb.one</artifactId>
             <version>1.0.0</version>
         </dependency>
 <!--        <dependency>
@@ -42,7 +42,7 @@
             <artifactId>frame.one</artifactId>
             <version>1.0.0</version>
             <scope>system</scope>
-            <systemPath>E:/frame.one-1.0.0.jar</systemPath>
+            <systemPath>E:/gzb.one-1.0.0-fat.jar</systemPath>
         </dependency>
         -->
 
