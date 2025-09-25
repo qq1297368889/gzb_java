@@ -1,3 +1,21 @@
+/*
+ *
+ *  * Copyright [2025] [GZB ONE]
+ *  *
+ *  * Licensed under the Apache License, Version 2.0 (the "License");
+ *  * you may not use this file except in compliance with the License.
+ *  * You may obtain a copy of the License at
+ *  *
+ *  * http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ *  * Unless required by applicable law or agreed to in writing, software
+ *  * distributed under the License is distributed on an "AS IS" BASIS,
+ *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  * See the License for the specific language governing permissions and
+ *  * limitations under the License.
+ *
+ */
+
 package gzb.tools.img;
 
 import java.awt.*;
@@ -6,24 +24,6 @@ import java.awt.image.DataBufferByte;
 import java.io.*;
 
 
-/**
- * Gif生成工具
- * Class AnimatedGifEncoder - Encodes a GIF file consisting of one or
- * more frames.
- * <pre>
- * Example:
- *    AnimatedGifEncoder e = new AnimatedGifEncoder();
- *    e.start(outputFileName);
- *    e.setDelay(1000);   // 1 frame per sec
- *    e.addFrame(image1);
- *    e.addFrame(image2);
- *    e.finish();
- * </pre>
- * No copyright asserted on the source code of this class.  May be used
- * for any purpose, however, refer to the Unisys LZW patent for restrictions
- * on use of the associated Encoder class.  Please forward any corrections
- * to questions at fmsware.com.
- */
 public class GifEncoder {
     protected int width; // image size
     protected int height;
