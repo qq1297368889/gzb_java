@@ -10,7 +10,7 @@ public class OnlyId {
     private static long subId;
     private static long subTime;
     static {
-        serverName = Config.getInteger("server.name", 100);
+        serverName = Config.getInteger("gzb.system.server.name", 1);
         subId = 0;
         subTime = 0;
     }

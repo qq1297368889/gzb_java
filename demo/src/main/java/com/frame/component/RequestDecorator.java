@@ -48,7 +48,7 @@ public class RequestDecorator {
     }
 
     //登陆验证
-    @DecoratorStart("/system/")
+    @DecoratorStart(value = "/system/",sort = 0)
     public RunRes authorization(Request request, RunRes runRes, Log log) throws Exception {
         Session session=request.getSession();
         log.d("登陆验证 开始");
@@ -97,7 +97,7 @@ public class RequestDecorator {
     }
 
     //权限验证
-    @DecoratorStart("/system/")
+    @DecoratorStart(value = "/system/",sort = 1)
     public RunRes verPermission(RunRes runRes, Request request, SysUsers sysUsers, SysUsersDao sysUsersDao, Log log) throws Exception {
         log.d("权限验证 开始");
         String path = ClassTools.webPathFormat(request.getUri()) + "-" + (request.getMethod().toUpperCase());

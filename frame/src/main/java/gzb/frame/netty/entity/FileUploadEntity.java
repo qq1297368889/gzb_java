@@ -1,6 +1,9 @@
 package gzb.frame.netty.entity;
 
+import gzb.tools.Config;
+import gzb.tools.OnlyId;
 import io.netty.handler.codec.http.multipart.FileUpload;
+
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.UUID;
@@ -28,6 +31,7 @@ public class FileUploadEntity {
 
     /**
      * 构造方法：通过Netty的FileUpload对象自动初始化
+     *
      * @param nettyFileUpload Netty的FileUpload对象
      */
     public FileUploadEntity(FileUpload nettyFileUpload) {
@@ -42,7 +46,10 @@ public class FileUploadEntity {
 
         // 复制文件内容或临时文件引用
         try {
-            this.file = nettyFileUpload.getFile();
+            this.file = new File(Config.tempDir + File.separator + OnlyId.getDistributed() + ".data");
+            if (!nettyFileUpload.getFile().renameTo(file)) {
+                throw new RuntimeException("Can't rename file 文件移动失败，请注意"+file.getPath());
+            }
         } catch (Exception e) {
             // 处理可能的IO异常
             throw new RuntimeException("Failed to copy content from Netty FileUpload", e);
@@ -54,7 +61,7 @@ public class FileUploadEntity {
      * （用于后续完全移除Netty依赖时使用）
      */
     public FileUploadEntity(String name, String filename, String contentType,
-                               Charset charset, long size, boolean isInMemory,File file) {
+                            Charset charset, long size, boolean isInMemory, File file) {
         this.name = name;
         this.filename = filename;
         this.contentType = contentType;
@@ -109,15 +116,16 @@ public class FileUploadEntity {
      * 释放资源
      */
     public boolean delete() {
-        if (!isInMemory && file != null){
+        if (!isInMemory && file != null) {
             return file.delete();
         }
-     return true;
+        return true;
     }
 
     @Override
     public String toString() {
         return "DecoupledFileUpload{" +
+                "file='" + file.getPath() + '\'' +
                 "name='" + name + '\'' +
                 ", filename='" + filename + '\'' +
                 ", contentType='" + contentType + '\'' +

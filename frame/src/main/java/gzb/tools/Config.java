@@ -77,8 +77,8 @@ static{
         WS_PORT = Config.getInteger("gzb.system.server.ws.port", 0);
         threadNum = Config.getInteger("gzb.system.server.http.thread.num", cpu * 2);
         maxAwaitNum = Config.getInteger("gzb.system.server.http.await.num", cpu * 1000);
-        maxPostSize = Config.getInteger("gzb.system.server.http.postSize", 1024 * 1024 * 10);
-        compressionMinSize = Config.getInteger("gzb.system.server.http.compressionMinSize", 1024 * 5);
+        maxPostSize = Config.getInteger("gzb.system.server.http.post.size", 1024 * 1024 * 10);
+        compressionMinSize = Config.getInteger("gzb.system.server.http.compression.min.size", 1024 * 5);
         compression = Config.getBoolean("gzb.system.server.http.compression", false);
         codeDir = Config.get("gzb.system.code.dir", null);
         codePwd = Config.get("gzb.system.code.pwd", null);
@@ -202,6 +202,7 @@ static{
                         if (!new File(n1).exists()) {
                             n1 = ss2[1].replaceAll("classpath:", thisPath());
                         }
+                        Tools.fileMkdirs(new File(n1));
                         ss2[1] = n1;
 
                     }
@@ -210,6 +211,7 @@ static{
                         if (!new File(n1).exists()) {
                             n1 = ss2[1].replaceAll("this:", thisPath());
                         }
+                        Tools.fileMkdirs(new File(n1));
                         ss2[1] = n1;
                     }
                     if (config.get(ss2[0]) == null) {

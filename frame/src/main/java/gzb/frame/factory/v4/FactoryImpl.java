@@ -68,7 +68,7 @@ public class FactoryImpl implements Factory {
         Thread thread = new Thread(() -> {
             while (true) {
                 try {
-                    List<File>listFile=new ArrayList<>();
+                    List<File> listFile = new ArrayList<>();
                     String[] arr1 = classDir.split(",");
                     for (int i = 0; i < arr1.length; i++) {
                         arr1[i] = Tools.pathFormat(arr1[i].trim());
@@ -82,7 +82,7 @@ public class FactoryImpl implements Factory {
                             log.w("代码目录不存在或错误", arr1[i]);
                         }
                     }
-                    List<ClassEntity> listClassEntity =new ArrayList<>();
+                    List<ClassEntity> listClassEntity = new ArrayList<>();
                     for (File file : listFile) {
                         ClassEntity classEntity = loadFile(file, pwd, iv, mapClassEntity);
                         if (classEntity != null) {
@@ -96,23 +96,21 @@ public class FactoryImpl implements Factory {
                         for (ClassEntity classEntity : listClassEntity) {
                             loadControllerObject(classEntity, mapObject0);
                         }
-                        List<DecoratorEntity> list0 = new ArrayList<>();
                         for (ClassEntity classEntity : listClassEntity) {
-                            loadDecorator(classEntity, list0);
+                            loadDecorator(classEntity, listDecoratorEntity);
                         }
+                        //去重
+                        List<DecoratorEntity> list0 = new ArrayList<>();
+                        Map<String, DecoratorEntity> mapHttpMappingOld1 = new ConcurrentHashMap<>();
                         for (DecoratorEntity decoratorEntity : listDecoratorEntity) {
-                            int next = 1;
-                            for (DecoratorEntity entity : list0) {
-                                if (entity.classEntity.clazz.getName().equals(decoratorEntity.classEntity.clazz.getName())) {
-                                    next = 0;
-                                    break;
-                                }
-                            }
-                            if (next == 1) {
-                                list0.add(decoratorEntity);
-                            }
+                            log.d(decoratorEntity.name);
+                            mapHttpMappingOld1.put(decoratorEntity.name, decoratorEntity);
+                        }
+                        for (Map.Entry<String, DecoratorEntity> stringDecoratorEntityEntry : mapHttpMappingOld1.entrySet()) {
+                            list0.add(stringDecoratorEntityEntry.getValue());
                         }
                         listDecoratorEntity = list0;
+                        log.d("list0",list0.size());
                         for (Map.Entry<String, Object> stringObjectEntry : mapObject0.entrySet()) {
                             ClassTools.classInject(stringObjectEntry.getValue(), null, mapObject0);
                         }
@@ -191,6 +189,7 @@ public class FactoryImpl implements Factory {
         // 再将原生类型转换为目标类型，编译器无法阻止
         return (Map<String, Object>) rawMap;
     }
+
     public RunRes request(Request request, Response response) {
         /// 函数执行 开始
         /// 初始化 开始
@@ -513,7 +512,7 @@ public class FactoryImpl implements Factory {
             for (Map.Entry<String, String> stringStringEntry : map2.entrySet()) {
                 map1.remove(stringStringEntry.getKey());
                 mapHttpMapping.remove(stringStringEntry.getKey());
-                log.d("删除", stringStringEntry.getKey());
+                log.t("删除", stringStringEntry.getKey());
             }
             //log.d("map1 最终",map1);
             //log.d("map2 最终",map2);
@@ -525,6 +524,7 @@ public class FactoryImpl implements Factory {
     public void DecoratorAdd(String url, String met, int startOrEnd,
                              List<DecoratorEntity> listDecoratorEntity1, List<DecoratorEntity> listDecoratorEntity) {
         //log.d("isDecorator 0 ",listDecorator);
+        Map<String, List<DecoratorEntity>> map1 = new HashMap<>();
         for (DecoratorEntity decoratorEntity : listDecoratorEntity1) {
             if (startOrEnd == 1 && decoratorEntity.decoratorStart != null) {
                 for (String string : decoratorEntity.decoratorStart.value()) {
@@ -551,9 +551,10 @@ public class FactoryImpl implements Factory {
                             suc = !suc;
                         }
                         if (suc) {
-                            listDecoratorEntity.add(decoratorEntity);
+                            List<DecoratorEntity> list001 = map1.computeIfAbsent(decoratorEntity.decoratorStart.sort() + "", k -> new ArrayList<>());
+                            list001.add(decoratorEntity);
                         }
-                        //log.d("isDecorator start", url, string, startOrEnd, suc, listDecoratorEntity.size());
+                        //log.t("isDecorator start", url, string, startOrEnd, suc, listDecoratorEntity.size());
                     }
 
                 }
@@ -583,9 +584,10 @@ public class FactoryImpl implements Factory {
                             suc = !suc;
                         }
                         if (suc) {
-                            listDecoratorEntity.add(decoratorEntity);
+                            List<DecoratorEntity> list001 = map1.computeIfAbsent(decoratorEntity.decoratorEnd.sort() + "", k -> new ArrayList<>());
+                            list001.add(decoratorEntity);
                         }
-                        //log.d("isDecorator end", url, string, startOrEnd, suc, listDecoratorEntity.size());
+                        //log.t("isDecorator end", url, string, startOrEnd, suc, listDecoratorEntity.size());
                     }
 
                 }
@@ -593,7 +595,16 @@ public class FactoryImpl implements Factory {
 
 
         }
-
+        int x=0;
+        while (true){
+            List<DecoratorEntity> list001 = map1.get(x+"");
+            if(list001==null){
+                break;
+            }
+            listDecoratorEntity.addAll(list001);
+            x++;
+        }
+        log.t("listDecoratorEntity",url,met,listDecoratorEntity.size(),listDecoratorEntity);
     }
 
     public void putMapping(CrossDomain classCrossDomain, CrossDomain metCrossDomain, Header headerClass, Header headerMethod,
@@ -732,7 +743,7 @@ public class FactoryImpl implements Factory {
                 log.w(clazz, methodName, "参数名获取失败,请确保源码中存在方法签名");
                 continue;
             }
-            method_call_code += "        if (methodName.equals(\"" + methodSign + "\")) {\n" +
+            method_call_code += "        if ( _gzb_x001_methodName.equals(\"" + methodSign + "\")) {\n" +
                     "            Object object=null;\n" +
                     "            java.util.List<gzb.frame.db.BaseDao>listBaseDao=null;\n" +
                     "            try {\n";
@@ -750,11 +761,11 @@ public class FactoryImpl implements Factory {
                             "                String[] TypeName=_gzb_one_in_x001_met_name.get(" + met_int + ");\n";
                     method_call_code += "                java.util.List<Object> list= " +
                             "gzb.frame.factory.ClassTools.getMethodParameterList(" +
-                            "requestMap," +
-                            "mapObject,arrayObject," +
+                            "_gzb_x001_requestMap," +
+                            "_gzb_x001_mapObject,_gzb_x001_arrayObject," +
                             "TypeClass,TypeName,null);\n" +
                             "                if(list==null){return gzb.tools.json.GzbJsonImpl.json.fail(\"Incorrect parameters\");}\n";
-                    method_call_code += "                listBaseDao=gzb.frame.factory.ClassTools.transactionOpen(openTransaction,list);\n";
+                    method_call_code += "                listBaseDao=gzb.frame.factory.ClassTools.transactionOpen(_gzb_x001_openTransaction,list);\n";
                 }
                 method_call_code += "                " + parameterTypes[i].getTypeName() + " " + parameterTypeNames[i] + "=(" + parameterTypes[i].getTypeName() + ")list.get(" + num + ");\n";
                 num++;
@@ -823,7 +834,7 @@ public class FactoryImpl implements Factory {
         }
         if (class_field_put_code.length() > 0) {
             class_field_put_code = "        java.util.List<Object> list0= gzb.frame.factory.ClassTools.getMethodParameterList" +
-                    "(requestMap,mapObject,arrayObject," +
+                    "(_gzb_x001_requestMap,_gzb_x001_mapObject,_gzb_x001_arrayObject," +
                     "_gzb_x001_field_types," +
                     "_gzb_x001_field_names," +
                     "_gzb_x001_field_impl" +
@@ -862,10 +873,10 @@ public class FactoryImpl implements Factory {
                 + class_field_impl_code
                 +
                 "    @Override\n" +
-                "    public Object call(String methodName,\n" +
-                "                       java.util.Map<String, java.util.List<Object>> requestMap,\n" +
-                "                       java.util.Map<String, Object> mapObject,\n" +
-                "                       Object[] arrayObject,boolean openTransaction) throws Exception {\n" +
+                "    public Object call(String _gzb_x001_methodName,\n" +
+                "                       java.util.Map<String, java.util.List<Object>> _gzb_x001_requestMap,\n" +
+                "                       java.util.Map<String, Object> _gzb_x001_mapObject,\n" +
+                "                       Object[] _gzb_x001_arrayObject,boolean _gzb_x001_openTransaction) throws Exception {\n" +
                 class_field_put_code +
                 method_call_code +
                 "        return null;\n" +

@@ -48,7 +48,7 @@ public class DataBaseMsql implements DataBase {
 
     public DataBaseMsql(String key) throws Exception {
         readConfig(key);
-        initDataBase(name, ip, port, acc, pwd, clz, auto, threadMax, overtime, asyncSleep, asyBatch,asyThreadMax);
+        initDataBase(name, ip, port, acc, pwd, clz, auto, threadMax, overtime, asyncSleep, asyBatch, asyThreadMax);
     }
 
     public DataBaseMsql(String name, String ip, String port, String acc, String pwd, String clz, Boolean auto,
@@ -65,8 +65,8 @@ public class DataBaseMsql implements DataBase {
         Config.set("db.mysql." + name + ".overtime", overtime.toString());
         Config.set("db.mysql." + name + ".async.sleep", asyncSleep.toString());
         Config.set("db.mysql." + name + ".async.batch", asyBatch.toString());
-
-        initDataBase(name, ip, port, acc, pwd, clz, auto, threadMax, overtime, asyncSleep, asyBatch,asyThreadMax);
+        Config.set("db.mysql." + name + ".async.thread.num", asyThreadMax.toString());
+        initDataBase(name, ip, port, acc, pwd, clz, auto, threadMax, overtime, asyncSleep, asyBatch, asyThreadMax);
     }
 
     public String getSign() {
@@ -96,7 +96,7 @@ public class DataBaseMsql implements DataBase {
                 this.asyThreadMax = asyThreadMax;
 
                 this.url = "jdbc:mysql://" + this.ip + ":" + this.port + "/" + this.name + "?" +
-                        "autoReconnect=" + this.auto + "&" +/// 自动重连
+                        "autoReconnect=true&" +/// 自动重连
                         "useUnicode=true&" +/// 使用 Unicode
                         "characterEncoding=" + Config.encoding + "&" +/// 设置编码
                         "useSSL=false&" +/// 允许不使用ssl
@@ -120,7 +120,7 @@ public class DataBaseMsql implements DataBase {
                 log.d("数据库：[" + this.name + "]，数据表信息抓取成功........");
 
                 asyncFactory = new AsyncFactory(this, asyThreadMax, asyBatch, asyncSleep);
-                log.d("数据库：[" + this.name + "]，异步服务启动成功........","后台异步线程数",asyThreadMax);
+                log.d("数据库：[" + this.name + "]，异步服务启动成功........", "后台异步线程数", asyThreadMax);
 
             } else {
                 throw new SQLException("数据库名称不能为空，连接失败........");
@@ -282,14 +282,17 @@ public class DataBaseMsql implements DataBase {
         this.asyBatch = Config.getInteger("db.mysql." + name + ".async.batch", 200);
         this.asyThreadMax = Config.getInteger("db.mysql." + name + ".async.thread.num", Math.max(Config.cpu / 2, 1));
 
-        this.url = Config.get("db.mysql." + name + ".url", "jdbc:mysql://" + this.ip + ":" + this.port + "/" + this.name + "?" +
-                "autoReconnect=" + this.auto + "&" +
-                "useUnicode=true&" +
-                "characterEncoding=" + Config.encoding + "&" +
-                "useSSL=false&" +
-                "zeroDateTimeBehavior=convertToNull&" +
-                "serverTimezone=UTC&" +
-                "rewriteBatchedStatements=true");
+        this.url = "jdbc:mysql://" + this.ip + ":" + this.port + "/" + this.name + "?" +
+                "autoReconnect=true&" +/// 自动重连
+                "useUnicode=true&" +/// 使用 Unicode
+                "characterEncoding=" + Config.encoding + "&" +/// 设置编码
+                "useSSL=false&" +/// 允许不使用ssl
+                "zeroDateTimeBehavior=convertToNull&" +/// 防止日期转换错误
+                "serverTimezone=UTC&" +/// 统一时区
+                "rewriteBatchedStatements=true&" +/// 允许sql合并
+                "allowMultiQueries=true&" +/// 允许1次执行多个sql
+                "useServerPrepStmts=true&" +/// 服务端缓存sql
+                "cachePrepStmts=true&";/// 客户端缓存sql
     }
 
 

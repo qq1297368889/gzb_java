@@ -67,7 +67,11 @@ public class AsyncFactory {
         this.batchSize = batchSize;
         this.batchAwait = batchAwait;
         threads = new Thread[threadNum];
-        startThread(threadNum);
+        if (threadNum<1) {
+            log.w("警告，后台异步线程数小于1，所有异步操作将无法执行,如需要请至少设置为1，请检查配置文件中的 db.mysql.数据库名.async.thread.num=0");
+        }else{
+            startThread(threadNum);
+        }
     }
 
     public void startThread(int threadNum) {

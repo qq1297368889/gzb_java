@@ -1,6 +1,6 @@
 # 框架名称 : gzb one
 ## 简介
-这是一个**轻量级**、**高性能**的 Java Web 框架。它的核心理念是用最少的概念，解决开发者 90% 的问题，同时保留 10% 的底层控制力，以应对**极致性能**需求。它从头开始构建，旨在消除传统框架的臃肿和性能开销。
+这是一个**全栈/全功能框架**、**高性能**的 Java Web 框架。它的核心理念是用最少的概念，解决开发者 90% 的问题，同时保留 10% 的底层控制力，以应对**极致性能**需求。它从头开始构建，旨在消除传统框架的臃肿和性能开销。
 
 这不仅是一个 Web 框架，它还是一个**一站式解决方案**，一个强大的**低代码平台**。
 ### 告别重启！框架允许 您在系统满负载下实现无缝热更新，无需停机。
@@ -13,7 +13,7 @@ Please right click->Translate
 * **CPU**：AMD Ryzen 5 3600
 * **JDK**：GraalVM 21.0.6
 * 以下这份代码 预热后 框架接受请求，全流程 亚微秒级别(小于1微秒) 一秒=10亿纳秒
-* 已经达到jvm物理极限，足够轻量级了 理论上应该没有其他java框架能超越
+* 已经达到jvm物理极限，理论上应该没有其他java框架能超越
 ```java
 /**
  * 演示HTTP端点  包含 端点映射 请求参数映射到参数 注入内部对象 组装json字符串 以及判断是否 需要调用一系的组件
@@ -30,7 +30,7 @@ public String test(String sysUsersAcc,GzbJson gzbJson) throws Exception {
 #### 我不提供可能存在偏差的压测数据。我的关注点在于框架本身的高效设计，而非受外部因素影响的最终性能数字。
 #### 压测效果很惊艳，不过我没有标准的环境进行测试 。
 ### 压测代码
-#### 感兴趣可以通过调用实例项目 来启动压测。你也可以使用其他压测工具。
+#### 感兴趣可以通过调用示例项目的TestDDOS.main 来启动压测。你也可以使用其他压测工具。
 
 * [查看执行耗时日志](执行耗时.md) 
 ---
@@ -53,8 +53,8 @@ public String test(String sysUsersAcc,GzbJson gzbJson) throws Exception {
 
 ## 理念与愿景
 传统框架虽然提供了便利，但往往以牺牲性能和控制力为代价。
-本框架则代表了一种不同的理念：通过消除不必要的运行时抽象，**优先考虑原始速度和效率**。它不仅仅是一个框架，更是你应用程序的**高性能引擎**。
-
+本框架则代表了一种不同的理念：通过消除不必要的运行时抽象，
+**优先考虑原始速度和效率**。它不仅仅是一个框架，更是你应用程序的**高性能引擎**。
 ---
 
 ## 快速上手指南
@@ -71,7 +71,7 @@ public String test(String sysUsersAcc,GzbJson gzbJson) throws Exception {
     * 在 `src/main/resources` 目录下创建 `application.properties` 文件。
     * 参考示例项目中的 `src/main/resources/application.properties`，其中内含详细注释。
 4.  **配置数据库**：目前仅支持 MySQL。请按照注释配置数据库连接信息。
-5.  **配置缓存与 Session**：如果你的项目使用 Redis，请配置 Redis 连接信息；如果不需要，请将 `session.type` 和 `cache.type` 设置为 `map`。
+5.  **配置缓存与 Session**：如果你的项目使用 Redis，请配置 Redis 连接信息；如果不需要，请将 `session.type` 和 `cache.type`和 `db.cache.type` 设置为 `map`。
 6.  **核心路径配置**：在配置文件中设置源代码目录（`gzb.system.code.dir`）、上传目录、静态资源目录、临时目录等。
 
 ### 第3步：代码生成与启动
@@ -93,7 +93,17 @@ public String test(String sysUsersAcc,GzbJson gzbJson) throws Exception {
 ## 文档
 * 示例项目 可以直接在 IntelliJ IDEA 运行。
 * 持续更新中...
-* [API文档在这里，持续更新中......](doc.md)
+* 文档不够齐全，但是和spring主流环境 差异很小 参考经验 和 示例项目 即可
+* [文档在这里，持续更新中......](doc.md)
 ## JAR包下载
 * 下载后引入  查看示例项目
-* [JAR包下载](frame.one-1.0.0-fat.jar)
+* [JAR包下载 1.0.0](frame.one-1.0.0-fat.jar)
+```maven
+        <dependency>
+            <groupId>gzb</groupId>
+            <artifactId>frame.one</artifactId>
+            <version>1.0.0</version>
+            <scope>system</scope>
+            <systemPath>E:/frame.one-1.0.0.jar</systemPath>
+        </dependency>
+```

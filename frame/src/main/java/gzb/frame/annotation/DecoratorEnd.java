@@ -16,4 +16,5 @@ public @interface DecoratorEnd {
     boolean turn() default false;
     //要匹配的方法 GET POST PUT DELETE
     String[]method() default {"GET","POST","PUT","DELETE"};
+    int sort() default 0;//排序 越小越先执行
 }

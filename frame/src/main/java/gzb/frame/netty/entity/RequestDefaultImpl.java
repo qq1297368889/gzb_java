@@ -24,9 +24,8 @@ public class RequestDefaultImpl implements Request {
     private String localIp;
     private int localPort;
     private Map<String, String> headers;
-    private byte[] body;
     private Set<Cookie> cookies;
-    private HTTPRequestParameters HTTPRequestParameters;
+    private HTTPRequestParameters httpRequestParameters;
     private FullHttpRequest request;
     private Response response;
     private Session session;
@@ -43,9 +42,6 @@ public class RequestDefaultImpl implements Request {
         this.remotePort = remoteAddress.getPort();
         this.localIp = localAddress.getAddress().getHostAddress();
         this.localPort = localAddress.getPort();
-        ByteBuf content = request.content();
-        this.body = new byte[content.readableBytes()];
-        content.readBytes(this.body);
         getParameter();
     }
 
@@ -143,7 +139,7 @@ public class RequestDefaultImpl implements Request {
     }
 
     public HTTPRequestParameters getRequestParameters() {
-        return HTTPRequestParameters;
+        return httpRequestParameters;
     }
 
     public Response getResponse() {
@@ -171,13 +167,13 @@ public class RequestDefaultImpl implements Request {
     }
 
     public String[] getParameterArray(String key) {
-        if (HTTPRequestParameters == null) {
+        if (httpRequestParameters == null) {
             getParameter();
         }
-        if (HTTPRequestParameters == null) {
+        if (httpRequestParameters == null) {
             return null;
         }
-        List<Object> list = HTTPRequestParameters.getParameters().get(key);
+        List<Object> list = httpRequestParameters.getParameters().get(key);
         if (list != null && !list.isEmpty()) {
             return list.toArray(new String[0]);
         }
@@ -193,10 +189,10 @@ public class RequestDefaultImpl implements Request {
     }
 
     public Map<String, List<Object>> getParameter() {
-        if (HTTPRequestParameters == null) {
-            HTTPRequestParameters = new HTTPRequestParameters(request, getBodyString());
+        if (httpRequestParameters == null) {
+            httpRequestParameters = new HTTPRequestParameters(request);
         }
-        return HTTPRequestParameters.getParameters();
+        return httpRequestParameters.getParameters();
     }
 
     public String getOrigin() {
@@ -263,7 +259,7 @@ public class RequestDefaultImpl implements Request {
 
 
     public String getUri() {
-        return HTTPRequestParameters.path;
+        return httpRequestParameters.path;
     }
 
     public String getMethod() {
@@ -287,11 +283,11 @@ public class RequestDefaultImpl implements Request {
     }
 
     public String getBodyString() {
-        return new String(body, Charset.forName(Config.encoding));
+        return httpRequestParameters.readString();
     }
 
     public byte[] getBody() {
-        return body;
+        return httpRequestParameters.readByte();
     }
 
     public FullHttpRequest getRequest() {
