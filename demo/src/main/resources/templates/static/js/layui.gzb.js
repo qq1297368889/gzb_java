@@ -1,3 +1,21 @@
+/*
+ *
+ *  * Copyright [2025] [GZB ONE]
+ *  *
+ *  * Licensed under the Apache License, Version 2.0 (the "License");
+ *  * you may not use this file except in compliance with the License.
+ *  * You may obtain a copy of the License at
+ *  *
+ *  * http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ *  * Unless required by applicable law or agreed to in writing, software
+ *  * distributed under the License is distributed on an "AS IS" BASIS,
+ *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  * See the License for the specific language governing permissions and
+ *  * limitations under the License.
+ *
+ */
+
 let $ = layui.$;
 let admin = layui.admin;
 let element = layui.element;
@@ -516,14 +534,42 @@ gzb.bindUploadImage = function (id) {
         , accept: 'file'
         , before: function (obj) {
             //预读本地文件示例，不支持ie8
-/*            obj.preview(function (index, file, result) {
+            obj.preview(function (index, file, result) {
                 $('#' + id_img_1).attr('src', result); //图片链接（base64）
-            });*/
+            });
         }
         , done: function (res) {
             if (gzb.jsonVerify(res, true)) {
-                console.log(res.data, res.data[0].sysFileMd5)
-                $("#" + id).val(res.data[0].sysFileMd5);
+                console.log(res.data, res.data[0].sysFileId)
+                $("#" + id).val(res.data[0].sysFileId);
+            }
+        }
+        , error: function () {
+            //演示失败状态，并实现重传
+            var demoText = $('#' + id_p_1);
+            demoText.html('<span style="color: #FF5722;">上传失败</span> <a class="layui-btn layui-btn-mini demo-reload">重试</a>');
+            demoText.find('.demo-reload').on('click', function () {
+                uploadInst.upload();
+            });
+        }
+    });
+}
+gzb.bindUploadFile= function (id) {
+    let id_button_1 = id + "-button-1-file";
+    let id_p_1 = id + "-p-1-file";
+    //普通文件上传
+    var uploadInst = upload.render({
+        elem: '#' + id_button_1
+        , url: gzb.api.upload
+        , accept: 'file'
+        , before: function (obj) {
+            //预读本地文件示例，不支持ie8
+            console.log(obj)
+        }
+        , done: function (res) {
+            if (gzb.jsonVerify(res, true)) {
+                console.log(res.data, res.data[0].sysFileId)
+                $("#" + id).val(res.data[0].sysFileId);
             }
         }
         , error: function () {
@@ -545,15 +591,29 @@ gzb.getUploadImage = function (json, id, title, css1, css2, imageUrl) {
         "            <div class=\"" + css2 + "\">\n" +
         "                    <div class=\"layui-upload\">\n" +
         "                        <button type=\"button\" class=\"layui-btn layui-btn-danger layui-btn-radius\" id=\"" + id_button_1 + "\">文件上传</button>\n" +
-      /*
+
         "                        <div class=\"layui-upload-list\">\n" +
         "                            <img src='" + (imageUrl == null ? "" : imageUrl) + "' class=\"layui-upload-img\" id=\"" + id_img_1 + "\" style='width: 150px;height: 150px;background-color: #4E5465'>\n" +
         "                            <p id=\"" + id_p_1 + "\"></p>\n" +
         "                        </div>\n" +
-        */
+
         "                    </div>\n" +
         "<input id='" + id + "' value='" + (imageUrl == null ? "" : imageUrl) + "' type='hidden'>" +
         "<script>gzb.bindUploadImage(\"" + id + "\")</script>" +
+        "            </div>\n" +
+        "        </div>";
+}
+gzb.getUploadFile= function (json, id, title, css1, css2, fileUrl) {
+    let id_button_1 = id + "-button-1-file";
+    return "<div class=\"" + css1 + "\">\n" +
+        "            <label class=\"layui-form-label\">" + title + "</label>\n" +
+        "            <div class=\"" + css2 + "\">\n" +
+        "                    <div class=\"layui-upload\">\n" +
+        "                        <button type=\"button\" class=\"layui-btn layui-btn-danger layui-btn-radius\" id=\"" + id_button_1 + "\">文件上传</button>\n" +
+
+        "                    </div>\n" +
+        "<input id='" + id + "' value='" + (fileUrl == null ? "" : fileUrl) + "' type='hidden'>" +
+        "<script>gzb.bindUploadFile(\"" + id + "\")</script>" +
         "            </div>\n" +
         "        </div>";
 }
@@ -590,8 +650,10 @@ gzb.initInput = function (json, eleId, isField, defVal, cssText) {
             html = gzb.getSelect(json.sysMappingSelect, id, json.sysMappingTitle, css1, css2);
         } else if (json.sysMappingDate != null && json.sysMappingDate.toString().length > 0) {
             html = gzb.getInput(null, id, json.sysMappingTitle, css1, css2);
-        } else if (json.sysMappingFile != null && json.sysMappingFile.toString().length > 0) {
+        } else if (json.sysMappingImage != null && json.sysMappingImage.toString().length > 0) {
             html = gzb.getUploadImage(null, id, json.sysMappingTitle, css1, css2);
+        } else if (json.sysMappingFile != null && json.sysMappingFile.toString().length > 0) {
+            html = gzb.getUploadFile(null, id, json.sysMappingTitle, css1, css2);
         } else {
             html = gzb.getInput(null, id, json.sysMappingTitle, css1, css2);
         }
@@ -980,6 +1042,16 @@ gzb.initListPage = function () {
             if (datum.sysMappingScript != null) {
                 json0.templet = sysMappingScript;
             }
+            if (datum.sysMappingImage != null) {
+                json0.templet = function (data) {
+                    let imageUrl = gzb.low_hump(datum.sysMappingImage)
+                    let key2 = gzb.low_hump(datum.sysMappingVal)
+                    while (imageUrl.indexOf("\${" + key2 + "}") > -1) {
+                        imageUrl = imageUrl.replace("\${" + key2 + "}", data[key2])
+                    }
+                    return gzb.getTableImage(imageUrl, 30);
+                };
+            }
             if (datum.sysMappingFile != null) {
                 json0.templet = function (data) {
                     let imageUrl = gzb.low_hump(datum.sysMappingFile)
@@ -987,7 +1059,7 @@ gzb.initListPage = function () {
                     while (imageUrl.indexOf("\${" + key2 + "}") > -1) {
                         imageUrl = imageUrl.replace("\${" + key2 + "}", data[key2])
                     }
-                    return gzb.getTableImage(imageUrl, 30);
+                    return imageUrl;
                 };
             }
 
@@ -1030,16 +1102,19 @@ gzb.loadLibs = async function () {
         let url2 = "js/edit/" + name + ".js"
         eval(await (await fetch(url1)).text())
         eval(await (await fetch(url2)).text())
-        gzb.api = {
-            query: gzb.base + gzb.entityName + "/query",
-            list: gzb.base + gzb.entityName + "/list",
-            find: gzb.base + gzb.entityName + "/find",
-            update: gzb.base + gzb.entityName + "/update",
-            delete: gzb.base + gzb.entityName + "/deleteAll",
-            save: gzb.base + gzb.entityName + "/save",
-            upload: gzb.base + "upload",
-            mapping: gzb.base + "read/mapping",
+        if (gzb.api == null) {
+            gzb.api = {
+                query: gzb.base + gzb.entityName + "/query",
+                list: gzb.base + gzb.entityName + "/list",
+                find: gzb.base + gzb.entityName + "/find",
+                update: gzb.base + gzb.entityName + "/update",
+                delete: gzb.base + gzb.entityName + "/deleteAll",
+                save: gzb.base + gzb.entityName + "/save",
+                upload: gzb.base + "upload",
+                mapping: gzb.base + "read/mapping",
+            }
         }
+
     }
 }
 
@@ -1315,4 +1390,128 @@ function eventUpdate() {
     gzb.post(gzb.api.update, postData, function (res) {
         gzb.jsonVerify(res, true)
     });
+}
+
+/**
+ * 初始化文件上传功能
+ * @param {but_sele} but_sele - 绑定上传事件的按钮选择器 (例如: '#ID', '.CLASS')
+ * @param {string} upload_url - 文件上传的后端接口地址
+ * @param {string} file_suffix - 允许上传的文件后缀，逗号分隔 (例如: 'jpg,png,pdf')
+ * @param {number} file_size - 允许上传的文件最大大小，单位 MB
+ * @param {string} [image_sele] - 用于显示图片预览的元素选择器 (可选)
+ * @param {function} callback_fun - 上传完毕后的回调函数，参数1为服务器响应数据 (失败时为 null)
+ */
+gzb.uploadInit = function (but_sele, upload_url, file_suffix, file_size, image_sele, callback_fun) {
+    const button = document.querySelector(but_sele);
+    if (!button) {
+        console.error("Upload Init Error: 找不到指定的绑定按钮选择器: " + but_sele);
+        return;
+    }
+    // 1. 创建隐藏的文件输入框
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.style.display = 'none';
+
+    // 2. 准备文件类型过滤器
+    const acceptTypes = file_suffix ? file_suffix.split(',').map(s => '.' + s.trim()).join(',') : '';
+    fileInput.accept = acceptTypes;
+
+    // 3. 绑定按钮点击事件，模拟点击文件输入框
+    button.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    // 4. 监听文件选择变化事件
+    fileInput.addEventListener('change', () => {
+        const file = fileInput.files[0];
+        // 确保选中了文件
+        if (!file) {
+            fileInput.value = ''; // 清空 file input，允许再次选择相同文件
+            return;
+        }
+
+        // --- 文件校验 ---
+        if (file_size != null && Number(file_size) > 0) {
+            const maxSizeBytes = file_size * 1024 * 1024;
+            if (file.size > maxSizeBytes) {
+                alert(`文件大小超出限制! 最大允许 ${file_size} MB。`);
+                fileInput.value = '';
+                callback_fun(null); // 校验失败也触发回调，传入 null
+                return;
+            }
+        }
+
+        // 校验文件后缀 (如果指定了后缀)
+        if (file_suffix && file_suffix.length > 0) {
+            const ext = file.name.split('.').pop().toLowerCase();
+            const allowedExts = file_suffix.toLowerCase().split(',').map(s => s.trim());
+            if (allowedExts.indexOf(ext) === -1) {
+                alert(`文件类型不被允许! 仅支持 ${file_suffix}。`);
+                fileInput.value = '';
+                callback_fun(null);
+                return;
+            }
+        }
+
+        // --- 图片预览 (可选) ---
+        if (image_sele) {
+            const imageElement = document.querySelector(image_sele);
+            if (imageElement && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    imageElement.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // --- 执行上传 ---
+        gzb.performUpload(file, upload_url, callback_fun, fileInput);
+    });
+}
+
+gzb.performUpload = function (file, upload_url, callback_fun, fileInput) {
+    const formData = new FormData();
+    // 这里的 'file' 必须与你的 GZB One 后端 Controller 中 FileUploadEntity 接收的字段名一致
+    formData.append('file', file);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', upload_url, true);
+
+    // 监听状态变化
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            fileInput.value = ''; // 清空 input value，允许重新选择
+            let responseData = null;
+
+            if (xhr.status >= 200 && xhr.status < 300) {
+                // 上传成功，尝试解析 JSON
+                try {
+                    responseData = JSON.parse(xhr.responseText);
+                } catch (e) {
+                    console.error("Upload Success, but JSON Parse Error:", e);
+                    // 即使 JSON 解析失败，也认为上传成功，但传入原始响应文本或 null
+                    responseData = xhr.responseText;
+                }
+            } else {
+                // HTTP 状态码非 2xx，上传失败
+                console.error(`Upload Failed with status ${xhr.status}:`, xhr.responseText);
+            }
+            try {
+                callback_fun(JSON.parse(responseData));
+            } catch (e) {
+                callback_fun(responseData);
+            }
+        }
+    };
+
+    // 监听上传错误
+    xhr.onerror = function () {
+        fileInput.value = '';
+        console.error("Upload Network Error.");
+        callback_fun(null);
+    };
+
+    // 发送请求
+    xhr.send(formData);
 }

@@ -27,6 +27,7 @@ import java.lang.reflect.Field;
 public class DecoratorEntity {
     public GzbOneInterface call;
     public ClassEntity classEntity;
+    public int id;
     public String name;
     public Field[]fields = null;
     public Class<?>[]fieldTypes = null;

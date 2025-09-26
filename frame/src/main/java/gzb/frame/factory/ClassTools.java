@@ -849,10 +849,8 @@ public class ClassTools {
                 } catch (Exception e) {
                     continue;
                 }
-                code += "        if (obj.get" + c_h_d_name + "() != null) {\n" +
-                        "            stringBuilder.append(\"" + c_name + "=?,\");\n" +
-                        "            params.add(obj.get" + c_h_d_name + "());\n" +
-                        "        }\n";
+                code += "            stringBuilder.append(\"" + c_name + "=?,\");\n" +
+                        "            params.add(obj.get" + c_h_d_name + "());\n";
             }
             code += "        if (stringBuilder.length() > 0) {\n" +
                     "            stringBuilder.delete(stringBuilder.length() - 1, stringBuilder.length());\n" +

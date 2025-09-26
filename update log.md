@@ -1,7 +1,25 @@
 
 
+
+# 2025-09-27
+### 性能优化
+* 1.一些性能优化
+## 一个基础请求耗时小于1微秒 比例达到 99.99% (框架耗时30% 业务代码70% ，底层耗时没有计算)
+```java
+    @DecoratorOpen
+    @Limitation(10)
+    @Header(item = {@HeaderItem(key = "content-type", val = "application/json;charset=UTF-8")})
+    @GetMapping("/test1")
+    public Object test1(String sysUsersAcc, GzbJson gzbJson) {
+        return gzbJson.success(sysUsersAcc);
+    }
+```
+### 修复已知BUG
+* 1.一些BUG修复
+
+
 # 2025-09-26
-### 修复 已知BUG
+### 修复已知BUG
 * 1.上传文件未及时删除，可能泄露
 * 2.修复 FileUploadEntity 参数接收不到文件的情况
 * 3.多装饰器的调用顺序通过 sort指定 防止调用顺序和预期不符 @DecoratorStart(sort = 0) @DecoratorEnd(sort = 0) sort越小越先执行

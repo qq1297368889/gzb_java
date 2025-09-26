@@ -149,7 +149,7 @@ public class ActionCode extends Base {
                     "     * /system/v1.0.0/" + tableInfo.getNameHumpLowerCase() + "/deleteAll?" + tableInfo.getIdHumpLowerCase() + "=\n" +
                     "     * */\n" +
                     "    @DecoratorOpen\n" +
-                    "    @GetMapping(\"deleteAll\")\n" +
+                    "    @DeleteMapping(\"deleteAll\")\n" +
                     "    public Object deleteAll(GzbJson result, Long[] " + tableInfo.getIdHumpLowerCase() + ") throws Exception {\n" +
                     "        if (" + tableInfo.getIdHumpLowerCase() + " == null || " + tableInfo.getIdHumpLowerCase() + ".length < 1) {\n" +
                     "            return result.fail(\"delete 输入参数错误\");\n" +

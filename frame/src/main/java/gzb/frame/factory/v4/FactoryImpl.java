@@ -44,6 +44,7 @@ import gzb.tools.log.Log;
 import gzb.tools.log.LogImpl;
 
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class FactoryImpl implements Factory {
@@ -121,14 +122,13 @@ public class FactoryImpl implements Factory {
                         List<DecoratorEntity> list0 = new ArrayList<>();
                         Map<String, DecoratorEntity> mapHttpMappingOld1 = new ConcurrentHashMap<>();
                         for (DecoratorEntity decoratorEntity : listDecoratorEntity) {
-                            log.d(decoratorEntity.name);
+                            //log.d(decoratorEntity.name);
                             mapHttpMappingOld1.put(decoratorEntity.name, decoratorEntity);
                         }
                         for (Map.Entry<String, DecoratorEntity> stringDecoratorEntityEntry : mapHttpMappingOld1.entrySet()) {
                             list0.add(stringDecoratorEntityEntry.getValue());
                         }
                         listDecoratorEntity = list0;
-                        log.d("list0",list0.size());
                         for (Map.Entry<String, Object> stringObjectEntry : mapObject0.entrySet()) {
                             ClassTools.classInject(stringObjectEntry.getValue(), null, mapObject0);
                         }
@@ -268,7 +268,7 @@ public class FactoryImpl implements Factory {
             /// 内置对象创建 结束
             /// 装饰器(调用前) 开始
             for (DecoratorEntity decoratorEntity : httpMappings[index].start) {
-                RunRes runRes1 = (RunRes) decoratorEntity.call.call(decoratorEntity.name, parar, mapObject0, objects, httpMappings[index].isOpenTransaction);
+                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, parar, mapObject0, objects, httpMappings[index].isOpenTransaction);
                 if (runRes1 != null) {
                     if (runRes1.getState() != 200) {
                         //log.d("request", key, request.getMethod(), parar, 200, "请求被调用前拦截");
@@ -288,12 +288,12 @@ public class FactoryImpl implements Factory {
             /// 装饰器(调用前) 结束
             //调用映射端点
             /// 调用映射端点函数 开始
-            Object obj02 = httpMappings[index].httpMappingFun.call(httpMappings[index].sign, parar, mapObject0, objects, httpMappings[index].isOpenTransaction);
+            Object obj02 = httpMappings[index].httpMappingFun._gzb_call_x01(httpMappings[index].id, parar, mapObject0, objects, httpMappings[index].isOpenTransaction);
             runRes.setData(obj02);
             /// 调用映射端点函数 结束
             /// 装饰器(调用后) 开始
             for (DecoratorEntity decoratorEntity : httpMappings[index].end) {
-                RunRes runRes1 = (RunRes) decoratorEntity.call.call(decoratorEntity.name, parar, mapObject0, objects, httpMappings[index].isOpenTransaction);
+                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, parar, mapObject0, objects, httpMappings[index].isOpenTransaction);
                 if (runRes1 != null) {
                     if (runRes1.getState() != 200) {
                         //log.d("request", key, request.getMethod(), parar, 200, "请求被调用后拦截");
@@ -343,7 +343,7 @@ public class FactoryImpl implements Factory {
         int index = -1;
         try {
             for (int i = 0; i < met.length; i++) {
-                if (metName.toUpperCase().equals(met[i])) {
+                if (metName.equals(met[i])) {
                     if (httpMappings[i] == null) {
                         return runRes.setState(404);
                     }
@@ -395,7 +395,7 @@ public class FactoryImpl implements Factory {
             times[5] = System.nanoTime();
             /// 装饰器(调用前) 开始
             for (DecoratorEntity decoratorEntity : httpMappings[index].start) {
-                RunRes runRes1 = (RunRes) decoratorEntity.call.call(decoratorEntity.name, parar, mapObject0, objects, httpMappings[index].isOpenTransaction);
+                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, parar, mapObject0, objects, httpMappings[index].isOpenTransaction);
                 if (runRes1 != null) {
                     if (runRes1.getState() != 200) {
                         //log.d("request", key, request.getMethod(), parar, 200, "请求被调用前拦截");
@@ -416,14 +416,14 @@ public class FactoryImpl implements Factory {
 
             //调用映射端点
             /// 调用映射端点函数 开始
-            Object obj02 = httpMappings[index].httpMappingFun.call(httpMappings[index].sign, parar, mapObject0, objects, httpMappings[index].isOpenTransaction);
+            Object obj02 = httpMappings[index].httpMappingFun._gzb_call_x01(httpMappings[index].id, parar, mapObject0, objects, httpMappings[index].isOpenTransaction);
             runRes.setData(obj02);
             /// 调用映射端点函数 结束
             times[7] = System.nanoTime();
 
             /// 装饰器(调用后) 开始
             for (DecoratorEntity decoratorEntity : httpMappings[index].end) {
-                RunRes runRes1 = (RunRes) decoratorEntity.call.call(decoratorEntity.name, parar, mapObject0, objects, httpMappings[index].isOpenTransaction);
+                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, parar, mapObject0, objects, httpMappings[index].isOpenTransaction);
                 if (runRes1 != null) {
                     if (runRes1.getState() != 200) {
                         //log.d("request", key, request.getMethod(), parar, 200, "请求被调用后拦截");
@@ -451,7 +451,6 @@ public class FactoryImpl implements Factory {
             /// 函数执行 结束
             times[9] = System.nanoTime();
             /// 输出调试信息
-
             log.t(
                     "初始化", times[1] - times[0], "纳秒",
                     "预设协议头", times[2] - times[1], "纳秒",
@@ -463,11 +462,16 @@ public class FactoryImpl implements Factory {
                     "装饰器(调用后)(包含事物处理)", times[8] - times[7], "纳秒",
                     "全流程执行耗时", (times[9] - times[0]) / 1000, "微秒"
             );
-
+            Long res =(times[9] - times[0]) / 1000;
+            AtomicInteger atomicInteger = reqInfo.computeIfAbsent(res, k -> new AtomicInteger());
+            atomicInteger.addAndGet(1);
         }
 
         return runRes;
     }
+
+    public static Map<Long, AtomicInteger> reqInfo = new ConcurrentHashMap<>();
+
 
     public Class<?> loadController(Class<?> clazz, Object object, Map<String, HttpMapping[]> mapHttpMapping, Map<String, Map<String, String>> mapHttpMappingOld,
                                    List<DecoratorEntity> listDecoratorEntity) throws Exception {
@@ -499,8 +503,13 @@ public class FactoryImpl implements Factory {
             //log.d("map2 最初",map2);
 
             Method[] methods = ClassTools.getCombinedMethods(clazz);
+            int id = -1;
             for (int j = 0; j < methods.length; j++) {
                 Method method = methods[j];
+                if (method.getName().equals("_gzb_call_x01")) {
+                    id--;
+                }
+                id++;
                 GetMapping getMapping = method.getAnnotation(GetMapping.class);
                 PostMapping postMapping = method.getAnnotation(PostMapping.class);
                 PutMapping putMapping = method.getAnnotation(PutMapping.class);
@@ -512,18 +521,18 @@ public class FactoryImpl implements Factory {
                 Header headerMethod = method.getAnnotation(Header.class);
                 Limitation limitation = method.getAnnotation(Limitation.class);
                 if (getMapping != null && getMapping.value().length > 0) {
-                    putMapping(crossDomain, metCrossDomain, header, headerMethod, clazz, 0, getMapping.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
+                    putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 0, getMapping.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
                 } else if (postMapping != null && postMapping.value().length > 0) {
-                    putMapping(crossDomain, metCrossDomain, header, headerMethod, clazz, 1, postMapping.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
+                    putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 1, postMapping.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
                 } else if (putMapping != null && putMapping.value().length > 0) {
-                    putMapping(crossDomain, metCrossDomain, header, headerMethod, clazz, 2, putMapping.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
+                    putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 2, putMapping.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
                 } else if (deleteMapping != null && deleteMapping.value().length > 0) {
-                    putMapping(crossDomain, metCrossDomain, header, headerMethod, clazz, 3, deleteMapping.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
+                    putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 3, deleteMapping.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
                 } else if (requestMappingMethod != null && requestMappingMethod.value().length > 0) {
-                    putMapping(crossDomain, metCrossDomain, header, headerMethod, clazz, 0, requestMappingMethod.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
-                    putMapping(crossDomain, metCrossDomain, header, headerMethod, clazz, 1, requestMappingMethod.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
-                    putMapping(crossDomain, metCrossDomain, header, headerMethod, clazz, 2, requestMappingMethod.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
-                    putMapping(crossDomain, metCrossDomain, header, headerMethod, clazz, 3, requestMappingMethod.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
+                    putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 0, requestMappingMethod.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
+                    putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 1, requestMappingMethod.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
+                    putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 2, requestMappingMethod.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
+                    putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 3, requestMappingMethod.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
                 }
             }
 
@@ -613,19 +622,19 @@ public class FactoryImpl implements Factory {
 
 
         }
-        int x=0;
-        while (true){
-            List<DecoratorEntity> list001 = map1.get(x+"");
-            if(list001==null){
+        int x = 0;
+        while (true) {
+            List<DecoratorEntity> list001 = map1.get(x + "");
+            if (list001 == null) {
                 break;
             }
             listDecoratorEntity.addAll(list001);
             x++;
         }
-        log.t("listDecoratorEntity",url,met,listDecoratorEntity.size(),listDecoratorEntity);
+        log.t("listDecoratorEntity", url, met, listDecoratorEntity.size(), listDecoratorEntity);
     }
 
-    public void putMapping(CrossDomain classCrossDomain, CrossDomain metCrossDomain, Header headerClass, Header headerMethod,
+    public void putMapping(int id, CrossDomain classCrossDomain, CrossDomain metCrossDomain, Header headerClass, Header headerMethod,
                            Class<?> aClass, int index, String[] metPath, Method method, Object object,
                            Transaction transaction, DecoratorOpen decoratorOpen, Limitation limitation,
                            List<String> listClassPath, Map<String, HttpMapping[]> mapHttpMapping
@@ -643,6 +652,7 @@ public class FactoryImpl implements Factory {
                 }
                 HttpMapping httpMapping2 = new HttpMapping();
                 httpMapping2.sign = ClassTools.getSing(method, aClass);
+                httpMapping2.id = id;
                 httpMapping2.isOpenTransaction = transaction != null && transaction.value();
                 httpMapping2.httpMappingFun = (GzbOneInterface) object;
                 httpMapping2.met = index;
@@ -761,10 +771,12 @@ public class FactoryImpl implements Factory {
                 log.w(clazz, methodName, "参数名获取失败,请确保源码中存在方法签名");
                 continue;
             }
-            method_call_code += "        if ( _gzb_x001_methodName.equals(\"" + methodSign + "\")) {\n" +
-                    "            Object object=null;\n" +
-                    "            java.util.List<gzb.frame.db.BaseDao>listBaseDao=null;\n" +
-                    "            try {\n";
+            method_call_code +=
+                    //"        if ( _gzb_x001_methodName.equals(\"" + methodSign + "\")) {\n" +
+                    "        if ( _gzb_x001_methodName == " + j + ") {\n" +
+                            "            Object object=null;\n" +
+                            "            java.util.List<gzb.frame.db.BaseDao>listBaseDao=null;\n" +
+                            "            try {\n";
 
             int num = 0;
 
@@ -891,12 +903,14 @@ public class FactoryImpl implements Factory {
                 + class_field_impl_code
                 +
                 "    @Override\n" +
-                "    public Object call(String _gzb_x001_methodName,\n" +
+                //"    public Object call(String _gzb_x001_methodName,\n" +
+                "    public Object _gzb_call_x01(int _gzb_x001_methodName,\n" +
                 "                       java.util.Map<String, java.util.List<Object>> _gzb_x001_requestMap,\n" +
                 "                       java.util.Map<String, Object> _gzb_x001_mapObject,\n" +
                 "                       Object[] _gzb_x001_arrayObject,boolean _gzb_x001_openTransaction) throws Exception {\n" +
                 class_field_put_code +
                 method_call_code +
+                //"        System.out.println(_gzb_x001_methodName);\n" +
                 "        return null;\n" +
                 "    }\n" +
                 "///  ############## 生成代码结束 ##############\n";
@@ -950,6 +964,7 @@ public class FactoryImpl implements Factory {
                         decoratorEntity1.fieldNames = decoratorEntity.fieldNames;
                         decoratorEntity1.fieldTypes = decoratorEntity.fieldTypes;
                         decoratorEntity1.name = name;
+                        decoratorEntity1.id = j;
                         decoratorEntity1.decoratorStart = decoratorStart;
                         decoratorEntity1.classEntity = classEntity;
                         listDecoratorEntity.add(decoratorEntity1);
@@ -1006,8 +1021,8 @@ public class FactoryImpl implements Factory {
             classEntity.clazz = gen_code(classEntity.clazz, classEntity.code);
             object = ClassTools.putObject(classEntity.clazz, null, mapObject);
             Method[] methods = classEntity.clazz.getMethods();
-            for (Method method : methods) {
-                startThreadFactory(classEntity.clazz, method, (GzbOneInterface) object, mapObject);
+            for (int i = 0; i < methods.length; i++) {
+                startThreadFactory(i, classEntity.clazz, methods[i], (GzbOneInterface) object, mapObject);
             }
         }
         return object;
@@ -1020,7 +1035,7 @@ public class FactoryImpl implements Factory {
     /// 4 线程数量不变 方法签名不变 修改代码可以无缝热更新 这是非常稳定的模式
     /// 5 方法内部禁止阻塞 除非你明白你在做什么
 
-    public void startThreadFactory(Class<?> aClass, Method method, GzbOneInterface gzbOneInterface
+    public void startThreadFactory(int id, Class<?> aClass, Method method, GzbOneInterface gzbOneInterface
             , Map<String, Object> mapObject) throws Exception {
         ThreadInterval threadInterval = method.getDeclaredAnnotation(ThreadInterval.class);
         Transaction transaction = method.getDeclaredAnnotation(Transaction.class);
@@ -1093,7 +1108,7 @@ public class FactoryImpl implements Factory {
                         }
 
                         Object[] objects = new Object[]{threadEntity0.result.get(finalI), threadEntity0.lock};
-                        Object obj = gzbOneInterface.call(key, null, mapObject, objects, transaction != null && transaction.value());
+                        Object obj = gzbOneInterface._gzb_call_x01(id, null, mapObject, objects, transaction != null && transaction.value());
                         if (obj != null) {
                             log.d("线程正常退出-释放线程状态-根据调用函数返回值决定", key);
                             //释放占用

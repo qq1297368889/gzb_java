@@ -45,6 +45,11 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.net.*;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.security.CodeSource;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -1766,34 +1771,15 @@ public class Tools {
         return (T[]) list.toArray(ts);
     }
 
-    public static <T> T[] appendArray(T[] ts, T[] def, Object... objs) {
-        List list = new ArrayList();
-        if (ts == null) {
-            ts = def;
+    public static <T> T[] appendArray(T[] ts, T[] def, T... tArray) {
+        List<T>list=new ArrayList<>();
+        if (ts!=null) {
+            Collections.addAll(list, ts);
         }
-        for (T t : ts) {
-            list.add(t);
-        }
-        for (Object object : objs) {
-            list.add(object);
-        }
-        return (T[]) list.toArray(ts);
+        Collections.addAll(list, tArray);
+        return list.toArray(def);
     }
 
-
-    public static <T> T[] appendArrayDef(T[] ts, T[] def, Object... objs) {
-        List list = new ArrayList();
-        if (ts == null) {
-            return def;
-        }
-        for (T t : ts) {
-            list.add(t);
-        }
-        for (Object object : objs) {
-            list.add(object);
-        }
-        return (T[]) list.toArray(ts);
-    }
 
     public static Object[] toArray(Object... objs) {
         return objs;
@@ -2405,6 +2391,19 @@ public class Tools {
             }
         }
 
+    }
+    /**
+     * 使用 Files.write 方法向文件追加文本内容。
+     * 如果文件不存在，则会自动创建。
+     * * @param filePath 要写入的文件路径
+     * @param content 要追加的文本内容（会自动添加换行符）
+     */
+    public static void fileAppend(String filePath, byte[] content) throws IOException {
+        Files.write(
+                Paths.get(filePath),content,
+                StandardOpenOption.APPEND,
+                StandardOpenOption.CREATE
+        );
     }
 
     /**

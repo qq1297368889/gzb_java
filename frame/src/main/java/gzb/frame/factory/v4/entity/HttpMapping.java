@@ -28,6 +28,7 @@ public class HttpMapping {
     public GzbOneInterface httpMappingFun;
 
     public String sign;
+    public int id;
     public String path;
     public int met;
     //是否开启事务

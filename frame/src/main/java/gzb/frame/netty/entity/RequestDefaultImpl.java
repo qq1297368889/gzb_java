@@ -55,7 +55,7 @@ public class RequestDefaultImpl implements Request {
         this.ctx = ctx;
         this.request = request;
         this.response = new ResponseDefaultImpl(ctx);
-        this.method = request.method().name();
+        this.method = request.method().name().toUpperCase();
         this.remoteIp = remoteAddress.getAddress().getHostAddress();
         this.remotePort = remoteAddress.getPort();
         this.localIp = localAddress.getAddress().getHostAddress();
