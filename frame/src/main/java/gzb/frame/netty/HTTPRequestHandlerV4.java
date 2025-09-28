@@ -22,6 +22,7 @@ import gzb.frame.netty.entity.Request;
 import gzb.frame.netty.entity.RequestDefaultImpl;
 import gzb.frame.netty.entity.Response;
 import gzb.frame.server.http.entity.RunRes;
+import gzb.tools.Config;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -35,7 +36,7 @@ public class HTTPRequestHandlerV4 extends SimpleChannelInboundHandler<FullHttpRe
             FullHttpResponse response = new DefaultFullHttpResponse(
                     HttpVersion.HTTP_1_1,
                     HttpResponseStatus.OK,
-                    Unpooled.copiedBuffer("{\"code\":\"1\",\"data\":{\"sysFileMd5\":\"101\"},\"message\":\"n01\"}".getBytes()));
+                    Unpooled.copiedBuffer("{\"code\":\"1\",\"data\":{\"sysFileMd5\":\"101\"},\"message\":\"n01\"}".getBytes(Config.encoding)));
             response.headers().set("content-length", response.content().readableBytes());
             ctx.writeAndFlush(response);
             return;

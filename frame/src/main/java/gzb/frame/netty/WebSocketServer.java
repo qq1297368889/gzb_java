@@ -45,14 +45,6 @@ public final class WebSocketServer {
 
         System.setProperty("file.encoding", "UTF-8");
         System.setProperty("this.dir", Tools.getProjectRoot(WebSocketServer.class));
-        System.out.println(Arrays.toString(" ".getBytes()));
-        System.out.println(Arrays.toString("\r".getBytes()));
-        System.out.println(Arrays.toString("\n".getBytes()));
-        System.out.println(Arrays.toString("0".getBytes()));
-        System.out.println(Arrays.toString("1".getBytes()));
-        System.out.println(Arrays.toString("2".getBytes()));
-        System.out.println(Arrays.toString("3".getBytes()));
-        System.out.println(Arrays.toString("4".getBytes()));
     }
 
     private final int port;

@@ -18,6 +18,7 @@
 
 package gzb.frame.generate;
 
+import gzb.tools.FileTools;
 import gzb.tools.Tools;
 
 import java.io.File;
@@ -107,14 +108,10 @@ public class Base {
     }
 
     public void saveFile(String path, String code, boolean save) {
-        try {
-            Tools.fileMkdirs(new File(path).getParentFile());
-            //System.out.println(path);
-            if (save) {
-                Tools.fileSaveString(path, code, false);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        FileTools.mkdir(new File(path).getParentFile());
+        //System.out.println(path);
+        if (save) {
+            FileTools.save(new File(path), code);
         }
     }
 }

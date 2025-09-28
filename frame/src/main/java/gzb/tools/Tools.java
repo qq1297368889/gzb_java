@@ -18,12 +18,8 @@
 
 package gzb.tools;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.TypeAdapter;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonToken;
-import com.google.gson.stream.JsonWriter;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.TypeReference;
 import gzb.entity.PagingEntity;
 import gzb.entity.TableInfo;
 import gzb.entity.UploadEntity;
@@ -32,7 +28,6 @@ import gzb.frame.factory.ClassTools;
 import gzb.frame.factory.Constant;
 import gzb.frame.factory.v4.entity.HttpMapping;
 import gzb.frame.netty.entity.Response;
-import gzb.start.Application;
 import gzb.tools.http.HTTP;
 import gzb.tools.img.GifCaptcha;
 import gzb.tools.json.JsonSerializable;
@@ -44,12 +39,6 @@ import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.net.*;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.security.CodeSource;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -111,46 +100,21 @@ public class Tools {
         return (obj == null) ? 0 : obj.toString().length();
     }
 
-    static class ObjectTypeAdapter extends TypeAdapter<Object> {
-        private final TypeAdapter<Object> defaultAdapter = new Gson().getAdapter(Object.class);
-
-        @Override
-        public void write(JsonWriter out, Object value) throws IOException {
-            defaultAdapter.write(out, value);
-        }
-
-        @Override
-        public Object read(JsonReader in) throws IOException {
-            JsonToken token = in.peek();
-            switch (token) {
-                case NUMBER:
-                case STRING:
-                    return in.nextString();
-                case BOOLEAN:
-                    return in.nextBoolean();
-                case NULL:
-                    in.nextNull();
-                    return null;
-                case BEGIN_ARRAY:
-                    in.beginArray();
-                    return in;
-                case BEGIN_OBJECT:
-                    in.beginObject();
-                    return in;
-                default:
-                    return null;
-            }
-        }
-    }
-
     public static Map<String, Object> jsonToMap(String json) {
-        if (json == null) {
+        if (json == null || json.isEmpty()) {
             return new HashMap<>();
         }
-        // 使用 GsonBuilder 来注册自定义的 TypeAdapter
-        return new GsonBuilder()
-                .registerTypeAdapter(Object.class, new ObjectTypeAdapter())
-                .create().fromJson(json, Map.class);
+
+        // Fastjson2 推荐使用 TypeReference 来进行泛型解析
+        // TypeReference<Map<String, Object>> 明确告诉解析器，Map的值类型是 Object
+        try {
+            return JSON.parseObject(
+                    json,
+                    new TypeReference<Map<String, Object>>() {});
+        } catch (Exception e) {
+            System.err.println("Fastjson2 解析失败: " + e.getMessage());
+            return null;
+        }
     }
 
     public static Map<Object, Object> createHashMap(String key, String val) {
@@ -462,7 +426,7 @@ public class Tools {
             byte[] bytes2 = AES_CBC_128.aesDe(bytes, pwd, null);
             if (bytes2 != null) {
                 //System.out.println(desc + " " + (i + 1) + "/" + list.size() + " data " + bytes2.length);
-                fileSaveByte(file, bytes2, true);
+                FileTools.save(file, bytes2);
                 if (intervalMin > 0 && intervalMax > 0) {
                     sleep(getRandomInt(intervalMax, intervalMin));
                 }
@@ -482,7 +446,7 @@ public class Tools {
             if (!file.exists()) {
                 break;
             }
-            Tools.fileSaveByte(mp4Path, Tools.fileReadByte(file), true);
+            FileTools.append(new File(mp4Path), Tools.fileReadByte(file));
         }
         return new File(mp4Path);
     }
@@ -2011,7 +1975,7 @@ public class Tools {
             out = new ByteArrayOutputStream();
             pout = new PrintStream(out);
             ex.printStackTrace(pout);
-            ret = new String(out.toByteArray(), Charset.forName(Config.encoding));
+            ret = new String(out.toByteArray());
             out.close();
         } catch (Exception e) {
             return ex.getMessage();
@@ -2106,7 +2070,7 @@ public class Tools {
      * 默认为 UTF-8
      */
     public static String textToMd5(String str){
-        return toMd5(str.getBytes(Charset.forName(Config.encoding)));
+        return toMd5(str.getBytes(Config.encoding));
     }
 
     /**
@@ -2171,267 +2135,6 @@ public class Tools {
 
 
     //###############################################文件操作@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    public static boolean copyFile(String oldFileName, String newFileName) {
-        return copyFile(new File(oldFileName), new File(newFileName));
-    }
-
-    public static boolean copyFile(File oldFile, File newFile) {
-        if (oldFile.exists() && oldFile.isFile() && !newFile.exists()) {
-            try {
-                byte[] bytes = Tools.fileReadByte(oldFile);
-                Tools.fileSaveByte(newFile, bytes, false);
-                return true;
-            } catch (Exception e) {
-                e.printStackTrace();
-                return false;
-            }
-        } else {
-            return false;
-        }
-    }
-
-    public static List<String> copyStaticFile(Class<?> clazz) throws Exception {
-        List<String> list = new ArrayList<String>();
-        String staticDir = "/src/main/resources/templates/static/";
-        String path0_1 = Tools.getProjectRoot(Application.class);
-        String path0_2 = Tools.getProjectRoot(clazz);
-        String path1 = Tools.pathFormat(path0_1 + staticDir);
-        String path2 = Tools.pathFormat(path0_2 + staticDir);
-
-        byte[] bytes = Tools.fileReadByte(path0_1 + "/src/main/resources/templates/page/permission.html");
-        Tools.fileSaveByte(path0_2 + "/src/main/resources/templates/page/permission.html", bytes, false);
-        List<File> list1 = Tools.fileSub(path1, 2);
-
-        new File(path2).mkdirs();
-        for (File file : list1) {
-            String path3 = Tools.pathFormat(file.getPath());
-            path3 = path3.replaceAll(path1, "");
-            File file1 = new File(path2 + path3);
-            copyFile(file, file1);
-        }
-
-        String path01 = Tools.pathFormat(path0_1 + "/src/main/resources/templates/page/js/");
-        String path02 = Tools.pathFormat(path0_2 + "/src/main/resources/templates/page/js/");
-        List<File> list2 = Tools.fileSub(path01, 2);
-        new File(path02).mkdirs();
-        for (File file : list2) {
-            String path3 = Tools.pathFormat(file.getPath());
-            path3 = path3.replaceAll(path01, "");
-            File file1 = new File(path02 + path3);
-            copyFile(file, file1);
-        }
-        return list;
-    }
-
-    /**
-     * 重命名文件
-     *
-     * @param oldFilePath 老文件路径
-     * @param newFilePath 新文件路径
-     * @return
-     */
-    public static void fileRename(String oldFilePath, String newFilePath) {
-        File oldFile = new File(oldFilePath);
-        File newFile = new File(newFilePath);
-        if (oldFile.exists() && oldFile.isFile()) {
-            oldFile.renameTo(newFile);
-        }
-    }
-
-    /**
-     * 保存字符串数据
-     *
-     * @param file     文件地址 例如 "d:/a.txt"
-     * @param str      要保存的数据
-     * @param encoding 是否追加,true追加写入,false覆盖写入
-     * @return 默认为 UTF-8
-     */
-    public static void fileSaveArray(File file, Object[] str, String encoding) {
-        FileOutputStream fos = null;
-        try {
-            fos = new FileOutputStream(file, true);
-            for (Object object : str) {
-                fos.write((object + "\r\n").getBytes(encoding));
-            }
-            fos.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    /**
-     * 保存字符串数据
-     * 参数1:文件地址 例如 "d:/a.txt"
-     * 参数2:要保存的数据
-     * 参数3:是否追加,true追加写入,false覆盖写入
-     * 默认为 UTF-8
-     */
-    public static void fileSaveList(File file, List<?> str, String encoding) {
-        FileOutputStream fos = null;
-        try {
-            fos = new FileOutputStream(file, true);
-            for (Object object : str) {
-                fos.write((object + "\r\n").getBytes(encoding));
-            }
-            fos.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    /**
-     * 保存字符串数据
-     * 参数1:文件地址 例如 "d:/a.txt"
-     * 参数2:要保存的数据
-     * 参数3:是否追加,true追加写入,false覆盖写入
-     * 默认为 UTF-8
-     *
-     * @throws IOException
-     * @throws UnsupportedEncodingException
-     */
-    public static void fileSaveString(String file, String str, boolean add) throws UnsupportedEncodingException, IOException {
-        fileSaveString(file, str, add, "UTF-8");
-    }
-
-    /**
-     * 保存字符串数据
-     * 参数1:文件地址 例如new File("d:/a.txt")
-     * 参数2:要保存的数据
-     * 参数3:是否追加,true追加写入,false覆盖写入
-     * 默认为 UTF-8
-     *
-     * @throws IOException
-     * @throws UnsupportedEncodingException
-     */
-    public static void fileSaveString(File file, String str, boolean add) throws UnsupportedEncodingException, IOException {
-        fileSaveString(file, str, add, "UTF-8");
-    }
-
-    /**
-     * 保存字符串数据
-     * 参数1:文件地址 例如 "d:/a.txt"
-     * 参数2:要保存的数据
-     * 参数3:是否追加,true追加写入,false覆盖写入
-     * 参数4:编码
-     *
-     * @throws IOException
-     * @throws UnsupportedEncodingException
-     */
-    public static void fileSaveString(String file, String str, boolean add, String encoding) throws UnsupportedEncodingException, IOException {
-        fileSaveByte(new File(file), str.getBytes(encoding), add);
-    }
-
-    /**
-     * 保存字符串数据
-     * 参数1:文件地址 例如 new File("d:/a.txt")
-     * 参数2:要保存的数据
-     * 参数3:是否追加,true追加写入,false覆盖写入
-     * 参数4:编码
-     *
-     * @throws IOException
-     * @throws UnsupportedEncodingException
-     */
-    public static void fileSaveString(File file, String str, boolean add, String encoding) throws UnsupportedEncodingException, IOException {
-        fileSaveByte(file, str.getBytes(encoding), add);
-    }
-
-
-    /**
-     * 保存byte数据
-     * 参数1:文件地址 例如 "d:/a.txt"
-     * 参数2:要保存的数据
-     * 参数3:是否追加,true追加写入,false覆盖写入
-     *
-     * @throws IOException
-     */
-    public static void fileSaveByte(String file, byte[] bytes, boolean add) throws IOException {
-        fileSaveByte(new File(file), bytes, add);
-    }
-
-    /**
-     * 保存byte数据
-     * 参数1:文件地址 例如 new File("d:/a.txt")
-     * 参数2:要保存的数据
-     * 参数3:是否追加,true追加写入,false覆盖写入
-     *
-     * @throws IOException
-     */
-    public static void fileSaveByte(File file, byte[] bytes, boolean add) throws IOException {
-        FileOutputStream fos = null;
-        try {
-            fileNew(file);
-            fos = new FileOutputStream(file, add);
-            fos.write(bytes);
-            fos.flush();
-        } catch (IOException e) {
-            throw e;
-        } finally {
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (IOException e) {
-                    throw e;
-                }
-            }
-        }
-
-    }
-    /**
-     * 使用 Files.write 方法向文件追加文本内容。
-     * 如果文件不存在，则会自动创建。
-     * * @param filePath 要写入的文件路径
-     * @param content 要追加的文本内容（会自动添加换行符）
-     */
-    public static void fileAppend(String filePath, byte[] content) throws IOException {
-        Files.write(
-                Paths.get(filePath),content,
-                StandardOpenOption.APPEND,
-                StandardOpenOption.CREATE
-        );
-    }
-
-    /**
-     * 文件不存在会重新创建目录并创建文件,如果存在则不作操作,
-     * 参数1:文件地址 例如 new File("d:/a.txt")
-     */
-    public static void fileNew(File file) throws IOException {
-        if (!file.exists()) {
-            file.getParentFile().mkdirs();
-            file.createNewFile();
-        }
-    }
-
-    public static void fileMkdirsPath(String path) throws IOException {
-        fileMkdirs(new File(path));
-    }
-
-    public static void fileMkdirs(File file) throws IOException {
-        if (file == null) {
-            return;
-        }
-        if (!file.exists()) {
-            if (!file.getParentFile().exists()) {
-                fileMkdirs(file.getParentFile());
-            }
-            file.mkdirs();
-        }
-    }
 
     public static String toMD5Path(String rootPath, String md5) {
         String path = rootPath
@@ -2480,7 +2183,7 @@ public class Tools {
         if (file2.exists()) {
             return path;//重复文件!
         }
-        Tools.fileSaveByte(file2, Tools.fileReadByte(file), false);
+        FileTools.save(file2, Tools.fileReadByte(file));
         return path;
     }
 
@@ -2496,7 +2199,7 @@ public class Tools {
         if (file2.exists()) {
             return page;//重复文件!
         }
-        Tools.fileSaveByte(file2, bytes, false);
+        FileTools.save(file2, bytes);
         return page;
     }
 
@@ -2504,13 +2207,6 @@ public class Tools {
         return fileSaveResources(bytes, rootUrl, "data");
     }
 
-    /**
-     * 文件不存在会重新创建目录并创建文件,如果存在则不作操作,
-     * 参数1:文件地址 例如 "d:/a.txt"
-     */
-    public static void fileNew(String file) throws IOException {
-        fileNew(new File(file));
-    }
 
     /**
      * 读取byte数据
@@ -2621,27 +2317,6 @@ public class Tools {
         return new String(fileReadByte(file), encoding).split(split);
     }
 
-    /**
-     * 读取字符串数据 返回数组 一行一个
-     * 参数1:文件地址 例如 new File("d:/a.txt")
-     * 参数2:编码
-     *
-     * @throws Exception
-     */
-    public static String[] fileReadArray(String file, String encoding) throws Exception {
-        return fileReadArray(new File(file), encoding, "\r\n");
-    }
-
-    /**
-     * 读取字符串数据 返回数组 一行一个
-     * 参数1:文件地址 例如 new File("d:/a.txt")
-     * 默认编码为"UTF-8"
-     *
-     * @throws Exception
-     */
-    public static String[] fileReadArray(File file) throws Exception {
-        return fileReadArray(file, "UTF-8", "\r\n");
-    }
 
     static int BUFFER_SIZE = 16 * 1024;
 

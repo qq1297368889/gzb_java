@@ -142,7 +142,7 @@ public class FileUploadEntity {
 
     @Override
     public String toString() {
-        return "DecoupledFileUpload{" +
+        return "FileUploadEntity{" +
                 "file='" + file.getPath() + '\'' +
                 "name='" + name + '\'' +
                 ", filename='" + filename + '\'' +

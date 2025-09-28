@@ -396,7 +396,7 @@ public class SystemAction {
             String rootPath = Config.uploadDir;
             String md5 = Tools.fileToMd5(file0);
             File file2 = new File(Tools.toMD5Path(rootPath, md5));
-            Tools.fileMkdirs(file2);
+            FileTools.mkdir(file2);
             File file3 = new File(file2.getPath() + "/" + fileUploadEntity.getFilename());
             if (!file3.exists()) {
                 if (!file0.renameTo(file3)) {
@@ -454,7 +454,7 @@ public class SystemAction {
         }
 
         // 读取文件内容
-        byte[] bytes = Tools.fileReadByte(file);
+        byte[] bytes = FileTools.readByte(file);
         if (bytes == null || bytes.length < 1) {
             return res.fail("文件不存在或无权限访问[1002]");
         }

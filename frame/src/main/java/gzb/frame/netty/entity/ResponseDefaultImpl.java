@@ -31,7 +31,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class ResponseDefaultImpl implements Response {
-    public static final Charset encoding = Charset.forName(Config.encoding);
     private HttpResponseStatus status;
     private Map<String, String> headers;
     private String charset;
@@ -110,7 +109,7 @@ public class ResponseDefaultImpl implements Response {
         if (chunk instanceof byte[]) {
             bytes = (byte[]) chunk;
         } else if (chunk instanceof String) {
-            bytes = ((String) chunk).getBytes(encoding);
+            bytes = ((String) chunk).getBytes(Config.encoding);
         } else if (chunk == null) {
             bytes = new byte[0];
         } else {
@@ -118,7 +117,7 @@ public class ResponseDefaultImpl implements Response {
             if (str1 == null) {
                 bytes = new byte[0];
             } else {
-                bytes = str1.getBytes(encoding);
+                bytes = str1.getBytes(Config.encoding);
             }
         }
         FullHttpResponse response = new DefaultFullHttpResponse(
@@ -225,7 +224,7 @@ public class ResponseDefaultImpl implements Response {
     }
 
     public Response success(String body) {
-        return sendAndFlush(body.getBytes(encoding));
+        return sendAndFlush(body.getBytes(Config.encoding));
     }
 
     public Response fail() {

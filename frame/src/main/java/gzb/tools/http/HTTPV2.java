@@ -21,6 +21,7 @@ package gzb.tools.http;
 
 import gzb.tools.Config;
 import gzb.tools.DateTime;
+import gzb.tools.FileTools;
 import gzb.tools.Tools;
 
 import java.io.*;
@@ -44,7 +45,6 @@ public class HTTPV2 {
     private static final String BOUNDARY = "#";
     private static final String NAME_ATTRIBUTE = "name";
     private static final String FILENAME_ATTRIBUTE = "filename";
-    private static final String UTF_8 = (Config.encoding);
     private static final String ACCEPT_ALL = "*/*";
     private static final String ACCEPT_ENCODING = "gzip, deflate";
     private static final String CACHE_CONTROL = "no-cache";
@@ -210,7 +210,7 @@ public class HTTPV2 {
                     conn.setDoOutput(true);
                     conn.setUseCaches(false);
                     try (DataOutputStream out = new DataOutputStream(conn.getOutputStream())) {
-                        out.write(data.getBytes(UTF_8));
+                        out.write(data.getBytes(Config.encoding));
                         out.flush();
                     }
                     break;
@@ -234,7 +234,7 @@ public class HTTPV2 {
                                 for (String value : values) {
                                     dos.writeBytes(PREFIX + BOUNDARY + CRLF);
                                     dos.writeBytes("Content-Disposition: form-data; " + NAME_ATTRIBUTE + "=\"" + key + "\"" + CRLF + CRLF);
-                                    dos.write(value.getBytes(UTF_8));
+                                    dos.write(value.getBytes(Config.encoding));
                                     dos.writeBytes(CRLF);
                                 }
                             }
@@ -244,10 +244,12 @@ public class HTTPV2 {
                             for (File file : listFiles) {
                                 if (!file.exists()) continue;
                                 String fileName = file.getName();
-                                byte[] body_data = Tools.fileReadByte(file);
+                                byte[] body_data = FileTools.readByte(file);
                                 if (body_data != null && body_data.length > 0) {
                                     dos.writeBytes(PREFIX + BOUNDARY + CRLF);
-                                    dos.writeBytes("Content-Disposition: form-data; " + NAME_ATTRIBUTE + "=\"" + uploadName + "\"; " + FILENAME_ATTRIBUTE + "=\"" + URLEncoder.encode(fileName, UTF_8) + "\"" + CRLF);
+                                    dos.writeBytes("Content-Disposition: form-data; " +
+                                            NAME_ATTRIBUTE + "=\"" + uploadName + "\"; " + FILENAME_ATTRIBUTE + "=\"" +
+                                            URLEncoder.encode(fileName, Config.encoding.name()) + "\"" + CRLF);
                                     dos.writeBytes(CRLF);
                                     dos.write(body_data);
                                     dos.writeBytes(CRLF);
@@ -264,7 +266,7 @@ public class HTTPV2 {
                     conn.setDoOutput(true);
                     conn.setUseCaches(false);
                     try (DataOutputStream out = new DataOutputStream(conn.getOutputStream())) {
-                        out.write(data.getBytes(UTF_8));
+                        out.write(data.getBytes(Config.encoding));
                         out.flush();
                     }
                     break;
@@ -357,11 +359,6 @@ public class HTTPV2 {
         if (this.bytes == null) {
             return null;
         }
-        try {
-            return new String(this.bytes, UTF_8);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            return null;
-        }
+        return new String(this.bytes, Config.encoding);
     }
 }

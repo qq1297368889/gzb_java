@@ -28,7 +28,7 @@ public class RSA {
     public static void main(String[] args) {
         RSAEntity rsaEntity = generateKeyPair();
         String originalData = "Hello, RSA Encryption!";
-        byte[] data = originalData.getBytes();
+        byte[] data = originalData.getBytes(Config.encoding);
 
         // 加密
         byte[] encryptedData = encrypt(data, rsaEntity.pub);
@@ -63,7 +63,7 @@ public class RSA {
                 .replaceAll("\\+","-");
     }
     public static final byte[] decryptBase64(String data, String publicKeyString){
-        return decrypt(Base64.getDecoder().decode(data.replaceAll("-","+").replaceAll("_","=").getBytes()), publicKeyString);
+        return decrypt(Base64.getDecoder().decode(data.replaceAll("-","+").replaceAll("_","=").getBytes(Config.encoding)), publicKeyString);
     }
     public static final byte[] encrypt(byte[] bytes, String publicKeyString) {
         try {
@@ -94,7 +94,7 @@ class RSATools {
     public static void main(String[] args) {
         try {
             String originalData = "Hello, RSA Encryption!";
-            byte[] data = originalData.getBytes();
+            byte[] data = originalData.getBytes(Config.encoding);
 
             // 生成密钥对
             KeyPair keyPair = generateKeyPair();

@@ -81,8 +81,6 @@ public class HTTPRequestParameters {
     private byte[] body;
     private Map<String, List<Object>> parameters;
     public String path;
-    private static Charset charset = Charset.forName(Config.encoding);
-
     public HTTPRequestParameters(FullHttpRequest request) {
         this.request = request;
     }
@@ -98,7 +96,7 @@ public class HTTPRequestParameters {
         if (this.body==null) {
             readByte();
         }
-        return new String(this.body, charset);
+        return new String(this.body, Config.encoding);
     }
     /**
      * Lazily parses and returns all parameters from the request.

@@ -18,6 +18,7 @@
 
 package gzb.frame;
 
+import gzb.tools.Config;
 import gzb.tools.Tools;
 import gzb.tools.http.HTTP;
 import gzb.tools.http.HTTP_V3;
@@ -42,7 +43,7 @@ public class DDOS {
 
         url = "http://127.0.0.1:2081/test/test1?sysUsersAcc=n01";
         //url = "http://127.0.0.1:2082/test/test1?p1=1&p2=2&p3=3.1&p4=4&p5=5&p6=6&p7=7&p8=8&p9=9&p10=10&p11=11&p12=12&p13=13";
-        bytes = "n01".getBytes();//   sysUsersAcc  name msg
+        bytes = "n01".getBytes(Config.encoding);//   sysUsersAcc  name msg
         start("gzb-zero web框架压测",6,url,0,null,10000 * 1000,bytes);
 
 

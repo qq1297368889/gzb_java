@@ -19,6 +19,7 @@
 package gzb.frame.factory;
 
 import gzb.tools.Config;
+import gzb.tools.FileTools;
 import gzb.tools.Tools;
 import gzb.tools.log.Log;
 
@@ -38,21 +39,23 @@ import java.util.regex.Pattern;
  * 本方案为每次加载使用独立的类加载器，以支持热更新。
  */
 public class ClassLoad {
-    public static Log log= Config.log;
+    public static Log log = Config.log;
 
     /**
      * 从文件编译 Java 代码。
+     *
      * @param file Java 源文件
      * @return 编译后的 Class 对象
      * @throws Exception 编译或加载失败
      */
     public static Class<?> compileJavaCode(File file) throws Exception {
-        String javaCode = Tools.fileReadString(file);
+        String javaCode = FileTools.readString(file);
         return compileJavaCode(javaCode);
     }
 
     /**
      * 从字符串编译 Java 代码。
+     *
      * @param javaCode Java 源代码字符串
      * @return 编译后的 Class 对象
      * @throws Exception 编译或加载失败
@@ -68,7 +71,8 @@ public class ClassLoad {
 
     /**
      * 核心编译和加载方法。
-     * @param javaCode Java 源代码
+     *
+     * @param javaCode  Java 源代码
      * @param className 类的全限定名
      * @return 编译后的 Class 对象
      * @throws Exception 编译或加载失败
@@ -80,7 +84,7 @@ public class ClassLoad {
         }
 
         JavaFileObject source = new JavaSourceFromString(className, javaCode);
-       JavaClassInMemory classInMemory = new JavaClassInMemory(className, JavaFileObject.Kind.CLASS);
+        JavaClassInMemory classInMemory = new JavaClassInMemory(className, JavaFileObject.Kind.CLASS);
 
         List<JavaFileObject> compilationUnits = new ArrayList<>();
         compilationUnits.add(source);
@@ -95,9 +99,17 @@ public class ClassLoad {
         };
 
         List<String> options = new ArrayList<>();
-        options.add("-classpath");
-        options.add(System.getProperty("java.class.path"));
+        options.add("-parameters");
+        options.add("-encoding");
+        options.add(Config.encoding.name());
+        String jarPath = System.getProperty("java.class.path");
+        String separator = File.pathSeparator;
+        String completeClasspath = jarPath + separator + ".";
 
+        options.add("-classpath");
+        options.add(completeClasspath);
+
+        //log.t("-classpath", completeClasspath);
         JavaCompiler.CompilationTask task =
                 compiler.getTask(null, fileManager, diagnostics, options, null, compilationUnits);
         boolean success = task.call();
@@ -106,7 +118,7 @@ public class ClassLoad {
             StringBuilder errorMessage = new StringBuilder();
             diagnostics.getDiagnostics().forEach(
                     d -> errorMessage.append(d.getMessage(null)).append("\n"));
-            throw new Exception("编译失败："+"\r\n" + errorMessage+"\r\n" +className+"\r\n"+javaCode);
+            throw new Exception("编译失败：" + "\r\n" + errorMessage + "\r\n" + className + "\r\n" + javaCode);
         }
 
         byte[] bytes = classInMemory.getBytes();

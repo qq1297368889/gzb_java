@@ -126,7 +126,7 @@ public class HTTPStaticFileHandler {
      */
     private String sanitizeUri(String uri) throws URISyntaxException {
         try {
-            uri = URLDecoder.decode(uri, Config.encoding);
+            uri = URLDecoder.decode(uri, Config.encoding.name());
         } catch (Exception e) {
             return null;
         }
@@ -166,7 +166,7 @@ public class HTTPStaticFileHandler {
     private void sendError(ChannelHandlerContext ctx, HttpResponseStatus status) {
         FullHttpResponse response = new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1, status,
-                Unpooled.copiedBuffer("Failure: " + status + "\r\n", Charset.forName(Config.encoding)));
+                Unpooled.copiedBuffer("Failure: " + status + "\r\n", (Config.encoding)));
         response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain; charset="+Config.encoding);
         ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
     }

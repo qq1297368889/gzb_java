@@ -391,7 +391,7 @@ public class GzbCacheRedis implements GzbCache {
     @Override
     public byte[] getByteArray(String key, byte[] defVal) {
         try (Jedis jedis = jedisPool.getResource()) {
-            byte[] bytes = jedis.get(key.getBytes());
+            byte[] bytes = jedis.get(key.getBytes(Config.encoding));
             return bytes != null ? bytes : defVal;
         } catch (Exception e) {
             log.e(e);
@@ -402,7 +402,7 @@ public class GzbCacheRedis implements GzbCache {
     @Override
     public byte[] getByteArray(String key, String mapKey, byte[] defVal) {
         try (Jedis jedis = jedisPool.getResource()) {
-            byte[] bytes = jedis.hget(key.getBytes(), mapKey.getBytes());
+            byte[] bytes = jedis.hget(key.getBytes(Config.encoding), mapKey.getBytes(Config.encoding));
             return bytes != null ? bytes : defVal;
         } catch (Exception e) {
             log.e(e);
@@ -413,7 +413,7 @@ public class GzbCacheRedis implements GzbCache {
     @Override
     public byte[] getByteArray(String key, int index, byte[] defVal) {
         try (Jedis jedis = jedisPool.getResource()) {
-            List<byte[]> bytesList = jedis.lrange(key.getBytes(), index, index);
+            List<byte[]> bytesList = jedis.lrange(key.getBytes(Config.encoding), index, index);
             if (bytesList != null && !bytesList.isEmpty()) {
                 return bytesList.get(0);
             }
@@ -453,7 +453,7 @@ public class GzbCacheRedis implements GzbCache {
         try (Jedis jedis = jedisPool.getResource()) {
             byte[] bytes = serialize(val);
             if (bytes != null) {
-                jedis.setex(key.getBytes(), second, bytes);
+                jedis.setex(key.getBytes(Config.encoding), second, bytes);
             }
         } catch (Exception e) {
             log.e(e);
@@ -465,7 +465,7 @@ public class GzbCacheRedis implements GzbCache {
         try (Jedis jedis = jedisPool.getResource()) {
             byte[] bytes = serialize(val);
             if (bytes != null) {
-                jedis.hset(key.getBytes(), mapKey.getBytes(), bytes);
+                jedis.hset(key.getBytes(Config.encoding), mapKey.getBytes(Config.encoding), bytes);
                 jedis.expire(key, second);
             }
         } catch (Exception e) {
@@ -478,7 +478,7 @@ public class GzbCacheRedis implements GzbCache {
         try (Jedis jedis = jedisPool.getResource()) {
             byte[] bytes = serialize(val);
             if (bytes != null) {
-                jedis.lset(key.getBytes(), index, bytes);
+                jedis.lset(key.getBytes(Config.encoding), index, bytes);
                 jedis.expire(key, second);
             }
         } catch (Exception e) {
@@ -491,7 +491,7 @@ public class GzbCacheRedis implements GzbCache {
         try (Jedis jedis = jedisPool.getResource()) {
             byte[] bytes = serialize(val);
             if (bytes != null) {
-                jedis.rpush(key.getBytes(), bytes);
+                jedis.rpush(key.getBytes(Config.encoding), bytes);
             }
         } catch (Exception e) {
             log.e(e);
@@ -559,7 +559,7 @@ public class GzbCacheRedis implements GzbCache {
         try (Jedis jedis = jedisPool.getResource()) {
             byte[] bytes = serialize(val);
             if (bytes != null) {
-                jedis.lpush(key.getBytes(), bytes);
+                jedis.lpush(key.getBytes(Config.encoding), bytes);
             }
         } catch (Exception e) {
             log.e(e);
@@ -569,7 +569,7 @@ public class GzbCacheRedis implements GzbCache {
     @Override
     public <T> T queueConsumptionObject(String key) {
         try (Jedis jedis = jedisPool.getResource()) {
-            byte[] bytes = jedis.rpop(key.getBytes());
+            byte[] bytes = jedis.rpop(key.getBytes(Config.encoding));
             return (T) deserialize(bytes);
         } catch (Exception e) {
             log.e(e);
@@ -585,7 +585,7 @@ public class GzbCacheRedis implements GzbCache {
     @Override
     public <T> T queueConsumptionBlockObject(String key, int second) {
         try (Jedis jedis = jedisPool.getResource()) {
-            List<byte[]> bytesList = jedis.brpop(second, key.getBytes());
+            List<byte[]> bytesList = jedis.brpop(second, key.getBytes(Config.encoding));
             if (bytesList != null && !bytesList.isEmpty()) {
                 byte[] bytes = bytesList.get(1); // BRPOP 返回一个列表，第一个元素是键名，第二个是值
                 return (T) deserialize(bytes);

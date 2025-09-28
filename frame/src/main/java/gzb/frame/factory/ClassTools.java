@@ -19,13 +19,21 @@
 package gzb.frame.factory;
 
 import gzb.entity.SqlTemplate;
+import gzb.exception.GzbException0;
 import gzb.frame.annotation.*;
 import gzb.frame.db.BaseDao;
 import gzb.frame.netty.entity.FileUploadEntity;
 import gzb.tools.Config;
 import gzb.tools.Tools;
 import gzb.tools.log.Log;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.LocalVariableNode;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.*;
 import java.sql.Connection;
 import java.util.*;
@@ -97,8 +105,7 @@ public class ClassTools {
 
         return type.isPrimitive() || WRAPPER_TYPES.contains(type);
     }
-
-    /*
+/*
         public static List<String> getParameterNames(Method method) {
             List<String> paramNames = new ArrayList<>();
 
@@ -151,8 +158,124 @@ public class ClassTools {
             }
 
             return paramNames;
+        }*/
+
+    /**
+     * 通过 ASM 字节码技术，获取指定 Method 的参数名列表。
+     * <p>
+     * 注意：目标类必须使用 -parameters 选项编译，否则参数名将是 arg0, arg1 等默认值。
+     *
+     * @param method 要获取参数名的反射 Method 对象
+     * @return 参数名列表，如果无法获取则返回空列表
+     */
+    public static List<String> getParameterNamesByAsm(final Method method, final Class<?>[] parameterTypes) {
+        Class<?> declaringClass = method.getDeclaringClass();
+        List<String> parameterNames = new ArrayList<>();
+
+        // 如果方法没有参数，直接返回空列表
+        if (parameterTypes.length == 0) {
+            return parameterNames;
         }
-        */
+
+        // 1. 获取类文件的输入流
+        String className = declaringClass.getName().replace('.', '/') + ".class";
+        InputStream is = declaringClass.getClassLoader().getResourceAsStream(className);
+
+        if (is == null) {
+            // 无法找到 .class 文件，通常发生在动态代理或特殊的类加载器中
+            return parameterNames;
+        }
+
+        try {
+            // 2. 创建 ClassReader 来读取字节码
+            ClassReader classReader = new ClassReader(is);
+
+            // 3. 定义 ClassVisitor
+            classReader.accept(new ClassVisitor(Opcodes.ASM9) {
+
+                @Override
+                public MethodVisitor visitMethod(int access, String name, String descriptor,
+                                                 String signature, String[] exceptions) {
+
+                    if (name.equals(method.getName()) && descriptor.equals(org.objectweb.asm.Type.getMethodDescriptor(method))) {
+
+                        return new MethodVisitor(Opcodes.ASM9) {
+
+                            // 非静态方法从索引 1 开始（索引 0 是 'this'），静态方法从 0 开始
+                            private int nextExpectedIndex = Modifier.isStatic(method.getModifiers()) ? 0 : 1;
+                            private int paramIndex = 0; // 跟踪当前已获取的参数数量
+
+                            @Override
+                            public void visitLocalVariable(String name, String descriptor, String signature,
+                                                           org.objectweb.asm.Label start, org.objectweb.asm.Label end, int index) {
+
+                                // 1. 只处理方法参数 (即 index 必须是预期参数的索引)
+                                if (index == nextExpectedIndex && paramIndex < parameterTypes.length) {
+
+                                    // 排除 Java 编译器默认生成的参数名 (arg0, arg1...)
+                                    if (!name.matches("arg\\d+")) {
+                                        parameterNames.add(name);
+                                    } else {
+                                        // 如果是默认名，我们仍然占位，防止影响后续参数的索引计算
+                                        parameterNames.add(null);
+                                    }
+
+                                    // 2. 处理 long/double 类型的索引槽位跳跃
+                                    Class<?> currentParamType = parameterTypes[paramIndex];
+                                    if (currentParamType == long.class || currentParamType == double.class) {
+                                        // long/double 占用两个槽位
+                                        nextExpectedIndex += 2;
+                                    } else {
+                                        // 其他类型占用一个槽位
+                                        nextExpectedIndex += 1;
+                                    }
+
+                                    paramIndex++; // 实际参数计数器前进
+                                }
+                            }
+                        };
+                    }
+                    return super.visitMethod(access, name, descriptor, signature, exceptions);
+                }
+            }, 0);
+
+        } catch (IOException e) {
+            // 实际应用中应该记录错误日志
+            log.e("getParameterNamesByAsm", e);
+        } finally {
+            try {
+                is.close();
+            } catch (IOException ignored) {
+
+                log.e("getParameterNamesByAsm", ignored);
+            }
+        }
+        // 清理：如果中间有 null 占位，且最终参数名数量与期望不符，说明编译时没有保留参数名，需要根据 parameterTypes 数量截断或填充
+        if (parameterNames.size() != parameterTypes.length) {
+            // 通常情况下，如果正确编译，这里不应该发生数量不匹配
+            // 容错处理：清除所有不完整的或不规范的结果
+            parameterNames.clear();
+        }
+
+        return parameterNames;
+    }
+
+    /**
+     * 辅助方法：获取 Method 的描述符 (Descriptor)
+     *
+     * @param method 反射方法
+     * @return 方法描述符字符串
+     */
+    private static String getMethodDescriptor(Method method) {
+        StringBuilder sb = new StringBuilder("(");
+        for (Class<?> paramType : method.getParameterTypes()) {
+            sb.append(org.objectweb.asm.Type.getDescriptor(paramType));
+        }
+        sb.append(")");
+        sb.append(org.objectweb.asm.Type.getDescriptor(method.getReturnType()));
+        return sb.toString();
+    }
+
     //code 源代码  methodName 方法名 pararType 参数类型  返回参数名称List
     public static List<String> getParameterNames(String code, String methodName, Class<?>[] pararType) throws Exception {
         List<String> names = new ArrayList<>();
@@ -265,7 +388,7 @@ public class ClassTools {
         if (names.size() != pararType.length) {
             names.clear();
         }
-        log.t("获取参数名", methodName, names);
+        //log.d("获取参数名", methodName, names);
         return names;
 
     }
@@ -366,7 +489,8 @@ public class ClassTools {
                                         Array.set(array, i, Double.parseDouble(values.get(i).toString()));
                                     } else if (componentType == boolean.class || componentType == Boolean.class) {
                                         Array.set(array, i, Boolean.parseBoolean(values.get(i).toString()));
-                                    } else {
+                                    } else if (componentType.isAssignableFrom(values.get(0).getClass())) {
+                                        log.d("数组参数注入", i, paramName, paramValue, values.get(i), array.getClass());
                                         Array.set(array, i, values.get(i));
                                     }
                                 }
@@ -421,9 +545,7 @@ public class ClassTools {
                     }
                     listObject.add(paramValue);
                 } catch (NumberFormatException e) {
-                    throw new RuntimeException(
-                            "请求参数 数字类型 转换错误 -> 名称:" + paramName + ",类型:" + paramType + ",参数:" + requestDataMap
-                            , e);
+                    throw new GzbException0( "请求参数 数字类型 转换错误 -> 名称:" + paramName + ",类型:" + paramType + ",参数:" + requestDataMap);
                 }
             }
         }
@@ -567,6 +689,9 @@ public class ClassTools {
     }
 
     public static String gen_code_entity_load_map(Class<?> aClass) throws NoSuchMethodException {
+        if (!Modifier.isPublic(aClass.getModifiers())) {
+            return null;
+        }
         int num = 0;
         Field[] fields = aClass.getDeclaredFields();
         String className = aClass.getName();
@@ -1129,11 +1254,11 @@ public class ClassTools {
     private static final char WINDOWS_SEPARATOR_CHAR = '\\';
     private static final char LAST_CHAR = '\\';
 
+
     public static String webPathFormat(String path) {
         if (path == null || path.isEmpty()) {
             return PATH_SEPARATOR_STRING;
         }
-
         StringBuilder sb = new StringBuilder();
 
         // 1. 确保以 '/' 开头
@@ -1227,6 +1352,30 @@ public class ClassTools {
         }
         key.append(")");
         return key.toString();
+    }
+
+    static Map<String, Map<String, Integer>> map_getSingInt = new HashMap<>();
+
+    public static int getSingInt(Method method, Class<?> aClass) {
+        lock.lock();
+        try {
+            String key0 = aClass.getName();
+            String key1 = getSing(method, aClass);
+            Map<String, Integer> map0 = map_getSingInt.get(key0);
+            if (map0 == null) {
+                map0 = new HashMap<>();
+                map_getSingInt.put(key0, map0);
+            }
+            int id = map0.getOrDefault(key1, -1);
+            if (id == -1) {
+                id = map0.size();
+                map0.put(key1, id);
+            }
+            //System.out.println("getSingInt|"+aClass.getName()+" "+method.getName()+" "+id);
+            return id;
+        } finally {
+            lock.unlock();
+        }
     }
 
     public static Field[] getCombinedFields(Class<?> clazz) {

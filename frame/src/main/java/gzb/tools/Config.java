@@ -26,6 +26,9 @@ import gzb.tools.log.LogImpl;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Array;
+import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -34,7 +37,7 @@ public class Config {
     public static String thisPath = null;
     public static File configFile = null;
     public static long configTime = 0;
-    public static String encoding = null;
+    public static Charset encoding = null;
 
     public static int cpu;
     public static String domain;
@@ -73,19 +76,10 @@ public class Config {
     public static String sizeName;
     public static String totalName;
 
-
     public static Log log;
-    //默认 缓存 具体实现取决于配置文件
-    public static GzbCache cache_gzbCache;
-    //session 缓存 具体实现取决于配置文件
-    public static GzbCache cache_session;
-    //数据库查询 缓存 具体实现取决于配置文件
-    public static GzbCache cache_dataBaseCache;
-    //全局缓存 是map实现 避免一些对象无法存入redis 并且重启会消失
-    public static GzbCache cache_gzbMap;
-static{
-    init();
-}
+    static{
+        init();
+    }
 
     public static void update() {
         domain = Config.get("gzb.system.server.http.domain", "0.0.0.0");
@@ -128,7 +122,7 @@ static{
     private static void init() {
         try {
             cpu = Tools.getCPUNum();
-            encoding = System.getProperty("file.encoding", "UTF-8");
+            encoding = Charset.forName(System.getProperty("file.encoding", "UTF-8"));
             thisPath = System.getProperty("this.dir");
             tempDir = Config.get("gzb.system.server.http.tmp.dir", System.getProperty("java.io.tmpdir"));
             if (thisPath == null || thisPath.isEmpty()) {
@@ -154,48 +148,22 @@ static{
                 }
                 configFile = file;
             }
-            load();
+            load(configFile);
             log = new LogImpl();
-            //配置读取完毕
-            cache_gzbMap = new GzbCacheMap();
-            if (Config.cacheType.equals("redis")) {
-                cache_gzbCache = new GzbCacheRedis();
-            } else {
-                cache_gzbCache = new GzbCacheMap(Tools.pathFormat(Config.thisPath() + "/session.cache"));
-            }
-            if (Config.sessionType.equals("redis")) {
-                cache_session = new GzbCacheRedis();
-            } else {
-                cache_session = new GzbCacheMap();
-            }
-            if (Config.dataBaseCache.equals("redis")) {
-                cache_dataBaseCache = new GzbCacheRedis();
-            } else {
-                cache_dataBaseCache = new GzbCacheMap();
-            }
             new Thread(() -> {
                 while (true) {
                     try {
                         Tools.sleep(3000);
-                        load();
+                        load(configFile);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
                 }
             }).start();
         } catch (Exception e) {
-            System.err.println("cache 缓存初始化错误" + Tools.getExceptionInfo(e));
+            System.err.println("程序配置 缓存初始化错误" + Tools.getExceptionInfo(e));
         }
     }
-
-    public static void load() throws Exception {
-        load(configFile);
-    }
-
-    public static void load(String configFilePath) throws Exception {
-        load(new File(configFilePath));
-    }
-
 
     public static void load(File file) throws Exception {
         if (file.exists()) {
@@ -203,7 +171,8 @@ static{
                 return;
             }
             configTime = file.lastModified();
-            String[] ss1 = Tools.fileReadArray(file, encoding, "\n");
+
+            String[] ss1 = FileTools.readArray(file);
             for (String s : ss1) {
                 if (s == null || s.length() < 2) {
                     continue;
@@ -220,24 +189,39 @@ static{
                         if (!new File(n1).exists()) {
                             n1 = ss2[1].replaceAll("classpath:", thisPath());
                         }
-                        Tools.fileMkdirs(new File(n1));
-                        ss2[1] = n1;
-
+                        String[]arr1=n1.split(",");
+                        StringBuilder newString= new StringBuilder();
+                        for (String string : arr1) {
+                            FileTools.mkdir(new File(string.trim()));
+                            newString.append(string).append(",");
+                        }
+                        if (newString.toString().endsWith(",")) {
+                            newString.delete(newString.length()-1,newString.length());
+                        }
+                        ss2[1] = newString.toString();
                     }
                     if (ss2[1].contains("this:")) {
                         String n1 = ss2[1].replaceAll("this:", thisPath());
                         if (!new File(n1).exists()) {
                             n1 = ss2[1].replaceAll("this:", thisPath());
                         }
-                        Tools.fileMkdirs(new File(n1));
-                        ss2[1] = n1;
+                        String[]arr1=n1.split(",");
+                        StringBuilder newString= new StringBuilder();
+                        for (String string : arr1) {
+                            FileTools.mkdir(new File(string.trim()));
+                            newString.append(string).append(",");
+                        }
+                        if (newString.toString().endsWith(",")) {
+                            newString.delete(newString.length()-1,newString.length());
+                        }
+                        ss2[1] = newString.toString();
                     }
                     if (config.get(ss2[0]) == null) {
                         config.put(ss2[0], ss2[1]);
-                        //log.d("config","add",ss2[0] + "=" + config.get(ss2[0]));
+                        //log.t("config","add",ss2[0] + "=" + config.get(ss2[0]));
                     } else if (!config.get(ss2[0]).equals(ss2[1])) {
                         config.put(ss2[0], ss2[1]);
-                        //log.d("config","upd",ss2[0] + "=" + config.get(ss2[0]));
+                        //log.t("config","upd",ss2[0] + "=" + config.get(ss2[0]));
                     }
                 }
             }
@@ -253,7 +237,7 @@ static{
             sb.append(en.getKey()).append("=").append(en.getValue()).append("\n");
         }
         System.out.println(sb.toString());
-        Tools.fileSaveString(configFile, sb.toString(), false);
+        FileTools.save(configFile, sb.toString());
     }
 
     public static String get(String key, String defVal) {

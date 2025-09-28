@@ -18,10 +18,7 @@
 
 package gzb.tools.log;
 
-import gzb.tools.Config;
-import gzb.tools.DateTime;
-import gzb.tools.Queue;
-import gzb.tools.Tools;
+import gzb.tools.*;
 import gzb.tools.cache.Cache;
 import gzb.tools.thread.ThreadPool;
 
@@ -67,15 +64,15 @@ public class LogThread {
                             if (logFile[finalI] != null && logFile[finalI].exists()) {
                                 String str = logQueues.get(finalI).peek();
                                 if (str != null) {
-                                    stringBuilder.append(str);
+                                    stringBuilder.append(str).append("\r\n");
                                     logQueues.get(finalI).poll();
                                 }
-                                if (str == null || stringBuilder.length() >= 1024 * 512) {
+                                if ((str == null && stringBuilder.length() > 0) || stringBuilder.length() >= 1024 * 512) {
                                     String file = logFile[finalI].getPath().trim()
                                             + "/"
                                             + new DateTime().formatDateTime("yyyy-MM-dd_HH")
                                             + ".log";
-                                    Tools.fileAppend(file, (stringBuilder + "\r\n").getBytes());
+                                    FileTools.append(new File(file), stringBuilder.toString());
                                     stringBuilder = new StringBuilder();
                                 }
                                 if (str != null) {
@@ -96,18 +93,7 @@ public class LogThread {
             @Override
             public void run() {
                 while (true) {
-                    for (int i = 0; i < lvNames.length; i++) {
-                        lvConfig[i] = Config.getInteger("frame.log." + lvNames[i] + ".lv", 0);
-                        if (logFile[i] == null) {
-                            logFile[i] = new File(rootPathFile.getPath() + "/" + lvNames[i]);
-                        }
-                        //System.out.println(logFile[i]);
-                        if (!logFile[i].exists()) {
-                            if (!logFile[i].mkdirs()) {
-                                System.out.println("创建日志目录失败:" + logFile[i].getPath());
-                            }
-                        }
-                    }
+                    loadConfig();
                     Tools.sleep(1000);
                 }
 
@@ -118,6 +104,21 @@ public class LogThread {
 
     public LogThread() {
 
+    }
+
+    public static void loadConfig() {
+        for (int i = 0; i < lvNames.length; i++) {
+            lvConfig[i] = Config.getInteger("frame.log." + lvNames[i] + ".lv", 0);
+            if (logFile[i] == null) {
+                logFile[i] = new File(rootPathFile.getPath() + "/" + lvNames[i]);
+            }
+            //System.out.println(logFile[i]);
+            if (!logFile[i].exists()) {
+                if (!logFile[i].mkdirs()) {
+                    System.out.println("创建日志目录失败:" + logFile[i].getPath());
+                }
+            }
+        }
     }
 
     public void addLog(int index, Class<?> aClass, Object[] log) {

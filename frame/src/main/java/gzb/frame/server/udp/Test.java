@@ -18,6 +18,7 @@
 
 package gzb.frame.server.udp;
 
+import gzb.tools.Config;
 import gzb.tools.Tools;
 
 import java.net.DatagramSocket;
@@ -44,9 +45,9 @@ public class Test {
                     }
                     for (int i1 = 0; i1 < 10000; i1++) {
                         try {
-                            UDP.send(client,"127.0.0.1",1088, (Tools.getRandomString(32)+(i1+1)).getBytes());
-                            //UDP.send(client,"123.60.94.141",2600, (Tools.getRandomString(18)+(i1+1)).getBytes());
-                            //System.out.println(new String(UDP.read(client).getBytes()));
+                            UDP.send(client,"127.0.0.1",1088, (Tools.getRandomString(32)+(i1+1)).getBytes(Config.encoding));
+                            //UDP.send(client,"123.60.94.141",2600, (Tools.getRandomString(18)+(i1+1)).getBytes(Config.encoding));
+                            //System.out.println(new String(UDP.read(client).getBytes(Config.encoding)));
                             suc.incrementAndGet(); // 原子递增
                         } catch (Exception e) {
                             e.printStackTrace();

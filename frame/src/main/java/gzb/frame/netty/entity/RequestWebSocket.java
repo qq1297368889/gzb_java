@@ -193,7 +193,7 @@ public class RequestWebSocket implements Request {
     }
 
     public String getBodyString() {
-        return new String(body, Charset.forName(Config.encoding));
+        return new String(body, Config.encoding);
     }
 
     public byte[] getBody() {

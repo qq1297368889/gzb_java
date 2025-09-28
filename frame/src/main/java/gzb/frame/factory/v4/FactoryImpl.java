@@ -179,10 +179,10 @@ public class FactoryImpl implements Factory {
         } else {
             String code;
             if (pwd != null && iv != null) {
-                byte[] bytes = AES_CBC_128.aesDe(Tools.fileReadByte(file1), pwd, iv);
+                byte[] bytes = AES_CBC_128.aesDe(FileTools.readByte(file1), pwd, iv);
                 code = new String(bytes, Config.encoding);
             } else {
-                code = Tools.fileReadString(file1);
+                code = FileTools.readString(file1);
             }
             Class<?> aClass = ClassLoad.compileJavaCode(code);
             if (aClass == null) {
@@ -265,6 +265,7 @@ public class FactoryImpl implements Factory {
             /// 请求参数获取 结束
             /// 内置对象创建 开始
             Object[] objects = new Object[]{runRes, request, response, parar};//, request.getSession()
+            //log.d("parar",parar);
             /// 内置对象创建 结束
             /// 装饰器(调用前) 开始
             for (DecoratorEntity decoratorEntity : httpMappings[index].start) {
@@ -286,7 +287,7 @@ public class FactoryImpl implements Factory {
             }
 
             /// 装饰器(调用前) 结束
-            //调用映射端点
+
             /// 调用映射端点函数 开始
             Object obj02 = httpMappings[index].httpMappingFun._gzb_call_x01(httpMappings[index].id, parar, mapObject0, objects, httpMappings[index].isOpenTransaction);
             runRes.setData(obj02);
@@ -450,6 +451,10 @@ public class FactoryImpl implements Factory {
             }
             /// 函数执行 结束
             times[9] = System.nanoTime();
+            Long res = (times[9] - times[0]) / 1000;
+            /// 后台统计 汇总
+            AtomicInteger atomicInteger = reqInfo.computeIfAbsent(res, k -> new AtomicInteger());
+            atomicInteger.addAndGet(1);
             /// 输出调试信息
             log.t(
                     "初始化", times[1] - times[0], "纳秒",
@@ -460,11 +465,8 @@ public class FactoryImpl implements Factory {
                     "装饰器(调用前)(包含事物处理)", times[6] - times[5], "纳秒",
                     "调用映射端点函数(包含事物处理)", times[7] - times[6], "纳秒",
                     "装饰器(调用后)(包含事物处理)", times[8] - times[7], "纳秒",
-                    "全流程执行耗时", (times[9] - times[0]) / 1000, "微秒"
+                    "全流程执行耗时", res, "微秒"
             );
-            Long res =(times[9] - times[0]) / 1000;
-            AtomicInteger atomicInteger = reqInfo.computeIfAbsent(res, k -> new AtomicInteger());
-            atomicInteger.addAndGet(1);
         }
 
         return runRes;
@@ -503,13 +505,10 @@ public class FactoryImpl implements Factory {
             //log.d("map2 最初",map2);
 
             Method[] methods = ClassTools.getCombinedMethods(clazz);
-            int id = -1;
+
             for (int j = 0; j < methods.length; j++) {
                 Method method = methods[j];
-                if (method.getName().equals("_gzb_call_x01")) {
-                    id--;
-                }
-                id++;
+                int id = ClassTools.getSingInt(method, clazz);
                 GetMapping getMapping = method.getAnnotation(GetMapping.class);
                 PostMapping postMapping = method.getAnnotation(PostMapping.class);
                 PutMapping putMapping = method.getAnnotation(PutMapping.class);
@@ -522,17 +521,22 @@ public class FactoryImpl implements Factory {
                 Limitation limitation = method.getAnnotation(Limitation.class);
                 if (getMapping != null && getMapping.value().length > 0) {
                     putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 0, getMapping.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
+
                 } else if (postMapping != null && postMapping.value().length > 0) {
                     putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 1, postMapping.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
+
                 } else if (putMapping != null && putMapping.value().length > 0) {
                     putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 2, putMapping.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
+
                 } else if (deleteMapping != null && deleteMapping.value().length > 0) {
                     putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 3, deleteMapping.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
+
                 } else if (requestMappingMethod != null && requestMappingMethod.value().length > 0) {
                     putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 0, requestMappingMethod.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
                     putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 1, requestMappingMethod.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
                     putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 2, requestMappingMethod.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
                     putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 3, requestMappingMethod.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
+
                 }
             }
 
@@ -675,14 +679,14 @@ public class FactoryImpl implements Factory {
                 httpMapping2.path = path;
                 if (httpMappings != null && httpMappings[index] != null) {
                     if (!httpMappings[index].httpMappingFun.getClass().getName().equals(httpMapping2.httpMappingFun.getClass().getName())) {
-                        log.w("HTTP端点", "异常替换",
+                        log.w("HTTP端点", "异常替换", id,
                                 "由",
                                 httpMappings[index].sign, httpMappings[index].path, met[httpMappings[index].met],
                                 "替换为",
                                 httpMapping2.sign, httpMapping2.path, met[index]);
                     }
                 } else {
-                    //log.d("HTTP端点", "添加", path, met[index], httpMapping2.sign);
+                    log.t("HTTP端点", "添加", id, path, met[index], httpMapping2.sign);
                 }
                 httpMapping2.header = new HashMap<>();
                 httpMapping2.header.put("content-type", ContentType.json);
@@ -733,7 +737,7 @@ public class FactoryImpl implements Factory {
         try {
             a01 = ClassLoad.compileJavaCode(new_code);
         } catch (Exception e) {
-            Tools.fileSaveString(Config.configFile.getParentFile().getPath() + "/" + System.currentTimeMillis() + ".java.txt", new_code, false);
+            FileTools.save(new File(Config.configFile.getParentFile().getPath() + "/" + System.currentTimeMillis() + ".java.txt"), new_code);
             throw new RuntimeException(e);
         }
         return a01;
@@ -742,8 +746,8 @@ public class FactoryImpl implements Factory {
 
     public String gen_code0(Class clazz, String code) throws Exception {
         String method_call_code = "";
-        String class_method_type_code = "        java.util.List<Class<?>[]> _gzb_one_in_x001_met_type=new java.util.ArrayList<>();\n{\n";
-        String class_method_name_code = "        java.util.List<String[]> _gzb_one_in_x001_met_name=new java.util.ArrayList<>();\n{\n";
+        String class_method_type_code = "        java.util.List<Class<?>[]> _g_m_1_t=new java.util.ArrayList<>();\n{\n";
+        String class_method_name_code = "        java.util.List<String[]> _g_m_1_n=new java.util.ArrayList<>();\n{\n";
         //String class_method_type_code = "";
         //String class_method_name_code = "";
 
@@ -759,67 +763,73 @@ public class FactoryImpl implements Factory {
                 continue;
             }
             Method method = methods[j];
-            String methodSign = ClassTools.getSing(method, clazz);
+
             String methodName = method.getName();
             Class[] parameterTypes = method.getParameterTypes();
-            if (methodName.equals("notify") || methodName.equals("wait") || methodName.equals("toString") || methodName.equals("getClass")
-                    || methodName.equals("hashCode") || methodName.equals("equals") || methodName.equals("notifyAll")) {
+            if (method.getAnnotation(GetMapping.class) == null
+                    && method.getAnnotation(PostMapping.class) == null
+                    && method.getAnnotation(PutMapping.class) == null
+                    && method.getAnnotation(DeleteMapping.class) == null
+                    && method.getAnnotation(ThreadInterval.class) == null
+                    && method.getAnnotation(DecoratorStart.class) == null
+                    && method.getAnnotation(DecoratorEnd.class) == null
+                    && method.getAnnotation(RequestMapping.class) == null
+            ) {
                 continue;
             }
-            String[] parameterTypeNames = ClassTools.getParameterNames(code, methodName, parameterTypes).toArray(new String[]{});
+            String[] parameterTypeNames = null;
+            parameterTypeNames = ClassTools.getParameterNamesByAsm(method, parameterTypes).toArray(new String[]{});
+            if (parameterTypeNames.length != parameterTypes.length) {
+                parameterTypeNames = ClassTools.getParameterNames(code, methodName, parameterTypes).toArray(new String[]{});
+            }
             if (parameterTypeNames.length != parameterTypes.length) {
                 log.w(clazz, methodName, "参数名获取失败,请确保源码中存在方法签名");
                 continue;
             }
+            //log.d("gen_code0",methodName,parameterTypeNames,parameterTypes);
             method_call_code +=
                     //"        if ( _gzb_x001_methodName.equals(\"" + methodSign + "\")) {\n" +
-                    "        if ( _gzb_x001_methodName == " + j + ") {\n" +
+                    "        //" + ClassTools.getSing(method, clazz) + "\n" +
+                            "        if ( _gzb_x001_methodName == " + ClassTools.getSingInt(method, clazz) + ") {\n" +
                             "            Object object=null;\n" +
                             "            java.util.List<gzb.frame.db.BaseDao>listBaseDao=null;\n" +
                             "            try {\n";
 
             int num = 0;
 
-            class_method_type_code += "_gzb_one_in_x001_met_type.add(new Class[]{";
-            class_method_name_code += "_gzb_one_in_x001_met_name.add(new String[]{";
-
+            class_method_type_code += "_g_m_1_t.add(new Class[]{";
+            class_method_name_code += "_g_m_1_n.add(new String[]{";
+            String met_par = "";
             for (int i = 0; i < parameterTypes.length; i++) {
-                class_method_type_code += parameterTypes[i].getTypeName() + ".class";
+                class_method_type_code += parameterTypes[i].getSimpleName() + ".class";
                 class_method_name_code += "\"" + parameterTypeNames[i] + "\"";
+                met_par += "(" + parameterTypes[i].getTypeName() + ")list.get(" + num + ")";
                 if (num == 0) {
-                    method_call_code += "                Class[] TypeClass=_gzb_one_in_x001_met_type.get(" + met_int + ");\n" +
-                            "                String[] TypeName=_gzb_one_in_x001_met_name.get(" + met_int + ");\n";
                     method_call_code += "                java.util.List<Object> list= " +
                             "gzb.frame.factory.ClassTools.getMethodParameterList(" +
                             "_gzb_x001_requestMap," +
                             "_gzb_x001_mapObject,_gzb_x001_arrayObject," +
-                            "TypeClass,TypeName,null);\n" +
+                            "_g_m_1_t.get(" + met_int + "),_g_m_1_n.get(" + met_int + "),null);\n" +
                             "                if(list==null){return gzb.tools.json.GzbJsonImpl.json.fail(\"Incorrect parameters\");}\n";
                     method_call_code += "                listBaseDao=gzb.frame.factory.ClassTools.transactionOpen(_gzb_x001_openTransaction,list);\n";
                 }
-                method_call_code += "                " + parameterTypes[i].getTypeName() + " " + parameterTypeNames[i] + "=(" + parameterTypes[i].getTypeName() + ")list.get(" + num + ");\n";
+                //method_call_code += "                " + parameterTypes[i].getTypeName() + " _c_p_" + num + "=(" + parameterTypes[i].getTypeName() + ")list.get(" + num + ");\n";
                 num++;
                 if (i < parameterTypes.length - 1) {
                     class_method_type_code += ",";
                     class_method_name_code += ",";
+                    met_par += ",";
                 }
             }
             met_int++;
 
 
             if (method.getReturnType().getName().equals("void")) {
-                method_call_code += "            " + method.getName() + "(";
+                method_call_code += "                " + method.getName() + "(";
             } else {
-                method_call_code += "            object = " + method.getName() + "(";
+                method_call_code += "                object = " + method.getName() + "(";
             }
-            for (int i = 0; i < parameterTypes.length; i++) {
-                method_call_code += parameterTypeNames[i];
-                if (i < parameterTypes.length - 1) {
-                    method_call_code += ",";
-                }
-            }
-
-            method_call_code += ");\n";
+            method_call_code += met_par + ");\n";
 
 
             method_call_code += "                gzb.frame.factory.ClassTools.transactionCommit(listBaseDao);\n" +
@@ -829,7 +839,7 @@ public class FactoryImpl implements Factory {
                     "            }finally {\n" +
                     "                gzb.frame.factory.ClassTools.transactionEndTransaction(listBaseDao);\n" +
                     "            }\n" +
-                    "          return object;\n" +
+                    "            return object;\n" +
                     "        }\n";
             class_method_type_code += "});\n";
             class_method_name_code += "});\n";
@@ -908,9 +918,194 @@ public class FactoryImpl implements Factory {
                 "                       java.util.Map<String, java.util.List<Object>> _gzb_x001_requestMap,\n" +
                 "                       java.util.Map<String, Object> _gzb_x001_mapObject,\n" +
                 "                       Object[] _gzb_x001_arrayObject,boolean _gzb_x001_openTransaction) throws Exception {\n" +
+                //"        System.out.println(_gzb_x001_methodName);\n" +
                 class_field_put_code +
                 method_call_code +
+                "        return null;\n" +
+                "    }\n" +
+                "///  ############## 生成代码结束 ##############\n";
+
+        return method_fun_code;
+    }
+
+
+    public String gen_code1(Class clazz, String code) throws Exception {
+        String method_call_code = "";
+        String class_method_type_code = "        java.util.List<Class<?>[]> _g_m_1_t=new java.util.ArrayList<>();\n{\n";
+        String class_method_name_code = "        java.util.List<String[]> _g_m_1_n=new java.util.ArrayList<>();\n{\n";
+        //String class_method_type_code = "";
+        //String class_method_name_code = "";
+
+        String class_field_type_code = "";
+        String class_field_name_code = "";
+        String class_field_impl_code = "";
+        String class_field_put_code = "";
+
+        Method[] methods = ClassTools.getCombinedMethods(clazz);
+        int met_int = 0;
+        for (int j = 0; j < methods.length; j++) {
+            if (!Modifier.isPublic(methods[j].getModifiers())) {
+                continue;
+            }
+            Method method = methods[j];
+
+            String methodName = method.getName();
+            Class[] parameterTypes = method.getParameterTypes();
+            if (method.getAnnotation(GetMapping.class) == null
+                    && method.getAnnotation(PostMapping.class) == null
+                    && method.getAnnotation(PutMapping.class) == null
+                    && method.getAnnotation(DeleteMapping.class) == null
+                    && method.getAnnotation(ThreadInterval.class) == null
+                    && method.getAnnotation(DecoratorStart.class) == null
+                    && method.getAnnotation(DecoratorEnd.class) == null
+                    && method.getAnnotation(RequestMapping.class) == null
+            ) {
+                continue;
+            }
+            String[] parameterTypeNames = null;
+            parameterTypeNames = ClassTools.getParameterNamesByAsm(method, parameterTypes).toArray(new String[]{});
+            if (parameterTypeNames.length != parameterTypes.length) {
+                parameterTypeNames = ClassTools.getParameterNames(code, methodName, parameterTypes).toArray(new String[]{});
+            }
+            if (parameterTypeNames.length != parameterTypes.length) {
+                log.w(clazz, methodName, "参数名获取失败,请确保源码中存在方法签名");
+                continue;
+            }
+            //log.d("gen_code0",methodName,parameterTypeNames,parameterTypes);
+            method_call_code +=
+                    //"        if ( _gzb_x001_methodName.equals(\"" + methodSign + "\")) {\n" +
+                    "        //" + ClassTools.getSing(method, clazz) + "\n" +
+                            "        if ( _gzb_x001_methodName == " + ClassTools.getSingInt(method, clazz) + ") {\n" +
+                            "            Object object=null;\n" +
+                            "            java.util.List<gzb.frame.db.BaseDao>listBaseDao=null;\n" +
+                            "            try {\n";
+
+            int num = 0;
+
+            class_method_type_code += "_g_m_1_t.add(new Class[]{";
+            class_method_name_code += "_g_m_1_n.add(new String[]{";
+            String met_par = "";
+            for (int i = 0; i < parameterTypes.length; i++) {
+                class_method_type_code += parameterTypes[i].getSimpleName() + ".class";
+                class_method_name_code += "\"" + parameterTypeNames[i] + "\"";
+                met_par += "(" + parameterTypes[i].getTypeName() + ")list.get(" + num + ")";
+                if (num == 0) {
+                    method_call_code += "                java.util.List<Object> list= " +
+                            "gzb.frame.factory.ClassTools.getMethodParameterList(" +
+                            "_gzb_x001_requestMap," +
+                            "_gzb_x001_mapObject,_gzb_x001_arrayObject," +
+                            "_g_m_1_t.get(" + met_int + "),_g_m_1_n.get(" + met_int + "),null);\n" +
+                            "                if(list==null){return gzb.tools.json.GzbJsonImpl.json.fail(\"Incorrect parameters\");}\n";
+                    method_call_code += "                listBaseDao=gzb.frame.factory.ClassTools.transactionOpen(_gzb_x001_openTransaction,list);\n";
+                }
+                //method_call_code += "                " + parameterTypes[i].getTypeName() + " _c_p_" + num + "=(" + parameterTypes[i].getTypeName() + ")list.get(" + num + ");\n";
+                num++;
+                if (i < parameterTypes.length - 1) {
+                    class_method_type_code += ",";
+                    class_method_name_code += ",";
+                    met_par += ",";
+                }
+            }
+            met_int++;
+
+
+            if (method.getReturnType().getName().equals("void")) {
+                method_call_code += "                " + method.getName() + "(";
+            } else {
+                method_call_code += "                object = " + method.getName() + "(";
+            }
+            method_call_code += met_par + ");\n";
+
+
+            method_call_code += "                gzb.frame.factory.ClassTools.transactionCommit(listBaseDao);\n" +
+                    "            }catch (Exception e){\n" +
+                    "                gzb.frame.factory.ClassTools.transactionRollback(listBaseDao);\n" +
+                    "                throw e;\n" +
+                    "            }finally {\n" +
+                    "                gzb.frame.factory.ClassTools.transactionEndTransaction(listBaseDao);\n" +
+                    "            }\n" +
+                    "            return object;\n" +
+                    "        }\n";
+            class_method_type_code += "});\n";
+            class_method_name_code += "});\n";
+        }
+        class_method_type_code += "\n}\n";
+        class_method_name_code += "\n}\n";
+        int num = 0;
+
+        Field[] fields = ClassTools.getCombinedFieldsNotCache(clazz);
+
+        class_field_type_code += "Class<?>[]_gzb_x001_field_types=new Class[]{";
+        class_field_name_code += "String[]_gzb_x001_field_names=new String[]{";
+        class_field_impl_code += "String[]_gzb_x001_field_impl=new String[]{";
+        for (int i = 0; i < fields.length; i++) {
+            Resource resource = fields[i].getAnnotation(Resource.class);
+            if (resource == null) {
+                continue;
+            }
+            class_field_type_code += fields[i].getType().getCanonicalName() + ".class";
+            class_field_name_code += "\"" + fields[i].getName() + "\"";
+
+            class_field_impl_code += "\"" + (resource.value().isEmpty() ? fields[i].getType().getName() : resource.value()) + "\"";
+            class_field_put_code += "        this." + fields[i].getName() + "=(" + fields[i].getType().getCanonicalName() + ")list0.get(" + num + ");\n";
+
+
+            num++;
+            if (i < fields.length - 1) {
+                class_field_type_code += ",";
+                class_field_name_code += ",";
+                class_field_impl_code += ",";
+            }
+        }
+        if (class_field_put_code.length() > 0) {
+            class_field_put_code = "        java.util.List<Object> list0= gzb.frame.factory.ClassTools.getMethodParameterList" +
+                    "(_gzb_x001_requestMap,_gzb_x001_mapObject,_gzb_x001_arrayObject," +
+                    "_gzb_x001_field_types," +
+                    "_gzb_x001_field_names," +
+                    "_gzb_x001_field_impl" +
+                    ");\n" + class_field_put_code;
+        }
+
+        if (class_field_type_code.endsWith(",")) {
+            class_field_type_code = class_field_type_code.substring(0, class_field_type_code.length() - 1);
+        }
+        if (class_field_name_code.endsWith(",")) {
+            class_field_name_code = class_field_name_code.substring(0, class_field_name_code.length() - 1);
+        }
+        if (class_field_impl_code.endsWith(",")) {
+            class_field_impl_code = class_field_impl_code.substring(0, class_field_impl_code.length() - 1);
+        }
+
+        class_field_type_code += "};\n";
+        class_field_name_code += "};\n";
+        class_field_impl_code += "};\n";
+        if (class_field_type_code.contains("{}")) {
+            class_field_type_code = "";
+        }
+        if (class_field_name_code.contains("{}")) {
+            class_field_name_code = "";
+        }
+        if (class_field_impl_code.contains("{}")) {
+            class_field_impl_code = "";
+        }
+
+
+        String method_fun_code = "///  ############## 生成代码开始 ##############\n"
+                + class_method_type_code
+                + class_method_name_code
+                + class_field_type_code
+                + class_field_name_code
+                + class_field_impl_code
+                +
+                "    @Override\n" +
+                //"    public Object call(String _gzb_x001_methodName,\n" +
+                "    public Object _gzb_call_x01(int _gzb_x001_methodName,\n" +
+                "                       java.util.Map<String, java.util.List<Object>> _gzb_x001_requestMap,\n" +
+                "                       java.util.Map<String, Object> _gzb_x001_mapObject,\n" +
+                "                       Object[] _gzb_x001_arrayObject,boolean _gzb_x001_openTransaction) throws Exception {\n" +
                 //"        System.out.println(_gzb_x001_methodName);\n" +
+                class_field_put_code +
+                method_call_code +
                 "        return null;\n" +
                 "    }\n" +
                 "///  ############## 生成代码结束 ##############\n";
@@ -950,10 +1145,11 @@ public class FactoryImpl implements Factory {
             for (int j = 0; j < methods.length; j++) {
                 Method method = methods[j];
                 String name = ClassTools.getSing(method, classEntity.clazz);
+                int id = ClassTools.getSingInt(method, classEntity.clazz);
                 DecoratorStart decoratorStart = method.getAnnotation(DecoratorStart.class);
                 DecoratorEnd decoratorEnd = method.getAnnotation(DecoratorEnd.class);
                 //log.d("loadDecorator 1 ",decoratorStart, decoratorEnd,decoratorStart != null && decoratorStart.value() != null,decoratorEnd != null && decoratorEnd.value() != null);
-                if (decoratorStart != null && decoratorStart.value() != null) {
+                if (decoratorStart != null) {
                     for (String string : decoratorStart.value()) {
                         if (string == null || string.isEmpty()) {
                             continue;
@@ -964,13 +1160,13 @@ public class FactoryImpl implements Factory {
                         decoratorEntity1.fieldNames = decoratorEntity.fieldNames;
                         decoratorEntity1.fieldTypes = decoratorEntity.fieldTypes;
                         decoratorEntity1.name = name;
-                        decoratorEntity1.id = j;
+                        decoratorEntity1.id = id;
                         decoratorEntity1.decoratorStart = decoratorStart;
                         decoratorEntity1.classEntity = classEntity;
                         listDecoratorEntity.add(decoratorEntity1);
                     }
                 }
-                if (decoratorEnd != null && decoratorEnd.value() != null) {
+                if (decoratorEnd != null) {
                     for (String string : decoratorEnd.value()) {
                         if (string == null || string.isEmpty()) {
                             continue;
@@ -981,6 +1177,7 @@ public class FactoryImpl implements Factory {
                         decoratorEntity1.fieldNames = decoratorEntity.fieldNames;
                         decoratorEntity1.fieldTypes = decoratorEntity.fieldTypes;
                         decoratorEntity1.name = name;
+                        decoratorEntity1.id = id;
                         decoratorEntity1.decoratorEnd = decoratorEnd;
                         decoratorEntity1.classEntity = classEntity;
                         listDecoratorEntity.add(decoratorEntity1);

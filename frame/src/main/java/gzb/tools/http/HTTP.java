@@ -20,6 +20,7 @@ package gzb.tools.http;
 
 import gzb.tools.Config;
 import gzb.tools.DateTime;
+import gzb.tools.FileTools;
 import gzb.tools.Tools;
 import java.io.*;
 import java.net.*;
@@ -216,7 +217,7 @@ static {
                         continue;
                     }
                     String fileName = file.getName();
-                    byte[] body_data = Tools.fileReadByte(file);
+                    byte[] body_data = FileTools.readByte(file);
                     if (body_data != null && body_data.length > 0) {
                         dos.writeBytes(PREFIX + BOUNDARY + NEWLINE);
                         dos.writeBytes("Content-Disposition: form-data; " + "name=\""
@@ -355,7 +356,7 @@ static {
                         continue;
                     }
                     String fileName = file.getName();
-                    byte[] body_data = Tools.fileReadByte(file);
+                    byte[] body_data = FileTools.readByte(file);
                     if (body_data != null && body_data.length > 0) {
                         dos.writeBytes(PREFIX + BOUNDARY + NEWLINE);
                         dos.writeBytes("Content-Disposition: form-data; " + "name=\""

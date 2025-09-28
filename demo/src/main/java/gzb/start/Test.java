@@ -32,7 +32,7 @@ public class Test {
         DDOS.start("框架测试 服务器线程1 压测线程6", 6,
                 url, 0, null,
                 10000 * 50,
-                "code".getBytes());
+                "code".getBytes(Config.encoding));
         */
         Constructor c = SysFile.class.getDeclaredConstructor();
         for (int n = 0; n < 5; n++) {

@@ -18,6 +18,7 @@
 
 package gzb.tools.http;
 
+import gzb.tools.FileTools;
 import gzb.tools.Tools;
 
 import java.io.*;
@@ -113,7 +114,7 @@ public class HTTP_V3 {
         responseMessage = null;
         responseHeaders.clear();
         if (url.startsWith("file:///")) {
-            responseBytes=Tools.fileReadByte(url.substring(8));
+            responseBytes= FileTools.readByte(new File(url.substring(8)));
             return this;
         }
         long reqTimeout = customTimeout != null ? customTimeout : this.timeout;

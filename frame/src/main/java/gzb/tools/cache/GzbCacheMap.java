@@ -34,7 +34,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class GzbCacheMap implements GzbCache {
 
-    public static Log log= Config.log;
+    private final static Log log= Config.log;
     String persistFilePath = null;
 
     /**
@@ -76,7 +76,7 @@ public class GzbCacheMap implements GzbCache {
         }
         // 启动过期清理和定时保存任务（原逻辑保留）
         scheduler.scheduleAtFixedRate(this::cleanExpiredEntries, 1, 1, TimeUnit.MINUTES);
-        log.d("GzbCacheMap,初始化成功");
+        log.d("GzbCacheMap,初始化成功","持久化路径",persistFilePath==null?"无，仅保存在内存":persistFilePath);
     }
 
     /**
@@ -86,13 +86,13 @@ public class GzbCacheMap implements GzbCache {
     private void loadCacheFromFile() {
         // 若文件路径无效，直接返回
         if (persistFilePath == null || persistFilePath.trim().isEmpty()) {
-            log.d("持久化文件未指定，跳过缓存恢复");
+            log.t("持久化文件未指定，跳过缓存恢复");
             return;
         }
 
         File persistFile = new File(persistFilePath);
         if (!persistFile.exists() || persistFile.length() == 0) {
-            log.d("持久化文件不存在或为空，跳过缓存恢复");
+            log.t("持久化文件不存在或为空，跳过缓存恢复");
             return;
         }
 
@@ -112,9 +112,9 @@ public class GzbCacheMap implements GzbCache {
                 }
             }
 
-            log.d("从文件恢复缓存完成",persistFilePath,"共恢复", restoredCount,"条有效条目");
+            log.t("从文件恢复缓存完成",persistFilePath,"共恢复", restoredCount,"条有效条目");
         } catch (Exception e) {
-            log.d("从文件加载缓存失败！",persistFilePath,e);
+            log.e("从文件加载缓存失败！",persistFilePath,e);
         }
     }
 
@@ -147,7 +147,7 @@ public class GzbCacheMap implements GzbCache {
             oos.writeObject(validCache); // 序列化过滤后的缓存数据
             log.d("缓存数据已成功保存到文件",persistFilePath,"共保存", validCache.size(),"条有效条目");
         } catch (Exception e) {
-            log.d("保存缓存到文件失败！",persistFilePath,e);
+            log.e("保存缓存到文件失败！",persistFilePath,e);
         }
     }
 

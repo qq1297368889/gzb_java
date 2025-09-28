@@ -30,11 +30,11 @@ public class AES_ECB_128 {
 
     public static final byte[] aesEn(byte[] contentByte, String key, String iv) {
         try {
-            byte[] keyByte = key.getBytes();
+            byte[] keyByte = key.getBytes(Config.encoding);
             //初始化一个密钥对象
             SecretKeySpec keySpec = new SecretKeySpec(keyByte, AES);
             //初始化一个初始向量,不传入的话，则默认用全0的初始向量
-            byte[] initParam = iv == null ? iv_def : iv.getBytes();
+            byte[] initParam = iv == null ? iv_def : iv.getBytes(Config.encoding);
             IvParameterSpec ivSpec = new IvParameterSpec(initParam);
             // 指定加密的算法、工作模式和填充方式
             //Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
@@ -47,7 +47,7 @@ public class AES_ECB_128 {
     }
 
     public static final byte[] aesDe(byte[] contentByte, String key, String iv) {
-        return aesDe(contentByte,key.getBytes(),iv == null ? iv_def : iv.getBytes());
+        return aesDe(contentByte,key.getBytes(Config.encoding),iv == null ? iv_def : iv.getBytes(Config.encoding));
     }
     public static final byte[] aesDe(byte[] contentByte, byte[] key, byte[] iv) {
         try {
@@ -66,7 +66,7 @@ public class AES_ECB_128 {
 
     public static final byte[] aesECBEn(byte[] contentByte, String key) {
         try {
-            byte[] keyByte = key.getBytes();
+            byte[] keyByte = key.getBytes(Config.encoding);
             //初始化一个密钥对象
             SecretKeySpec keySpec = new SecretKeySpec(keyByte, AES);
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
@@ -79,7 +79,7 @@ public class AES_ECB_128 {
 
     public static final byte[] aesECBDe(byte[] contentByte, String key) {
         try {
-            byte[] keyByte = key.getBytes();
+            byte[] keyByte = key.getBytes(Config.encoding);
             //初始化一个密钥对象
             SecretKeySpec keySpec = new SecretKeySpec(keyByte, AES);
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
@@ -92,7 +92,7 @@ public class AES_ECB_128 {
     }
 
     public static final String aesECBEn(String content, String pwd) {
-        byte[] b0 = content.getBytes(Charset.forName(Config.encoding));
+        byte[] b0 = content.getBytes((Config.encoding));
         byte[] b1 = aesECBEn(b0, pwd);
         return Tools.textBase64Encoder(b1);
     }
@@ -100,11 +100,11 @@ public class AES_ECB_128 {
     public static final String aesECBDe(String content, String pwd) {
         byte[] b0 = Tools.textBase64DecoderByte(content);
         byte[] b1 = aesECBDe(b0, pwd);
-        return new String(b1, Charset.forName(Config.encoding));
+        return new String(b1, (Config.encoding));
     }
 
     public static final String aesEn(String content, String pwd, String iv) {
-        byte[] b0 = content.getBytes(Charset.forName(Config.encoding));
+        byte[] b0 = content.getBytes((Config.encoding));
         byte[] b1 = aesEn(b0, pwd, iv);
         return Tools.textBase64Encoder(b1);
     }
@@ -112,7 +112,7 @@ public class AES_ECB_128 {
     public static final String aesDe(String content, String pwd, String iv) {
         byte[] b0 = Tools.textBase64DecoderByte(content);
         byte[] b1 = aesDe(b0, pwd, iv);
-        return new String(b1, Charset.forName(Config.encoding));
+        return new String(b1, (Config.encoding));
     }
 
 

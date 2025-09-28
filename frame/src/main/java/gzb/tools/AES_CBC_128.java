@@ -29,7 +29,7 @@ public class AES_CBC_128 {
     private final static byte[] iv_def = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     public static final byte[] aesEn(byte[] contentByte, String key, String iv) {
-        return aesEn(contentByte, key.getBytes(), iv.getBytes());
+        return aesEn(contentByte, key.getBytes(Config.encoding), iv.getBytes(Config.encoding));
     }
     public static final byte[] aesEn(byte[] contentByte, byte[] key, byte[] iv) {
         try {
@@ -48,7 +48,7 @@ public class AES_CBC_128 {
     }
 
     public static final byte[] aesDe(byte[] contentByte, String key, String iv) {
-        return aesDe(contentByte, key.getBytes(), iv.getBytes());
+        return aesDe(contentByte, key.getBytes(Config.encoding), iv.getBytes(Config.encoding));
     }
     public static final byte[] aesDe(byte[] contentByte, byte[] key, byte[] iv) {
         try {
@@ -69,7 +69,7 @@ public class AES_CBC_128 {
 
 
     public static final String aesEn(String content, String pwd, String iv) {
-        byte[] b0 = content.getBytes(Charset.forName(Config.encoding));
+        byte[] b0 = content.getBytes((Config.encoding));
         byte[] b1 = aesEn(b0, pwd, iv);
         return Tools.textBase64Encoder(b1);
     }
@@ -77,7 +77,7 @@ public class AES_CBC_128 {
     public static final String aesDe(String content, String pwd, String iv) {
         byte[] b0 = Tools.textBase64DecoderByte(content);
         byte[] b1 = aesDe(b0, pwd, iv);
-        return new String(b1, Charset.forName(Config.encoding));
+        return new String(b1, (Config.encoding));
     }
 
 

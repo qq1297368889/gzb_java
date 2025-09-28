@@ -18,6 +18,7 @@
 
 package gzb.tools.img;
 
+import gzb.tools.FileTools;
 import gzb.tools.Tools;
 
 import javax.imageio.IIOImage;
@@ -61,7 +62,7 @@ public class PicUtils {
         }
     }
     public static byte[] resizeImage(File file, int targetSize) throws Exception {
-        return resizeImage(Tools.fileReadByte(file),targetSize);
+        return resizeImage(FileTools.readByte(file),targetSize);
     }
     public static byte[] resizeImage(byte[] imageData, int targetSize) {
         try {

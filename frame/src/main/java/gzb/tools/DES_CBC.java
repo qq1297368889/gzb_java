@@ -39,8 +39,8 @@ public class DES_CBC {
 
     public static final byte[] encrypt(byte[] bytes, String key, String iv) throws Exception {
         Cipher cipher = Cipher.getInstance("DES/CBC/PKCS5Padding");
-        SecretKeySpec keyspec = new SecretKeySpec(key.getBytes(), "DES");
-        IvParameterSpec ivspec = new IvParameterSpec(iv.getBytes());
+        SecretKeySpec keyspec = new SecretKeySpec(key.getBytes(Config.encoding), "DES");
+        IvParameterSpec ivspec = new IvParameterSpec(iv.getBytes(Config.encoding));
         cipher.init(Cipher.ENCRYPT_MODE, keyspec, ivspec);
         byte[] encrypted = cipher.doFinal(bytes);
         return encrypted;
@@ -48,7 +48,7 @@ public class DES_CBC {
 
     public static String encrypt(String data, String key, String iv) {
         try {
-            return new String(Base64.getEncoder().encode(encrypt(data.getBytes(), key, iv)), Config.encoding);
+            return new String(Base64.getEncoder().encode(encrypt(data.getBytes(Config.encoding), key, iv)), Config.encoding);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -57,8 +57,8 @@ public class DES_CBC {
 
     public static final byte[] decrypt(byte[] bytes, String key, String iv) throws Exception {
         Cipher cipher = Cipher.getInstance("DES/CBC/PKCS5Padding");
-        SecretKeySpec keyspec = new SecretKeySpec(key.getBytes(), "DES");
-        IvParameterSpec ivspec = new IvParameterSpec(iv.getBytes());
+        SecretKeySpec keyspec = new SecretKeySpec(key.getBytes(Config.encoding), "DES");
+        IvParameterSpec ivspec = new IvParameterSpec(iv.getBytes(Config.encoding));
         cipher.init(Cipher.DECRYPT_MODE, keyspec, ivspec);
         return cipher.doFinal(bytes);
     }

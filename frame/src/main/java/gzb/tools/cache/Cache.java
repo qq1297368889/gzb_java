@@ -18,20 +18,33 @@
 
 package gzb.tools.cache;
 
-import gzb.frame.factory.ClassTools;
 import gzb.tools.Config;
-import gzb.tools.Tools;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class Cache {
     //默认 缓存 具体实现取决于配置文件
-    public static GzbCache gzbCache=Config.cache_gzbCache;
+    public static GzbCache gzbCache;
     //session 缓存 具体实现取决于配置文件
-    public static GzbCache session=Config.cache_session;
+    public static GzbCache session;
     //数据库查询 缓存 具体实现取决于配置文件
-    public static GzbCache dataBaseCache=Config.cache_dataBaseCache;
+    public static GzbCache dataBaseCache;
     //全局缓存 是map实现 避免一些对象无法存入redis 并且重启会消失
-    public static GzbCache gzbMap=Config.cache_gzbMap;
+    public static GzbCache gzbMap;
+    static{
+        gzbMap = new GzbCacheMap();
+        if (Config.cacheType.equals("redis")) {
+            gzbCache = new GzbCacheRedis();
+        } else {
+            gzbCache = new GzbCacheMap(Config.thisPath+ "main.cache");
+        }
+        if (Config.sessionType.equals("redis")) {
+            session = new GzbCacheRedis();
+        } else {
+            session = new GzbCacheMap(Config.thisPath+ "session.cache");
+        }
+        if (Config.dataBaseCache.equals("redis")) {
+            dataBaseCache = new GzbCacheRedis();
+        } else {
+            dataBaseCache = new GzbCacheMap(Config.thisPath+  "db.cache");
+        }
+    }
 }
