@@ -22,7 +22,15 @@
 
 #### Limitation(10) 方法级注解 表示这是一个被限流的端点 当同时运行该端点超过10个时 将会返回 服务器繁忙 （注意只有http端点注解才有效）
 
-#### Transaction 方法级注解 表示这是一个开启事务的端点 关闭了自动提交 你可以随意回滚 或者出错自动回滚 未出错 结束后自动提交
+#### Transaction 方法级注解 表示这是一个开启事务的端点 关闭了自动提交 你可以随意回滚 或者出错自动回滚 未出错 结束后自动提交    注意 事务开启时不支持异步执行SQL
+
+#### @DataBaseEventFactory    标注为 数据库事件注册 类      注意参数只要定义 且 有可注入的对象 就会注入
+#### @DataBaseEventSave(entity = SysUsers.class, executionBefore = false, depth = 5)     //entity 注册到 某个实体类 数据库 新增事件 //executionBefore 事件执行时机，true 主操作执行前 false 主操作执行后 默认false //depth 事件传播深度 防止循环传播
+#### @DataBaseEventDelete(entity = SysUsers.class, executionBefore = false, depth = 5)     //entity 注册到 某个实体类 数据库 删除事件 //executionBefore 事件执行时机，true 主操作执行前 false 主操作执行后 默认false //depth 事件传播深度 防止循环传播
+#### @DataBaseEventUpdate(entity = SysUsers.class, executionBefore = false, depth = 5)     //entity 注册到 某个实体类 数据库 修改事件 //executionBefore 事件执行时机，true 主操作执行前 false 主操作执行后 默认false //depth 事件传播深度 防止循环传播
+#### @DataBaseEventSelect(entity = SysUsers.class, executionBefore = false, depth = 5)     //entity 注册到 某个实体类 数据库 查询事件 //executionBefore 事件执行时机，true 主操作执行前 false 主操作执行后 默认false //depth 事件传播深度 防止循环传播
+
+
 
 #### EntityAttribute(key=true,size = 19,name="sys_file_id",desc="sysFileId") 类级或方法级注解 表示这是一个实体类 和 数据库的映射信息  这个对开发者无感知 知道就行 没有实用机会
 
@@ -30,12 +38,11 @@
 
 
 # 参数注入介绍
-### 在参数或者类变量  定义了 下方 的 接口 或 类 都可以自动注入 
-#### 所有注解了都实现类 或单类 都可以被注入
+#### 所有注解了 会被框架管理的 类 都可以被注入  可以注入到 类变量 和 方法参数  
 #### http 请求流程的对象 Request(请求对象 .getSession()可以获取session )  Response(响应对象) Map<List<Object>>(请求参数) Log(框架日志对象) GzbJson(JSO对象) 会被注入
 #### 在装饰器 DecoratorStart 中 runRes.setData(xx)的对象 也会在后续流程被注入 
-
-#### 什么时候会被注入: Controller Decorator ThreadFactory 这些类内部的类变量 和 注册的方法都会被注入  
+#### 有一个例外 线程模型 不会注入http相关的变量 因为他与http请求无关
+#### 什么时候会被注入: Controller Decorator ThreadFactory DataBaseEventFactory 这些标注类 内部的 变量 和 注册的方法参数 都会被注入  
 
 
 
@@ -162,6 +169,75 @@ public class ThreadClass {
     public Object test003(SysUsersDao sysUsersDao, Result result, Log log, Lock lock) {
         return test001(sysUsersDao,result,log,lock);
     }
+}
+
+```
+## 数据库 事件例子
+```java
+ package com.frame.component;
+
+import com.frame.dao.SysUsersLoginLogDao;
+import com.frame.entity.SysUsers;
+import com.frame.entity.SysUsersLoginLog;
+import gzb.frame.annotation.*;
+import gzb.frame.netty.entity.Request;
+import gzb.tools.DateTime;
+import gzb.tools.log.Log;
+
+//标注为 数据库事件注册 类
+@DataBaseEventFactory
+public class DataBaseEvent {
+    @Resource
+    Log log;
+    
+    
+    /// 注意 异步操作 和 直接执行SQL不会触发事件
+     
+    /// 如果主操作开启事务 本方法一定开启  如果主操作没开启 但是本方法注解事务了 也会开启
+   
+    /// 依赖注入规则 和 action 一致 所有框架调度方法 都是一样的（线程模型例外，因为他没有 req resp）
+
+    //entity 注册到 某个实体类 数据库 新增事件
+    //executionBefore 事件执行时机，true 主操作执行前 false 主操作执行后 默认false
+    //depth 事件传播深度 防止循环传播
+    @DataBaseEventSave(entity = SysUsers.class, executionBefore = false, depth = 5)
+    public void save(SysUsers sysUsers, SysUsersLoginLogDao sysUsersLoginLogDao, Request request) throws Exception {
+        log.d("事件触发 DataBaseEventSave", sysUsersLoginLogDao, sysUsers);
+        SysUsersLoginLog sysUsersLoginLog = new SysUsersLoginLog();
+        sysUsersLoginLog.setSysUsersLoginLogIp(request.getRemoteIp())
+                .setSysUsersLoginLogUid(sysUsers.getSysUsersId())
+                .setSysUsersLoginLogTime(new DateTime().toString())
+                .setSysUsersLoginLogDesc("用户创建")
+                .setSysUsersLoginLogToken(request.getSession().getId());
+        sysUsersLoginLogDao.save(sysUsersLoginLog);
+    }
+
+    //entity 注册到 某个实体类 数据库 删除事件
+    //executionBefore 事件执行时机，true 主操作执行前 false 主操作执行后 默认false
+    //depth 事件传播深度 防止循环传播
+    @DataBaseEventDelete(entity = SysUsers.class)
+    public void delete(SysUsers sysUsers, SysUsersLoginLogDao sysUsersLoginLogDao) throws Exception {
+        log.d("事件触发 DataBaseEventDelete", sysUsersLoginLogDao, sysUsers);
+        sysUsersLoginLogDao.delete(new SysUsersLoginLog().setSysUsersLoginLogUid(sysUsers.getSysUsersId()));
+    }
+
+    //entity 注册到 某个实体类 数据库 修改事件
+    //executionBefore 事件执行时机，true 主操作执行前 false 主操作执行后 默认false
+    //depth 事件传播深度 防止循环传播
+    @DataBaseEventUpdate(entity = SysUsers.class)
+    public void update(SysUsers sysUsers, SysUsersLoginLogDao sysUsersLoginLogDao) throws Exception {
+        log.d("事件触发 DataBaseEventUpdate", sysUsersLoginLogDao, sysUsers);
+    }
+
+    //entity 注册到 某个实体类 数据库 查询事件
+    //executionBefore 事件执行时机，true 主操作执行前 false 主操作执行后 默认false
+    //depth 事件传播深度 防止循环传播
+    @DataBaseEventSelect(entity = SysUsers.class)
+    public void select(SysUsers sysUsers, SysUsersLoginLogDao sysUsersLoginLogDao) throws Exception {
+        log.d("事件触发 DataBaseEventSelect", sysUsersLoginLogDao, sysUsers);
+    }
+
+
 }
 
 ```

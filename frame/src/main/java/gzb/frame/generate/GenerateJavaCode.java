@@ -20,9 +20,8 @@ package gzb.frame.generate;
 
 import gzb.entity.TableInfo;
 import gzb.frame.db.DataBase;
-import gzb.frame.db.DataBaseMsql;
+import gzb.frame.db.DataBaseImpl;
 import gzb.tools.*;
-import gzb.tools.log.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,10 +45,10 @@ public class GenerateJavaCode {
     /// frameDbKey 储存授权 验证 信息 等内容的数据库 key  如果只有一个数据库 frameDbKey和userDbKeys一样即可
     /// userDbKeys 业务数据库 key
     public static void generateCode(String codeSrcPath, String pkg, int type,boolean updateMapping,String frameDbKey,String...userDbKeys) throws Exception {
-        DataBase frameDataBase = new DataBaseMsql(frameDbKey);
+        DataBase frameDataBase = new DataBaseImpl(frameDbKey);
         String frameDbName=Config.get("db.mysql."+frameDbKey+".name");
         for (int i = 0; i < userDbKeys.length; i++) {
-            DataBase userDataBase = new DataBaseMsql(userDbKeys[i]);
+            DataBase userDataBase = new DataBaseImpl(userDbKeys[i]);
             String userDbName=Config.get("db.mysql."+userDbKeys[i]+".name");
             List<TableInfo> list0 = userDataBase.getTableInfo();
             List<TableInfo> list = new ArrayList<>();

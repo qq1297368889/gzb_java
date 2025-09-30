@@ -18,7 +18,9 @@
 
 package gzb.frame.factory.v4;
 
+import gzb.frame.ThreadLocalData;
 import gzb.frame.annotation.*;
+import gzb.frame.db.ForeignKeyFactory;
 import gzb.frame.factory.*;
 import gzb.frame.factory.v4.entity.ClassEntity;
 import gzb.frame.factory.v4.entity.DecoratorEntity;
@@ -31,7 +33,6 @@ import gzb.tools.*;
 
 import java.io.File;
 import java.lang.reflect.*;
-import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -54,29 +55,36 @@ public class FactoryImpl implements Factory {
         FactoryImpl factory = new FactoryImpl();
     }
 
+    public Map<String, Map<String, Method>> mapClassMethod = new ConcurrentHashMap<>();
     public static Log log = Config.log;
     public Map<String, ClassEntity> mapClassEntity = new ConcurrentHashMap<>();
     public Map<String, HttpMapping[]> mapHttpMapping0 = new ConcurrentHashMap<>();
     public Map<String, Object> mapObject0 = new ConcurrentHashMap<>();
     List<DecoratorEntity> listDecoratorEntity = new ArrayList<>();
     public Map<String, Map<String, String>> mapHttpMappingOld0 = new ConcurrentHashMap<>();
-    public Map<String, Semaphore> semaphoreMap = new ConcurrentHashMap<>();
     public static int serverState = -1;
     public String[] met = Constant.requestMethod;
     public Map<String, ThreadEntity> mapListThreadEntity0 = new ConcurrentHashMap<>();
 
 
-    public void loadJavaDir(String classDir, String pwd, String iv) throws Exception {
+    public void loadJavaDir(String classDir, String pwd, String iv) {
         //加入内置对象
         mapObject0.put(Log.class.getName(), Config.log);
         mapObject0.put(LogImpl.class.getName(), Config.log);
+
+
         //JSON对象
         GzbJson gzbJson = new GzbJsonImpl();
         mapObject0.put(GzbJson.class.getName(), gzbJson);
         mapObject0.put(GzbJsonImpl.class.getName(), gzbJson);
+        mapObject0.put(ForeignKeyFactory.class.getName(), new ForeignKeyFactory(mapObject0,log));
+
+
         //缓存对象
         mapObject0.put(Cache.gzbCache.getClass().getName(), Cache.gzbCache);
         mapObject0.put(GzbCache.class.getName(), Cache.gzbCache);
+
+
         startFileScanning(classDir, pwd, iv);
         while (serverState == -1) {
             Tools.sleep(1);
@@ -116,19 +124,31 @@ public class FactoryImpl implements Factory {
                             loadControllerObject(classEntity, mapObject0);
                         }
                         for (ClassEntity classEntity : listClassEntity) {
-                            loadDecorator(classEntity, listDecoratorEntity);
+                            loadDataBaseEventFactory(classEntity, mapObject0);
                         }
-                        //去重
-                        List<DecoratorEntity> list0 = new ArrayList<>();
-                        Map<String, DecoratorEntity> mapHttpMappingOld1 = new ConcurrentHashMap<>();
-                        for (DecoratorEntity decoratorEntity : listDecoratorEntity) {
-                            //log.d(decoratorEntity.name);
-                            mapHttpMappingOld1.put(decoratorEntity.name, decoratorEntity);
+                        for (ClassEntity classEntity : listClassEntity) {
+                            Map<String, Method> map = mapClassMethod.get(classEntity.clazz.getName());
+                            List<DecoratorEntity> listDecoratorEntity2= new ArrayList<>();
+                            loadDecorator(classEntity, listDecoratorEntity2);
+                            if (map!=null) {
+                                for (Map.Entry<String, Method> stringMethodEntry : map.entrySet()) {
+                                    Iterator<DecoratorEntity> iterator = listDecoratorEntity.iterator();
+                                    while (iterator.hasNext()) {
+                                        DecoratorEntity decorator=iterator.next();
+                                        if (Objects.equals(decorator.sign, stringMethodEntry.getKey())) {
+                                            iterator.remove();
+                                        }
+                                    }
+                                }
+                            }
+                            map=new ConcurrentHashMap<>();
+                            for (DecoratorEntity decoratorEntity : listDecoratorEntity2) {
+                                listDecoratorEntity.add(decoratorEntity);
+                                map.put(decoratorEntity.sign,decoratorEntity.method);
+                            }
+                            mapClassMethod.put(classEntity.clazz.getName(),map);
                         }
-                        for (Map.Entry<String, DecoratorEntity> stringDecoratorEntityEntry : mapHttpMappingOld1.entrySet()) {
-                            list0.add(stringDecoratorEntityEntry.getValue());
-                        }
-                        listDecoratorEntity = list0;
+                        //log.d("listDecoratorEntity 1 ",listDecoratorEntity.size(),listDecoratorEntity);
                         for (Map.Entry<String, Object> stringObjectEntry : mapObject0.entrySet()) {
                             ClassTools.classInject(stringObjectEntry.getValue(), null, mapObject0);
                         }
@@ -220,7 +240,6 @@ public class FactoryImpl implements Factory {
         if (httpMappings == null) {
             return runRes.setState(404);
         }
-        Semaphore semaphore = null;
         int index = -1;
         try {
             for (int i = 0; i < met.length; i++) {
@@ -249,14 +268,10 @@ public class FactoryImpl implements Factory {
             }
             /// 预设协议头 预设  后续可以覆盖 结束
             /// 限流器 开始
-            if (httpMappings[index].limitation > 0) {
-                semaphore = semaphoreMap.get(httpMappings[index].sign);
-                if (semaphore != null) {
-                    boolean state = semaphore.tryAcquire();
-                    if (!state) {
-                        semaphore = null;
-                        return runRes.setState(200).setData("{\"code\":2,\"message\":\"请求量超过限流阈值，请稍后重试\"}");
-                    }
+            if (httpMappings[index].semaphore !=null) {
+                boolean state = httpMappings[index].semaphore.tryAcquire();
+                if (!state) {
+                    return runRes.setState(200).setData("{\"code\":2,\"message\":\"请求量超过限流阈值，请稍后重试\"}");
                 }
             }
             /// 限流器 结束
@@ -264,12 +279,15 @@ public class FactoryImpl implements Factory {
             Map<String, List<Object>> parar = request.getParameter();
             /// 请求参数获取 结束
             /// 内置对象创建 开始
-            Object[] objects = new Object[]{runRes, request, response, parar};//, request.getSession()
+            Object[] objects = new Object[]{runRes};//, request.getSession()
+            ThreadLocalData.this_request.set(request);
+            ThreadLocalData.this_response.set(response);
+            ThreadLocalData.this_requestMap.set(parar);
             //log.d("parar",parar);
             /// 内置对象创建 结束
             /// 装饰器(调用前) 开始
             for (DecoratorEntity decoratorEntity : httpMappings[index].start) {
-                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, parar, mapObject0, objects, httpMappings[index].isOpenTransaction);
+                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, objects, decoratorEntity.isOpenTransaction);
                 if (runRes1 != null) {
                     if (runRes1.getState() != 200) {
                         //log.d("request", key, request.getMethod(), parar, 200, "请求被调用前拦截");
@@ -289,12 +307,12 @@ public class FactoryImpl implements Factory {
             /// 装饰器(调用前) 结束
 
             /// 调用映射端点函数 开始
-            Object obj02 = httpMappings[index].httpMappingFun._gzb_call_x01(httpMappings[index].id, parar, mapObject0, objects, httpMappings[index].isOpenTransaction);
+            Object obj02 = httpMappings[index].httpMappingFun._gzb_call_x01(httpMappings[index].id, mapObject0, request, response, parar, objects, httpMappings[index].isOpenTransaction);
             runRes.setData(obj02);
             /// 调用映射端点函数 结束
             /// 装饰器(调用后) 开始
             for (DecoratorEntity decoratorEntity : httpMappings[index].end) {
-                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, parar, mapObject0, objects, httpMappings[index].isOpenTransaction);
+                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, objects, decoratorEntity.isOpenTransaction);
                 if (runRes1 != null) {
                     if (runRes1.getState() != 200) {
                         //log.d("request", key, request.getMethod(), parar, 200, "请求被调用后拦截");
@@ -315,9 +333,13 @@ public class FactoryImpl implements Factory {
             return runRes.setState(500).setData("{\"code\":3,\"message\":\"访问出现错误\"}");
         } finally {
             //限流如果开启 解除占用
-            if (semaphore != null) {
-                semaphore.release();
+            if (index>-1 && httpMappings[index]!=null && httpMappings[index].semaphore != null) {
+                httpMappings[index].semaphore.release();
             }
+            ThreadLocalData.this_request.remove();
+            ThreadLocalData.this_response.remove();
+            ThreadLocalData.this_requestMap.remove();
+            ThreadLocalData.depth.remove();
 
             /// 函数执行 结束
             /// 输出调试信息
@@ -371,14 +393,10 @@ public class FactoryImpl implements Factory {
             /// 预设协议头 预设  后续可以覆盖 结束
             times[2] = System.nanoTime();
             /// 限流器 开始
-            if (httpMappings[index].limitation > 0) {
-                semaphore = semaphoreMap.get(httpMappings[index].sign);
-                if (semaphore != null) {
-                    boolean state = semaphore.tryAcquire();
-                    if (!state) {
-                        semaphore = null;
-                        return runRes.setState(200).setData("{\"code\":2,\"message\":\"请求量超过限流阈值，请稍后重试\"}");
-                    }
+            if (httpMappings[index].semaphore !=null) {
+                boolean state = httpMappings[index].semaphore.tryAcquire();
+                if (!state) {
+                    return runRes.setState(200).setData("{\"code\":2,\"message\":\"请求量超过限流阈值，请稍后重试\"}");
                 }
             }
             /// 限流器 结束
@@ -391,12 +409,16 @@ public class FactoryImpl implements Factory {
             times[4] = System.nanoTime();
 
             /// 内置对象创建 开始
-            Object[] objects = new Object[]{runRes, request, response, parar};//, request.getSession()
+            Object[] objects = new Object[]{runRes};//, request.getSession()
+            ThreadLocalData.this_request.set(request);
+            ThreadLocalData.this_response.set(response);
+            ThreadLocalData.this_requestMap.set(parar);
+
             /// 内置对象创建 结束
             times[5] = System.nanoTime();
             /// 装饰器(调用前) 开始
             for (DecoratorEntity decoratorEntity : httpMappings[index].start) {
-                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, parar, mapObject0, objects, httpMappings[index].isOpenTransaction);
+                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, objects, decoratorEntity.isOpenTransaction);
                 if (runRes1 != null) {
                     if (runRes1.getState() != 200) {
                         //log.d("request", key, request.getMethod(), parar, 200, "请求被调用前拦截");
@@ -417,14 +439,13 @@ public class FactoryImpl implements Factory {
 
             //调用映射端点
             /// 调用映射端点函数 开始
-            Object obj02 = httpMappings[index].httpMappingFun._gzb_call_x01(httpMappings[index].id, parar, mapObject0, objects, httpMappings[index].isOpenTransaction);
+            Object obj02 = httpMappings[index].httpMappingFun._gzb_call_x01(httpMappings[index].id, mapObject0, request, response, parar, objects, httpMappings[index].isOpenTransaction);
             runRes.setData(obj02);
             /// 调用映射端点函数 结束
             times[7] = System.nanoTime();
-
             /// 装饰器(调用后) 开始
             for (DecoratorEntity decoratorEntity : httpMappings[index].end) {
-                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, parar, mapObject0, objects, httpMappings[index].isOpenTransaction);
+                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, objects, decoratorEntity.isOpenTransaction);
                 if (runRes1 != null) {
                     if (runRes1.getState() != 200) {
                         //log.d("request", key, request.getMethod(), parar, 200, "请求被调用后拦截");
@@ -446,9 +467,13 @@ public class FactoryImpl implements Factory {
             return runRes.setState(500).setData("{\"code\":3,\"message\":\"访问出现错误\"}");
         } finally {
             //限流如果开启 解除占用
-            if (semaphore != null) {
-                semaphore.release();
+            if (index>-1 && httpMappings[index]!=null && httpMappings[index].semaphore != null) {
+                httpMappings[index].semaphore.release();
             }
+            ThreadLocalData.this_request.remove();
+            ThreadLocalData.this_response.remove();
+            ThreadLocalData.this_requestMap.remove();
+            ThreadLocalData.depth.remove();
             /// 函数执行 结束
             times[9] = System.nanoTime();
             Long res = (times[9] - times[0]) / 1000;
@@ -668,11 +693,9 @@ public class FactoryImpl implements Factory {
                     DecoratorAdd(path, Constant.requestMethod[httpMapping2.met], 2, listDecoratorEntity, httpMapping2.end);
                 }
                 if (limitation != null && limitation.value() > 0) {
-                    semaphoreMap.put(httpMapping2.sign, new Semaphore(limitation.value()));
-                    httpMapping2.limitation = limitation.value();
+                    httpMapping2.semaphore=new Semaphore(limitation.value());
                 } else {
-                    httpMapping2.limitation = 0;
-                    semaphoreMap.remove(httpMapping2.sign);
+                    httpMapping2.semaphore=null;
                 }
 
                 HttpMapping[] httpMappings = mapHttpMapping.get(path);
@@ -729,390 +752,6 @@ public class FactoryImpl implements Factory {
     }
 
 
-    public Class<?> gen_code(Class clazz, String code) throws Exception {
-        String t_code = gen_code0(clazz, code);
-        String new_code = ClassTools.updateCode(code, clazz.getSimpleName(), "gzb.frame.factory.GzbOneInterface", t_code);
-        //System.out.println(new_code);
-        Class a01 = null;
-        try {
-            a01 = ClassLoad.compileJavaCode(new_code);
-        } catch (Exception e) {
-            FileTools.save(new File(Config.configFile.getParentFile().getPath() + "/" + System.currentTimeMillis() + ".java.txt"), new_code);
-            throw new RuntimeException(e);
-        }
-        return a01;
-
-    }
-
-    public String gen_code0(Class clazz, String code) throws Exception {
-        String method_call_code = "";
-        String class_method_type_code = "        java.util.List<Class<?>[]> _g_m_1_t=new java.util.ArrayList<>();\n{\n";
-        String class_method_name_code = "        java.util.List<String[]> _g_m_1_n=new java.util.ArrayList<>();\n{\n";
-        //String class_method_type_code = "";
-        //String class_method_name_code = "";
-
-        String class_field_type_code = "";
-        String class_field_name_code = "";
-        String class_field_impl_code = "";
-        String class_field_put_code = "";
-
-        Method[] methods = ClassTools.getCombinedMethods(clazz);
-        int met_int = 0;
-        for (int j = 0; j < methods.length; j++) {
-            if (!Modifier.isPublic(methods[j].getModifiers())) {
-                continue;
-            }
-            Method method = methods[j];
-
-            String methodName = method.getName();
-            Class[] parameterTypes = method.getParameterTypes();
-            if (method.getAnnotation(GetMapping.class) == null
-                    && method.getAnnotation(PostMapping.class) == null
-                    && method.getAnnotation(PutMapping.class) == null
-                    && method.getAnnotation(DeleteMapping.class) == null
-                    && method.getAnnotation(ThreadInterval.class) == null
-                    && method.getAnnotation(DecoratorStart.class) == null
-                    && method.getAnnotation(DecoratorEnd.class) == null
-                    && method.getAnnotation(RequestMapping.class) == null
-            ) {
-                continue;
-            }
-            String[] parameterTypeNames = null;
-            parameterTypeNames = ClassTools.getParameterNamesByAsm(method, parameterTypes).toArray(new String[]{});
-            if (parameterTypeNames.length != parameterTypes.length) {
-                parameterTypeNames = ClassTools.getParameterNames(code, methodName, parameterTypes).toArray(new String[]{});
-            }
-            if (parameterTypeNames.length != parameterTypes.length) {
-                log.w(clazz, methodName, "参数名获取失败,请确保源码中存在方法签名");
-                continue;
-            }
-            //log.d("gen_code0",methodName,parameterTypeNames,parameterTypes);
-            method_call_code +=
-                    //"        if ( _gzb_x001_methodName.equals(\"" + methodSign + "\")) {\n" +
-                    "        //" + ClassTools.getSing(method, clazz) + "\n" +
-                            "        if ( _gzb_x001_methodName == " + ClassTools.getSingInt(method, clazz) + ") {\n" +
-                            "            Object object=null;\n" +
-                            "            java.util.List<gzb.frame.db.BaseDao>listBaseDao=null;\n" +
-                            "            try {\n";
-
-            int num = 0;
-
-            class_method_type_code += "_g_m_1_t.add(new Class[]{";
-            class_method_name_code += "_g_m_1_n.add(new String[]{";
-            String met_par = "";
-            for (int i = 0; i < parameterTypes.length; i++) {
-                class_method_type_code += parameterTypes[i].getSimpleName() + ".class";
-                class_method_name_code += "\"" + parameterTypeNames[i] + "\"";
-                met_par += "(" + parameterTypes[i].getTypeName() + ")list.get(" + num + ")";
-                if (num == 0) {
-                    method_call_code += "                java.util.List<Object> list= " +
-                            "gzb.frame.factory.ClassTools.getMethodParameterList(" +
-                            "_gzb_x001_requestMap," +
-                            "_gzb_x001_mapObject,_gzb_x001_arrayObject," +
-                            "_g_m_1_t.get(" + met_int + "),_g_m_1_n.get(" + met_int + "),null);\n" +
-                            "                if(list==null){return gzb.tools.json.GzbJsonImpl.json.fail(\"Incorrect parameters\");}\n";
-                    method_call_code += "                listBaseDao=gzb.frame.factory.ClassTools.transactionOpen(_gzb_x001_openTransaction,list);\n";
-                }
-                //method_call_code += "                " + parameterTypes[i].getTypeName() + " _c_p_" + num + "=(" + parameterTypes[i].getTypeName() + ")list.get(" + num + ");\n";
-                num++;
-                if (i < parameterTypes.length - 1) {
-                    class_method_type_code += ",";
-                    class_method_name_code += ",";
-                    met_par += ",";
-                }
-            }
-            met_int++;
-
-
-            if (method.getReturnType().getName().equals("void")) {
-                method_call_code += "                " + method.getName() + "(";
-            } else {
-                method_call_code += "                object = " + method.getName() + "(";
-            }
-            method_call_code += met_par + ");\n";
-
-
-            method_call_code += "                gzb.frame.factory.ClassTools.transactionCommit(listBaseDao);\n" +
-                    "            }catch (Exception e){\n" +
-                    "                gzb.frame.factory.ClassTools.transactionRollback(listBaseDao);\n" +
-                    "                throw e;\n" +
-                    "            }finally {\n" +
-                    "                gzb.frame.factory.ClassTools.transactionEndTransaction(listBaseDao);\n" +
-                    "            }\n" +
-                    "            return object;\n" +
-                    "        }\n";
-            class_method_type_code += "});\n";
-            class_method_name_code += "});\n";
-        }
-        class_method_type_code += "\n}\n";
-        class_method_name_code += "\n}\n";
-        int num = 0;
-
-        Field[] fields = ClassTools.getCombinedFieldsNotCache(clazz);
-
-        class_field_type_code += "Class<?>[]_gzb_x001_field_types=new Class[]{";
-        class_field_name_code += "String[]_gzb_x001_field_names=new String[]{";
-        class_field_impl_code += "String[]_gzb_x001_field_impl=new String[]{";
-        for (int i = 0; i < fields.length; i++) {
-            Resource resource = fields[i].getAnnotation(Resource.class);
-            if (resource == null) {
-                continue;
-            }
-            class_field_type_code += fields[i].getType().getCanonicalName() + ".class";
-            class_field_name_code += "\"" + fields[i].getName() + "\"";
-
-            class_field_impl_code += "\"" + (resource.value().isEmpty() ? fields[i].getType().getName() : resource.value()) + "\"";
-            class_field_put_code += "        this." + fields[i].getName() + "=(" + fields[i].getType().getCanonicalName() + ")list0.get(" + num + ");\n";
-
-
-            num++;
-            if (i < fields.length - 1) {
-                class_field_type_code += ",";
-                class_field_name_code += ",";
-                class_field_impl_code += ",";
-            }
-        }
-        if (class_field_put_code.length() > 0) {
-            class_field_put_code = "        java.util.List<Object> list0= gzb.frame.factory.ClassTools.getMethodParameterList" +
-                    "(_gzb_x001_requestMap,_gzb_x001_mapObject,_gzb_x001_arrayObject," +
-                    "_gzb_x001_field_types," +
-                    "_gzb_x001_field_names," +
-                    "_gzb_x001_field_impl" +
-                    ");\n" + class_field_put_code;
-        }
-
-        if (class_field_type_code.endsWith(",")) {
-            class_field_type_code = class_field_type_code.substring(0, class_field_type_code.length() - 1);
-        }
-        if (class_field_name_code.endsWith(",")) {
-            class_field_name_code = class_field_name_code.substring(0, class_field_name_code.length() - 1);
-        }
-        if (class_field_impl_code.endsWith(",")) {
-            class_field_impl_code = class_field_impl_code.substring(0, class_field_impl_code.length() - 1);
-        }
-
-        class_field_type_code += "};\n";
-        class_field_name_code += "};\n";
-        class_field_impl_code += "};\n";
-        if (class_field_type_code.contains("{}")) {
-            class_field_type_code = "";
-        }
-        if (class_field_name_code.contains("{}")) {
-            class_field_name_code = "";
-        }
-        if (class_field_impl_code.contains("{}")) {
-            class_field_impl_code = "";
-        }
-
-
-        String method_fun_code = "///  ############## 生成代码开始 ##############\n"
-                + class_method_type_code
-                + class_method_name_code
-                + class_field_type_code
-                + class_field_name_code
-                + class_field_impl_code
-                +
-                "    @Override\n" +
-                //"    public Object call(String _gzb_x001_methodName,\n" +
-                "    public Object _gzb_call_x01(int _gzb_x001_methodName,\n" +
-                "                       java.util.Map<String, java.util.List<Object>> _gzb_x001_requestMap,\n" +
-                "                       java.util.Map<String, Object> _gzb_x001_mapObject,\n" +
-                "                       Object[] _gzb_x001_arrayObject,boolean _gzb_x001_openTransaction) throws Exception {\n" +
-                //"        System.out.println(_gzb_x001_methodName);\n" +
-                class_field_put_code +
-                method_call_code +
-                "        return null;\n" +
-                "    }\n" +
-                "///  ############## 生成代码结束 ##############\n";
-
-        return method_fun_code;
-    }
-
-
-    public String gen_code1(Class clazz, String code) throws Exception {
-        String method_call_code = "";
-        String class_method_type_code = "        java.util.List<Class<?>[]> _g_m_1_t=new java.util.ArrayList<>();\n{\n";
-        String class_method_name_code = "        java.util.List<String[]> _g_m_1_n=new java.util.ArrayList<>();\n{\n";
-        //String class_method_type_code = "";
-        //String class_method_name_code = "";
-
-        String class_field_type_code = "";
-        String class_field_name_code = "";
-        String class_field_impl_code = "";
-        String class_field_put_code = "";
-
-        Method[] methods = ClassTools.getCombinedMethods(clazz);
-        int met_int = 0;
-        for (int j = 0; j < methods.length; j++) {
-            if (!Modifier.isPublic(methods[j].getModifiers())) {
-                continue;
-            }
-            Method method = methods[j];
-
-            String methodName = method.getName();
-            Class[] parameterTypes = method.getParameterTypes();
-            if (method.getAnnotation(GetMapping.class) == null
-                    && method.getAnnotation(PostMapping.class) == null
-                    && method.getAnnotation(PutMapping.class) == null
-                    && method.getAnnotation(DeleteMapping.class) == null
-                    && method.getAnnotation(ThreadInterval.class) == null
-                    && method.getAnnotation(DecoratorStart.class) == null
-                    && method.getAnnotation(DecoratorEnd.class) == null
-                    && method.getAnnotation(RequestMapping.class) == null
-            ) {
-                continue;
-            }
-            String[] parameterTypeNames = null;
-            parameterTypeNames = ClassTools.getParameterNamesByAsm(method, parameterTypes).toArray(new String[]{});
-            if (parameterTypeNames.length != parameterTypes.length) {
-                parameterTypeNames = ClassTools.getParameterNames(code, methodName, parameterTypes).toArray(new String[]{});
-            }
-            if (parameterTypeNames.length != parameterTypes.length) {
-                log.w(clazz, methodName, "参数名获取失败,请确保源码中存在方法签名");
-                continue;
-            }
-            //log.d("gen_code0",methodName,parameterTypeNames,parameterTypes);
-            method_call_code +=
-                    //"        if ( _gzb_x001_methodName.equals(\"" + methodSign + "\")) {\n" +
-                    "        //" + ClassTools.getSing(method, clazz) + "\n" +
-                            "        if ( _gzb_x001_methodName == " + ClassTools.getSingInt(method, clazz) + ") {\n" +
-                            "            Object object=null;\n" +
-                            "            java.util.List<gzb.frame.db.BaseDao>listBaseDao=null;\n" +
-                            "            try {\n";
-
-            int num = 0;
-
-            class_method_type_code += "_g_m_1_t.add(new Class[]{";
-            class_method_name_code += "_g_m_1_n.add(new String[]{";
-            String met_par = "";
-            for (int i = 0; i < parameterTypes.length; i++) {
-                class_method_type_code += parameterTypes[i].getSimpleName() + ".class";
-                class_method_name_code += "\"" + parameterTypeNames[i] + "\"";
-                met_par += "(" + parameterTypes[i].getTypeName() + ")list.get(" + num + ")";
-                if (num == 0) {
-                    method_call_code += "                java.util.List<Object> list= " +
-                            "gzb.frame.factory.ClassTools.getMethodParameterList(" +
-                            "_gzb_x001_requestMap," +
-                            "_gzb_x001_mapObject,_gzb_x001_arrayObject," +
-                            "_g_m_1_t.get(" + met_int + "),_g_m_1_n.get(" + met_int + "),null);\n" +
-                            "                if(list==null){return gzb.tools.json.GzbJsonImpl.json.fail(\"Incorrect parameters\");}\n";
-                    method_call_code += "                listBaseDao=gzb.frame.factory.ClassTools.transactionOpen(_gzb_x001_openTransaction,list);\n";
-                }
-                //method_call_code += "                " + parameterTypes[i].getTypeName() + " _c_p_" + num + "=(" + parameterTypes[i].getTypeName() + ")list.get(" + num + ");\n";
-                num++;
-                if (i < parameterTypes.length - 1) {
-                    class_method_type_code += ",";
-                    class_method_name_code += ",";
-                    met_par += ",";
-                }
-            }
-            met_int++;
-
-
-            if (method.getReturnType().getName().equals("void")) {
-                method_call_code += "                " + method.getName() + "(";
-            } else {
-                method_call_code += "                object = " + method.getName() + "(";
-            }
-            method_call_code += met_par + ");\n";
-
-
-            method_call_code += "                gzb.frame.factory.ClassTools.transactionCommit(listBaseDao);\n" +
-                    "            }catch (Exception e){\n" +
-                    "                gzb.frame.factory.ClassTools.transactionRollback(listBaseDao);\n" +
-                    "                throw e;\n" +
-                    "            }finally {\n" +
-                    "                gzb.frame.factory.ClassTools.transactionEndTransaction(listBaseDao);\n" +
-                    "            }\n" +
-                    "            return object;\n" +
-                    "        }\n";
-            class_method_type_code += "});\n";
-            class_method_name_code += "});\n";
-        }
-        class_method_type_code += "\n}\n";
-        class_method_name_code += "\n}\n";
-        int num = 0;
-
-        Field[] fields = ClassTools.getCombinedFieldsNotCache(clazz);
-
-        class_field_type_code += "Class<?>[]_gzb_x001_field_types=new Class[]{";
-        class_field_name_code += "String[]_gzb_x001_field_names=new String[]{";
-        class_field_impl_code += "String[]_gzb_x001_field_impl=new String[]{";
-        for (int i = 0; i < fields.length; i++) {
-            Resource resource = fields[i].getAnnotation(Resource.class);
-            if (resource == null) {
-                continue;
-            }
-            class_field_type_code += fields[i].getType().getCanonicalName() + ".class";
-            class_field_name_code += "\"" + fields[i].getName() + "\"";
-
-            class_field_impl_code += "\"" + (resource.value().isEmpty() ? fields[i].getType().getName() : resource.value()) + "\"";
-            class_field_put_code += "        this." + fields[i].getName() + "=(" + fields[i].getType().getCanonicalName() + ")list0.get(" + num + ");\n";
-
-
-            num++;
-            if (i < fields.length - 1) {
-                class_field_type_code += ",";
-                class_field_name_code += ",";
-                class_field_impl_code += ",";
-            }
-        }
-        if (class_field_put_code.length() > 0) {
-            class_field_put_code = "        java.util.List<Object> list0= gzb.frame.factory.ClassTools.getMethodParameterList" +
-                    "(_gzb_x001_requestMap,_gzb_x001_mapObject,_gzb_x001_arrayObject," +
-                    "_gzb_x001_field_types," +
-                    "_gzb_x001_field_names," +
-                    "_gzb_x001_field_impl" +
-                    ");\n" + class_field_put_code;
-        }
-
-        if (class_field_type_code.endsWith(",")) {
-            class_field_type_code = class_field_type_code.substring(0, class_field_type_code.length() - 1);
-        }
-        if (class_field_name_code.endsWith(",")) {
-            class_field_name_code = class_field_name_code.substring(0, class_field_name_code.length() - 1);
-        }
-        if (class_field_impl_code.endsWith(",")) {
-            class_field_impl_code = class_field_impl_code.substring(0, class_field_impl_code.length() - 1);
-        }
-
-        class_field_type_code += "};\n";
-        class_field_name_code += "};\n";
-        class_field_impl_code += "};\n";
-        if (class_field_type_code.contains("{}")) {
-            class_field_type_code = "";
-        }
-        if (class_field_name_code.contains("{}")) {
-            class_field_name_code = "";
-        }
-        if (class_field_impl_code.contains("{}")) {
-            class_field_impl_code = "";
-        }
-
-
-        String method_fun_code = "///  ############## 生成代码开始 ##############\n"
-                + class_method_type_code
-                + class_method_name_code
-                + class_field_type_code
-                + class_field_name_code
-                + class_field_impl_code
-                +
-                "    @Override\n" +
-                //"    public Object call(String _gzb_x001_methodName,\n" +
-                "    public Object _gzb_call_x01(int _gzb_x001_methodName,\n" +
-                "                       java.util.Map<String, java.util.List<Object>> _gzb_x001_requestMap,\n" +
-                "                       java.util.Map<String, Object> _gzb_x001_mapObject,\n" +
-                "                       Object[] _gzb_x001_arrayObject,boolean _gzb_x001_openTransaction) throws Exception {\n" +
-                //"        System.out.println(_gzb_x001_methodName);\n" +
-                class_field_put_code +
-                method_call_code +
-                "        return null;\n" +
-                "    }\n" +
-                "///  ############## 生成代码结束 ##############\n";
-
-        return method_fun_code;
-    }
-
 
     //返回对象 并且加入缓存
     public DecoratorEntity loadDecorator(ClassEntity classEntity, List<DecoratorEntity> listDecoratorEntity) throws Exception {
@@ -1120,7 +759,7 @@ public class FactoryImpl implements Factory {
         DecoratorEntity decoratorEntity = null;
         if (decorator != null) {
             decoratorEntity = new DecoratorEntity();
-            Class<?> aClass = gen_code(classEntity.clazz, classEntity.code);
+            Class<?> aClass = ClassTools.gen_call_code_v4_class(classEntity.clazz, classEntity.code);
             if (aClass == null) {
                 return decoratorEntity;
             }
@@ -1144,7 +783,7 @@ public class FactoryImpl implements Factory {
             //log.d("loadDecorator 0 ",clazz, Arrays.toString(methods));
             for (int j = 0; j < methods.length; j++) {
                 Method method = methods[j];
-                String name = ClassTools.getSing(method, classEntity.clazz);
+                String sign = ClassTools.getSing(method, classEntity.clazz);
                 int id = ClassTools.getSingInt(method, classEntity.clazz);
                 DecoratorStart decoratorStart = method.getAnnotation(DecoratorStart.class);
                 DecoratorEnd decoratorEnd = method.getAnnotation(DecoratorEnd.class);
@@ -1159,8 +798,9 @@ public class FactoryImpl implements Factory {
                         decoratorEntity1.fields = decoratorEntity.fields;
                         decoratorEntity1.fieldNames = decoratorEntity.fieldNames;
                         decoratorEntity1.fieldTypes = decoratorEntity.fieldTypes;
-                        decoratorEntity1.name = name;
+                        decoratorEntity1.sign = sign;
                         decoratorEntity1.id = id;
+                        decoratorEntity1.method = method;
                         decoratorEntity1.decoratorStart = decoratorStart;
                         decoratorEntity1.classEntity = classEntity;
                         listDecoratorEntity.add(decoratorEntity1);
@@ -1176,8 +816,9 @@ public class FactoryImpl implements Factory {
                         decoratorEntity1.fields = decoratorEntity.fields;
                         decoratorEntity1.fieldNames = decoratorEntity.fieldNames;
                         decoratorEntity1.fieldTypes = decoratorEntity.fieldTypes;
-                        decoratorEntity1.name = name;
+                        decoratorEntity1.sign = sign;
                         decoratorEntity1.id = id;
+                        decoratorEntity1.method = method;
                         decoratorEntity1.decoratorEnd = decoratorEnd;
                         decoratorEntity1.classEntity = classEntity;
                         listDecoratorEntity.add(decoratorEntity1);
@@ -1198,12 +839,23 @@ public class FactoryImpl implements Factory {
         }
         return object;
     }
+    //返回对象 并且加入缓存
+    public Object loadDataBaseEventFactory(ClassEntity classEntity, Map<String, Object> mapObject) throws Exception {
+        DataBaseEventFactory dataBaseEventFactory = classEntity.clazz.getAnnotation(DataBaseEventFactory.class);
+        Object object = null;
+        if (dataBaseEventFactory != null) {
+             classEntity.clazz = ClassTools.gen_call_code_v4_class(classEntity.clazz, classEntity.code);
+            ForeignKeyFactory foreignKeyFactory = (ForeignKeyFactory)mapObject.get(ForeignKeyFactory.class.getName());
+            foreignKeyFactory.register(classEntity.clazz,classEntity.code);
+        }
+        return object;
+    }
 
     public Object loadControllerObject(ClassEntity classEntity, Map<String, Object> mapObject) throws Exception {
         Controller controller = classEntity.clazz.getAnnotation(Controller.class);
         Object object = null;
         if (controller != null) {
-            classEntity.clazz = gen_code(classEntity.clazz, classEntity.code);
+            classEntity.clazz = ClassTools.gen_call_code_v4_class(classEntity.clazz, classEntity.code);
             object = ClassTools.putObject(classEntity.clazz, controller.value(), mapObject);
 
         }
@@ -1215,7 +867,7 @@ public class FactoryImpl implements Factory {
         ThreadFactory threadInterval = classEntity.clazz.getAnnotation(ThreadFactory.class);
         Object object = null;
         if (threadInterval != null) {
-            classEntity.clazz = gen_code(classEntity.clazz, classEntity.code);
+            classEntity.clazz = ClassTools.gen_call_code_v4_class(classEntity.clazz, classEntity.code);
             object = ClassTools.putObject(classEntity.clazz, null, mapObject);
             Method[] methods = classEntity.clazz.getMethods();
             for (int i = 0; i < methods.length; i++) {
@@ -1305,7 +957,7 @@ public class FactoryImpl implements Factory {
                         }
 
                         Object[] objects = new Object[]{threadEntity0.result.get(finalI), threadEntity0.lock};
-                        Object obj = gzbOneInterface._gzb_call_x01(id, null, mapObject, objects, transaction != null && transaction.value());
+                        Object obj = gzbOneInterface._gzb_call_x01(id, mapObject0, null, null, new HashMap<>(), objects, transaction != null && transaction.value());
                         if (obj != null) {
                             log.d("线程正常退出-释放线程状态-根据调用函数返回值决定", key);
                             //释放占用

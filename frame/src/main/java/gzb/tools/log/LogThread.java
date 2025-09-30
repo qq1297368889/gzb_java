@@ -179,32 +179,37 @@ public class LogThread {
             }
         }
         sb.append(": ");
-
-
-        for (int i = 0; i < log.length; i++) {
-            if (log[i] instanceof Exception) {
-                String errMsg = Tools.getExceptionInfo((Exception) log[i]);
-                if (lvConfig[index] == 0 || lvConfig[index] == 3) {
-                    //控制台输出开启的话 说明是调试目的 就直接输出  避免清空控制台后 不知道发生了什么错误
-                } else {
-                    //不输出的话 说明是 记录到文件 开启归类
-                    String md5 = Tools.textToMd5(errMsg);
-                    int num = Cache.gzbMap.getInteger("异常去重", md5, 1);
-                    Cache.gzbMap.setMap("异常去重", md5, num + 1, 10 * 60);//计次十分钟过期
-                    if (num > 1) {
-                        errMsg = "异常已出现 " + num + " 次,异常MD5:" + md5;
+        if (log!=null) {
+            for (int i = 0; i < log.length; i++) {
+                if (log[i] instanceof Exception) {
+                    String errMsg = Tools.getExceptionInfo((Exception) log[i]);
+                    if (lvConfig[index] == 0 || lvConfig[index] == 3) {
+                        //控制台输出开启的话 说明是调试目的 就直接输出  避免清空控制台后 不知道发生了什么错误
                     } else {
-                        errMsg = "异常MD5:" + md5 + "\r\n" + errMsg;
+                        //不输出的话 说明是 记录到文件 开启归类
+                        String md5 = Tools.textToMd5(errMsg);
+                        int num = Cache.gzbMap.getInteger("异常去重", md5, 1);
+                        Cache.gzbMap.setMap("异常去重", md5, num + 1, 10 * 60);//计次十分钟过期
+                        if (num > 1) {
+                            errMsg = "异常已出现 " + num + " 次,异常MD5:" + md5;
+                        } else {
+                            errMsg = "异常MD5:" + md5 + "\r\n" + errMsg;
+                        }
                     }
+                    sb.append(errMsg);
+                } else {
+                    sb.append(Tools.toJson(log[i]));
                 }
-                sb.append(errMsg);
-            } else {
-                sb.append(Tools.toJson(log[i]));
+                if (i < log.length - 1) {
+                    sb.append(" | ");
+                }
             }
-            if (i < log.length - 1) {
-                sb.append(" | ");
-            }
+        }else{
+
+            sb.append(": null");
         }
+
+
   /*      System.out.println("类名: " + element.getClassName() +
                 ", 方法名: " + element.getMethodName() +
                 ", 文件名: " + element.getFileName() +

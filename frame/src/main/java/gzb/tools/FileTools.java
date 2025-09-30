@@ -123,7 +123,7 @@ public class FileTools {
         System.out.println("--- FileTools 功能测试结束 ---");
     }
     // 统一使用 UTF-8 编码，防止乱码
-    private static final Charset ENCODING = Config.encoding;
+    private static final Charset ENCODING = StandardCharsets.UTF_8;
     /**
      * 循环创建目录（包括所有不存在的父目录）。
      * 性能优化：使用 Files.createDirectories (JDK 7+)。

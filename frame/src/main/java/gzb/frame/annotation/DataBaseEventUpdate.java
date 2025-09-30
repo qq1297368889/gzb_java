@@ -26,5 +26,18 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DataBaseEventUpdate {
-    String value() default "";
+    /**
+     * 实体类绑定
+     */
+    Class<?> entity();
+
+    /**
+     * 是否执行之前调用  true 是 / false 否 ; 默认 否 后执行
+     */
+    boolean executionBefore() default false;
+
+    /**
+     * 事件循环深度 防止无限递归
+     */
+    int depth() default 5;
 }

@@ -20,16 +20,14 @@ package gzb.frame.db;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import gzb.frame.annotation.EntityAttribute;
-import gzb.entity.AsyEntity;
 import gzb.entity.EntityClassInfo;
 import gzb.entity.SqlTemplate;
 import gzb.entity.TableInfo;
+import gzb.exception.GzbException0;
+import gzb.frame.annotation.EntityAttribute;
 import gzb.tools.*;
 import gzb.tools.cache.Cache;
 import gzb.tools.log.Log;
-import gzb.tools.log.LogThread;
-import gzb.tools.thread.ThreadPool;
 
 import java.lang.reflect.Field;
 import java.sql.*;
@@ -37,26 +35,20 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 
-public class DataBaseMsql implements DataBase {
+public class DataBaseImpl implements DataBase {
+
+    //数据库连接
+    private final ThreadLocal<Connection> connectionThreadLocal = new ThreadLocal<>();
+    //数据库事务是否开启
+    private final ThreadLocal<Boolean> openTransactionThreadLocal = new ThreadLocal<>();
 
     public AsyncFactory asyncFactory = null;
 
+    DataBaseConfig dataBaseConfig;
     public static Log log = Config.log;
     public static String[] montageArr = new String[]{"and", "or", "and(", "or(", ")and", ")or", "(", ")"};
     public static String[] symbolArr = new String[]{"=", ">", ">=", "<", "<=", "<>", "%like%", "like%", "%like"};
-    public String name = null;
-    public String ip = null;
-    public String port = null;
-    public String acc = null;
-    public String pwd = null;
-    public String url = null;
-    public String clz = null;
-    public Boolean auto = null;
-    public Integer threadMax = null;
-    public Integer overtime = null;
-    public Integer asyncSleep = null;
-    public Integer asyBatch = null;
-    public Integer asyThreadMax = null;
+
     public HikariDataSource hds = null;
     private Map<String, String> humpMap = new HashMap<>();
     public Map<String, String> tableInfoMap = new ConcurrentHashMap<>();
@@ -64,89 +56,43 @@ public class DataBaseMsql implements DataBase {
     Map<Object, EntityClassInfo> mapEntityClassInfo = new ConcurrentHashMap<>();
 
 
-    public DataBaseMsql(String key) throws Exception {
-        readConfig(key);
-        initDataBase(name, ip, port, acc, pwd, clz, auto, threadMax, overtime, asyncSleep, asyBatch, asyThreadMax);
+    public DataBaseImpl(DataBaseConfig dataBaseConfig) throws Exception {
+        this.dataBaseConfig = dataBaseConfig;
+        initDataBase();
     }
 
-    public DataBaseMsql(String name, String ip, String port, String acc, String pwd, String clz, Boolean auto,
-                        Integer threadMax, Integer overtime,
-                        Integer asyncSleep, Integer asyBatch, Integer asyThreadMax) throws Exception {
-        Config.set("db.mysql." + name + ".name", name);
-        Config.set("db.mysql." + name + ".ip", ip);
-        Config.set("db.mysql." + name + ".port", port);
-        Config.set("db.mysql." + name + ".acc", acc);
-        Config.set("db.mysql." + name + ".pwd", pwd);
-        Config.set("db.mysql." + name + ".clz", clz);
-        Config.set("db.mysql." + name + ".auto", auto.toString());
-        Config.set("db.mysql." + name + ".thread.max", threadMax.toString());
-        Config.set("db.mysql." + name + ".overtime", overtime.toString());
-        Config.set("db.mysql." + name + ".async.sleep", asyncSleep.toString());
-        Config.set("db.mysql." + name + ".async.batch", asyBatch.toString());
-        Config.set("db.mysql." + name + ".async.thread.num", asyThreadMax.toString());
-        initDataBase(name, ip, port, acc, pwd, clz, auto, threadMax, overtime, asyncSleep, asyBatch, asyThreadMax);
+    public DataBaseImpl(String key) throws Exception {
+        dataBaseConfig = DataBaseConfig.readConfig(key);
+        initDataBase();
+    }
+
+    public DataBaseImpl(String type, String key, String clz, String ip, int port, String name, String acc, String pwd, int threadMax, int overtime, int asyncSleepMilli, int asyncBatchSize, int asyncThreadNum, String sign) throws Exception {
+        dataBaseConfig = DataBaseConfig.readConfig(type, key, clz, ip, port, name, acc, pwd, threadMax, overtime, asyncSleepMilli, asyncBatchSize, asyncThreadNum, sign);
+        initDataBase();
     }
 
     public String getSign() {
-        return ip + "_" + port + "_" + name;
+        return dataBaseConfig.getSign();
     }
 
     public AsyncFactory getAsyncFactory() {
         return asyncFactory;
     }
 
-    private void initDataBase(String name, String ip, String port, String acc, String pwd,
-                              String clz, Boolean auto, Integer threadMax, Integer overtime,
-                              Integer asyncSleep, Integer asyBatch, Integer asyThreadMax) throws SQLException {
+    private void initDataBase() {
+        log.d("数据库配置信息", dataBaseConfig);
         try {
-            if (name != null) {
-                this.name = name;
-                this.ip = ip;
-                this.port = port;
-                this.acc = acc;
-                this.pwd = pwd;
-                this.clz = clz;
-                this.auto = auto;
-                this.threadMax = threadMax;
-                this.overtime = overtime;
-                this.asyncSleep = asyncSleep;
-                this.asyBatch = asyBatch;
-                this.asyThreadMax = asyThreadMax;
+            hds = getHikariDataSource();
+            log.d("数据库：[" + dataBaseConfig.name + "]，连接成功........");
 
-                this.url = "jdbc:mysql://" + this.ip + ":" + this.port + "/" + this.name + "?" +
-                        "autoReconnect=true&" +/// 自动重连
-                        "useUnicode=true&" +/// 使用 Unicode
-                        "characterEncoding=" + Config.encoding + "&" +/// 设置编码
-                        "useSSL=false&" +/// 允许不使用ssl
-                        "zeroDateTimeBehavior=convertToNull&" +/// 防止日期转换错误
-                        "serverTimezone=UTC&" +/// 统一时区
-                        "rewriteBatchedStatements=true&" +/// 允许sql合并
-                        "allowMultiQueries=true&" +/// 允许1次执行多个sql
-                        "useServerPrepStmts=true&" +/// 服务端缓存sql
-                        "cachePrepStmts=true&";/// 客户端缓存sql
-                log.d("数据库配置信息:{", "name=" + this.name, "ip=" + this.ip, "port=" + this.port, "acc=" + this.acc, "pwd=" + this.pwd, "clz=" + this.clz,
-                        "auto=" + this.auto,
-                        "threadMax=" + this.threadMax,
-                        "overtime=" + this.overtime,
-                        "asyncSleep=" + this.asyncSleep,
-                        "url=" + this.url,
-                        "}");
-                hds = getHikariDataSource();
-                log.d("数据库：[" + this.name + "]，连接成功........");
+            readTableInfo();
+            log.d("数据库：[" + dataBaseConfig.name + "]，数据表信息抓取成功........");
 
-                readTableInfo();
-                log.d("数据库：[" + this.name + "]，数据表信息抓取成功........");
-
-                asyncFactory = new AsyncFactory(this, asyThreadMax, asyBatch, asyncSleep);
-                log.d("数据库：[" + this.name + "]，异步服务启动成功........", "后台异步线程数", asyThreadMax);
-
-            } else {
-                throw new SQLException("数据库名称不能为空，连接失败........");
-            }
+            asyncFactory = new AsyncFactory(this, dataBaseConfig.asyncThreadNum, dataBaseConfig.asyncBatchSize, dataBaseConfig.asyncSleepMilli);
+            log.d("数据库：[" + dataBaseConfig.name + "]，异步服务启动成功........", "后台异步线程数", dataBaseConfig.asyncThreadNum);
 
         } catch (Exception e) {
-            log.e(e, "数据库：[" + this.name + "]，连接失败........");
-            throw new SQLException("数据库连接失败");
+            throw new RuntimeException("数据库：[" + dataBaseConfig.name + "]，连接失败........", e);
         }
     }
 
@@ -217,25 +163,32 @@ public class DataBaseMsql implements DataBase {
         HikariConfig config = new HikariConfig();
 
         // 设置连接池名称（便于监控和日志识别）
-        config.setPoolName("hikari-" + this.name + "-pool");
-
+        config.setPoolName("hikari-" + dataBaseConfig.sign + "-pool");
+        String para01 = "autoReconnect=true&" +/// 自动重连
+                "useUnicode=true&" +/// 使用 Unicode
+                "characterEncoding=" + Config.encoding + "&" +/// 设置编码
+                "useSSL=false&" +/// 允许不使用ssl
+                "zeroDateTimeBehavior=convertToNull&" +/// 防止日期转换错误
+                "serverTimezone=UTC&" +/// 统一时区
+                "rewriteBatchedStatements=true&" +/// 允许sql合并
+                "allowMultiQueries=true&" +/// 允许1次执行多个sql
+                "useServerPrepStmts=true&" +/// 服务端缓存sql
+                "cachePrepStmts=true&";/// 客户端缓存sql
         // 数据库连接基础配置
-        config.setJdbcUrl(this.url);        // 数据库连接URL
-        config.setUsername(acc);            // 数据库用户名
-        config.setPassword(pwd);            // 数据库密码
-        config.setDriverClassName(clz);     // 数据库驱动类名
+        config.setJdbcUrl(dataBaseConfig.getUrl(para01));        // 数据库连接URL
+        config.setUsername(dataBaseConfig.acc);            // 数据库用户名
+        config.setPassword(dataBaseConfig.pwd);            // 数据库密码
+        config.setDriverClassName(dataBaseConfig.clz);     // 数据库驱动类名
 
-        // 连接池核心参数配置
-        // 最小空闲连接数：根据最大连接数动态调整，至少保持一半的连接处于空闲状态
-        config.setMinimumIdle(threadMax > 10 ? threadMax / 2 : threadMax);
+        config.setMinimumIdle(dataBaseConfig.threadMax > 10 ? dataBaseConfig.threadMax / 3 : dataBaseConfig.threadMax);
         // 最大连接数：控制池的最大连接数量，避免资源耗尽
-        config.setMaximumPoolSize(threadMax);
+        config.setMaximumPoolSize(dataBaseConfig.threadMax);
         // 自动提交模式：控制是否自动提交事务
-        config.setAutoCommit(auto);
+        config.setAutoCommit(true);
 
         // 连接保活与健康检查配置
         // 连接超时时间：获取连接的最大等待时间（毫秒）
-        config.setConnectionTimeout(overtime);
+        config.setConnectionTimeout(dataBaseConfig.overtime);
         // 空闲连接超时：超过此时间的空闲连接将被回收（5分钟）
         config.setIdleTimeout(300000);
         // 连接最大生命周期：强制回收超过此时间的连接（30分钟）
@@ -285,34 +238,6 @@ public class DataBaseMsql implements DataBase {
 
         return new HikariDataSource(config);
     }
-
-    private void readConfig(String name) {
-        this.name = Config.get("db.mysql." + name + ".name", null);
-        this.ip = Config.get("db.mysql." + name + ".ip", null);
-        this.port = Config.get("db.mysql." + name + ".port", null);
-        this.acc = Config.get("db.mysql." + name + ".acc", null);
-        this.pwd = Config.get("db.mysql." + name + ".pwd", null);
-        this.clz = Config.get("db.mysql." + name + ".clz", Config.get("db.mysql." + name + ".class", null));
-        this.auto = Config.getBoolean("db.mysql." + name + ".auto", false);
-        this.threadMax = Config.getInteger("db.mysql." + name + ".thread.max", Tools.getCPUNum() * 2);
-        this.overtime = Config.getInteger("db.mysql." + name + ".overtime", 3000);
-        this.asyncSleep = Config.getInteger("db.mysql." + name + ".async.sleep", 50);
-        this.asyBatch = Config.getInteger("db.mysql." + name + ".async.batch", 200);
-        this.asyThreadMax = Config.getInteger("db.mysql." + name + ".async.thread.num", Math.max(Config.cpu / 2, 1));
-
-        this.url = "jdbc:mysql://" + this.ip + ":" + this.port + "/" + this.name + "?" +
-                "autoReconnect=true&" +/// 自动重连
-                "useUnicode=true&" +/// 使用 Unicode
-                "characterEncoding=" + Config.encoding + "&" +/// 设置编码
-                "useSSL=false&" +/// 允许不使用ssl
-                "zeroDateTimeBehavior=convertToNull&" +/// 防止日期转换错误
-                "serverTimezone=UTC&" +/// 统一时区
-                "rewriteBatchedStatements=true&" +/// 允许sql合并
-                "allowMultiQueries=true&" +/// 允许1次执行多个sql
-                "useServerPrepStmts=true&" +/// 服务端缓存sql
-                "cachePrepStmts=true&";/// 客户端缓存sql
-    }
-
 
     @Override
     public SqlTemplate toSelect(String tableName, String[] fields, String[] symbol, String[] value, String[] montage, String sortField, String sortType) {
@@ -472,10 +397,9 @@ public class DataBaseMsql implements DataBase {
         }
 
         if (size > 0) {
-            sql.append(" ");
-            sql.append("limit ?,?");
-            list.add(start);
+            sql.append(" LIMIT ? OFFSET ?");
             list.add(end);
+            list.add(start);
         }
         return new SqlTemplate(sql.toString(), list.toArray());
     }
@@ -643,11 +567,11 @@ public class DataBaseMsql implements DataBase {
                         tableInfo.idType = columnClassName;
                     }
                 }
-                tableInfo.setColumnNames(tableInfo.columnNames, this.name);
+                tableInfo.setColumnNames(tableInfo.columnNames, dataBaseConfig.name);
                 list.add(tableInfo);
             }
         } finally {
-            close(conn, rs, ps);
+            close(rs, ps);
         }
         return list;
     }
@@ -661,6 +585,131 @@ public class DataBaseMsql implements DataBase {
     public Long getOnlyIdDistributed() {
         return OnlyId.getDistributed();
     }
+
+
+    @Override
+    public Connection getConnection() throws SQLException {
+        Connection connection1 = connectionThreadLocal.get();
+        if (connection1 != null) {
+            return connection1;
+        }
+        connection1 = hds.getConnection();
+        try {
+            connection1.setAutoCommit(!isOpenTransaction());
+        } catch (SQLException e) {
+            log.e(e);
+        }
+        connectionThreadLocal.set(connection1);
+        return connection1;
+    }
+
+    @Override
+    public void setConnection(Connection connection) {
+        setConnection(connection, false);
+    }
+
+    @Override
+    public void setConnection(Connection connection0, boolean openTransaction0) {
+        log.t("框架 指定连接", connection0, "是否开启事物", openTransaction0);
+        openTransactionThreadLocal.set(openTransaction0);
+        connectionThreadLocal.set(connection0);
+        try {
+            connection0.setAutoCommit(!openTransaction0);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    @Override
+    public boolean isOpenTransaction() {
+        return openTransactionThreadLocal.get() != null && openTransactionThreadLocal.get();
+    }
+
+    //开启事务 主要是框架内部调用 当然 也可以手动
+    @Override
+    public void openTransaction() {
+        log.t("框架 开启事物");
+        openTransactionThreadLocal.set(true);
+    }
+
+    //关闭事务 主要是框架内部调用 当然 也可以手动
+    @Override
+    public void endTransaction() {
+        openTransactionThreadLocal.remove();
+        log.t("框架 关闭事物");
+        close(null, null);
+    }
+
+    //提交并且关闭事务  同时也会归还连接 主要是框架内部调用 当然 也可以手动
+    @Override
+    public void commit() throws SQLException {
+        Connection connection1 = connectionThreadLocal.get();
+        log.t("框架 提交事物", connection1);
+        if (connection1 != null) {
+            connection1.commit();
+        }
+    }
+
+    //回滚并且关闭事务  同时也会归还连接 主要是框架内部调用 当然 也可以手动
+    @Override
+    public void rollback() throws SQLException {
+        Connection connection1 = connectionThreadLocal.get();
+        log.t("框架 回滚事物", connection1);
+        if (connection1 != null) {
+            connection1.rollback();
+        }
+    }
+
+    /**
+     * 事务开启情况 不会close 数据库连接  正常情况会close
+     */
+    //关闭链接 非自动提交状态例外
+    @Override
+    public void close(ResultSet resultSet, PreparedStatement preparedStatement) {
+        if (resultSet != null) {
+            try {
+                resultSet.close();
+            } catch (SQLException e) {
+                log.e(e);
+            }
+        }
+        if (preparedStatement != null) {
+            try {
+                preparedStatement.close();
+            } catch (SQLException e) {
+                log.e(e);
+            }
+        }
+        Connection connection0 = connectionThreadLocal.get();
+        if (connection0 != null) {
+            try {
+
+                if (!isOpenTransaction()) {
+                    log.t("数据连接 由于未开启事物 数据库连接 归还", connection0);
+                    connection0.setAutoCommit(true);
+                    connection0.close();
+                    connectionThreadLocal.remove();
+                } else {
+                    log.t("数据连接 由于已开启事务 数据库连接 不归还", connection0);
+                }
+            } catch (SQLException e) {
+                log.e(e);
+            }
+        } else {
+            log.t("数据连接 为空 跳过");
+        }
+    }
+
+    @Override
+    public int count(String sql, Object[] params) throws Exception {
+        String[] arr1 = sql.split(" from ");
+        String countSql = "select COUNT(*) as select_count from " + arr1[1];
+        List<GzbMap> list = selectGzbMap(countSql, params, false);
+        if (list != null && list.size() == 1) {
+            return list.get(0).getInteger("select_count", 0);
+        }
+        return 0;
+    }
+
 
     @Override
     public int getMaxId(String mapName, String idName) {
@@ -680,7 +729,7 @@ public class DataBaseMsql implements DataBase {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            close(conn, resultSet, preparedStatement);
+            close(resultSet, preparedStatement);
         }
         return 0;
     }
@@ -701,43 +750,6 @@ public class DataBaseMsql implements DataBase {
             lock.unlock();
         }
         return Integer.valueOf(String.valueOf(id));
-    }
-
-    /**
-     * 事务开启情况 每次都获取同一个连接  close 不会归还   不开启情况 每次都会colse 且每次都会调用 hds.getConnection()
-     */
-    @Override
-    public Connection getConnection() {
-        try {
-            if (hds == null) {
-                throw new SQLException("数据库连接池hds为NULL");
-            }
-            return hds.getConnection();
-        } catch (Exception e) {
-            log.e(e, "获取数据库连接出错");
-            return null;
-        }
-    }
-
-    /**
-     * 事务开启情况 不会close 数据库连接  正常情况会close
-     */
-    @Override
-    public void close(Connection connection0, ResultSet resultSet, PreparedStatement preparedStatement) {
-        try {
-            if (resultSet != null) {
-                resultSet.close();
-            }
-            if (preparedStatement != null) {
-                preparedStatement.close();
-            }
-            if (connection0 != null) {
-                connection0.setAutoCommit(true);
-                connection0.close();
-            }
-        } catch (Exception e) {
-            log.e(e);
-        }
     }
 
 
@@ -819,7 +831,6 @@ public class DataBaseMsql implements DataBase {
             }
             times[3] = System.currentTimeMillis();
         } finally {
-            close(connection, rs, ps);
             times[4] = System.currentTimeMillis();
             sb.append(",[连接：").append(times[1] - times[0]).append("ms]");
             sb.append(",[执行：").append(times[2] - times[1]).append("ms]");
@@ -830,6 +841,7 @@ public class DataBaseMsql implements DataBase {
             } else {
                 log.d(sb);
             }
+            close(rs, ps);
         }
         return list;
     }
@@ -840,134 +852,52 @@ public class DataBaseMsql implements DataBase {
         return runSql(sql, new Object[]{});
     }
 
-    @Override
-    public int runSql(String sql, Connection connection) throws Exception {
-        return runSql(sql, null, connection);
-    }
-
 
     @Override
-    public int runSql(String sql, Object[] para) throws Exception {
-        List<Object[]> list_parameter = new ArrayList<>();
-        list_parameter.add(para);
-        return runSqlBatch(sql, list_parameter);
-    }
-
-    @Override
-    public int runSql(String sql, Object[] para, Connection connection) throws Exception {
-        List<Object[]> list_parameter = new ArrayList<>();
-        list_parameter.add(para);
-        return runSqlBatch(sql, list_parameter, connection);
-    }
-
-
-    @Override
-    public int runSqlBatch(String sql, List<Object[]> list_parameter) throws Exception {
-        Connection connection = getConnection();
-        return runSqlBatch(sql, list_parameter, connection, true);
-    }
-
-    @Override
-    public int runSqlBatch(String sql, List<Object[]> list_parameter, Connection connection) throws Exception {
-        return runSqlBatch(sql, list_parameter, connection, false);
-    }
-
-    // autoCommit    true的话 自动提交sql     false的话 自己手动提交 connection.setAutoCommit(true false);
-    public int runSqlBatch(String sql, List<Object[]> list_parameter, Connection connection, boolean autoCommit) throws Exception {
-        //  只有在 debug环境下 执行 带日志输出的 批量执行   LogThread.lvConfig.get(0) != 2表示 debug级别 不显示 也不输出
-        if (LogThread.lvConfig[0] != 2) {
-            return runSqlBatchPrintLog(sql, list_parameter, connection, autoCommit);
-        }
-        int allRow = 0;
+    public int runSql(String sql, Object[] params) throws Exception {
         ResultSet rs = null;
         PreparedStatement ps = null;
-        if (sql == null || list_parameter == null) {
+        long start = 0, end = 0;
+        if (sql == null || params == null) {
             return -1;
         }
-        if (autoCommit) {
-            connection.setAutoCommit(false);
-        }
-        if (sql.endsWith(";")) {
-            sql = sql.split(";")[0];
-        }
+        Connection connection = getConnection();
         try {
+            start = System.currentTimeMillis();
             ps = connection.prepareStatement(sql);
-            for (int j = 0; j < list_parameter.size(); j++) {
-                Object[] parameter = list_parameter.get(j);
-                if (parameter == null) {
-                    continue;
-                }
-                for (int i = 0; i < parameter.length; i++) {
-                    if (parameter[i] != null) {
-                        if (parameter[i].toString().isEmpty()) {
-                            parameter[i] = null;
-                        }
-                    }
-                    ps.setObject(i + 1, parameter[i]);
-                }
-                ps.addBatch();
-                if ((j + 1) % asyBatch == 0 || j + 1 == list_parameter.size()) {
-                    int[] rows = ps.executeBatch();
-                    for (int i = 0; i < rows.length; i++) {
-                        if (rows[i] == -3) {
-                            log.e("SQL执行失败：", Arrays.toString(list_parameter.get(j - (20 - i))));
-                        }
-                    }
-                    if (autoCommit) {
-                        connection.commit();
-                    }
-                    allRow += rows.length;
-                }
+            for (int i = 0; i < params.length; i++) {
+                ps.setObject(i + 1, params[i]);
             }
+            int res = ps.executeUpdate();
+            end = System.currentTimeMillis();
+            return res;
         } catch (SQLException e) {
-            connection.rollback();
             StringBuilder stringBuilder1 = new StringBuilder(sql);
             stringBuilder1.append(" -> data:[");
-            for (int j = 0; j < list_parameter.size(); j++) {
-                Object[] parameter = list_parameter.get(j);
-                if (parameter == null) {
-                    continue;
-                }
-                stringBuilder1.append("{");
-                for (int i = 0; i < parameter.length; i++) {
-                    stringBuilder1.append(parameter[i]);
-                    if (i != parameter.length - 1) {
-                        stringBuilder1.append(",");
-                    }
-                }
-                stringBuilder1.append("}");
-                if (j + 1 < list_parameter.size()) {
-                    stringBuilder1.append(",");
-                }
+            for (Object param : params) {
+                stringBuilder1.append(param).append(",");
             }
             stringBuilder1.append("]");
-            log.e(e, "异常：" + stringBuilder1);
-            throw e;
+            throw new RuntimeException("\n SQLException "+stringBuilder1.toString(),e);
         } catch (Exception e) {
             log.e(e, "Exception 非SQL异常");
             throw e;
         } finally {
-            if (autoCommit) {
-                connection.setAutoCommit(true);
-                close(connection, rs, ps);
-            } else {
-                close(null, rs, ps);
-            }
+            close(rs, ps);
+            log.s(sql, start, end);
         }
-        return allRow;
     }
 
+
     // autoCommit    true的话 自动提交sql     false的话 自己手动提交 connection.setAutoCommit(true false);
-    public int runSqlBatchPrintLog(String sql, List<Object[]> list_parameter, Connection connection, boolean autoCommit) throws Exception {
+    public int runSqlBatch(String sql, List<Object[]> list_parameter) throws Exception {
         int allRow = 0;
         long a = 0, b = 0, c = 0;
         ResultSet rs = null;
         PreparedStatement ps = null;
         StringBuilder sb = null;
+        Connection connection = getConnection();
         try {
-            if (autoCommit) {
-                connection.setAutoCommit(false);
-            }
             if (sql.lastIndexOf(";") > -1) {
                 sql = sql.split(";")[0];
             }
@@ -997,14 +927,14 @@ public class DataBaseMsql implements DataBase {
                 sb.append("}");
                 ps.addBatch();
                 b = System.currentTimeMillis();
-                if ((j + 1) % asyBatch == 0 || j + 1 == list_parameter.size()) {
+                if ((j + 1) % dataBaseConfig.asyncBatchSize == 0 || j + 1 == list_parameter.size()) {
                     int[] rows = ps.executeBatch();
                     for (int i = 0; i < rows.length; i++) {
                         if (rows[i] == -3) {
                             log.e("SQL执行失败：", Arrays.toString(list_parameter.get(j - (20 - i))));
                         }
                     }
-                    if (autoCommit) {
+                    if (!isOpenTransaction()) {
                         connection.commit();
                     }
                     c = System.currentTimeMillis();
@@ -1024,12 +954,7 @@ public class DataBaseMsql implements DataBase {
             log.e(e, "异常：" + sb);
             throw e;
         } finally {
-            if (autoCommit) {
-                connection.setAutoCommit(true);
-                close(connection, rs, ps);
-            } else {
-                close(null, rs, ps);
-            }
+            close(rs, ps);
         }
         log.d(sb);
         return allRow;
@@ -1042,6 +967,9 @@ public class DataBaseMsql implements DataBase {
 
     @Override
     public int runSqlAsyncBatch(String sql, List<Object[]> list_parameter) {
+        if (isOpenTransaction()) {
+            throw new GzbException0("开启事务的时候无法使用异步执行");
+        }
         int num = 0;
         for (Object[] objects : list_parameter) {
             num += runSqlAsync(sql, objects);

@@ -1,21 +1,3 @@
-/*
- *
- *  * Copyright [2025] [GZB ONE]
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  * http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
- *
- */
-
 let $ = layui.$;
 let admin = layui.admin;
 let element = layui.element;
@@ -1098,26 +1080,32 @@ gzb.loadLibs = async function () {
         if (map.edit != null) {
             name = map.edit
         }
-        let url1 = "js/" + map.config + ".js"
-        let url2 = "js/edit/" + name + ".js"
-        eval(await (await fetch(url1)).text())
-        eval(await (await fetch(url2)).text())
-        if (gzb.api == null) {
-            gzb.api = {
-                query: gzb.base + gzb.entityName + "/query",
-                list: gzb.base + gzb.entityName + "/list",
-                find: gzb.base + gzb.entityName + "/find",
-                update: gzb.base + gzb.entityName + "/update",
-                delete: gzb.base + gzb.entityName + "/deleteAll",
-                save: gzb.base + gzb.entityName + "/save",
-                upload: gzb.base + "upload",
-                mapping: gzb.base + "read/mapping",
-            }
+        //加载
+        eval(await (await fetch("js/" + map.config + ".js")).text())
+        gzb.api = {
+            query: gzb.base + gzb.entityName + "/query",
+            list: gzb.base + gzb.entityName + "/list",
+            find: gzb.base + gzb.entityName + "/find",
+            update: gzb.base + gzb.entityName + "/update",
+            delete: gzb.base + gzb.entityName + "/deleteAll",
+            save: gzb.base + gzb.entityName + "/save",
+            upload: gzb.base + "upload",
+            mapping: gzb.base + "read/mapping",
         }
-
+        eval(await (await fetch("js/edit/" + name + ".js")).text())
+    }
+    if (gzb.hook != null) {
+        gzb.hook();
     }
 }
 
+gzb.hook=function (){
+
+}
+async function initListPage() {
+    await gzb.loadLibs();
+    gzb.initListPage();
+}
 async function initUpdate() {
     await gzb.loadLibs();
     let map = gzb.getParas()
@@ -1222,10 +1210,6 @@ async function initSave() {
     }, "click")
 }
 
-async function initListPage() {
-    await gzb.loadLibs();
-    gzb.initListPage();
-}
 
 
 gzb.getMappingJSON = function (suc) {
@@ -1273,7 +1257,7 @@ gzb.getMappingJSON = function (suc) {
 gzb.delete_table_gzb_b001 = function (obj, data) {
     layer.confirm('真的要删除吗？', function (index) {
         let postData = gzb.entityIdName + "=" + data[gzb.entityIdName];
-        gzb.get(gzb.api.delete, postData, function (res) {
+        gzb.delete(gzb.api.delete, postData, function (res) {
             if (gzb.jsonVerify(res, true)) {
                 obj.del();
             }
@@ -1290,7 +1274,7 @@ gzb.delete_gzb_b001 = function (_this) {
         for (let datum of data) {
             postData += gzb.entityIdName + "=" + encodeURIComponent(datum[gzb.entityIdName]) + "&";
         }
-        gzb.get(gzb.api.delete, postData, function (res) {
+        gzb.delete(gzb.api.delete, postData, function (res) {
             if (gzb.jsonVerify(res, true)) {
                 table.reload(gzb.table.eleId);
             }

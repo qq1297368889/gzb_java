@@ -123,25 +123,17 @@ public class HTTP_V3 {
 
         HttpURLConnection connection = null;
         try {
-            // 【关键】直接创建连接（JDK 会自动从原生池取复用连接）
             URL requestUrl = new URL(finalUrl);
             connection = (HttpURLConnection) requestUrl.openConnection();
-
-            // 初始化连接设置（保留原逻辑，无需复用重置）
             initConnectionSettings(connection, method, reqTimeout, requestHeaders);
-
-            // 处理请求体（完全保留原逻辑）
             handleRequestBody(connection, method, data, files, requestHeaders);
-
-            // 获取响应（完全保留原逻辑）
             processResponse(connection);
 
         } catch (Exception e) {
-            // 异常处理（移除自定义池的key相关逻辑）
             throw e;
         } finally {
             if (connection != null) {
-                connection.disconnect();
+                //connection.disconnect();
             }
         }
 

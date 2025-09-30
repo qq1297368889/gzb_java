@@ -18,8 +18,25 @@
 
 package gzb.frame.factory;
 
+import gzb.frame.netty.entity.Request;
+import gzb.frame.netty.entity.Response;
+
 import java.util.Map;
 
 public interface GzbOneInterface {
-    public Object _gzb_call_x01(int methodName, Map<String, java.util.List<Object>> requestMap, Map<String, Object> mapObject, Object[] arrayObject,boolean openTransaction)throws Exception;
+/*    public Object _gzb_call_x01(
+            int methodName,
+                                Map<String, java.util.List<Object>> requestMap,
+                                Map<String, Object> mapObject, Object[] arrayObject,
+                                boolean openTransaction
+    )throws Exception;*/
+public Object _gzb_call_x01(
+        int _gzb_one_c_id,
+        java.util.Map<String, Object> _gzb_one_c_mapObject,
+        Request _g_p_req,
+        Response _g_p_resp,
+        java.util.Map<String, java.util.List<Object>> _gzb_one_c_requestMap,
+        Object[] arrayObject,
+        boolean _gzb_x001_openTransaction
+)throws Exception;
 }

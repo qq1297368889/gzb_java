@@ -1,9 +1,11 @@
 package gzb.exception;
 
+import gzb.tools.Tools;
+
 public class GzbException0 extends RuntimeException {
     // 构造函数：禁用写入栈追踪和启用抑制
-    public GzbException0(String message) {
-        super(message, null, false, false);
+    public GzbException0(Object...objs) {
+        super(Tools.toJson(objs), null, false, false);
     }
 
     // 覆盖 fillInStackTrace，阻止 JVM 填充栈追踪。

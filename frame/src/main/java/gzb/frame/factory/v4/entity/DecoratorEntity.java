@@ -23,16 +23,19 @@ import gzb.frame.annotation.DecoratorStart;
 import gzb.frame.factory.GzbOneInterface;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 public class DecoratorEntity {
     public GzbOneInterface call;
     public ClassEntity classEntity;
+    public boolean isOpenTransaction;
     public int id;
-    public String name;
+    public String sign;
     public Field[]fields = null;
     public Class<?>[]fieldTypes = null;
     public String[]fieldNames;
     public DecoratorStart decoratorStart;
     public DecoratorEnd decoratorEnd;
+    public Method method;
 
 }

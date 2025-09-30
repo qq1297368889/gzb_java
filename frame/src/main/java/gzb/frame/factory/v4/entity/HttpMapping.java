@@ -22,8 +22,29 @@ import gzb.frame.factory.GzbOneInterface;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 
 public class HttpMapping {
+    //http端点映射方法
+    public GzbOneInterface httpMappingFun;
+
+    public String sign;
+    public int id;
+    public String path;
+    public int met;
+    //是否开启事务
+    public boolean isOpenTransaction;
+    //是否开启跨域 域名替换
+    public boolean isCrossDomainOrigin;
+    public Semaphore semaphore;
+    public List<DecoratorEntity> start;
+    public List<DecoratorEntity> end;
+    public Map<String,String> header;
+
+
+
+/*
+
     //http端点映射方法
     public GzbOneInterface httpMappingFun;
 
@@ -39,4 +60,7 @@ public class HttpMapping {
     public List<DecoratorEntity> start;
     public List<DecoratorEntity> end;
     public Map<String,String> header;
+
+*/
+
 }

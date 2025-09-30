@@ -22,6 +22,7 @@ import gzb.entity.TableInfo;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 public class EntityCode extends Base {
     public EntityCode(String path, String pkg, String table) {
@@ -269,17 +270,23 @@ public class EntityCode extends Base {
                 }
 
             }
-            code += "    public List<?> getList() {\n" +
-                    "        return (List<?>) data;\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    public "+ tableInfo.getNameHumpUpperCase() +" setList(List<?> data) {\n" +
+
+            code += "    public "+ tableInfo.getNameHumpUpperCase() +" setList(List<?> data) {\n" +
                     "        this.data = data;\n" +
                     "        return this;\n" +
                     "    }\n" +
                     "\n" +
+                    "    public List<?> getList() {\n" +
+                    "          if (data instanceof List) {\n" +
+                    "                return (List<?>) data;\n" +
+                    "          }\n" +
+                    "        return null;\n" +
+                    "    }\n" +
                     "    public Map<String, Object> getMap() {\n" +
-                    "        return (Map<String, Object>) data;\n" +
+                    "          if (data instanceof Map) {\n" +
+                    "                return (Map<String, Object>) data;\n" +
+                    "          }\n" +
+                    "        return null;\n" +
                     "    }\n" +
                     "\n" +
                     "    public "+ tableInfo.getNameHumpUpperCase() +" setMap(Map<String, Object> data) {\n" +

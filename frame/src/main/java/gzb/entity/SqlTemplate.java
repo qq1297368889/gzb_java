@@ -18,11 +18,14 @@
 
 package gzb.entity;
 
-import java.util.Arrays;
+import gzb.tools.Tools;
+
 
 public class SqlTemplate {
-    String sql;
-    Object[] objects;
+    public String sql;
+    public int type = 0;
+    public boolean before = false;
+    public Object[] objects;
 
     public SqlTemplate(String sql, Object[] objects) {
         this.sql = sql;
@@ -48,9 +51,6 @@ public class SqlTemplate {
     @Override
     public String toString() {
 
-        return "SqlTemplate{" +
-                "sql='" + sql + '\'' +
-                ", objects=" + Arrays.toString(objects) +
-                '}';
+        return Tools.toJson(this);
     }
 }

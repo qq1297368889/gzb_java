@@ -19,6 +19,7 @@
 package gzb.tools;
 
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONWriter;
 import com.alibaba.fastjson2.TypeReference;
 import gzb.entity.PagingEntity;
 import gzb.entity.TableInfo;
@@ -110,7 +111,8 @@ public class Tools {
         try {
             return JSON.parseObject(
                     json,
-                    new TypeReference<Map<String, Object>>() {});
+                    new TypeReference<Map<String, Object>>() {
+                    });
         } catch (Exception e) {
             System.err.println("Fastjson2 解析失败: " + e.getMessage());
             return null;
@@ -129,16 +131,21 @@ public class Tools {
     public static Map<Object, Object> createHashMap() {
         return createHashMap(null, null);
     }
-    public static List<Object> createArrayList(Object...objects) {
-        if (objects!=null&&objects.length>0) {
-            List<Object>list = new ArrayList<>(objects.length);
+
+    public static List<Object> createArrayList(Object... objects) {
+        if (objects != null && objects.length > 0) {
+            List<Object> list = new ArrayList<>(objects.length);
             for (Object object : objects) {
                 list.add(object);
             }
             return list;
-        }else{
+        } else {
             return new ArrayList<>();
         }
+    }
+
+    public static String toJson0(Object obj) {
+        return JSON.toJSONString(obj, JSONWriter.Feature.WriteNonStringValueAsString);
     }
 
     public static String toJson(Object obj) {
@@ -158,10 +165,10 @@ public class Tools {
             return obj.toString();
         }
         if (obj instanceof Class<?>) {
-            return "\"" + obj.toString()+ "\"";
+            return "\"" + obj.toString() + "\"";
         }
         if (obj instanceof File) {
-            return "\"" + obj.toString()+ "\"";
+            return "\"" + obj.toString() + "\"";
         }
         if (obj instanceof JsonSerializable) {
             return obj.toString();
@@ -717,6 +724,9 @@ public class Tools {
 
     public static String lowStr_hump(String str) {
         String[] ss1 = str.split("_");
+        if (ss1.length == 1) {
+            return str;
+        }
         String newString = "";
         for (int i = 0; i < ss1.length; i++) {
             if (i == 0) {
@@ -1696,6 +1706,7 @@ public class Tools {
         response.flush();
         return verCode;
     }
+
     //验证码 gif 那种
     public static byte[] getPictureCode2() {
         GifCaptcha gifCaptcha = new GifCaptcha(140, 45, 5);
@@ -1736,8 +1747,8 @@ public class Tools {
     }
 
     public static <T> T[] appendArray(T[] ts, T[] def, T... tArray) {
-        List<T>list=new ArrayList<>();
-        if (ts!=null) {
+        List<T> list = new ArrayList<>();
+        if (ts != null) {
             Collections.addAll(list, ts);
         }
         Collections.addAll(list, tArray);
@@ -2069,7 +2080,7 @@ public class Tools {
      * 参数1:文本
      * 默认为 UTF-8
      */
-    public static String textToMd5(String str){
+    public static String textToMd5(String str) {
         return toMd5(str.getBytes(Config.encoding));
     }
 
@@ -2077,7 +2088,7 @@ public class Tools {
      * 获取文本MD5
      * 参数1:byte[]
      */
-    public static String toMd5(byte[] bytes){
+    public static String toMd5(byte[] bytes) {
         MessageDigest m = null;
         try {
             m = MessageDigest.getInstance("MD5");

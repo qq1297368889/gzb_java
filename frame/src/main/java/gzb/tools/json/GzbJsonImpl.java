@@ -18,6 +18,7 @@
 
 package gzb.tools.json;
 
+import com.alibaba.fastjson2.JSON;
 import gzb.tools.Config;
 import gzb.tools.Tools;
 
@@ -53,9 +54,6 @@ public class GzbJsonImpl implements GzbJson {
         if (total != null) {
             sb.append(",\"").append(Config.totalName).append("\":\"").append(total).append("\"");
         }
-
-        // 注意：你原始代码中重复添加了time字段，我在此处修正了，只保留一次
-        // 如果你有特殊需求，确实需要两次，请告知。
 
         if (data != null) {
             try {
@@ -130,6 +128,7 @@ public class GzbJsonImpl implements GzbJson {
                 throw new RuntimeException(e);
             }
         }
+
         sb.append("}");
         return sb.toString();
     }

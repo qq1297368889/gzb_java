@@ -231,7 +231,7 @@ public class Config {
         }
     }
 
-    public static void save() throws IOException {
+    public static void save(){
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, String> en : config.entrySet()) {
             sb.append(en.getKey()).append("=").append(en.getValue()).append("\n");

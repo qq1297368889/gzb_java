@@ -47,7 +47,9 @@ public class HTTPRequestHandlerV4 extends SimpleChannelInboundHandler<FullHttpRe
         Response response = request.getResponse();
         //long endTime2 = System.nanoTime();
         response.setStatus(200);
+        //这个方法不会出错 有try包裹
         RunRes runRes = NettyServer.factory.request(request, response);
+        //你说的意思必须在这里释放  而我放在了后边 这没区别啊
         //long endTime3 = System.nanoTime();
         if (runRes.getState() == 200) {
             response.sendAndFlush(runRes.getData());
@@ -59,6 +61,7 @@ public class HTTPRequestHandlerV4 extends SimpleChannelInboundHandler<FullHttpRe
                 response.setStatus(runRes.getState()).sendAndFlush(runRes.getData());
             }
         }
+        //System.out.println("req.content().refCnt()  "+req.content().refCnt());
         //log.d("耗时",endTime3-endTime2,endTime2-endTime1,endTime1-startTime,endTime3-startTime,runRes);
     }
 

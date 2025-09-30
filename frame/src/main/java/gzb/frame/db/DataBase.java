@@ -26,12 +26,14 @@ import gzb.tools.GzbMap;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 
 public interface DataBase {
 
     AsyncFactory getAsyncFactory();
 
+    int count(String sql, Object[] params) throws Exception;
 
     public String getSign();
 
@@ -69,10 +71,10 @@ public interface DataBase {
     int getOnlyIdNumber(String mapName, String idName);
 
     //获取一个数据库连接
-    Connection getConnection();
+    Connection getConnection() throws SQLException;
 
     //获取一个数据库连接
-    void close(Connection connection, ResultSet resultSet, PreparedStatement preparedStatement);
+    void close(ResultSet resultSet, PreparedStatement preparedStatement);
 
     //执行sql查询
     List<GzbMap> selectGzbMap(String sql) throws Exception;
@@ -92,17 +94,11 @@ public interface DataBase {
     //执行sql 修改删除新增
     int runSql(String sql) throws Exception;
 
-    int runSql(String sql, Connection connection) throws Exception;
-
     //执行sql 修改删除新增
     int runSql(String sql, Object[] para) throws Exception;
 
-    int runSql(String sql, Object[] para, Connection connection) throws Exception;
-
     //执行sql 修改删除新增 批量
     int runSqlBatch(String sql, List<Object[]> list_parameter) throws Exception;
-
-    int runSqlBatch(String sql, List<Object[]> list_parameter, Connection connection) throws Exception;
 
     //执行sql 修改删除新增 异步
     int runSqlAsync(String sql, Object[] para);
@@ -110,4 +106,17 @@ public interface DataBase {
     //执行sql 修改删除新增 异步 批量
     int runSqlAsyncBatch(String sql, List<Object[]> list_parameter);
 
+    boolean isOpenTransaction();
+
+    void setConnection(Connection connection);
+
+    void setConnection(Connection connection0, boolean openTransaction0);
+
+    void openTransaction();
+
+    void endTransaction();
+
+    void commit() throws SQLException;
+
+    void rollback() throws SQLException;
 }

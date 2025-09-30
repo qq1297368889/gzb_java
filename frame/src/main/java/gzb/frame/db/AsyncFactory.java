@@ -37,38 +37,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class AsyncFactory {
 
-    public static void main(String[] args) throws Exception {
-        System.setProperty("file.encoding", "UTF-8");
-        System.setProperty("this.dir", Tools.getProjectRoot(AsyncFactory.class));
-
-        DataBase db = DataBaseFactory.getDataBase(
-                "frame", "127.0.0.1", "3306", "root", "root",
-                "com.mysql.cj.jdbc.Driver", true,
-                12, 3000, 200, 5000, 6
-        );
-        String sql = "INSERT INTO frame.sys_users_login_log" +
-                "(sys_users_login_log_id, sys_users_login_log_ip, sys_users_login_log_desc, sys_users_login_log_time, " +
-                "sys_users_login_log_uid, sys_users_login_log_token, sys_users_login_log_mac) VALUES " +
-                "(?,?,?,?,?,?,?);";
-        String sql2 = "INSERT INTO frame.sys_users_login_log" +
-                "(sys_users_login_log_id, sys_users_login_log_ip, sys_users_login_log_desc, sys_users_login_log_time, " +
-                "sys_users_login_log_2uid, sys_users_login_log_token, sys_users_login_log_mac) VALUES " +
-                "(?,?,?,?,?,?);";
-
-        AsyncFactory asyncFactory = db.getAsyncFactory();
-
-        long start = System.currentTimeMillis();
-        for (int i = 0; i < 500000; i++) {
-            asyncFactory.add(sql, new Object[]{OnlyId.getDistributed(), null, i + "-desc", null, null, null, null});
-        }
-        long end = System.currentTimeMillis();
-        asyncFactory.log.d("异步插入数据库10000条 耗时", end - start, "总耗时", System.currentTimeMillis() - start);
-        while (true) {
-            Tools.sleep(1000);
-            asyncFactory.log.d("异步插入数据库10000条 耗时", end - start, "总耗时", System.currentTimeMillis() - start);
-        }
-    }
-
     public Log log = Config.log;
     public int debugNum = 0;
     public int batchSize = 1000;

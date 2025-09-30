@@ -24,6 +24,7 @@ import gzb.frame.annotation.*;
 import gzb.frame.db.BaseDao;
 import gzb.frame.netty.entity.FileUploadEntity;
 import gzb.tools.Config;
+import gzb.tools.FileTools;
 import gzb.tools.Tools;
 import gzb.tools.log.Log;
 import org.objectweb.asm.ClassReader;
@@ -32,6 +33,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.LocalVariableNode;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.*;
@@ -62,7 +64,7 @@ public class ClassTools {
     static Lock lock = new ReentrantLock();
 
 
-    public static String toName(Class<?> type) {
+    public static String toName(Class<?> type, boolean noArray) {
         if (type == null) {
             return null;
         }
@@ -90,8 +92,18 @@ public class ClassTools {
         if (type == char.class) {
             return "java.lang.Character";
         }
+        if (noArray) {
+            Class<?> c01 = type.getComponentType();
+            if (c01 != null) {
+                return toName(type.getComponentType(), true);
+            }
+        }
+        return type.getCanonicalName();
+    }
 
-        return type.getName();
+    public static String toName(Class<?> type) {
+
+        return toName(type, false);
     }
 
 
@@ -169,95 +181,99 @@ public class ClassTools {
      * @return 参数名列表，如果无法获取则返回空列表
      */
     public static List<String> getParameterNamesByAsm(final Method method, final Class<?>[] parameterTypes) {
-        Class<?> declaringClass = method.getDeclaringClass();
         List<String> parameterNames = new ArrayList<>();
-
-        // 如果方法没有参数，直接返回空列表
-        if (parameterTypes.length == 0) {
-            return parameterNames;
-        }
-
-        // 1. 获取类文件的输入流
-        String className = declaringClass.getName().replace('.', '/') + ".class";
-        InputStream is = declaringClass.getClassLoader().getResourceAsStream(className);
-
-        if (is == null) {
-            // 无法找到 .class 文件，通常发生在动态代理或特殊的类加载器中
-            return parameterNames;
-        }
-
         try {
-            // 2. 创建 ClassReader 来读取字节码
-            ClassReader classReader = new ClassReader(is);
+            Class<?> declaringClass = method.getDeclaringClass();
 
-            // 3. 定义 ClassVisitor
-            classReader.accept(new ClassVisitor(Opcodes.ASM9) {
-
-                @Override
-                public MethodVisitor visitMethod(int access, String name, String descriptor,
-                                                 String signature, String[] exceptions) {
-
-                    if (name.equals(method.getName()) && descriptor.equals(org.objectweb.asm.Type.getMethodDescriptor(method))) {
-
-                        return new MethodVisitor(Opcodes.ASM9) {
-
-                            // 非静态方法从索引 1 开始（索引 0 是 'this'），静态方法从 0 开始
-                            private int nextExpectedIndex = Modifier.isStatic(method.getModifiers()) ? 0 : 1;
-                            private int paramIndex = 0; // 跟踪当前已获取的参数数量
-
-                            @Override
-                            public void visitLocalVariable(String name, String descriptor, String signature,
-                                                           org.objectweb.asm.Label start, org.objectweb.asm.Label end, int index) {
-
-                                // 1. 只处理方法参数 (即 index 必须是预期参数的索引)
-                                if (index == nextExpectedIndex && paramIndex < parameterTypes.length) {
-
-                                    // 排除 Java 编译器默认生成的参数名 (arg0, arg1...)
-                                    if (!name.matches("arg\\d+")) {
-                                        parameterNames.add(name);
-                                    } else {
-                                        // 如果是默认名，我们仍然占位，防止影响后续参数的索引计算
-                                        parameterNames.add(null);
-                                    }
-
-                                    // 2. 处理 long/double 类型的索引槽位跳跃
-                                    Class<?> currentParamType = parameterTypes[paramIndex];
-                                    if (currentParamType == long.class || currentParamType == double.class) {
-                                        // long/double 占用两个槽位
-                                        nextExpectedIndex += 2;
-                                    } else {
-                                        // 其他类型占用一个槽位
-                                        nextExpectedIndex += 1;
-                                    }
-
-                                    paramIndex++; // 实际参数计数器前进
-                                }
-                            }
-                        };
-                    }
-                    return super.visitMethod(access, name, descriptor, signature, exceptions);
-                }
-            }, 0);
-
-        } catch (IOException e) {
-            // 实际应用中应该记录错误日志
-            log.e("getParameterNamesByAsm", e);
-        } finally {
-            try {
-                is.close();
-            } catch (IOException ignored) {
-
-                log.e("getParameterNamesByAsm", ignored);
+            // 如果方法没有参数，直接返回空列表
+            if (parameterTypes.length == 0) {
+                return parameterNames;
             }
-        }
-        // 清理：如果中间有 null 占位，且最终参数名数量与期望不符，说明编译时没有保留参数名，需要根据 parameterTypes 数量截断或填充
-        if (parameterNames.size() != parameterTypes.length) {
-            // 通常情况下，如果正确编译，这里不应该发生数量不匹配
-            // 容错处理：清除所有不完整的或不规范的结果
-            parameterNames.clear();
-        }
 
+            // 1. 获取类文件的输入流
+            String className = declaringClass.getName().replace('.', '/') + ".class";
+            InputStream is = declaringClass.getClassLoader().getResourceAsStream(className);
+
+            if (is == null) {
+                // 无法找到 .class 文件，通常发生在动态代理或特殊的类加载器中
+                return parameterNames;
+            }
+
+            try {
+                // 2. 创建 ClassReader 来读取字节码
+                ClassReader classReader = new ClassReader(is);
+
+                // 3. 定义 ClassVisitor
+                classReader.accept(new ClassVisitor(Opcodes.ASM9) {
+
+                    @Override
+                    public MethodVisitor visitMethod(int access, String name, String descriptor,
+                                                     String signature, String[] exceptions) {
+
+                        if (name.equals(method.getName()) && descriptor.equals(org.objectweb.asm.Type.getMethodDescriptor(method))) {
+
+                            return new MethodVisitor(Opcodes.ASM9) {
+
+                                // 非静态方法从索引 1 开始（索引 0 是 'this'），静态方法从 0 开始
+                                private int nextExpectedIndex = Modifier.isStatic(method.getModifiers()) ? 0 : 1;
+                                private int paramIndex = 0; // 跟踪当前已获取的参数数量
+
+                                @Override
+                                public void visitLocalVariable(String name, String descriptor, String signature,
+                                                               org.objectweb.asm.Label start, org.objectweb.asm.Label end, int index) {
+
+                                    // 1. 只处理方法参数 (即 index 必须是预期参数的索引)
+                                    if (index == nextExpectedIndex && paramIndex < parameterTypes.length) {
+
+                                        // 排除 Java 编译器默认生成的参数名 (arg0, arg1...)
+                                        if (!name.matches("arg\\d+")) {
+                                            parameterNames.add(name);
+                                        } else {
+                                            // 如果是默认名，我们仍然占位，防止影响后续参数的索引计算
+                                            parameterNames.add(null);
+                                        }
+
+                                        // 2. 处理 long/double 类型的索引槽位跳跃
+                                        Class<?> currentParamType = parameterTypes[paramIndex];
+                                        if (currentParamType == long.class || currentParamType == double.class) {
+                                            // long/double 占用两个槽位
+                                            nextExpectedIndex += 2;
+                                        } else {
+                                            // 其他类型占用一个槽位
+                                            nextExpectedIndex += 1;
+                                        }
+
+                                        paramIndex++; // 实际参数计数器前进
+                                    }
+                                }
+                            };
+                        }
+                        return super.visitMethod(access, name, descriptor, signature, exceptions);
+                    }
+                }, 0);
+
+            } catch (IOException e) {
+                // 实际应用中应该记录错误日志
+                log.e("getParameterNamesByAsm", e);
+            } finally {
+                try {
+                    is.close();
+                } catch (IOException ignored) {
+
+                    log.e("getParameterNamesByAsm", ignored);
+                }
+            }
+            // 清理：如果中间有 null 占位，且最终参数名数量与期望不符，说明编译时没有保留参数名，需要根据 parameterTypes 数量截断或填充
+            if (parameterNames.size() != parameterTypes.length) {
+                // 通常情况下，如果正确编译，这里不应该发生数量不匹配
+                // 容错处理：清除所有不完整的或不规范的结果
+                parameterNames.clear();
+            }
+        }catch (Exception e){
+            log.e("getParameterNamesByAsm",e);
+        }
         return parameterNames;
+
     }
 
     /**
@@ -422,10 +438,12 @@ public class ClassTools {
         } else {
             tmp += " implements " + interfaceName;
         }
-        code = code.replace(name + tmp0 + "{", name + tmp + "{");
+        if (!code.contains("public Object _gzb_call_x01")) {
+            code = code.replace(name + tmp0 + "{", name + tmp + "{");
+            code = code.substring(0, code.lastIndexOf("}"));
+            code += appendCode + "\r\n}";
+        }
 
-        code = code.substring(0, code.lastIndexOf("}"));
-        code += appendCode + "\r\n}";
         return code;
     }
 
@@ -545,7 +563,7 @@ public class ClassTools {
                     }
                     listObject.add(paramValue);
                 } catch (NumberFormatException e) {
-                    throw new GzbException0( "请求参数 数字类型 转换错误 -> 名称:" + paramName + ",类型:" + paramType + ",参数:" + requestDataMap);
+                    throw new GzbException0("请求参数 数字类型 转换错误 -> 名称:" + paramName + ",类型:" + paramType + ",参数:" + requestDataMap);
                 }
             }
         }
@@ -560,9 +578,9 @@ public class ClassTools {
                 if (obj == null) {
                     String code;
                     if (aClass.isArray()) {
-                        code = ClassTools.gen_code_entity_load_map(aClass.getComponentType());
+                        code = ClassTools.gen_entity_load_code_v1(aClass.getComponentType());
                     } else {
-                        code = ClassTools.gen_code_entity_load_map(aClass);
+                        code = ClassTools.gen_entity_load_code_v1(aClass);
                     }
                     //System.out.println(code);
                     if (code != null) {
@@ -688,7 +706,26 @@ public class ClassTools {
         return n;
     }
 
-    public static String gen_code_entity_load_map(Class<?> aClass) throws NoSuchMethodException {
+    public static Object gen_call_code_v4_object(Class<?> aClass, String javaCode) throws Exception {
+        Class<?> a01 = gen_call_code_v4_class(aClass, javaCode);
+        return a01.getDeclaredConstructor().newInstance();
+    }
+
+    public static Class<?> gen_call_code_v4_class(Class<?> aClass, String javaCode) throws Exception {
+        String t_code = ClassTools.gen_call_code_v4(aClass, javaCode);
+        String new_code = ClassTools.updateCode(javaCode, aClass.getSimpleName(), "gzb.frame.factory.GzbOneInterface", t_code);
+       //System.out.println(new_code);
+        Class a01 = null;
+        try {
+            a01 = ClassLoad.compileJavaCode(new_code);
+        } catch (Exception e) {
+            FileTools.save(new File(Config.configFile.getParentFile().getPath() + "/" + System.currentTimeMillis() + ".java.txt"), new_code);
+            throw new RuntimeException(e);
+        }
+        return a01;
+    }
+
+    public static String gen_entity_load_code_v1(Class<?> aClass) throws NoSuchMethodException {
         if (!Modifier.isPublic(aClass.getModifiers())) {
             return null;
         }
@@ -1119,6 +1156,766 @@ public class ClassTools {
         return code;
     }
 
+    //可维护性堪忧 不过应该不需要维护其实
+    public static String gen_call_code_v4(Class<?> aClass, String javaCode) throws Exception {
+        Method[] methods = ClassTools.getCombinedMethods(aClass);
+        Field[] fields = ClassTools.getCombinedFields(aClass, false);
+
+        String code = "";
+
+        code += "    public Object _gzb_call_x01(" +
+                "int _gzb_one_c_id," +
+                "java.util.Map<String, Object> _gzb_one_c_mapObject," +
+                "gzb.frame.netty.entity.Request _g_p_req," +
+                "gzb.frame.netty.entity.Response _g_p_resp," +
+                "java.util.Map<String, " +
+                "java.util.List<Object>> _gzb_one_c_requestMap, " +
+                "Object[] arrayObject," +
+                "boolean _gzb_x001_openTransaction" +
+                ") throws Exception {\n" +
+                "        Object object_return = null;\n";
+
+        for (int i = 0; i < fields.length; i++) {
+            Resource resource = fields[i].getAnnotation(Resource.class);
+            String impl = "";
+            if (resource == null) {
+                continue;
+            }
+            impl = resource.value();
+            if (impl.length() == 0) {
+                impl = fields[i].getType().getName();
+            }
+            code += "        //如果有类变量 且 类型正确 就加入\n" +
+                    "        this." + fields[i].getName() + " = (" + fields[i].getType().getName() + ") _gzb_one_c_mapObject.get(\"" + impl + "\");\n";
+
+        }
+        code += "        java.util.List<Object>t_map_list=null;\n";
+
+        for (int i = 0; i < methods.length; i++) {
+            Method method = methods[i];
+            int met_id = ClassTools.getSingInt(method, aClass);
+            String met_Sign = ClassTools.getSing(method, aClass);
+            GetMapping getMapping = method.getAnnotation(GetMapping.class);
+            PostMapping postMapping = method.getAnnotation(PostMapping.class);
+            PutMapping putMapping = method.getAnnotation(PutMapping.class);
+            DeleteMapping deleteMapping = method.getAnnotation(DeleteMapping.class);
+            RequestMapping requestMappingMethod = method.getAnnotation(RequestMapping.class);
+            Transaction transaction = method.getAnnotation(Transaction.class);
+            ThreadInterval threadInterval = method.getAnnotation(ThreadInterval.class);
+            DecoratorStart decoratorStart = method.getAnnotation(DecoratorStart.class);
+            DecoratorEnd decoratorEnd = method.getAnnotation(DecoratorEnd.class);
+            Decorator decorator = method.getAnnotation(Decorator.class);
+
+            DataBaseEventSelect dataBaseEventSelect = method.getAnnotation(DataBaseEventSelect.class);
+            DataBaseEventSave dataBaseEventSave = method.getAnnotation(DataBaseEventSave.class);
+            DataBaseEventDelete dataBaseEventDelete = method.getAnnotation(DataBaseEventDelete.class);
+            DataBaseEventUpdate dataBaseEventUpdate = method.getAnnotation(DataBaseEventUpdate.class);
+
+
+
+            if (getMapping == null
+                    && postMapping == null
+                    && putMapping == null
+                    && deleteMapping == null
+                    && requestMappingMethod == null
+                    && transaction == null
+                    && threadInterval == null
+                    && decoratorStart == null
+                    && decoratorEnd == null
+                    && decorator == null
+                    && dataBaseEventSelect == null
+                    && dataBaseEventSave == null
+                    && dataBaseEventDelete == null
+                    && dataBaseEventUpdate == null
+            ) {
+                continue;
+            }
+            Class<?>[] types = method.getParameterTypes();
+            String[] names = ClassTools.getParameterNamesByAsm(method, types).toArray(new String[0]);
+            if (names.length != types.length) {
+                names = ClassTools.getParameterNames(javaCode, method.getName(), types).toArray(new String[0]);
+            }
+            if (names.length != types.length) {
+                Config.log.w("获取参数失败", method);
+                continue;
+            }
+            code += "        //方法ID匹配\n" +
+                    "        if (_gzb_one_c_id == " + met_id + ") {\n";
+            for (int i1 = 0; i1 < names.length; i1++) {
+                String typeName = ClassTools.toName(types[i1]);
+                if (typeName.startsWith("gzb.frame.netty.entity.Request")) {
+                    code += "        " + typeName + " _c_u_" + names[i1] + " = _g_p_req;\n";
+                } else if (typeName.startsWith("gzb.frame.netty.entity.Response")) {
+                    code += "        " + typeName + " _c_u_" + names[i1] + " = _g_p_resp;\n";
+                } else if (typeName.startsWith("java.util.Map")) {
+                    code += "        " + typeName + " _c_u_" + names[i1] + " = _gzb_one_c_requestMap;\n";
+                } else {
+                    code += "        " + typeName + " _c_u_" + names[i1] + " = null;\n";
+                }
+            }
+            code += "            for (Object object : arrayObject) {\n" +
+                    "                if (object == null) {\n" +
+                    "                    continue;\n" +
+                    "                }\n";
+
+            for (int i1 = 0; i1 < names.length; i1++) {
+                String typeName = ClassTools.toName(types[i1]);
+                if (typeName.startsWith("gzb.frame.netty.entity.Request")) {
+
+                } else if (typeName.startsWith("gzb.frame.netty.entity.Response")) {
+
+                } else if (typeName.startsWith("java.util.Map")) {
+
+                } else {
+                    boolean res01 = types[i1] != Boolean.class &&
+                            types[i1] != Byte.class &&
+                            types[i1] != Short.class &&
+                            types[i1] != Integer.class &&
+                            types[i1] != Long.class &&
+                            types[i1] != Float.class &&
+                            types[i1] != Double.class &&
+                            types[i1] != Character.class &&
+                            types[i1] != String.class
+                            && !types[i1].isPrimitive();
+                    if (types[i1].getComponentType() != null) {
+                        res01 = types[i1].getComponentType() != Boolean.class
+                                && types[i1].getComponentType() != Byte.class
+                                && types[i1].getComponentType() != Short.class
+                                && types[i1].getComponentType() != Integer.class
+                                && types[i1].getComponentType() != Long.class
+                                && types[i1].getComponentType() != Float.class
+                                && types[i1].getComponentType() != Double.class
+                                && types[i1].getComponentType() != Character.class
+                                && types[i1].getComponentType() != String.class
+                                && !types[i1].getComponentType().isPrimitive();
+                    }
+                    if (res01) {
+                        code += "                if (_c_u_" + names[i1] + "==null && " + types[i1].getCanonicalName() + ".class.isAssignableFrom(object.getClass())) {\n" +
+                                "                    _c_u_" + names[i1] + "=(" + types[i1].getCanonicalName() + ") object;\n" +
+                                "                } \n";
+                    }
+
+                }
+
+            }
+            code += "            }\n";
+            for (int i1 = 0; i1 < types.length; i1++) {
+                String typeName = ClassTools.toName(types[i1]);
+                if (typeName.startsWith("gzb.frame.netty.entity.Request")) {
+                } else if (typeName.startsWith("gzb.frame.netty.entity.Response")) {
+                } else if (typeName.startsWith("java.util.Map")) {
+                } else {
+                    boolean res01 = types[i1] != Boolean.class &&
+                            types[i1] != Byte.class &&
+                            types[i1] != Short.class &&
+                            types[i1] != Integer.class &&
+                            types[i1] != Long.class &&
+                            types[i1] != Float.class &&
+                            types[i1] != Double.class &&
+                            types[i1] != Character.class &&
+                            types[i1] != String.class
+                            && !types[i1].isPrimitive();
+                    if (types[i1].getComponentType() != null) {
+                        res01 = types[i1].getComponentType() != Boolean.class
+                                && types[i1].getComponentType() != Byte.class
+                                && types[i1].getComponentType() != Short.class
+                                && types[i1].getComponentType() != Integer.class
+                                && types[i1].getComponentType() != Long.class
+                                && types[i1].getComponentType() != Float.class
+                                && types[i1].getComponentType() != Double.class
+                                && types[i1].getComponentType() != Character.class
+                                && types[i1].getComponentType() != String.class
+                                && !types[i1].getComponentType().isPrimitive();
+                    }
+
+                    code += "                if (_c_u_" + names[i1] + "==null) {\n";
+
+
+                    if (res01) {
+                        code += "                //复杂对象\n" +
+                                "                t_map_list = _gzb_one_c_requestMap.get(\"" + names[i1] + "\");";
+                        if (types[i1].isArray()) {
+                            code += "                //如果是数组 则这样输出\n" +
+                                    "                if (t_map_list != null && t_map_list.size() > 0) {\n" +
+                                    "                    _c_u_" + names[i1] + "=new " + types[i1].getComponentType().getName() + "[t_map_list.size()];\n" +
+                                    "                    for (int i = 0; i < t_map_list.size(); i++) {\n" +
+                                    "                        _c_u_" + names[i1] + "[i]=(" + types[i1].getComponentType().getName() + ")t_map_list.get(i);\n" +
+                                    "                    }\n" +
+                                    "                }\n";
+                        } else {
+                            code += "                //如果不是数组 则这样输出\n" +
+                                    "                if (t_map_list != null && t_map_list.size() > 0 && t_map_list.get(0)!=null){\n" +
+                                    "                        _c_u_" + names[i1] + " = (" + types[i1].getName() + ")t_map_list.get(0);\n" +
+                                    "                }\n";
+                        }
+                        code += "\n" +
+                                "                if (_c_u_" + names[i1] + "==null) {\n" +
+                                "                   _c_u_" + names[i1] + " = (" + types[i1].getCanonicalName() + ")_gzb_one_c_mapObject.get(\"" + types[i1].getName() + "\");\n" +
+                                "                }\n";
+                        code += "                       if (_c_u_" + names[i1] + "==null) {\n";
+                        if (types[i1].isArray()) {
+                            code += "                           Object[] objects = gzb.frame.factory.ClassTools.loadObject(" + (
+                                    types[i1].getComponentType() == null ? types[i1].getName() : types[i1].getComponentType().getName()
+                            ) + ".class, _gzb_one_c_requestMap, gzb.tools.Config.log);\n" +
+                                    "                               if(objects!=null && objects.length>0){\n" +
+                                    "                                   //如果是数组 则这样输出\n" +
+                                    "                                   _c_u_" + names[i1] + " =(" + typeName + ") objects;\n" +
+                                    "                               }\n";
+                        } else {
+                            code += "                           Object[] objects = gzb.frame.factory.ClassTools.loadObject(" + (
+                                    types[i1].getComponentType() == null ? types[i1].getName() : types[i1].getComponentType().getName()
+                            ) + ".class, _gzb_one_c_requestMap, gzb.tools.Config.log);\n" +
+                                    "                               if(objects!=null && objects.length>0){\n" +
+                                    "                                   //如果不是数组 则这样输出\n" +
+                                    "                                   _c_u_" + names[i1] + " =(" + typeName + ") objects[0];\n" +
+                                    "                               }\n";
+                        }
+
+                        code += "                       }\n";
+                    } else {
+                        code += "                //简单对象\n" +
+                                "                t_map_list = _gzb_one_c_requestMap.get(\"" + names[i1] + "\");";
+                        if (types[i1].isArray()) {
+                            String funName = "parse";
+                            if (types[i1].getComponentType().getSimpleName().contains("String")) {
+                                funName = "valueOf";
+                            } else {
+                                funName += ClassTools.toName(types[i1], true);
+                                funName = funName.replaceAll("java.lang.", "");
+                                funName = funName.replaceAll("Integer", "Int");
+                            }
+
+                            code += "            //如果是数组 则这样输出\n" +
+                                    "            if (t_map_list != null && t_map_list.size() > 0) {\n" +
+                                    "                _c_u_" + names[i1] + " = new " + types[i1].getComponentType().getSimpleName() + "[t_map_list.size()];\n" +
+                                    "                for (int i = 0; i < t_map_list.size(); i++) {\n" +
+                                    "                    if(t_map_list.get(i)==null){\n" +
+                                    "                       continue;\n" +
+                                    "                    }\n" +
+                                    "                    _c_u_" + names[i1] + "[i] = " +
+                                    ClassTools.toName(types[i1].getComponentType()) + "." + funName +
+                                    "(" + ("t_map_list.get(i) instanceof String ? (String) t_map_list.get(i) : t_map_list.get(i).toString()") + ");\n" +
+                                    "                }\n" +
+                                    "            }\n";
+                        } else {
+                            String funName = "parse";
+                            if (types[i1].getSimpleName().contains("String")) {
+                                funName = "valueOf";
+                            } else {
+                                funName += ClassTools.toName(types[i1], true);
+                                funName = funName.replaceAll("java.lang.", "");
+                                funName = funName.replaceAll("Integer", "Int");
+                            }
+                            code += "            //如果不是数组 则这样输出\n" +
+                                    "            if (t_map_list != null && t_map_list.size() > 0 && t_map_list.get(0)!=null){\n" +
+                                    "                _c_u_" + names[i1] + " = " +
+                                    ClassTools.toName(types[i1]) + "." + funName +
+                                    "(" + ("t_map_list.get(0) instanceof String ? (String) t_map_list.get(0) : t_map_list.get(0).toString()") + ");\n" +
+                                    "            }\n";
+                        }
+
+                    }
+                    code += "                }\n";
+                }
+            }
+            if (transaction == null || transaction.value() == false) {
+                code += "            //不开事物直接生成这个\n" +
+                        "            " + (method.getReturnType() == void.class ? "" : "object_return =") + " " + method.getName() + "(";
+                for (int i1 = 0; i1 < names.length; i1++) {
+                    code += "_c_u_" + names[i1];
+                    if (i1 < names.length - 1) {
+                        code += ",";
+                    }
+                }
+                code += ");\n";
+            } else {
+
+                code += "            //如果开启事物 则添加事务处理  不存在不生成\n" +
+                        "            java.util.Map<String, java.sql.Connection> mapConnection = new java.util.HashMap<>();\n" +
+                        "            try {\n" +
+                        "                java.sql.Connection connection = null;\n";
+                for (int i1 = 0; i1 < types.length; i1++) {
+                    String typeName = ClassTools.toName(types[i1]);
+                    if (!types[i1].isArray() && BaseDao.class.isAssignableFrom(types[i1])) {
+                        code += "                //每个dao\n" +
+                                "           if(_c_u_" + names[i1] + "!=null){\n" +
+                                "                connection = mapConnection.get(_c_u_" + names[i1] + ".getDataBase().getSign());\n" +
+                                "                if (connection == null) { \n" +
+                                "                    connection = _c_u_" + names[i1] + ".getDataBase().getConnection();\n" +
+                                "                    _c_u_" + names[i1] + ".getDataBase().setConnection(connection, true);\n" +
+                                "                    mapConnection.put(_c_u_" + names[i1] + ".getDataBase().getSign(), connection);\n" +
+                                "                } else {\n" +
+                                "                    _c_u_" + names[i1] + ".getDataBase().setConnection(connection, true);\n" +
+                                "                }\n" +
+                                "           }\n";
+                    }
+                }
+                for (int i1 = 0; i1 < fields.length; i1++) {
+                    if (!fields[i1].getType().isArray() && BaseDao.class.isAssignableFrom(fields[i1].getType())) {
+                        code += "                //每个dao\n" +
+                                "           if(this." + fields[i1].getName() + "!=null){\n" +
+                                "                connection = mapConnection.get(this." + fields[i1].getName() + ".getDataBase().getSign());\n" +
+                                "                if (connection == null) { \n" +
+                                "                    connection = this." + fields[i1].getName() + ".getDataBase().getConnection();\n" +
+                                "                    this." + fields[i1].getName() + ".getDataBase().setConnection(connection, true);\n" +
+                                "                    mapConnection.put(this." + fields[i1].getName() + ".getDataBase().getSign(), connection);\n" +
+                                "                } else {\n" +
+                                "                    this." + fields[i1].getName() + ".getDataBase().setConnection(connection, true);\n" +
+                                "                }\n" +
+                                "           }\n";
+                    }
+                }
+                code +=
+                        "                " + (method.getReturnType() == void.class ? "" : "object_return =") + " " + method.getName() + "(";
+                for (int i1 = 0; i1 < names.length; i1++) {
+                    code += "_c_u_" + names[i1];
+                    if (i1 < names.length - 1) {
+                        code += ",";
+                    }
+                }
+                code += ");\n";
+
+                for (int i1 = 0; i1 < types.length; i1++) {
+                    if (!types[i1].isArray() && BaseDao.class.isAssignableFrom(types[i1])) {
+                        code += "                //每个dao\n" +
+                                "           if(_c_u_" + names[i1] + "!=null){\n" +
+                                "                _c_u_" + names[i1] + ".getDataBase().commit();\n" +
+                                "           }\n";
+                    }
+                }
+                for (int i1 = 0; i1 < fields.length; i1++) {
+                    if (!fields[i1].getType().isArray() && BaseDao.class.isAssignableFrom(fields[i1].getType())) {
+                        code += "                //每个dao\n" +
+                                "           if(this." + fields[i1].getName() + "!=null){\n" +
+                                "                this." + fields[i1].getName() + ".getDataBase().commit();\n" +
+                                "           }\n";
+                    }
+                }
+                code += "            } catch (Exception e) {\n";
+
+                for (int i1 = 0; i1 < types.length; i1++) {
+                    if (!types[i1].isArray() && BaseDao.class.isAssignableFrom(types[i1])) {
+                        code += "                //每个dao\n" +
+                                "           if(_c_u_" + names[i1] + "!=null){\n" +
+                                "                try {_c_u_" + names[i1] + ".getDataBase().rollback();}catch (Exception e0){gzb.tools.Config.log.e(\"事物出现预料外错误\",e0);}\n" +
+                                "           }\n";
+                    }
+                }
+                for (int i1 = 0; i1 < fields.length; i1++) {
+                    if (!fields[i1].getType().isArray() && BaseDao.class.isAssignableFrom(fields[i1].getType())) {
+                        code += "                //每个dao\n" +
+                                "           if(this." + fields[i1].getName() + "!=null){\n" +
+                                "                try {this." + fields[i1].getName() + ".getDataBase().rollback();}catch (Exception e0){gzb.tools.Config.log.e(\"事物出现预料外错误\",e0);}\n" +
+                                "           }\n";
+                    }
+                }
+
+                code += "                throw e;\n" +
+                        "            } finally {\n";
+                for (int i1 = 0; i1 < types.length; i1++) {
+                    if (!types[i1].isArray() && BaseDao.class.isAssignableFrom(types[i1])) {
+                        code += "                //每个dao\n" +
+                                "           if(_c_u_" + names[i1] + "!=null){\n" +
+                                "                try {_c_u_" + names[i1] + ".getDataBase().endTransaction();}catch (Exception e0){gzb.tools.Config.log.e(\"事物 回滚 出现预料外错误\",e0);}\n" +
+                                "           }\n";
+                    }
+                }
+                for (int i1 = 0; i1 < fields.length; i1++) {
+                    if (!fields[i1].getType().isArray() && BaseDao.class.isAssignableFrom(fields[i1].getType())) {
+                        code += "                //每个dao\n" +
+                                "           if(this." + fields[i1].getName() + "!=null){\n" +
+                                "                try {this." + fields[i1].getName() + ".getDataBase().endTransaction();}catch (Exception e0){gzb.tools.Config.log.e(\"事物 关闭连接 出现预料外错误\",e0);}\n" +
+                                "           }\n";
+                    }
+                }
+                code += "            }\n";
+            }
+            code += "        return object_return;\n" +
+                    "       }\n";
+        }
+
+        code += "        gzb.tools.Config.log.t(\"miss v4\",_gzb_one_c_id,this);\n" +
+                "        return null;\n" +
+                "    }";
+
+        return code;
+    }
+
+
+    public static String gen_call_code_v1(Class clazz, String code) throws Exception {
+        String method_call_code = "";
+        String class_method_type_code = "        java.util.List<Class<?>[]> _g_m_1_t=new java.util.ArrayList<>();\n{\n";
+        String class_method_name_code = "        java.util.List<String[]> _g_m_1_n=new java.util.ArrayList<>();\n{\n";
+        //String class_method_type_code = "";
+        //String class_method_name_code = "";
+
+        String class_field_type_code = "";
+        String class_field_name_code = "";
+        String class_field_impl_code = "";
+        String class_field_put_code = "";
+
+        Method[] methods = ClassTools.getCombinedMethods(clazz);
+        int met_int = 0;
+        for (int j = 0; j < methods.length; j++) {
+            if (!Modifier.isPublic(methods[j].getModifiers())) {
+                continue;
+            }
+            Method method = methods[j];
+
+            String methodName = method.getName();
+            Class[] parameterTypes = method.getParameterTypes();
+            if (method.getAnnotation(GetMapping.class) == null
+                    && method.getAnnotation(PostMapping.class) == null
+                    && method.getAnnotation(PutMapping.class) == null
+                    && method.getAnnotation(DeleteMapping.class) == null
+                    && method.getAnnotation(ThreadInterval.class) == null
+                    && method.getAnnotation(DecoratorStart.class) == null
+                    && method.getAnnotation(DecoratorEnd.class) == null
+                    && method.getAnnotation(RequestMapping.class) == null
+            ) {
+                continue;
+            }
+            String[] parameterTypeNames = null;
+            parameterTypeNames = ClassTools.getParameterNamesByAsm(method, parameterTypes).toArray(new String[]{});
+            if (parameterTypeNames.length != parameterTypes.length) {
+                parameterTypeNames = ClassTools.getParameterNames(code, methodName, parameterTypes).toArray(new String[]{});
+            }
+            if (parameterTypeNames.length != parameterTypes.length) {
+                log.w(clazz, methodName, "参数名获取失败,请确保源码中存在方法签名");
+                continue;
+            }
+            //log.d("gen_code0",methodName,parameterTypeNames,parameterTypes);
+            method_call_code +=
+                    //"        if ( _gzb_x001_methodName.equals(\"" + methodSign + "\")) {\n" +
+                    "        //" + ClassTools.getSing(method, clazz) + "\n" +
+                            "        if ( _gzb_x001_methodName == " + ClassTools.getSingInt(method, clazz) + ") {\n" +
+                            "            Object object=null;\n" +
+                            "            java.util.List<gzb.frame.db.BaseDao>listBaseDao=null;\n" +
+                            "            try {\n";
+
+            int num = 0;
+
+            class_method_type_code += "_g_m_1_t.add(new Class[]{";
+            class_method_name_code += "_g_m_1_n.add(new String[]{";
+            String met_par = "";
+            for (int i = 0; i < parameterTypes.length; i++) {
+                class_method_type_code += parameterTypes[i].getSimpleName() + ".class";
+                class_method_name_code += "\"" + parameterTypeNames[i] + "\"";
+                met_par += "(" + parameterTypes[i].getTypeName() + ")list.get(" + num + ")";
+                if (num == 0) {
+                    method_call_code += "                java.util.List<Object> list= " +
+                            "gzb.frame.factory.ClassTools.getMethodParameterList(" +
+                            "_gzb_x001_requestMap," +
+                            "_gzb_x001_mapObject,_gzb_x001_arrayObject," +
+                            "_g_m_1_t.get(" + met_int + "),_g_m_1_n.get(" + met_int + "),null);\n" +
+                            "                if(list==null){return gzb.tools.json.GzbJsonImpl.json.fail(\"Incorrect parameters\");}\n";
+                    method_call_code += "                listBaseDao=gzb.frame.factory.ClassTools.transactionOpen(_gzb_x001_openTransaction,list);\n";
+                }
+                //method_call_code += "                " + parameterTypes[i].getTypeName() + " _c_p_" + num + "=(" + parameterTypes[i].getTypeName() + ")list.get(" + num + ");\n";
+                num++;
+                if (i < parameterTypes.length - 1) {
+                    class_method_type_code += ",";
+                    class_method_name_code += ",";
+                    met_par += ",";
+                }
+            }
+            met_int++;
+
+
+            if (method.getReturnType().getName().equals("void")) {
+                method_call_code += "                " + method.getName() + "(";
+            } else {
+                method_call_code += "                object = " + method.getName() + "(";
+            }
+            method_call_code += met_par + ");\n";
+
+
+            method_call_code += "                gzb.frame.factory.ClassTools.transactionCommit(listBaseDao);\n" +
+                    "            }catch (Exception e){\n" +
+                    "                gzb.frame.factory.ClassTools.transactionRollback(listBaseDao);\n" +
+                    "                throw e;\n" +
+                    "            }finally {\n" +
+                    "                gzb.frame.factory.ClassTools.transactionEndTransaction(listBaseDao);\n" +
+                    "            }\n" +
+                    "            return object;\n" +
+                    "        }\n";
+            class_method_type_code += "});\n";
+            class_method_name_code += "});\n";
+        }
+        class_method_type_code += "\n}\n";
+        class_method_name_code += "\n}\n";
+        int num = 0;
+
+        Field[] fields = ClassTools.getCombinedFieldsNotCache(clazz);
+
+        class_field_type_code += "Class<?>[]_gzb_x001_field_types=new Class[]{";
+        class_field_name_code += "String[]_gzb_x001_field_names=new String[]{";
+        class_field_impl_code += "String[]_gzb_x001_field_impl=new String[]{";
+        for (int i = 0; i < fields.length; i++) {
+            Resource resource = fields[i].getAnnotation(Resource.class);
+            if (resource == null) {
+                continue;
+            }
+            class_field_type_code += fields[i].getType().getCanonicalName() + ".class";
+            class_field_name_code += "\"" + fields[i].getName() + "\"";
+
+            class_field_impl_code += "\"" + (resource.value().isEmpty() ? fields[i].getType().getName() : resource.value()) + "\"";
+            class_field_put_code += "        this." + fields[i].getName() + "=(" + fields[i].getType().getCanonicalName() + ")list0.get(" + num + ");\n";
+
+
+            num++;
+            if (i < fields.length - 1) {
+                class_field_type_code += ",";
+                class_field_name_code += ",";
+                class_field_impl_code += ",";
+            }
+        }
+        if (class_field_put_code.length() > 0) {
+            class_field_put_code = "        java.util.List<Object> list0= gzb.frame.factory.ClassTools.getMethodParameterList" +
+                    "(_gzb_x001_requestMap,_gzb_x001_mapObject,_gzb_x001_arrayObject," +
+                    "_gzb_x001_field_types," +
+                    "_gzb_x001_field_names," +
+                    "_gzb_x001_field_impl" +
+                    ");\n" + class_field_put_code;
+        }
+
+        if (class_field_type_code.endsWith(",")) {
+            class_field_type_code = class_field_type_code.substring(0, class_field_type_code.length() - 1);
+        }
+        if (class_field_name_code.endsWith(",")) {
+            class_field_name_code = class_field_name_code.substring(0, class_field_name_code.length() - 1);
+        }
+        if (class_field_impl_code.endsWith(",")) {
+            class_field_impl_code = class_field_impl_code.substring(0, class_field_impl_code.length() - 1);
+        }
+
+        class_field_type_code += "};\n";
+        class_field_name_code += "};\n";
+        class_field_impl_code += "};\n";
+        if (class_field_type_code.contains("{}")) {
+            class_field_type_code = "";
+        }
+        if (class_field_name_code.contains("{}")) {
+            class_field_name_code = "";
+        }
+        if (class_field_impl_code.contains("{}")) {
+            class_field_impl_code = "";
+        }
+
+
+        String method_fun_code = "///  ############## 生成代码开始 ##############\n"
+                + class_method_type_code
+                + class_method_name_code
+                + class_field_type_code
+                + class_field_name_code
+                + class_field_impl_code
+                +
+                "    @Override\n" +
+                //"    public Object call(String _gzb_x001_methodName,\n" +
+                "    public Object _gzb_call_x01(int _gzb_x001_methodName,\n" +
+                "                       java.util.Map<String, Object> _gzb_x001_mapObject,\n" +
+                "                       gzb.frame.netty.entity.Request _g_p_req,\n" +
+                "                       gzb.frame.netty.entity.Response _g_p_resp,\n" +
+                "                       java.util.Map<String, java.util.List<Object>> _gzb_x001_requestMap,\n" +
+                "                       Object[] _gzb_x001_arrayObject," +
+                "                       boolean _gzb_x001_openTransaction" +
+                ") throws Exception {\n" +
+                //"        System.out.println(_gzb_x001_methodName);\n" +
+                class_field_put_code +
+                method_call_code +
+                "        return null;\n" +
+                "    }\n" +
+                "///  ############## 生成代码结束 ##############\n";
+
+
+        return method_fun_code;
+    }
+
+
+    public static String gen_call_code_v0(Class clazz, String code) throws Exception {
+        String method_call_code = "";
+        String class_method_type_code = "        java.util.List<Class<?>[]> _g_m_1_t=new java.util.ArrayList<>();\n{\n";
+        String class_method_name_code = "        java.util.List<String[]> _g_m_1_n=new java.util.ArrayList<>();\n{\n";
+        //String class_method_type_code = "";
+        //String class_method_name_code = "";
+
+        String class_field_type_code = "";
+        String class_field_name_code = "";
+        String class_field_impl_code = "";
+        String class_field_put_code = "";
+
+        Method[] methods = ClassTools.getCombinedMethods(clazz);
+        int met_int = 0;
+        for (int j = 0; j < methods.length; j++) {
+            if (!Modifier.isPublic(methods[j].getModifiers())) {
+                continue;
+            }
+            Method method = methods[j];
+
+            String methodName = method.getName();
+            Class[] parameterTypes = method.getParameterTypes();
+            if (method.getAnnotation(GetMapping.class) == null
+                    && method.getAnnotation(PostMapping.class) == null
+                    && method.getAnnotation(PutMapping.class) == null
+                    && method.getAnnotation(DeleteMapping.class) == null
+                    && method.getAnnotation(ThreadInterval.class) == null
+                    && method.getAnnotation(DecoratorStart.class) == null
+                    && method.getAnnotation(DecoratorEnd.class) == null
+                    && method.getAnnotation(RequestMapping.class) == null
+            ) {
+                continue;
+            }
+            String[] parameterTypeNames = null;
+            parameterTypeNames = ClassTools.getParameterNamesByAsm(method, parameterTypes).toArray(new String[]{});
+            if (parameterTypeNames.length != parameterTypes.length) {
+                parameterTypeNames = ClassTools.getParameterNames(code, methodName, parameterTypes).toArray(new String[]{});
+            }
+            if (parameterTypeNames.length != parameterTypes.length) {
+                log.w(clazz, methodName, "参数名获取失败,请确保源码中存在方法签名");
+                continue;
+            }
+            //log.d("gen_code0",methodName,parameterTypeNames,parameterTypes);
+            method_call_code +=
+                    //"        if ( _gzb_x001_methodName.equals(\"" + methodSign + "\")) {\n" +
+                    "        //" + ClassTools.getSing(method, clazz) + "\n" +
+                            "        if ( _gzb_x001_methodName == " + ClassTools.getSingInt(method, clazz) + ") {\n" +
+                            "            Object object=null;\n" +
+                            "            java.util.List<gzb.frame.db.BaseDao>listBaseDao=null;\n" +
+                            "            try {\n";
+
+            int num = 0;
+
+            class_method_type_code += "_g_m_1_t.add(new Class[]{";
+            class_method_name_code += "_g_m_1_n.add(new String[]{";
+            String met_par = "";
+            for (int i = 0; i < parameterTypes.length; i++) {
+                class_method_type_code += parameterTypes[i].getSimpleName() + ".class";
+                class_method_name_code += "\"" + parameterTypeNames[i] + "\"";
+                met_par += "(" + parameterTypes[i].getTypeName() + ")list.get(" + num + ")";
+                if (num == 0) {
+                    method_call_code += "                java.util.List<Object> list= " +
+                            "gzb.frame.factory.ClassTools.getMethodParameterList(" +
+                            "_gzb_x001_requestMap," +
+                            "_gzb_x001_mapObject,_gzb_x001_arrayObject," +
+                            "_g_m_1_t.get(" + met_int + "),_g_m_1_n.get(" + met_int + "),null);\n" +
+                            "                if(list==null){return gzb.tools.json.GzbJsonImpl.json.fail(\"Incorrect parameters\");}\n";
+                    method_call_code += "                listBaseDao=gzb.frame.factory.ClassTools.transactionOpen(_gzb_x001_openTransaction,list);\n";
+                }
+                //method_call_code += "                " + parameterTypes[i].getTypeName() + " _c_p_" + num + "=(" + parameterTypes[i].getTypeName() + ")list.get(" + num + ");\n";
+                num++;
+                if (i < parameterTypes.length - 1) {
+                    class_method_type_code += ",";
+                    class_method_name_code += ",";
+                    met_par += ",";
+                }
+            }
+            met_int++;
+
+
+            if (method.getReturnType().getName().equals("void")) {
+                method_call_code += "                " + method.getName() + "(";
+            } else {
+                method_call_code += "                object = " + method.getName() + "(";
+            }
+            method_call_code += met_par + ");\n";
+
+
+            method_call_code += "                gzb.frame.factory.ClassTools.transactionCommit(listBaseDao);\n" +
+                    "            }catch (Exception e){\n" +
+                    "                gzb.frame.factory.ClassTools.transactionRollback(listBaseDao);\n" +
+                    "                throw e;\n" +
+                    "            }finally {\n" +
+                    "                gzb.frame.factory.ClassTools.transactionEndTransaction(listBaseDao);\n" +
+                    "            }\n" +
+                    "            return object;\n" +
+                    "        }\n";
+            class_method_type_code += "});\n";
+            class_method_name_code += "});\n";
+        }
+        class_method_type_code += "\n}\n";
+        class_method_name_code += "\n}\n";
+        int num = 0;
+
+        Field[] fields = ClassTools.getCombinedFieldsNotCache(clazz);
+
+        class_field_type_code += "Class<?>[]_gzb_x001_field_types=new Class[]{";
+        class_field_name_code += "String[]_gzb_x001_field_names=new String[]{";
+        class_field_impl_code += "String[]_gzb_x001_field_impl=new String[]{";
+        for (int i = 0; i < fields.length; i++) {
+            Resource resource = fields[i].getAnnotation(Resource.class);
+            if (resource == null) {
+                continue;
+            }
+            class_field_type_code += fields[i].getType().getCanonicalName() + ".class";
+            class_field_name_code += "\"" + fields[i].getName() + "\"";
+
+            class_field_impl_code += "\"" + (resource.value().isEmpty() ? fields[i].getType().getName() : resource.value()) + "\"";
+            class_field_put_code += "        this." + fields[i].getName() + "=(" + fields[i].getType().getCanonicalName() + ")list0.get(" + num + ");\n";
+
+
+            num++;
+            if (i < fields.length - 1) {
+                class_field_type_code += ",";
+                class_field_name_code += ",";
+                class_field_impl_code += ",";
+            }
+        }
+        if (class_field_put_code.length() > 0) {
+            class_field_put_code = "        java.util.List<Object> list0= gzb.frame.factory.ClassTools.getMethodParameterList" +
+                    "(_gzb_x001_requestMap,_gzb_x001_mapObject,_gzb_x001_arrayObject," +
+                    "_gzb_x001_field_types," +
+                    "_gzb_x001_field_names," +
+                    "_gzb_x001_field_impl" +
+                    ");\n" + class_field_put_code;
+        }
+
+        if (class_field_type_code.endsWith(",")) {
+            class_field_type_code = class_field_type_code.substring(0, class_field_type_code.length() - 1);
+        }
+        if (class_field_name_code.endsWith(",")) {
+            class_field_name_code = class_field_name_code.substring(0, class_field_name_code.length() - 1);
+        }
+        if (class_field_impl_code.endsWith(",")) {
+            class_field_impl_code = class_field_impl_code.substring(0, class_field_impl_code.length() - 1);
+        }
+
+        class_field_type_code += "};\n";
+        class_field_name_code += "};\n";
+        class_field_impl_code += "};\n";
+        if (class_field_type_code.contains("{}")) {
+            class_field_type_code = "";
+        }
+        if (class_field_name_code.contains("{}")) {
+            class_field_name_code = "";
+        }
+        if (class_field_impl_code.contains("{}")) {
+            class_field_impl_code = "";
+        }
+
+
+        String method_fun_code = "///  ############## 生成代码开始 ##############\n"
+                + class_method_type_code
+                + class_method_name_code
+                + class_field_type_code
+                + class_field_name_code
+                + class_field_impl_code
+                +
+                "    @Override\n" +
+                //"    public Object call(String _gzb_x001_methodName,\n" +
+                "    public Object _gzb_call_x01(int _gzb_x001_methodName,\n" +
+                "                       java.util.Map<String, java.util.List<Object>> _gzb_x001_requestMap,\n" +
+                "                       java.util.Map<String, Object> _gzb_x001_mapObject,\n" +
+                "                       Object[] _gzb_x001_arrayObject,boolean _gzb_x001_openTransaction) throws Exception {\n" +
+                //"        System.out.println(_gzb_x001_methodName);\n" +
+                class_field_put_code +
+                method_call_code +
+                "        return null;\n" +
+                "    }\n" +
+                "///  ############## 生成代码结束 ##############\n";
+
+        return method_fun_code;
+    }
+
     public static Object handlePrimitiveArray(Class<?> componentType, Object[] objects) {
         try {
             if (objects != null && objects.length > 0 && objects[0] != null) {
@@ -1463,6 +2260,9 @@ public class ClassTools {
             if (anInterface.getName().equals("gzb.frame.factory.GzbOneInterface")) {
                 continue;
             }
+            if (anInterface.getName().equals("gzb.frame.factory.GzbEntityInterface")) {
+                continue;
+            }
             map.put(anInterface.getName(), object);
             log.t("储存对象", anInterface.getName(), " -> ", object);
         }
@@ -1474,87 +2274,4 @@ public class ClassTools {
     }
 
 
-    // 定义一个枚举来区分操作
-    private enum TransactionAction {
-        COMMIT, ROLLBACK, CLOSE
-    }
-
-    // 通用的事务操作
-    private static void handleTransaction(List<BaseDao> listBaseDao, TransactionAction action) throws Exception {
-        if (listBaseDao == null) {
-            return;
-        }
-        // 使用 Set 确保每个 DataBase 实例只处理一次
-        Set<Connection> connectionsToProcess = new HashSet<>();
-        for (BaseDao baseDao : listBaseDao) {
-            if (baseDao != null && baseDao.getConnect() != null) {
-                connectionsToProcess.add(baseDao.getConnect());
-            }
-        }
-
-        // 对每个连接执行操作
-        for (Connection connection : connectionsToProcess) {
-            if (connection != null && !connection.isClosed()) {
-                switch (action) {
-                    case COMMIT:
-                        if (!connection.getAutoCommit()) {
-                            connection.commit();
-                        }
-                        log.t("commit", connection);
-                        break;
-                    case ROLLBACK:
-                        if (!connection.getAutoCommit()) {
-                            connection.rollback();
-                        }
-                        log.t("rollback", connection);
-                        break;
-                    case CLOSE:
-                        if (!connection.getAutoCommit()) {
-                            connection.setAutoCommit(true); // 恢复自动提交
-                        }
-                        connection.close();
-                        log.t("close", connection);
-                        break;
-                }
-            }
-        }
-    }
-
-    public static List<BaseDao> transactionOpen(boolean isOpenTransaction, List<Object> list) throws Exception {
-        List<BaseDao> listBaseDao = null;
-        Map<String, Connection> mapConnection = new HashMap<>();
-        if (isOpenTransaction) {
-            listBaseDao = new ArrayList<>();
-            for (int i = 0; i < list.size(); i++) {
-                if (list.get(i) instanceof BaseDao) {
-                    BaseDao baseDao1 = (BaseDao) list.get(i);
-                    BaseDao baseDao2 = baseDao1.getClass().getConstructor().newInstance();
-                    Connection connection = mapConnection.get(baseDao1.getDataBase().getSign());
-                    if (connection != null) {
-                        baseDao2.setConnect(connection, true);
-                    } else {
-                        connection = baseDao2.getConnect();
-                        mapConnection.put(baseDao2.getDataBase().getSign(), connection);
-                        baseDao2.setConnect(connection, true);
-                    }
-                    list.set(i, baseDao2);
-                    listBaseDao.add(baseDao2);
-                    log.t("openTransaction", baseDao1, "->", baseDao2);
-                }
-            }
-        }
-        return listBaseDao;
-    }
-
-    public static void transactionCommit(List<BaseDao> listBaseDao) throws Exception {
-        handleTransaction(listBaseDao, TransactionAction.COMMIT);
-    }
-
-    public static void transactionRollback(List<BaseDao> listBaseDao) throws Exception {
-        handleTransaction(listBaseDao, TransactionAction.ROLLBACK);
-    }
-
-    public static void transactionEndTransaction(List<BaseDao> listBaseDao) throws Exception {
-        handleTransaction(listBaseDao, TransactionAction.CLOSE);
-    }
 }

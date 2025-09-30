@@ -30,32 +30,16 @@ public class DataBaseFactory {
     public static Map<String, DataBase> mapDataBase = new ConcurrentHashMap<>();
 
     public static DataBase getDataBase(String dbKey) throws Exception {
-        lock.lock();
-        try {
-            String key = Config.get("db.mysql." + dbKey + ".ip") + "_"
-                    + Config.get("db.mysql." + dbKey + ".port") + "_"
-                    + Config.get("db.mysql." + dbKey + ".name");
-            DataBase db = mapDataBase.get(key);
-            if (db == null) {
-                db = new DataBaseMsql(dbKey);
-                mapDataBase.put(key, db);
-            }
-            return db;
-        } finally {
-            lock.unlock();
-        }
+        return getDataBase(DataBaseConfig.readConfig(dbKey));
     }
 
-    public static DataBase getDataBase(String dbName, String ip, String port, String acc, String pwd, String clz,
-                                       Boolean auto, Integer threadMax, Integer overtime,
-                                       Integer asyncSleep,Integer asyBatch,Integer asyThreadMax) throws Exception {
+    public static DataBase getDataBase(DataBaseConfig dataBaseConfig) throws Exception {
         lock.lock();
         try {
-            String key = ip + "_" + port + "_" + dbName;
-            DataBase db = mapDataBase.get(key);
+            DataBase db = mapDataBase.get(dataBaseConfig.sign);
             if (db == null) {
-                db = new DataBaseMsql(dbName, ip, port, acc, pwd, clz, auto, threadMax, overtime, asyncSleep,asyBatch,asyThreadMax);
-                mapDataBase.put(key, db);
+                db = new DataBaseImpl(dataBaseConfig);
+                mapDataBase.put(dataBaseConfig.sign, db);
             }
             return db;
         } finally {
@@ -64,13 +48,7 @@ public class DataBaseFactory {
     }
 
     public static DataBase remove(String dbName) throws Exception {
-        lock.lock();
-        try {
-            String key = Config.get("db.mysql." + dbName + ".ip") + "_" + Config.get("db.mysql." + dbName + ".port") + "_" + Config.get("db.mysql." + dbName + ".name");
-            return mapDataBase.remove(key);
-        } finally {
-            lock.unlock();
-        }
+        return remove(Config.get("db.mysql." + dbName + ".ip"), Config.get("db.mysql." + dbName + ".port"), Config.get("db.mysql." + dbName + ".name"));
     }
 
     public static DataBase remove(String dbName, String ip, String port) throws Exception {

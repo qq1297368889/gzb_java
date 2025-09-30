@@ -57,7 +57,7 @@ public class HTTPRequestParameters {
                         max = System.currentTimeMillis() - tempFile1.time;
                         if (max >= mm) {
                             tempFile.poll();
-                            System.out.println("delete"+tempFile1.file.getPath());
+                            //System.out.println("delete" + tempFile1.file.getPath());
                             if (tempFile1.file.exists()) {
                                 tempFile1.file.delete();
                             }
@@ -81,23 +81,30 @@ public class HTTPRequestParameters {
     private byte[] body;
     private Map<String, List<Object>> parameters;
     public String path;
+
     public HTTPRequestParameters(FullHttpRequest request) {
         this.request = request;
+        getParameters();
     }
 
 
     public byte[] readByte() {
-        ByteBuf content = request.content();
+        if (body != null) {
+            return body;
+        }
+        ByteBuf content = request.content(); //FullHttpRequest
         this.body = new byte[content.readableBytes()];
         content.getBytes(content.readerIndex(), this.body);
         return body;
     }
+
     public String readString() {
-        if (this.body==null) {
+        if (this.body == null) {
             readByte();
         }
         return new String(this.body, Config.encoding);
     }
+
     /**
      * Lazily parses and returns all parameters from the request.
      * This method is designed for a single-threaded context.
@@ -132,9 +139,11 @@ public class HTTPRequestParameters {
     private void parseJson(Map<String, List<Object>> params) {
         try {
             Map<String, Object> jsonMap = Tools.jsonToMap(readString());
-            for (Map.Entry<String, Object> stringObjectEntry : jsonMap.entrySet()) {
-                List<Object> list = params.computeIfAbsent(stringObjectEntry.getKey(), k -> new ArrayList<>());
-                list.add(stringObjectEntry.getValue());
+            if (jsonMap != null) {
+                for (Map.Entry<String, Object> stringObjectEntry : jsonMap.entrySet()) {
+                    List<Object> list = params.computeIfAbsent(stringObjectEntry.getKey(), k -> new ArrayList<>());
+                    list.add(stringObjectEntry.getValue());
+                }
             }
         } catch (Exception e) {
             System.err.println("Failed to parse JSON body: " + e.getMessage());
@@ -144,7 +153,7 @@ public class HTTPRequestParameters {
 
     private void parseUrlEncoded(Map<String, List<Object>> params) {
         try {
-            QueryStringDecoder bodyDecoder = new QueryStringDecoder(readString(), CharsetUtil.UTF_8, false);
+            QueryStringDecoder bodyDecoder = new QueryStringDecoder(readString(), Config.encoding, false);
             bodyDecoder.parameters().forEach((key, valueList) ->
                     params.computeIfAbsent(key, k -> new ArrayList<>()).addAll(valueList)
             );
@@ -170,7 +179,7 @@ public class HTTPRequestParameters {
                 }
             }
         } catch (Exception e) {
-            Config.log.e("parseFormData 出现错误",e);
+            Config.log.e("parseFormData 出现错误", e);
             params.clear();
         } finally {
             // 确保释放资源
