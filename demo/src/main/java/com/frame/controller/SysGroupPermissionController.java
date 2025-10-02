@@ -110,7 +110,7 @@ public class SysGroupPermissionController{
      * /system/v1.0.0/sysGroupPermission/deleteAll?sysGroupPermissionId=
      * */
     @DecoratorOpen
-    @GetMapping("deleteAll")
+    @DeleteMapping("deleteAll")
     public Object deleteAll(GzbJson result, Long[] sysGroupPermissionId) throws Exception {
         if (sysGroupPermissionId == null || sysGroupPermissionId.length < 1) {
             return result.fail("delete 输入参数错误");

@@ -110,7 +110,7 @@ public class SysFileController{
      * /system/v1.0.0/sysFile/deleteAll?sysFileId=
      * */
     @DecoratorOpen
-    @GetMapping("deleteAll")
+    @DeleteMapping("deleteAll")
     public Object deleteAll(GzbJson result, Long[] sysFileId) throws Exception {
         if (sysFileId == null || sysFileId.length < 1) {
             return result.fail("delete 输入参数错误");

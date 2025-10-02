@@ -591,6 +591,7 @@ public class DataBaseImpl implements DataBase {
     public Connection getConnection() throws SQLException {
         Connection connection1 = connectionThreadLocal.get();
         if (connection1 != null) {
+            log.t("获取连接 缓存",connection1);
             return connection1;
         }
         connection1 = hds.getConnection();
@@ -600,6 +601,7 @@ public class DataBaseImpl implements DataBase {
             log.e(e);
         }
         connectionThreadLocal.set(connection1);
+        log.t("获取连接 新的",connection1);
         return connection1;
     }
 

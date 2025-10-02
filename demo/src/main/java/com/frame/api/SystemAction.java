@@ -29,10 +29,11 @@ import java.util.Map;
 @Header(item = {@HeaderItem(key = "content-type", val = "application/json;charset=UTF-8")})
 @RequestMapping(value = "/system/v1.0.0")
 public class SystemAction {
-    public SysFileDao sysFileDao = new SysFileDaoImpl();
+    @Resource
+    public SysFileDao sysFileDao;
     //key.system.login.image.code  验证码储存key
     //key.system.login.info  登录信息储存KEY
-    public DataBase dataBase = DataBaseFactory.getDataBase(Config.frameDbKey);
+
     @Resource()
     public Log log;
 
@@ -48,8 +49,8 @@ public class SystemAction {
                 .setSysUsersLoginLogUid(sysUsers.getSysUsersId())
                 .setSysUsersLoginLogToken(session.getId())
                 .setSysUsersLoginLogMac(mac);
-        SqlTemplate sqlTemplate = dataBase.toSave(sysUsersLoginLog);
-        return dataBase.runSqlAsync(sqlTemplate.getSql(), sqlTemplate.getObjects());
+        SqlTemplate sqlTemplate = sysFileDao.getDataBase().toSave(sysUsersLoginLog);
+        return sysFileDao.getDataBase().runSqlAsync(sqlTemplate.getSql(), sqlTemplate.getObjects());
     }
 
     /// /system/v1.0.0/image/code
@@ -72,7 +73,7 @@ public class SystemAction {
     /// /system/v1.0.0/image/code
     /// /system/v1.0.0/login?sysUsersAcc=admin&sysUsersPwd=admin&code=vkvss
     @GetMapping(value = "login")
-    public Object login(GzbJson result, SysUsers sysUsers, String mac, String code, Request request) throws Exception {
+    public Object login(GzbJson result, SysUsers sysUsers, String mac, String code, Request request, SysUsersDao sysUsersDao) throws Exception {
         Session session = request.getSession();
         if (sysUsers == null || sysUsers.toString().equals("{}") || sysUsers.getSysUsersAcc() == null || sysUsers.getSysUsersPwd() == null) {
             return result.fail("login 请输入账号密码");
@@ -87,12 +88,11 @@ public class SystemAction {
         if (!code_s.toString().equals(code)) {
             return result.fail("login 验证码输入错误");
         }
-        SqlTemplate sqlTemplate = dataBase.toSelect(sysUsers, 1, 2, null, null);
-        List<GzbMap> list = dataBase.selectGzbMap(sqlTemplate.getSql(), sqlTemplate.getObjects());
-        if (list.size() != 1) {
+
+        SysUsers sysUsers1 = sysUsersDao.find(new SysUsers());
+        if (sysUsers1 == null) {
             return result.fail("login 账号不存在或不正确");
         }
-        SysUsers sysUsers1 = new SysUsers(list.get(0));
         String ip = request.getRemoteIp();
         DateTime dateTime = new DateTime();
         if (sysUsers1.getSysUsersStatus() < 1) {
@@ -103,7 +103,8 @@ public class SystemAction {
 
         loginInfo(sysUsers1, mac, ip, dateTime, "用户登录-成功", session);
         session.put(Config.get("key.system.login.info"), sysUsers1.toString());
-        return result.success("登陆成功", "{\"token\":\"" + session.getId() + "\"}");
+        return result.success("登陆成功", Tools.createHashMap("token", session.getId()));
+
     }
 
     /// 注册 注册后的用户 归属权限组  默认权限_注册_限时用户
@@ -126,16 +127,11 @@ public class SystemAction {
             return result.fail("注册账号 验证码输入错误");
         }
 
-        SqlTemplate sqlTemplate = dataBase.toSelect(new SysUsers().setSysUsersId(sysUsers.getSysUsersSup()), 1, 2, null, null);
-        List<GzbMap> list = dataBase.selectGzbMap(sqlTemplate.getSql(), sqlTemplate.getObjects());
-        if (list.size() != 1) {
-            return result.fail("注册账号 上级账号不存在");
+        SysUsers sysUsers0 = sysUsersDao.find(new SysUsers().setSysUsersId(sysUsers.getSysUsersSup()));
+        if (sysUsers0 == null) {
+            sysUsers.setSysUsersSup(0L);
         }
-        SysUsers sysUsers0 = new SysUsers(list.get(0));
-
-        SqlTemplate sqlTemplate2 = dataBase.toSelect(new SysUsers().setSysUsersAcc(sysUsers.getSysUsersAcc()), 1, 2, null, null);
-        List<GzbMap> list2 = dataBase.selectGzbMap(sqlTemplate2.getSql(), sqlTemplate2.getObjects());
-        if (list2.size() == 1) {
+        if (sysUsersDao.find(new SysUsers().setSysUsersAcc(sysUsers.getSysUsersAcc())) != null) {
             return result.fail("注册账号 账号已存在,请更换");
         }
         DateTime dateTime = new DateTime();
@@ -147,18 +143,15 @@ public class SystemAction {
                 .setSysUsersMail(sysUsers.getSysUsersMail())
                 .setSysUsersType(5L)
                 .setSysUsersStatus(1L)
-                .setSysUsersSup(sysUsers0.getSysUsersId())
+                .setSysUsersSup(sysUsers.getSysUsersId())
                 .setSysUsersGroup(-100L)
                 .setSysUsersRegTime(dateTime.toString())
                 .setSysUsersPhone(sysUsers.getSysUsersPhone());
-
-        String ip = request.getRemoteIp();
-        SqlTemplate sqlTemplate3 = dataBase.toSave(sysUsers1);
-        dataBase.runSql(sqlTemplate3.getSql(), sqlTemplate3.getObjects());
-
-        loginInfo(sysUsers1, mac, ip, dateTime, "注册账号-成功", session);
+        if (sysUsersDao.save(sysUsers1) < 0) {
+            return result.fail("注册账号 失败，请稍后重试");
+        }
         session.put(Config.get("key.system.login.info"), sysUsers1.toString());
-        return result.success("注册账号 成功", "{\"token\":\"" + session.getId() + "\"}");
+        return result.success("登陆成功", Tools.createHashMap("token", session.getId()));
     }
 
     /// 退出登录 删除会话
@@ -192,36 +185,31 @@ public class SystemAction {
         if (sysGroupId == null) {
             return res.fail("必填参数为空");
         }
-        Tools.updateMapping(dataBase, null, sysGroupId);
+        Tools.updateMapping(sysFileDao.getDataBase(), null, sysGroupId);
         return res.success("映射已更新");
     }
 
     /// /system/v1.0.0/authorize/permission?pid=&gid=&type=
     @DecoratorOpen
     @PostMapping(value = "authorize/permission")
-    public Object authorize(GzbJson res, Long[] pid, Long gid, Long type, SysUsers sysUsers) throws Exception {
+    public Object authorize(GzbJson res, Long[] pid, Long gid, Long type, SysUsers sysUsers, SysGroupPermissionDao sysGroupPermissionDao) throws Exception {
         if (pid == null || pid.length < 1 || gid == null) {
             return res.fail("必填参数不允许为空");
         }
         DateTime dateTime = new DateTime();
         for (Long id : pid) {
-            List<GzbMap> list2 = dataBase.selectGzbMap(
-                    "select * from sys_group_permission where sys_group_permission_gid = ? and sys_group_permission_pid = ?",
-                    new Object[]{gid, id});
-            if (list2.size() == 1) {
-                if (type == 0L) {
-                    SysGroupPermission sysGroupPermission = new SysGroupPermission();
-                    sysGroupPermission.setSysGroupPermissionId(list2.get(0).getLong("sysGroupPermissionId"));
-                    SqlTemplate sqlTemplate = dataBase.toDelete(sysGroupPermission);
-                    dataBase.runSql(sqlTemplate.getSql(), sqlTemplate.getObjects());
-                }
+            SysGroupPermission sysGroupPermission = sysGroupPermissionDao.find(new SysGroupPermission().setSysGroupPermissionGid(gid).setSysGroupPermissionPid(id));
+            if (sysGroupPermission == null) {
                 continue;
             }
-            SysGroupPermission sysGroupPermission = new SysGroupPermission();
-            sysGroupPermission.setSysGroupPermissionGid(gid).setSysGroupPermissionPid(id)
-                    .setSysGroupPermissionTime(dateTime.toString());
-            SqlTemplate sqlTemplate = dataBase.toSave(sysGroupPermission);
-            dataBase.runSql(sqlTemplate.getSql(), sqlTemplate.getObjects());
+            if (type == 0L) {
+                sysGroupPermissionDao.delete(sysGroupPermission);
+            }
+            if (sysGroupPermissionDao.save(new SysGroupPermission().setSysGroupPermissionGid(gid).setSysGroupPermissionPid(id)
+                    .setSysGroupPermissionTime(dateTime.toString())) < 0) {
+                return res.fail("授权失败，预料外的错误");
+            }
+
         }
         return res.success("授权成功");
     }
@@ -240,9 +228,9 @@ public class SystemAction {
             List<SysUsers> list1 = null;
             if (sysUsers0.getSysUsersType() == 4) {
 
-                list1 = sysUsersDao.query(new SysUsers().setSysUsersId(uid),60);
+                list1 = sysUsersDao.query(new SysUsers().setSysUsersId(uid), 60);
             } else {
-                list1 = sysUsersDao.query(new SysUsers().setSysUsersId(uid).setSysUsersSup(sysUsers0.getSysUsersId()),60);
+                list1 = sysUsersDao.query(new SysUsers().setSysUsersId(uid).setSysUsersSup(sysUsers0.getSysUsersId()), 60);
             }
             if (list1.size() != 1) {
                 return res.fail("无权干预该用户权限分配");
@@ -254,18 +242,18 @@ public class SystemAction {
         List<SysPermission> list1 = null;
         if (sysUsers.getSysUsersType() == 4) {
             list1 = sysPermissionDao.query("SELECT p.* FROM sys_permission p where sys_permission_type = ? and p.sys_permission_sup = ? " + "ORDER BY p.sys_permission_sort DESC"
-                    , new Object[]{1, 0},null,null,0,0,60);
+                    , new Object[]{1, 0}, null, null, 0, 0, 60);
             for (SysPermission sysPermission : list1) {
                 sysPermission.setList(sysPermissionDao.query(new SysPermission().setSysPermissionSup(sysPermission.getSysPermissionId()), 60));
             }
             return res.success("权限查询成功", list1);
         } else {
             list1 = sysPermissionDao.query("SELECT p.* FROM sys_permission p " + "WHERE p.sys_permission_id IN (" + "    SELECT gp.sys_group_permission_pid " + "    FROM sys_group_permission gp " + "    WHERE gp.sys_group_permission_gid = (" + "        SELECT g.sys_group_id " + "        FROM sys_group g " + "        WHERE g.sys_group_id = (" + "            SELECT u.sys_users_group " + "            FROM sys_users u " + "            WHERE u.sys_users_id = ? " + "            AND u.sys_users_status > ?" + "        )" + "    )" + ") AND p.sys_permission_sup = ? AND p.sys_permission_type = ? " + "ORDER BY p.sys_permission_sort DESC",
-                    new Object[]{sysUsers.getSysUsersId(), 0, 0, 1}, null,null,0,0,60);
+                    new Object[]{sysUsers.getSysUsersId(), 0, 0, 1}, null, null, 0, 0, 60);
         }
         for (SysPermission sysPermission : list1) {
             sysPermission.setList(sysPermissionDao.query("select sys_permission.* from sys_permission where " + "sys_permission.sys_permission_id in " + "(select sys_group_permission_pid from sys_group_permission where sys_group_permission_gid = " + "(select sys_users.sys_users_group from sys_users where sys_users_id = ? and sys_users_status > ?" + ") " + ") " + "and sys_permission.sys_permission_sup = ?",
-                    new Object[]{sysUsers.getSysUsersId(), 0, sysPermission.getSysPermissionId()}, null,null,0,0,60));
+                    new Object[]{sysUsers.getSysUsersId(), 0, sysPermission.getSysPermissionId()}, null, null, 0, 0, 60));
         }
         return res.success("权限查询成功", list1);
     }
@@ -274,46 +262,41 @@ public class SystemAction {
     @GetMapping(value = "read/permission/all")
     public Object readPermissionAll(GzbJson res,
                                     Request request,
-                                    Long gid) throws Exception {
+                                    Long gid,SysPermissionDao sysPermissionDao) throws Exception {
         Session session = request.getSession();
         SysUsers sysUsers0 = new SysUsers(session.getString(Config.get("key.system.login.info")));
         if (sysUsers0.getSysUsersType() != 4) {
             log.w("越权访问 ", gid, sysUsers0);
             return null;
         }
-        List<GzbMap> list1 = null;
+        List<SysPermission> list = null;
         if (gid != null) {
-            list1 = dataBase.selectGzbMap(
-                    "select sys_permission.* from sys_permission where sys_permission.sys_permission_id in " +
+
+            list = sysPermissionDao.query("select sys_permission.* from sys_permission where sys_permission.sys_permission_id in " +
                             "(select sys_group_permission.sys_group_permission_pid from sys_group_permission where " +
                             "sys_group_permission.sys_group_permission_gid = ?) and sys_permission_sup = ?",
-                    new Object[]{gid, 0});
+                    new Object[]{gid, 0},null,null,0,0,-1);
         } else {
-            list1 = dataBase.selectGzbMap(
-                    "select sys_permission.* from sys_permission where sys_permission_sup = ? order by sys_permission_sort desc",
-                    new Object[]{0});
+            list = sysPermissionDao.query( "select sys_permission.* from sys_permission where sys_permission_sup = ? order by sys_permission_sort desc",
+                    new Object[]{ 0},null,null,0,0,-1);
         }
-        List<SysPermission> list = new ArrayList<>(list1.size());
-        for (GzbMap gzbMap : list1) {
-            list.add(new SysPermission(gzbMap));
-        }
+
         for (SysPermission sysPermission : list) {
             if (!sysPermission.getSysPermissionType().toString().equals("1")) {
                 continue;
             }
-            List<GzbMap> list2 = null;
+            List<SysPermission> list2 = null;
             if (gid != null) {
-                list2 = dataBase.selectGzbMap(
-                        "select sys_permission.* from sys_permission where " +
+                list2 = sysPermissionDao.query("select sys_permission.* from sys_permission where " +
                                 "sys_permission.sys_permission_id in " +
                                 "(select sys_group_permission_pid from sys_group_permission where sys_group_permission_gid = ?" +
                                 ") " +
                                 "and sys_permission.sys_permission_sup = ?",
-                        new Object[]{gid, sysPermission.getSysPermissionId()});
+                        new Object[]{gid, sysPermission.getSysPermissionId()},null,null,0,0,-1);
+
             } else {
-                list2 = dataBase.selectGzbMap(
-                        "select sys_permission.* from sys_permission where sys_permission.sys_permission_sup = ?",
-                        new Object[]{sysPermission.getSysPermissionId()});
+                list2 = sysPermissionDao.query(  "select sys_permission.* from sys_permission where sys_permission.sys_permission_sup = ?",
+                        new Object[]{sysPermission.getSysPermissionId()},null,null,0,0,-1);
             }
             sysPermission.setList(list2);
         }
@@ -331,31 +314,30 @@ public class SystemAction {
                               SysGroupColumnDao sysGroupColumnDao,
                               SysMappingDao sysMappingDao,
                               SysOptionDao sysOptionDao) throws Exception {
-        log.d("key",key);
+        log.d("key", key);
         Session session = request.getSession();
         SysUsers sysUsers = new SysUsers(session.getString(Config.get("key.system.login.info")));
         if (key == null) {
             return res.fail("参数为空");
         }
         key = Tools.lowStr_x(Tools.lowStr_hump(key));
-        log.d("key",key);
-        List<SysGroup> listSysGroup = sysGroupDao.query(new SysGroup().setSysGroupId(sysUsers.getSysUsersGroup()),60);
+        List<SysGroup> listSysGroup = sysGroupDao.query(new SysGroup().setSysGroupId(sysUsers.getSysUsersGroup()), 60);
         if (listSysGroup.size() != 1) {
             return res.fail("组信息查询失败");
         }
         //查询表信息
-        List<SysGroupTable> listSysGroupTable = sysGroupTableDao.query(new SysGroupTable().setSysGroupTableKey(key).setSysGroupTableGid(sysUsers.getSysUsersGroup()),60);
+        List<SysGroupTable> listSysGroupTable = sysGroupTableDao.query(new SysGroupTable().setSysGroupTableKey(key).setSysGroupTableGid(sysUsers.getSysUsersGroup()), 60);
         if (listSysGroupTable.isEmpty()) {
             return res.fail("表映射信息获取失败");
         }
         //查询列信息 sysGroupColumnDao
-        List<SysGroupColumn> listSysGroupColumn = sysGroupColumnDao.query(new SysGroupColumn().setSysGroupColumnKey(key).setSysGroupColumnGid(sysUsers.getSysUsersGroup()),60);
+        List<SysGroupColumn> listSysGroupColumn = sysGroupColumnDao.query(new SysGroupColumn().setSysGroupColumnKey(key).setSysGroupColumnGid(sysUsers.getSysUsersGroup()), 60);
         if (listSysGroupColumn.isEmpty()) {
             return res.fail("列映射信息获取失败");
         }
         for (SysGroupColumn sysGroupColumn : listSysGroupColumn) {
             //查询映射信息
-            List<SysMapping> listSysMapping = sysMappingDao.query(new SysMapping().setSysMappingVal(sysGroupColumn.getSysGroupColumnName()).setSysMappingKey(key),60);
+            List<SysMapping> listSysMapping = sysMappingDao.query(new SysMapping().setSysMappingVal(sysGroupColumn.getSysGroupColumnName()).setSysMappingKey(key), 60);
             if (!listSysMapping.isEmpty()) {
                 sysGroupColumn.putMap("mapping", listSysMapping.get(0));
                 for (SysMapping sysMapping : listSysMapping) {
@@ -367,9 +349,9 @@ public class SystemAction {
                         List<SysOption> listOption = null;
                         if (sysMappingSelect.startsWith("key:")) {
                             listOption = sysOptionDao.query("select sys_option_title,sys_option_value from sys_option where sys_option_key = ?",
-                                    new Object[]{sysMappingSelect.replace("key:", "")},null,null,0,0,60);
+                                    new Object[]{sysMappingSelect.replace("key:", "")}, null, null, 0, 0, 60);
                         } else if (sysMappingSelect.toLowerCase().contains("select")) {
-                            listOption = sysOptionDao.query(sysMappingSelect, null,null,null,0,0,60);
+                            listOption = sysOptionDao.query(sysMappingSelect, null, null, null, 0, 0, 60);
                         }
                         sysMapping.putMap("sysMappingSelect", listOption);
                     }
@@ -407,7 +389,7 @@ public class SystemAction {
                     continue;
                 }
             }
-
+            log.d("sysFileDao", sysFileDao.toString());
             SysFile sysFile = sysFileDao.find(new SysFile().setSysFileMd5(md5));
             if (sysFile == null) {
                 String md5Path = Tools.toMD5Path(md5) + fileUploadEntity.getFilename();
@@ -486,6 +468,7 @@ public class SystemAction {
 
     @Resource
     SysUsersDao sysUsersDao;
+
     /**
      * 插入数据,不能接受空数据,请至少提供一个参数,请提供 SysUsers的参数
      * /system/v1.0.0/sysUsers/find?参数同下,只是仅接受查询结果为1条的情况
@@ -510,7 +493,7 @@ public class SystemAction {
     public Object list(GzbJson result, SysUsers sysUsers0, String sortField, String sortType, Integer page, Integer size, Map<String, List<Object>> req) throws Exception {
         Map<String, Object> re2 = mapArrayToNoArray(req);
         SysUsers sysUsers = new SysUsers(re2);
-        return result.paging(sysUsersDao.query(sysUsers,sortField,sortType,page,size), page, size);
+        return result.paging(sysUsersDao.query(sysUsers, sortField, sortType, page, size), page, size);
     }
 
     /**
@@ -519,9 +502,9 @@ public class SystemAction {
      */
     @DecoratorOpen
     @GetMapping("/sysUsers/query")
-    public Object query(GzbJson result, SysUsers sysUsers0, String[] field, String[] symbol, String[] value, String[] montage, String sortField, String sortType, Integer page, Integer limit) throws Exception {
-        SqlTemplate sqlTemplate = dataBase.toSelect("sys_users", field, symbol, value, montage, sortField, sortType);
-        List<GzbMap> listGzbMap1 = dataBase.selectGzbMap(sqlTemplate.getSql(), sqlTemplate.getObjects());
+    public Object query(SysUsersDao sysUsersDao,GzbJson result, String[] field, String[] symbol, String[] value, String[] montage, String sortField, String sortType, Integer page, Integer limit) throws Exception {
+        SqlTemplate sqlTemplate = sysUsersDao.getDataBase().toSelect("sys_users", field, symbol, value, montage, sortField, sortType);
+        List<SysUsers> listGzbMap1 = sysUsersDao.query(sqlTemplate.getSql(), sqlTemplate.getObjects(),null,null,0,0,-1);
         return result.paging(listGzbMap1, page, limit);
     }
 
@@ -542,6 +525,7 @@ public class SystemAction {
         }
         return result.success("save 成功");
     }
+
     /**
      * 修改,根据id修改其他参数 请提供 SysUsers的参数
      * /system/v1.0.0/sysUsers/update?sysUsersId=
@@ -583,7 +567,6 @@ public class SystemAction {
      * /system/v1.0.0/sysUsers/deleteAll?sysUsersId=
      */
     @DecoratorOpen
-    @Transaction
     @DeleteMapping("/sysUsers/deleteAll")
     public Object deleteAll(GzbJson result, Long[] sysUsersId) throws Exception {
         if (sysUsersId == null || sysUsersId.length < 1) {
@@ -591,18 +574,12 @@ public class SystemAction {
         }
         int num = 0;
         for (Long aLong : sysUsersId) {
-            if (sysUsersDao.delete(new SysUsers().setSysUsersId(aLong)) >-1) {
+            if (sysUsersDao.delete(new SysUsers().setSysUsersId(aLong)) > -1) {
                 num++;
             }
         }
         return result.success("成功删除[" + num + "]条数据");
     }
-
-
-
-
-
-
 
 
 }

@@ -110,7 +110,7 @@ public class SysLogController{
      * /system/v1.0.0/sysLog/deleteAll?sysLogId=
      * */
     @DecoratorOpen
-    @GetMapping("deleteAll")
+    @DeleteMapping("deleteAll")
     public Object deleteAll(GzbJson result, Long[] sysLogId) throws Exception {
         if (sysLogId == null || sysLogId.length < 1) {
             return result.fail("delete 输入参数错误");

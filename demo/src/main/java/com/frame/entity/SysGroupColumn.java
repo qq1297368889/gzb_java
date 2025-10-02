@@ -425,17 +425,22 @@ public class SysGroupColumn implements Serializable, JsonSerializable{
         this.sysGroupColumnGid = sysGroupColumnGid;
         return this;
     }
-    public List<?> getList() {
-        return (List<?>) data;
-    }
-
     public SysGroupColumn setList(List<?> data) {
         this.data = data;
         return this;
     }
 
+    public List<?> getList() {
+          if (data instanceof List) {
+                return (List<?>) data;
+          }
+        return null;
+    }
     public Map<String, Object> getMap() {
-        return (Map<String, Object>) data;
+          if (data instanceof Map) {
+                return (Map<String, Object>) data;
+          }
+        return null;
     }
 
     public SysGroupColumn setMap(Map<String, Object> data) {

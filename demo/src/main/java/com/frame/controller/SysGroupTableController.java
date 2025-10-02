@@ -110,7 +110,7 @@ public class SysGroupTableController{
      * /system/v1.0.0/sysGroupTable/deleteAll?sysGroupTableId=
      * */
     @DecoratorOpen
-    @GetMapping("deleteAll")
+    @DeleteMapping("deleteAll")
     public Object deleteAll(GzbJson result, Long[] sysGroupTableId) throws Exception {
         if (sysGroupTableId == null || sysGroupTableId.length < 1) {
             return result.fail("delete 输入参数错误");

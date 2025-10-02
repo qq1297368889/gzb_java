@@ -110,7 +110,7 @@ public class SysOptionController{
      * /system/v1.0.0/sysOption/deleteAll?sysOptionId=
      * */
     @DecoratorOpen
-    @GetMapping("deleteAll")
+    @DeleteMapping("deleteAll")
     public Object deleteAll(GzbJson result, Long[] sysOptionId) throws Exception {
         if (sysOptionId == null || sysOptionId.length < 1) {
             return result.fail("delete 输入参数错误");

@@ -110,7 +110,7 @@ public class SysGroupController{
      * /system/v1.0.0/sysGroup/deleteAll?sysGroupId=
      * */
     @DecoratorOpen
-    @GetMapping("deleteAll")
+    @DeleteMapping("deleteAll")
     public Object deleteAll(GzbJson result, Long[] sysGroupId) throws Exception {
         if (sysGroupId == null || sysGroupId.length < 1) {
             return result.fail("delete 输入参数错误");

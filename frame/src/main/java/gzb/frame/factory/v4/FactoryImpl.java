@@ -20,6 +20,7 @@ package gzb.frame.factory.v4;
 
 import gzb.frame.ThreadLocalData;
 import gzb.frame.annotation.*;
+import gzb.frame.db.DataBaseFactory;
 import gzb.frame.db.ForeignKeyFactory;
 import gzb.frame.factory.*;
 import gzb.frame.factory.v4.entity.ClassEntity;
@@ -67,24 +68,16 @@ public class FactoryImpl implements Factory {
     public Map<String, ThreadEntity> mapListThreadEntity0 = new ConcurrentHashMap<>();
 
 
-    public void loadJavaDir(String classDir, String pwd, String iv) {
-        //加入内置对象
-        mapObject0.put(Log.class.getName(), Config.log);
-        mapObject0.put(LogImpl.class.getName(), Config.log);
-
-
-        //JSON对象
-        GzbJson gzbJson = new GzbJsonImpl();
-        mapObject0.put(GzbJson.class.getName(), gzbJson);
-        mapObject0.put(GzbJsonImpl.class.getName(), gzbJson);
-        mapObject0.put(ForeignKeyFactory.class.getName(), new ForeignKeyFactory(mapObject0,log));
-
+    public void loadJavaDir(String classDir, String pwd, String iv) throws Exception {
 
         //缓存对象
-        mapObject0.put(Cache.gzbCache.getClass().getName(), Cache.gzbCache);
-        mapObject0.put(GzbCache.class.getName(), Cache.gzbCache);
-
-
+        ClassTools.putObject(Cache.gzbCache.getClass(),null,mapObject0,Cache.gzbCache);
+        //JSON对象
+        ClassTools.putObject(GzbJsonImpl.class,null,mapObject0,new GzbJsonImpl());
+        //数据库事件对象
+        ClassTools.putObject(ForeignKeyFactory.class,null,mapObject0,new ForeignKeyFactory(mapObject0, log));
+        //日志对象
+        ClassTools.putObject(Config.log.getClass(),null,mapObject0,Config.log);
         startFileScanning(classDir, pwd, iv);
         while (serverState == -1) {
             Tools.sleep(1);
@@ -117,44 +110,51 @@ public class FactoryImpl implements Factory {
                         }
                     }
                     if (!listClassEntity.isEmpty()) {
+                        //创建 Service 对象 并且 存入 mapObject0
                         for (ClassEntity classEntity : listClassEntity) {
                             loadService(classEntity, mapObject0);
                         }
+                        //创建 Controller 对象 并且 存入 mapObject0
                         for (ClassEntity classEntity : listClassEntity) {
                             loadControllerObject(classEntity, mapObject0);
                         }
+                        //创建 DataBaseEvent 对象 并且 存入 mapObject0
                         for (ClassEntity classEntity : listClassEntity) {
                             loadDataBaseEventFactory(classEntity, mapObject0);
                         }
+                        //创建 Decorator 对象 并且 存入 mapObject0
                         for (ClassEntity classEntity : listClassEntity) {
                             Map<String, Method> map = mapClassMethod.get(classEntity.clazz.getName());
-                            List<DecoratorEntity> listDecoratorEntity2= new ArrayList<>();
+                            List<DecoratorEntity> listDecoratorEntity2 = new ArrayList<>();
                             loadDecorator(classEntity, listDecoratorEntity2);
-                            if (map!=null) {
+                            if (map != null) {
                                 for (Map.Entry<String, Method> stringMethodEntry : map.entrySet()) {
                                     Iterator<DecoratorEntity> iterator = listDecoratorEntity.iterator();
                                     while (iterator.hasNext()) {
-                                        DecoratorEntity decorator=iterator.next();
+                                        DecoratorEntity decorator = iterator.next();
                                         if (Objects.equals(decorator.sign, stringMethodEntry.getKey())) {
                                             iterator.remove();
                                         }
                                     }
                                 }
                             }
-                            map=new ConcurrentHashMap<>();
+                            map = new ConcurrentHashMap<>();
                             for (DecoratorEntity decoratorEntity : listDecoratorEntity2) {
                                 listDecoratorEntity.add(decoratorEntity);
-                                map.put(decoratorEntity.sign,decoratorEntity.method);
+                                map.put(decoratorEntity.sign, decoratorEntity.method);
                             }
-                            mapClassMethod.put(classEntity.clazz.getName(),map);
+                            mapClassMethod.put(classEntity.clazz.getName(), map);
                         }
                         //log.d("listDecoratorEntity 1 ",listDecoratorEntity.size(),listDecoratorEntity);
+                        //mapObject0 中 所有对象 执行重新注入一遍
                         for (Map.Entry<String, Object> stringObjectEntry : mapObject0.entrySet()) {
                             ClassTools.classInject(stringObjectEntry.getValue(), null, mapObject0);
                         }
+                        //加载线程对象
                         for (ClassEntity classEntity : listClassEntity) {
                             loadThreadInterval(classEntity, mapObject0);
                         }
+                        //重新加载一遍 控制器映射
                         for (Map.Entry<String, ClassEntity> stringClassEntityEntry : mapClassEntity.entrySet()) {
                             ClassEntity classEntity = stringClassEntityEntry.getValue();
                             loadController(classEntity.clazz, mapObject0.get(classEntity.clazz.getName()), mapHttpMapping0, mapHttpMappingOld0, listDecoratorEntity);
@@ -171,6 +171,60 @@ public class FactoryImpl implements Factory {
 
         });
         thread.start();
+    }
+    public Object putObject(Object object) throws Exception {
+        return putObject(object.getClass(),object);
+    }
+    public Object putObject(Class<?> clazz) throws Exception {
+        Service service = clazz.getAnnotation(Service.class);
+        Controller controller = clazz.getAnnotation(Controller.class);
+        Decorator decorator = clazz.getAnnotation(Decorator.class);
+        DataBaseEventFactory dataBaseEventFactory = clazz.getAnnotation(DataBaseEventFactory.class);
+        ThreadFactory threadFactory = clazz.getAnnotation(ThreadFactory.class);
+        if (threadFactory==null
+                &&dataBaseEventFactory==null
+                &&decorator==null
+                &&controller==null
+                &&service==null
+        ) {
+
+        }
+        return putObject(clazz,null);
+    }
+    public Object putObject(Class<?> clazz,Object object) throws Exception {
+        if (clazz == null) {
+            log.w("potObject clazz == null");
+            return null;
+        }
+        String name = null;
+        if (object==null) {
+            object = clazz.getDeclaredConstructor().newInstance();
+        }
+        Service service = object.getClass().getAnnotation(Service.class);
+        if (service != null && service.value().length() > 0) {
+            name = service.value();
+        }
+        Class<?>[] interfaces = clazz.getInterfaces();
+        for (Class<?> anInterface : interfaces) {
+            if (anInterface.getName().equals("groovy.lang.GroovyObject")) {
+                continue;
+            }
+            if (anInterface.getName().equals("gzb.frame.factory.GzbOneInterface")) {
+                continue;
+            }
+            if (anInterface.getName().equals("gzb.frame.factory.GzbEntityInterface")) {
+                continue;
+            }
+            mapObject0.put(anInterface.getName(), object);
+            log.t("储存对象", anInterface.getName(), " -> ", object);
+        }
+        mapObject0.put(clazz.getName(), object);
+        log.t("储存对象", clazz.getName(), " -> ", object);
+        if (name != null) {
+            mapObject0.put(name, object);
+            log.t("储存对象", name, " -> ", object);
+        }
+        return object;
     }
 
     public List<ClassEntity> loadFolder(String folder, String pwd, String iv, Map<String, ClassEntity> mapClassEntity) throws Exception {
@@ -268,7 +322,7 @@ public class FactoryImpl implements Factory {
             }
             /// 预设协议头 预设  后续可以覆盖 结束
             /// 限流器 开始
-            if (httpMappings[index].semaphore !=null) {
+            if (httpMappings[index].semaphore != null) {
                 boolean state = httpMappings[index].semaphore.tryAcquire();
                 if (!state) {
                     return runRes.setState(200).setData("{\"code\":2,\"message\":\"请求量超过限流阈值，请稍后重试\"}");
@@ -333,7 +387,7 @@ public class FactoryImpl implements Factory {
             return runRes.setState(500).setData("{\"code\":3,\"message\":\"访问出现错误\"}");
         } finally {
             //限流如果开启 解除占用
-            if (index>-1 && httpMappings[index]!=null && httpMappings[index].semaphore != null) {
+            if (index > -1 && httpMappings[index] != null && httpMappings[index].semaphore != null) {
                 httpMappings[index].semaphore.release();
             }
             ThreadLocalData.this_request.remove();
@@ -393,7 +447,7 @@ public class FactoryImpl implements Factory {
             /// 预设协议头 预设  后续可以覆盖 结束
             times[2] = System.nanoTime();
             /// 限流器 开始
-            if (httpMappings[index].semaphore !=null) {
+            if (httpMappings[index].semaphore != null) {
                 boolean state = httpMappings[index].semaphore.tryAcquire();
                 if (!state) {
                     return runRes.setState(200).setData("{\"code\":2,\"message\":\"请求量超过限流阈值，请稍后重试\"}");
@@ -467,7 +521,7 @@ public class FactoryImpl implements Factory {
             return runRes.setState(500).setData("{\"code\":3,\"message\":\"访问出现错误\"}");
         } finally {
             //限流如果开启 解除占用
-            if (index>-1 && httpMappings[index]!=null && httpMappings[index].semaphore != null) {
+            if (index > -1 && httpMappings[index] != null && httpMappings[index].semaphore != null) {
                 httpMappings[index].semaphore.release();
             }
             ThreadLocalData.this_request.remove();
@@ -693,9 +747,9 @@ public class FactoryImpl implements Factory {
                     DecoratorAdd(path, Constant.requestMethod[httpMapping2.met], 2, listDecoratorEntity, httpMapping2.end);
                 }
                 if (limitation != null && limitation.value() > 0) {
-                    httpMapping2.semaphore=new Semaphore(limitation.value());
+                    httpMapping2.semaphore = new Semaphore(limitation.value());
                 } else {
-                    httpMapping2.semaphore=null;
+                    httpMapping2.semaphore = null;
                 }
 
                 HttpMapping[] httpMappings = mapHttpMapping.get(path);
@@ -750,7 +804,6 @@ public class FactoryImpl implements Factory {
             }
         }
     }
-
 
 
     //返回对象 并且加入缓存
@@ -834,19 +887,20 @@ public class FactoryImpl implements Factory {
         Service service = classEntity.clazz.getAnnotation(Service.class);
         Object object = null;
         if (service != null) {
-            //classEntity.clazz = gen_code(classEntity.clazz, classEntity.code);
-            object = ClassTools.putObject(classEntity.clazz, service.value(), mapObject);
+            //classEntity.clazz = ClassTools.gen_call_code_v4_class(classEntity.clazz, classEntity.code);
+            object=ClassTools.putObject(classEntity.clazz,null,mapObject);
         }
         return object;
     }
+
     //返回对象 并且加入缓存
     public Object loadDataBaseEventFactory(ClassEntity classEntity, Map<String, Object> mapObject) throws Exception {
         DataBaseEventFactory dataBaseEventFactory = classEntity.clazz.getAnnotation(DataBaseEventFactory.class);
         Object object = null;
         if (dataBaseEventFactory != null) {
-             classEntity.clazz = ClassTools.gen_call_code_v4_class(classEntity.clazz, classEntity.code);
-            ForeignKeyFactory foreignKeyFactory = (ForeignKeyFactory)mapObject.get(ForeignKeyFactory.class.getName());
-            foreignKeyFactory.register(classEntity.clazz,classEntity.code);
+            classEntity.clazz = ClassTools.gen_call_code_v4_class(classEntity.clazz, classEntity.code);
+            ForeignKeyFactory foreignKeyFactory = (ForeignKeyFactory) mapObject.get(ForeignKeyFactory.class.getName());
+            foreignKeyFactory.register(classEntity.clazz, classEntity.code);
         }
         return object;
     }
@@ -856,8 +910,7 @@ public class FactoryImpl implements Factory {
         Object object = null;
         if (controller != null) {
             classEntity.clazz = ClassTools.gen_call_code_v4_class(classEntity.clazz, classEntity.code);
-            object = ClassTools.putObject(classEntity.clazz, controller.value(), mapObject);
-
+            object=ClassTools.putObject(classEntity.clazz,null,mapObject);
         }
         return object;
     }
@@ -868,7 +921,7 @@ public class FactoryImpl implements Factory {
         Object object = null;
         if (threadInterval != null) {
             classEntity.clazz = ClassTools.gen_call_code_v4_class(classEntity.clazz, classEntity.code);
-            object = ClassTools.putObject(classEntity.clazz, null, mapObject);
+            object=ClassTools.putObject(classEntity.clazz,null,mapObject);
             Method[] methods = classEntity.clazz.getMethods();
             for (int i = 0; i < methods.length; i++) {
                 startThreadFactory(i, classEntity.clazz, methods[i], (GzbOneInterface) object, mapObject);

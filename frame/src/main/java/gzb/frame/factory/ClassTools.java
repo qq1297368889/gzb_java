@@ -1211,8 +1211,6 @@ public class ClassTools {
             DataBaseEventDelete dataBaseEventDelete = method.getAnnotation(DataBaseEventDelete.class);
             DataBaseEventUpdate dataBaseEventUpdate = method.getAnnotation(DataBaseEventUpdate.class);
 
-
-
             if (getMapping == null
                     && postMapping == null
                     && putMapping == null
@@ -1241,6 +1239,7 @@ public class ClassTools {
             }
             code += "        //方法ID匹配\n" +
                     "        if (_gzb_one_c_id == " + met_id + ") {\n";
+            //固定对象 避免传递 直接生成注入代码
             for (int i1 = 0; i1 < names.length; i1++) {
                 String typeName = ClassTools.toName(types[i1]);
                 if (typeName.startsWith("gzb.frame.netty.entity.Request")) {
@@ -1253,6 +1252,7 @@ public class ClassTools {
                     code += "        " + typeName + " _c_u_" + names[i1] + " = null;\n";
                 }
             }
+            //注入 传入 本次调用 私有对象
             code += "            for (Object object : arrayObject) {\n" +
                     "                if (object == null) {\n" +
                     "                    continue;\n" +
@@ -1299,6 +1299,7 @@ public class ClassTools {
 
             }
             code += "            }\n";
+            //参数注入代码生成
             for (int i1 = 0; i1 < types.length; i1++) {
                 String typeName = ClassTools.toName(types[i1]);
                 if (typeName.startsWith("gzb.frame.netty.entity.Request")) {
@@ -1332,8 +1333,13 @@ public class ClassTools {
 
 
                     if (res01) {
+                        //尝试注入 service 等注解对象
                         code += "                //复杂对象\n" +
-                                "                t_map_list = _gzb_one_c_requestMap.get(\"" + names[i1] + "\");";
+                                "                   _c_u_" + names[i1] + " = (" + types[i1].getCanonicalName() + ")_gzb_one_c_mapObject.get(\"" + types[i1].getName() + "\");\n";
+
+                        //上一步注入失败的话 尝试注入 请求参数
+                        code += "                if (_c_u_" + names[i1] + "==null) {\n";
+                        code += "                t_map_list = _gzb_one_c_requestMap.get(\"" + names[i1] + "\");";
                         if (types[i1].isArray()) {
                             code += "                //如果是数组 则这样输出\n" +
                                     "                if (t_map_list != null && t_map_list.size() > 0) {\n" +
@@ -1348,10 +1354,8 @@ public class ClassTools {
                                     "                        _c_u_" + names[i1] + " = (" + types[i1].getName() + ")t_map_list.get(0);\n" +
                                     "                }\n";
                         }
-                        code += "\n" +
-                                "                if (_c_u_" + names[i1] + "==null) {\n" +
-                                "                   _c_u_" + names[i1] + " = (" + types[i1].getCanonicalName() + ")_gzb_one_c_mapObject.get(\"" + types[i1].getName() + "\");\n" +
-                                "                }\n";
+                        code += "                }\n";
+                        //尝试 把请求参数注入到 实体类 如果依然无法生成对应对象 那么 视为 null
                         code += "                       if (_c_u_" + names[i1] + "==null) {\n";
                         if (types[i1].isArray()) {
                             code += "                           Object[] objects = gzb.frame.factory.ClassTools.loadObject(" + (
@@ -1370,8 +1374,8 @@ public class ClassTools {
                                     "                                   _c_u_" + names[i1] + " =(" + typeName + ") objects[0];\n" +
                                     "                               }\n";
                         }
-
                         code += "                       }\n";
+
                     } else {
                         code += "                //简单对象\n" +
                                 "                t_map_list = _gzb_one_c_requestMap.get(\"" + names[i1] + "\");";
@@ -1412,12 +1416,22 @@ public class ClassTools {
                                     ClassTools.toName(types[i1]) + "." + funName +
                                     "(" + ("t_map_list.get(0) instanceof String ? (String) t_map_list.get(0) : t_map_list.get(0).toString()") + ");\n" +
                                     "            }\n";
+                            //这里可能存在特殊情况 基本数据类型 如果存在基本数据类型 且为null 直接提示某个参数不能为空
+                            if (types[i1].isPrimitive()) {
+                                code+="                                if (_c_u_" + names[i1]+" == null){\n" +
+                                        "                                    gzb.tools.Config.log.d(\"参数:"+names[i1]+",类型为："+types[i1].getName()+",不允许为 NULL\");\n" +
+                                        "                                    return \"{\\\"\"+gzb.tools.Config.stateName+\"\\\":\\\"\"+gzb.tools.Config.failVal+\"\\\",\\\"\"+gzb.tools.Config.messageName+\"\\\":\\\"有必填参数不允许为空,请检查日志\\\"}\";\n" +
+                                        "                                }";
+
+                            }
                         }
 
                     }
                     code += "                }\n";
                 }
             }
+
+            //检查是否开启事务 生成对应代码
             if (transaction == null || transaction.value() == false) {
                 code += "            //不开事物直接生成这个\n" +
                         "            " + (method.getReturnType() == void.class ? "" : "object_return =") + " " + method.getName() + "(";
@@ -2249,9 +2263,14 @@ public class ClassTools {
     }
 
     public static Object putObject(Class<?> clazz, String name, Map<String, Object> map) throws Exception {
-        Object object = null;
+        return putObject(clazz,name,map,null);
+    }
+    public static Object putObject(Class<?> clazz, String name, Map<String, Object> map,Object object) throws Exception {
 
-        object = clazz.getDeclaredConstructor().newInstance();
+        if (object==null) {
+            object = clazz.getDeclaredConstructor().newInstance();
+        }
+        log.t("储存对象", object);
         Class<?>[] interfaces = clazz.getInterfaces();
         for (Class<?> anInterface : interfaces) {
             if (anInterface.getName().equals("groovy.lang.GroovyObject")) {
@@ -2264,7 +2283,6 @@ public class ClassTools {
                 continue;
             }
             map.put(anInterface.getName(), object);
-            log.t("储存对象", anInterface.getName(), " -> ", object);
         }
         map.put(clazz.getName(), object);
         if (name != null && !name.isEmpty()) {

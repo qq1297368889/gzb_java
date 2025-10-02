@@ -133,7 +133,7 @@ public class HTTP_V3 {
             throw e;
         } finally {
             if (connection != null) {
-                //connection.disconnect();
+               connection.disconnect();
             }
         }
 

@@ -102,9 +102,10 @@ public class NettyServer {
             return;
         }
         bossGroup = new NioEventLoopGroup(main_thread_num);
-        workerGroup = new NioEventLoopGroup(io_thread_num);
+        workerGroup = new NioEventLoopGroup(io_thread_num);//,new TestExecutor()
         ServerBootstrap bootstrap = new ServerBootstrap();
         try {
+
             bootstrap.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
                     .option(ChannelOption.SO_BACKLOG, Config.maxAwaitNum)         // 待处理连接队列大小

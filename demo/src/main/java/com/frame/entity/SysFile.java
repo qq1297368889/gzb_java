@@ -237,17 +237,22 @@ public class SysFile implements Serializable, JsonSerializable{
         this.sysFileType = sysFileType;
         return this;
     }
-    public List<?> getList() {
-        return (List<?>) data;
-    }
-
     public SysFile setList(List<?> data) {
         this.data = data;
         return this;
     }
 
+    public List<?> getList() {
+          if (data instanceof List) {
+                return (List<?>) data;
+          }
+        return null;
+    }
     public Map<String, Object> getMap() {
-        return (Map<String, Object>) data;
+          if (data instanceof Map) {
+                return (Map<String, Object>) data;
+          }
+        return null;
     }
 
     public SysFile setMap(Map<String, Object> data) {

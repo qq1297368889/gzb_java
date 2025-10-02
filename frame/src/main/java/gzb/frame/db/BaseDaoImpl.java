@@ -117,7 +117,6 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
 
     @Override
     public List<T> query(String sql, Object[] params, String sortField, String sortType, int page, int size, int second) {
-        log.d(sql, params, sortField, sortType, page, size, second);
         String pageSql = sql.toLowerCase();
         if (pageSql.endsWith(";")) {
             pageSql = pageSql.substring(0, pageSql.length() - 1);

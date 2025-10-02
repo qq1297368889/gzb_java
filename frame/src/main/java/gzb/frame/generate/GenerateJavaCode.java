@@ -20,6 +20,7 @@ package gzb.frame.generate;
 
 import gzb.entity.TableInfo;
 import gzb.frame.db.DataBase;
+import gzb.frame.db.DataBaseConfig;
 import gzb.frame.db.DataBaseImpl;
 import gzb.tools.*;
 
@@ -31,10 +32,11 @@ public class GenerateJavaCode {
         String path = Config.thisPath() + "/src/main/java";
         String pkg = "com";
         String dbName = "frame";
-        generateCode(path, pkg, 2,true,dbName,dbName);
+        generateCode(path, pkg, 2, true, dbName, dbName);
     }
-    public static void generateCode(String codeSrcPath, String pkg,String frameDbKey,String...userDbKeys) throws Exception {
-        generateCode(codeSrcPath,pkg,1,false,frameDbKey,userDbKeys);
+
+    public static void generateCode(String codeSrcPath, String pkg, String frameDbKey, String... userDbKeys) throws Exception {
+        generateCode(codeSrcPath, pkg, 1, false, frameDbKey, userDbKeys);
     }
 
 
@@ -44,12 +46,15 @@ public class GenerateJavaCode {
     /// type=0 生成全部表  type=1 排除 sys_xxx  type=2 只生成 sys_xxx
     /// frameDbKey 储存授权 验证 信息 等内容的数据库 key  如果只有一个数据库 frameDbKey和userDbKeys一样即可
     /// userDbKeys 业务数据库 key
-    public static void generateCode(String codeSrcPath, String pkg, int type,boolean updateMapping,String frameDbKey,String...userDbKeys) throws Exception {
-        DataBase frameDataBase = new DataBaseImpl(frameDbKey);
-        String frameDbName=Config.get("db.mysql."+frameDbKey+".name");
+    public static void generateCode(String codeSrcPath, String pkg, int type, boolean updateMapping, String frameDbKey, String... userDbKeys) throws Exception {
+        DataBaseConfig dataBaseConfig = DataBaseConfig.readConfig(frameDbKey);
+        DataBase frameDataBase = new DataBaseImpl(dataBaseConfig);
+
+        String frameDbName = dataBaseConfig.getName();
         for (int i = 0; i < userDbKeys.length; i++) {
-            DataBase userDataBase = new DataBaseImpl(userDbKeys[i]);
-            String userDbName=Config.get("db.mysql."+userDbKeys[i]+".name");
+            DataBaseConfig dataBaseConfigUser = DataBaseConfig.readConfig(userDbKeys[i]);
+            DataBase userDataBase = new DataBaseImpl(dataBaseConfigUser);
+            String userDbName = dataBaseConfigUser.getName();
             List<TableInfo> list0 = userDataBase.getTableInfo();
             List<TableInfo> list = new ArrayList<>();
             String[] names = new String[]{
@@ -63,10 +68,10 @@ public class GenerateJavaCode {
                     list.add(tableInfo);
                     continue;
                 }
-                boolean suc =false;
+                boolean suc = false;
                 for (String name : names) {
                     if (tableInfo.name.equals(name)) {
-                        suc=true;
+                        suc = true;
                         break;
                     }
                 }
@@ -79,9 +84,9 @@ public class GenerateJavaCode {
                     continue;
                 }
             }
-            code(codeSrcPath, pkg, userDbKeys[i], userDbName, list,updateMapping);
+            code(codeSrcPath, pkg, userDbKeys[i], userDbName, list, updateMapping);
             if (updateMapping) {
-                Tools.updateMapping(frameDataBase,list,null);
+                Tools.updateMapping(frameDataBase, list, null);
             }
 
         }
@@ -90,8 +95,8 @@ public class GenerateJavaCode {
 
     }
 
-    public static void code(String codeSrcPath, String pkg,String dbKey, String dbName, List<TableInfo> list,boolean updateMapping) throws Exception {
-        if (list==null|| list.isEmpty()) {
+    public static void code(String codeSrcPath, String pkg, String dbKey, String dbName, List<TableInfo> list, boolean updateMapping) throws Exception {
+        if (list == null || list.isEmpty()) {
             return;
         }
         gzb.frame.generate.EntityCode entityCode = new EntityCode(codeSrcPath, pkg, null);
@@ -100,7 +105,7 @@ public class GenerateJavaCode {
         gzb.frame.generate.DaoCode daoCode = new DaoCode(codeSrcPath, pkg, null);
         //SqlToolsCode sqlToolsCode = new SqlToolsCode(codeSrcPath, pkg, null);
         gzb.frame.generate.ActionCode actionCode = new ActionCode(codeSrcPath, pkg, null);
-        dbCode.start(dbKey,dbName, true);
+        dbCode.start(dbKey, dbName, true);
         entityCode.start(list, true);
         daoImplCode.start(list, true);
         daoCode.start(list, true);

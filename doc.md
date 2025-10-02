@@ -38,7 +38,7 @@
 
 
 # 参数注入介绍
-#### 所有注解了 会被框架管理的 类 都可以被注入  可以注入到 类变量 和 方法参数  
+#### 所有被框架管理的 类 都可以被注入  可以注入到 类变量 和 方法参数  
 #### http 请求流程的对象 Request(请求对象 .getSession()可以获取session )  Response(响应对象) Map<List<Object>>(请求参数) Log(框架日志对象) GzbJson(JSO对象) 会被注入
 #### 在装饰器 DecoratorStart 中 runRes.setData(xx)的对象 也会在后续流程被注入 
 #### 有一个例外 线程模型 不会注入http相关的变量 因为他与http请求无关

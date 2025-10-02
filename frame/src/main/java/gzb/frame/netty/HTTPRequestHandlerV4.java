@@ -22,25 +22,16 @@ import gzb.frame.netty.entity.Request;
 import gzb.frame.netty.entity.RequestDefaultImpl;
 import gzb.frame.netty.entity.Response;
 import gzb.frame.server.http.entity.RunRes;
-import gzb.tools.Config;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 
 
 public class HTTPRequestHandlerV4 extends SimpleChannelInboundHandler<FullHttpRequest> {
+
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
-        if (req.uri().startsWith("/text")) {
-            FullHttpResponse response = new DefaultFullHttpResponse(
-                    HttpVersion.HTTP_1_1,
-                    HttpResponseStatus.OK,
-                    Unpooled.copiedBuffer("{\"code\":\"1\",\"data\":{\"sysFileMd5\":\"101\"},\"message\":\"n01\"}".getBytes(Config.encoding)));
-            response.headers().set("content-length", response.content().readableBytes());
-            ctx.writeAndFlush(response);
-            return;
-        }
+
         //long startTime = System.nanoTime();
         Request request = new RequestDefaultImpl(ctx, req);
         //long endTime1 = System.nanoTime();
@@ -48,21 +39,29 @@ public class HTTPRequestHandlerV4 extends SimpleChannelInboundHandler<FullHttpRe
         //long endTime2 = System.nanoTime();
         response.setStatus(200);
         //这个方法不会出错 有try包裹
-        RunRes runRes = NettyServer.factory.request(request, response);
-        //你说的意思必须在这里释放  而我放在了后边 这没区别啊
-        //long endTime3 = System.nanoTime();
-        if (runRes.getState() == 200) {
-            response.sendAndFlush(runRes.getData());
-        } else {
-            if (runRes.getState() == 404) {
-                NettyServer.HTTPStaticFileHandler.channelRead0(ctx, req);
+        RunRes runRes = null;
+        try {
+            runRes = NettyServer.factory.request(request, response);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }finally {
+            //你说的意思必须在这里释放  而我放在了后边 这没区别啊
+            //long endTime3 = System.nanoTime();
+            if (runRes.getState() == 200) {
+                response.sendAndFlush(runRes.getData());
             } else {
-                response.setContentType("application/json;charset=UTF-8");
-                response.setStatus(runRes.getState()).sendAndFlush(runRes.getData());
+                if (runRes.getState() == 404) {
+                    NettyServer.HTTPStaticFileHandler.channelRead0(ctx, req);
+                } else {
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.setStatus(runRes.getState()).sendAndFlush(runRes.getData());
+                }
             }
+            //System.out.println("req.content().refCnt()  "+req.content().refCnt());
+            //log.d("耗时",endTime3-endTime2,endTime2-endTime1,endTime1-startTime,endTime3-startTime,runRes);
         }
-        //System.out.println("req.content().refCnt()  "+req.content().refCnt());
-        //log.d("耗时",endTime3-endTime2,endTime2-endTime1,endTime1-startTime,endTime3-startTime,runRes);
+
+
     }
 
     @Override

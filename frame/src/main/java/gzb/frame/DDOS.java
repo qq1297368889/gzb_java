@@ -183,7 +183,12 @@ public class DDOS {
             str += "请求(最近)" + (all_num_this - all_num_lao) + "次,";
 
             str += "汇总耗时(最近)" + ((all_time_this - all_time_lao) / 1000) + "微秒,";
-            str += "平均耗时(最近)" + ((all_time_this - all_time_lao) / (all_num_this - all_num_lao) / 1000) + "微秒,";
+            if (all_num_this - all_num_lao>0 && all_time_this - all_time_lao>0) {
+                str += "平均耗时(最近)" + ((all_time_this - all_time_lao) / (all_num_this - all_num_lao) / 1000) + "微秒,";
+            }else{
+                str += "平均耗时(最近)0微秒,";
+            }
+
             str += "最大耗时(最近)" + (max / 1000) + "微秒,";
 
             str += "平均耗时(全局)" + (all_time_this / all_num_this / 1000) + "微秒,";

@@ -150,13 +150,7 @@ public class AsyncFactory {
 
                         }
                 } finally {
-                    if (preparedStatement != null) {
-                        preparedStatement.close();
-                    }
-                    if (connection != null) {
-                        connection.setAutoCommit(true);
-                        connection.close();
-                    }
+                    dataBase.close(null,preparedStatement);
                 }
 
             }
@@ -216,15 +210,7 @@ public class AsyncFactory {
             log.e("事务执行错误", e, "未执行数据", cacheMap, "已执行数据", cacheMap0);
             return false;
         } finally {
-
-            if (preparedStatement != null) {
-                preparedStatement.close();
-                log.d("preparedStatement", "close");
-            }
-            if (connection != null) {
-                connection.setAutoCommit(true);
-                connection.close();
-            }
+            dataBase.close(null,preparedStatement);
         }
         return true;
     }

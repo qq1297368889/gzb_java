@@ -110,7 +110,7 @@ public class SysMappingController{
      * /system/v1.0.0/sysMapping/deleteAll?sysMappingId=
      * */
     @DecoratorOpen
-    @GetMapping("deleteAll")
+    @DeleteMapping("deleteAll")
     public Object deleteAll(GzbJson result, Long[] sysMappingId) throws Exception {
         if (sysMappingId == null || sysMappingId.length < 1) {
             return result.fail("delete 输入参数错误");
