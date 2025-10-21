@@ -20,6 +20,7 @@ package gzb.frame.db;
 
 import gzb.tools.JSONResult;
 
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
@@ -62,6 +63,8 @@ public interface BaseDao<T> {
 
     int count(T t) throws Exception;
 
+    public T find(String sql, Object[] params) throws Exception;
+    public T find(String sql, Object[] params, int second) throws Exception;
     /**
      * 根据实体对象的非空属性作为查询条件，查询并返回一个实体列表。
      *
@@ -152,6 +155,7 @@ public interface BaseDao<T> {
      * @throws Exception 如果发生数据库访问错误。
      */
     int saveAsync(T t) throws Exception;
+    int saveAsync(T t,Runnable fail) throws Exception;
 
     /**
      * 异步更新一个实体。
@@ -161,6 +165,7 @@ public interface BaseDao<T> {
      * @throws Exception 如果发生数据库访问错误。
      */
     int updateAsync(T t) throws Exception;
+    int updateAsync(T t,Runnable fail) throws Exception;
 
     /**
      * 异步删除一个实体。
@@ -170,6 +175,7 @@ public interface BaseDao<T> {
      * @throws Exception 如果发生数据库访问错误。
      */
     int deleteAsync(T t) throws Exception;
+    int deleteAsync(T t,Runnable fail) throws Exception;
 
     /**
      * 根据实体对象、排序和分页信息，返回一个包含分页数据的 JSON 结果。
@@ -188,6 +194,7 @@ public interface BaseDao<T> {
 
     // --- 缓存操作 ---
 
+    T find(T t, int second) throws Exception;
     /**
      * 根据实体对象，从缓存中查询实体列表。
      *
@@ -255,14 +262,6 @@ public interface BaseDao<T> {
 
 
 
-
-
-
-
-
-
-
-
     /**
      * 执行一条 SQL DML（数据操作语言）语句，如 INSERT, UPDATE, DELETE。
      *
@@ -272,7 +271,7 @@ public interface BaseDao<T> {
      * @throws Exception 如果发生数据库访问错误。
      */
     int execute(String sql, Object[] params) throws Exception;
-    List<T> query(String sql, Object[] params, String sortField, String sortType, int page, int size, int second);
+    List<T> query(String sql, Object[] params, String sortField, String sortType, int page, int size, int second) throws SQLException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, Exception;
     JSONResult queryPage(String sql, Object[] objects, String sortField, String sortType, Integer page, Integer size, int maxPage, int maxSize) throws Exception;
     JSONResult queryPage(String sql, Object[] objects, String sortField, String sortType, Integer page, Integer size, int maxPage, int maxSize, int second) throws Exception;
 

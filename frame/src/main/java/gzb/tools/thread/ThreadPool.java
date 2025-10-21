@@ -1,182 +1,98 @@
-/*
- *
- *  * Copyright [2025] [GZB ONE]
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  * http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
- *
- */
-
 package gzb.tools.thread;
 
-import gzb.tools.Queue;
+import gzb.tools.Config;
+import gzb.tools.OSUtils;
+import gzb.tools.OnlyId;
+import gzb.tools.Tools;
+import gzb.tools.log.Log;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ThreadPool {
-    public static ThreadPool pool = new ThreadPool(10, 100);
-    int startThread;
-    int maxThread;
-    List<Thread> listThread = new ArrayList<>();
-    Queue<Runnable> queue = new Queue<>();
-    Lock mapThreadShareLock = new ReentrantLock();
-    Map<Long, Map<String, Object>> mapThreadShare = new ConcurrentHashMap<>();
 
-    public ThreadPool(int startThread, int maxThread) {
-        this.startThread = startThread;
-        this.maxThread = maxThread;
-        startThread(1, "thread-home", new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    try {
-                        if (queue.size() > listThread.size() - 3) {
-                            if (maxThread==0 || maxThread > queue.size()) {
-                                startExecuteThread(1);
-                            }
-                        }
-                        Thread.sleep(500);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
-        startExecuteThread(startThread);
+    public static Map<String, List<Thread>> serviceThread = new ConcurrentHashMap<>();
+
+    public static void startService(int threadNum, String name, Runnable runnable) {
+        for (int i = 0; i < threadNum; i++) {
+            startService(runnable, name + "-" + i);
+        }
     }
 
-    public void startExecuteThread(int num) {
-        this.listThread.addAll(startThread(num, "thread-pool", new Runnable() {
+    public static void startService(Runnable runnable, String name) {
+        if (name == null) {
+            name = "默认线程名-" + OnlyId.getDistributed();
+        }
+        Thread thread = new Thread(runnable, name);
+        List<Thread> list = serviceThread.get(name);
+        if (list == null) {
+            list = new ArrayList<>();
+            serviceThread.put(name, list);
+        }
+        list.add(thread);
+        thread.start();
+    }
+
+    public Log log = Log.log;
+
+    public static List<Thread> readService(String name) {
+        return serviceThread.get(name);
+    }
+
+    private final int await_sec = 15;
+    public volatile LinkedBlockingQueue<Runnable> runnableQueue = null;
+    public ThreadPool() {
+        this(Config.cpu, Config.cpu * 100);
+    }
+    public ThreadPool(int THREAD_NUM, int MAX_QUEUE_SIZE) {
+        this.THREAD_NUM = THREAD_NUM;
+        this.MAX_QUEUE_SIZE = MAX_QUEUE_SIZE;
+        runnableQueue = new LinkedBlockingQueue<>(MAX_QUEUE_SIZE);
+        threads = new Thread[THREAD_NUM];
+        for (int i = 0; i < THREAD_NUM; i++) {
+            startWork(i);
+        }
+        log.d("线程池启动成功",THREAD_NUM);
+    }
+
+    public int THREAD_NUM = 1;
+    public int MAX_QUEUE_SIZE = 1;
+    public Thread[] threads;
+
+
+    private void startWork(int index) {
+        Thread thread = new Thread() {
             @Override
             public void run() {
                 while (true) {
                     try {
-                        Runnable runnable = queue.take();
-                        runnable.run();
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                        runnableQueue.take().run();
+                    } catch (InterruptedException e) {
+                        log.d("线程被中断", Thread.currentThread().getName(), e);
                         break;
+                    } catch (Exception e) {
+                        log.e("线程运行出错", Thread.currentThread().getName(), e);
                     }
                 }
             }
-        }));
+        };
+        thread.setName("thread-pool-v2");
+        thread.start();
+        threads[index] = thread;
     }
 
-    public void putThreadShare(String key, Object val) {
-        long id = Thread.currentThread().getId();
-        Map<String, Object> map = mapThreadShare.get(id);
-
-        if (map == null) {
-            mapThreadShareLock.lock();
-            try {
-                if (map == null) {
-                    map = new ConcurrentHashMap<>();
-                    mapThreadShare.put(id, map);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                mapThreadShareLock.unlock();
-            }
-        }
-        map.put(key, val);
-    }
-
-    public Object getThreadShare(String key) {
-        long id = Thread.currentThread().getId();
-        Map<String, Object> map = mapThreadShare.get(id);
-        if (map == null) {
-            return null;
-        }
-        return map.get(key);
-    }
-
-    public void stopAll() {
-        for (Thread thread : listThread) {
-            stop(thread);
-        }
-    }
-
-    public void stop(Thread thread) {
-        thread.interrupt();
-    }
-
-    public int execute(int num, Runnable runnable) {
-        for (int i = 0; i < num; i++) {
-            if (!execute(runnable)) {
-                return i + 1;
-            }
-        }
-        return num;
-    }
 
     public boolean execute(Runnable runnable) {
-        if (listThread.size() >= maxThread && maxThread>0) {
-            return false;
-        }
-        queue.add(() -> {
-            while (!Thread.currentThread().isInterrupted()) {
-                runnable.run();
-            }
-        });
-        return true;
-    }
-    public boolean execute0(Runnable runnable) {
-        if (listThread.size() >= maxThread && maxThread>0) {
-            return false;
-        }
-        queue.add(runnable);
-        return true;
+        return runnableQueue.offer(runnable);
     }
 
-    public List<Thread> startThread(int startNum, String name, Boolean daemon, Runnable runnable) {
-        List<Thread> listThread1 = new ArrayList<>();
-        for (int i = 0; i < startNum; i++) {
-            Thread thread = new Thread(runnable);
-            thread.setDaemon(daemon);
-            thread.setName(name + "-" + i);
-            thread.start();
-            listThread1.add(thread);
-        }
-        return listThread1;
-    }
-
-    public List<Thread> startThread(int startNum, String name, Runnable runnable) {
-        List<Thread> listThread1 = startThread(startNum, name, true, runnable);
-        if (listThread1 == null || listThread1.size() == 0) {
-            return null;
-        }
-        return listThread1;
-    }
-
-    public List<Thread> startThread(int startNum, Runnable runnable) {
-        List<Thread> listThread1 = startThread(startNum, "ThreadPool-start-", true, runnable);
-        if (listThread1 == null || listThread1.size() == 0) {
-            return null;
-        }
-        return listThread1;
-    }
-
-    public Thread startThread(Runnable runnable) {
-        List<Thread> listThread1 = startThread(1, "ThreadPool-start-", true, runnable);
-        if (listThread1 == null || listThread1.size() == 0) {
-            return null;
-        }
-        return listThread1.get(0);
+    public int size() {
+        return runnableQueue.size();
     }
 
 

@@ -65,10 +65,10 @@ public interface DataBase {
     Long getOnlyIdDistributed();
 
     //获取整数最大ID
-    int getMaxId(String mapName, String idName);
+    int getMaxId(String tableName, String idName);
 
     //获取整数自增ID
-    int getOnlyIdNumber(String mapName, String idName);
+    int getOnlyIdNumber(String tableName, String idName, boolean reset);
 
     //获取一个数据库连接
     Connection getConnection() throws SQLException;
@@ -104,19 +104,17 @@ public interface DataBase {
     int runSqlAsync(String sql, Object[] para);
 
     //执行sql 修改删除新增 异步 批量
-    int runSqlAsyncBatch(String sql, List<Object[]> list_parameter);
+    int runSqlAsync(String sql, Object[] para, Runnable fail);
 
-    boolean isOpenTransaction();
+    Integer readTransactionState();
 
     void setConnection(Connection connection);
 
-    void setConnection(Connection connection0, boolean openTransaction0);
-
-    void openTransaction();
+    void openTransaction(boolean simulation);
 
     void endTransaction();
 
-    void commit() throws SQLException;
+    void commit() throws Exception;
 
     void rollback() throws SQLException;
 }

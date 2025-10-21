@@ -18,17 +18,16 @@
 
 package gzb.frame.netty;
 
-import gzb.frame.netty.entity.FileUploadEntity;
+import gzb.entity.FileUploadEntity;
 import gzb.tools.Config;
 import gzb.tools.Tools;
+import gzb.tools.log.Log;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http.multipart.*;
-import io.netty.util.CharsetUtil;
 
 import java.io.File;
-import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -179,7 +178,7 @@ public class HTTPRequestParameters {
                 }
             }
         } catch (Exception e) {
-            Config.log.e("parseFormData 出现错误", e);
+            Log.log.e("parseFormData 出现错误", e);
             params.clear();
         } finally {
             // 确保释放资源

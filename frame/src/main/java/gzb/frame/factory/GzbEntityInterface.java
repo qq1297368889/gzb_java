@@ -20,11 +20,22 @@ package gzb.frame.factory;
 
 import gzb.entity.SqlTemplate;
 
+
 public interface GzbEntityInterface {
-    String toJson(Object object,gzb.tools.log.Log _gzb_log) throws Exception;
-    Object[] loadObject(java.util.Map<String,java.util.List<Object>> map,gzb.tools.log.Log _gzb_log) throws Exception;
+    String toJson(Object object) throws Exception;
+
+    byte[] toJsonBytes(Object object) throws Exception;
+
+    Object[] loadObject(java.util.Map<String, java.util.List<Object>> map) throws Exception;
+
     SqlTemplate toDeleteSql(Object obj) throws Exception;
+
     SqlTemplate toUpdateSql(Object obj) throws Exception;
-    SqlTemplate toSaveSql(Object obj) throws Exception;
+
+    SqlTemplate toSaveSql(Object obj,gzb.frame.db.DataBase dataBase,boolean reset) throws Exception;
+
     SqlTemplate toSelectSql(Object obj) throws Exception;
+    public Object loadResultSet(java.sql.ResultSet resultSet, java.util.Set<String> names) throws Exception;
+    void toJson(Object obj,StringBuilder stringBuilder) throws Exception;
+
 }

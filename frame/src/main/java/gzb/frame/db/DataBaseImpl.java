@@ -33,25 +33,54 @@ import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
+
 
 public class DataBaseImpl implements DataBase {
 
+    public static class Column {
+        public String name;
+        public Class<?> clazz;
+
+        public Object toValue(Object object) {
+            if (object == null) {
+                return null;
+            }
+            if (object.getClass() == clazz) {
+                return object;
+            }
+            if (clazz == String.class) return object.toString();
+            if (clazz == Long.class) return Long.valueOf(object.toString());
+            if (clazz == Integer.class) return Integer.valueOf(object.toString());
+            if (clazz == Short.class) return Short.valueOf(object.toString());
+            if (clazz == Float.class) return Float.valueOf(object.toString());
+            if (clazz == Double.class) return Double.valueOf(object.toString());
+            if (clazz == Boolean.class) return Boolean.valueOf(object.toString());
+            if (clazz == byte[].class) return object.toString().getBytes(Config.encoding);
+
+            return null;
+        }
+    }
+
+    static Object[] defNullArray = new Object[0];
     //数据库连接
     private final ThreadLocal<Connection> connectionThreadLocal = new ThreadLocal<>();
-    //数据库事务是否开启
-    private final ThreadLocal<Boolean> openTransactionThreadLocal = new ThreadLocal<>();
+    //数据库事务是否开启 null关闭 1开启 2模拟
+    private final ThreadLocal<Integer> transactionSimulation = new ThreadLocal<>();
+
+    private final ThreadLocal<Map<String, List<Object[]>>> simulation_sql = new ThreadLocal<>();
 
     public AsyncFactory asyncFactory = null;
 
     DataBaseConfig dataBaseConfig;
-    public static Log log = Config.log;
+    public static Log log = Log.log;
     public static String[] montageArr = new String[]{"and", "or", "and(", "or(", ")and", ")or", "(", ")"};
     public static String[] symbolArr = new String[]{"=", ">", ">=", "<", "<=", "<>", "%like%", "like%", "%like"};
 
     public HikariDataSource hds = null;
-    private Map<String, String> humpMap = new HashMap<>();
-    public Map<String, String> tableInfoMap = new ConcurrentHashMap<>();
+    public Map<String, Column> columnInfoMap = new ConcurrentHashMap<>();
+    public Map<String, String> columnInfoMapSy = new ConcurrentHashMap<>();
 
     Map<Object, EntityClassInfo> mapEntityClassInfo = new ConcurrentHashMap<>();
 
@@ -96,63 +125,39 @@ public class DataBaseImpl implements DataBase {
         }
     }
 
+    public void pueColumnInfoMap(String tableName, String name, String type) {
+        Column column = new Column();
+        try {
+            column.clazz = Class.forName(type);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        column.name = name;
+        columnInfoMap.put(name, column);
+        columnInfoMap.put(Tools.lowStr_hump(name, false).toLowerCase(), column);
+        columnInfoMap.put((tableName + "." + name).toLowerCase(), column);
+        columnInfoMap.put((Tools.lowStr_hump(tableName, false) + "." + Tools.lowStr_hump(name, false)).toLowerCase(), column);
+
+
+    }
+
     private void readTableInfo() throws Exception {
         List<TableInfo> list = getTableInfo();
         for (TableInfo tableInfo : list) {
             for (int i = 0; i < tableInfo.columnNames.size(); i++) {
-                //表名 对应 表名
-                tableInfoMap.put((tableInfo.name).toLowerCase(), tableInfo.name);
-                //表名驼峰 对应 表名
-                tableInfoMap.put((tableInfo.nameHumpUpperCase).toLowerCase(), tableInfo.name);
-
-                //列名 对应 列名
-                tableInfoMap.put((tableInfo.columnNames.get(i)).toLowerCase(), tableInfo.columnNames.get(i));
-                //列名驼峰 对应 列名
-                tableInfoMap.put((tableInfo.columnNamesHumpLowerCase.get(i)).toLowerCase(), tableInfo.columnNames.get(i));
-
-                //表名.列名 对应 列名
-                tableInfoMap.put((tableInfo.name + "." + tableInfo.columnNames.get(i)).toLowerCase(), tableInfo.columnNames.get(i));
-                //表名.列名驼峰 对应 列名
-                tableInfoMap.put((tableInfo.name + "." + tableInfo.columnNamesHumpLowerCase.get(i)).toLowerCase(), tableInfo.columnNames.get(i));
-
-                //表名驼峰.列名 对应 列名
-                tableInfoMap.put((tableInfo.nameHumpLowerCase + "." + tableInfo.columnNames.get(i)).toLowerCase(), tableInfo.columnNames.get(i));
-                //表名驼峰.列名驼峰 对应 列名
-                tableInfoMap.put((tableInfo.nameHumpLowerCase + "." + tableInfo.columnNamesHumpLowerCase.get(i)).toLowerCase(), tableInfo.columnNames.get(i));
-
+                pueColumnInfoMap(tableInfo.name, tableInfo.columnNames.get(i), tableInfo.columnTypesDb.get(i));
+                columnInfoMapSy.put(tableInfo.name.toLowerCase(), tableInfo.name);
+                columnInfoMapSy.put(tableInfo.nameHumpLowerCase.toLowerCase(), tableInfo.name);
             }
         }
         for (int i = 0; i < montageArr.length; i++) {
-            tableInfoMap.put("montage." + (i + 1), montageArr[i]);
+            columnInfoMapSy.put("montage." + (i + 1), montageArr[i]);
         }
         for (int i = 0; i < symbolArr.length; i++) {
-            tableInfoMap.put("symbol." + (i + 1), symbolArr[i]);
+            columnInfoMapSy.put("symbol." + (i + 1), symbolArr[i]);
         }
     }
 
-    private String getName(String name) {
-        if (name == null) {
-            return null;
-        }
-        String nameHump = humpMap.get(name);
-        if (nameHump != null) {
-            return nameHump;
-        }
-        String[] arr1 = name.split("_");
-        String n = arr1[0];
-        for (int i = 1; i < arr1.length; i++) {
-            char[] chars = arr1[i].toCharArray();
-            for (int i1 = 0; i1 < chars.length; i1++) {
-                if (i1 == 0) {
-                    n += String.valueOf(chars[i1]).toUpperCase();
-                } else {
-                    n += String.valueOf(chars[i1]).toLowerCase();
-                }
-            }
-        }
-        humpMap.put(name, n);
-        return n;
-    }
 
     /**
      * 创建并配置 HikariCP 数据库连接池
@@ -241,19 +246,24 @@ public class DataBaseImpl implements DataBase {
 
     @Override
     public SqlTemplate toSelect(String tableName, String[] fields, String[] symbol, String[] value, String[] montage, String sortField, String sortType) {
-        StringBuilder sb = new StringBuilder();
-        StringBuilder sb2 = new StringBuilder();
+        StringBuilder sb = new StringBuilder(50);
+        StringBuilder sb2 = new StringBuilder(100);
         List<Object> list = new ArrayList<>();
-        String tableName1 = tableInfoMap.get(tableName);
+        String tableName1 = columnInfoMapSy.get(tableName);
         if (tableName1 == null) {
             log.d("tableName1 == null");
             return null;
         }
-        if (fields != null && symbol != null && value != null && montage != null && fields.length == symbol.length && symbol.length == value.length && montage.length >= value.length - 1) {
+        if (fields != null && symbol != null && value != null && montage != null &&
+                fields.length == symbol.length && symbol.length == value.length && montage.length >= value.length - 1) {
             String montage1 = null;
             for (int i = 0; i < fields.length; i++) {
-                String field1 = tableInfoMap.get((fields[i]).toLowerCase());
-                String symbol1 = tableInfoMap.get("symbol." + symbol[i]);
+                Column column = columnInfoMap.get(fields[i].toLowerCase());
+                if (column == null) {
+                    continue;
+                }
+                String field1 = column.name;
+                String symbol1 = columnInfoMapSy.get("symbol." + symbol[i]);
                 if (field1 == null || symbol1 == null || value[i] == null) {
                     int size = sb2.length();
                     if (size > 10) {
@@ -271,30 +281,36 @@ public class DataBaseImpl implements DataBase {
                     sb2.append("where ");
                 }
                 if (symbol1.equals("%like%")) {
-                    sb2.append(field1).append(" like ? ");
-                    list.add("%" + value[i] + "%");
+                    if (dataBaseConfig.type.equals("mysql")) {
+                        sb2.append(field1).append(" like ? ");
+                        list.add("%" + value[i] + "%");
+                    } else if (dataBaseConfig.type.equals("postgresql")) {
+                        sb2.append("CAST(").append(field1).append(" AS TEXT) like ? ");
+                        list.add("%" + value[i] + "%");
+                    }
                 } else if (symbol1.equals("%like")) {
-                    sb2.append(field1).append(" like ? ");
-                    list.add("%" + value[i]);
+                    if (dataBaseConfig.type.equals("mysql")) {
+                        sb2.append(field1).append(" like ? ");
+                        list.add("%" + value[i]);
+                    } else if (dataBaseConfig.type.equals("postgresql")) {
+                        sb2.append("CAST(").append(field1).append(" AS TEXT) like ? ");  // 同样加 CAST
+                        list.add("%" + value[i]);
+                    }
                 } else if (symbol1.equals("like%")) {
-                    sb2.append(field1).append(" like ? ");
-                    list.add(value[i] + "%");
+                    if (dataBaseConfig.type.equals("mysql")) {
+                        sb2.append(field1).append(" like ? ");
+                        list.add(value[i] + "%");
+                    } else if (dataBaseConfig.type.equals("postgresql")) {
+                        sb2.append("CAST(").append(field1).append(" AS TEXT) like ? ");  // 同样加 CAST
+                        list.add(value[i] + "%");
+                    }
                 } else {
                     sb2.append(field1).append(" ").append(symbol1).append(" ? ");
-                    list.add(value[i]);
-                    //暂时停用
-                 /*   String val = tableInfoMap.get(value[i]);
-                    if (val==null){
-                        sb2.append(field1).append(" ").append(symbol1).append(" ? ");
-                        list.add(value[i]);
-                    }else{
-                        sb2.append(field1).append(" ").append(symbol1).append(" ").append(val).append(" ");
-                    }*/
-
+                    list.add(column.toValue(value[i]));
                 }
                 if (i < value.length - 1) {
                     if (i < montage.length) {
-                        montage1 = tableInfoMap.get("montage." + montage[i]);
+                        montage1 = columnInfoMapSy.get("montage." + montage[i]);
                         if (montage1 != null) {
                             sb2.append(montage1).append(" ");
                         } else {
@@ -307,12 +323,11 @@ public class DataBaseImpl implements DataBase {
                 }
             }
         }
-        sb.append("select * from ").append(tableName1).append(" ").append(sb2);
+        sb.append("select ").append(tableName).append(".* from ").append(tableName1).append(" ").append(sb2);
         if (sortField != null && sortField.length() > 0) {
             sb.append("order by ").append(sortField).append(" ").append(sortType == null ? "asc" : sortType);
         }
-        SqlTemplate sqlTemplate = new SqlTemplate(sb.toString(), list.toArray());
-        return sqlTemplate;
+        return new SqlTemplate(sb.toString(), list.toArray());
 
     }
 
@@ -425,7 +440,7 @@ public class DataBaseImpl implements DataBase {
                 if (entityClassInfo.fields.get(i).getType().getName().equals("java.lang.Long")) {
                     list.add(getOnlyIdDistributed());
                 } else if (entityClassInfo.fields.get(i).getType().getName().equals("java.lang.Integer")) {
-                    list.add(getOnlyIdNumber(entityClassInfo.name, entityClassInfo.attributes.get(i)));
+                    list.add(getOnlyIdNumber(entityClassInfo.name, entityClassInfo.attributes.get(i), false));
                 } else if (entityClassInfo.fields.get(i).getType().getName().equals("java.lang.String")) {
                     list.add(getOnlyIdDistributedString());
                 }
@@ -506,7 +521,7 @@ public class DataBaseImpl implements DataBase {
 
     @Override
     public Object[] getDefObjectArr() {
-        return new Object[0];
+        return defNullArray;
     }
 
     @Override
@@ -524,7 +539,48 @@ public class DataBaseImpl implements DataBase {
                 tableInfo = new TableInfo();
                 tableInfo.name = rs.getString("TABLE_NAME").toLowerCase();
                 tableInfo.dbDesc = rs.getString("REMARKS");
+                List<GzbMap> list1 = null;
+                if (dataBaseConfig.type.equals("mysql")) {
+                    list1 = selectGzbMap("SELECT " +
+                            "COLUMN_NAME AS c_name," +
+                            "COLUMN_COMMENT AS c_desc" +
+                            " FROM " +
+                            " information_schema.COLUMNS" +
+                            " WHERE" +
+                            " TABLE_SCHEMA = '" + dataBaseConfig.name + "'" +
+                            " AND TABLE_NAME = '" + tableInfo.name + "'");
+                } else if (dataBaseConfig.type.equals("postgresql")) {
+                    list1 = selectGzbMap(
+                            "SELECT " +
+                                    "a.attname AS c_name, " +
+                                    "d.description AS c_desc " +
+                                    "FROM " +
+                                    "pg_catalog.pg_class c " +
+                                    "JOIN pg_catalog.pg_attribute a ON a.attrelid = c.oid " +
+                                    "LEFT JOIN pg_catalog.pg_description d ON d.objoid = c.oid AND d.objsubid = a.attnum " +
+                                    "WHERE " +
+                                    "c.relkind = 'r' " +
+                                    "AND c.relname = '" + tableInfo.name + "' " +
+                                    "AND a.attnum > 0 " +
+                                    "ORDER BY " +
+                                    "a.attnum");
+                } else {
+                    log.w("无法连接数据库类型", dataBaseConfig.type);
+                }
+                conn = getConnection();
                 ps = conn.prepareStatement("select * from " + tableInfo.name + " order by 1 limit 1");
+                Map<String, String> map = new HashMap<>();
+                for (GzbMap gzbMap : list1) {
+                    String c_name = gzbMap.getString("cName");
+                    String c_desc = gzbMap.getString("cDesc");
+                    if (c_name == null) {
+                        continue;
+                    }
+                    if (c_desc == null) {
+                        c_desc = c_name;
+                    }
+                    map.put(c_name, c_desc);
+                }
                 ResultSetMetaData col = ps.getMetaData();
                 ResultSet rst = meta.getPrimaryKeys(null, null, tableInfo.name);
                 if (!rst.next()) {
@@ -533,33 +589,21 @@ public class DataBaseImpl implements DataBase {
                 tableInfo.id = rst.getString("COLUMN_NAME");
                 tableInfo.columnNames = new ArrayList<String>();
                 tableInfo.columnTypes = new ArrayList<String>();
+                tableInfo.columnTypesDb = new ArrayList<String>();
                 tableInfo.columnSize = new ArrayList<Integer>();
                 tableInfo.columnDesc = new ArrayList<String>();
+
                 for (int i = 1; i <= col.getColumnCount(); i++) {
                     String columnClassName = col.getColumnClassName(i);
                     String columnName = col.getColumnName(i);
                     String columnDesc = col.getColumnLabel(i);
                     int columnSize = col.getColumnDisplaySize(i);
 
+                    tableInfo.columnTypesDb.add(columnClassName);
                     if ("[B".equals(columnClassName)) {
                         columnClassName = "java.lang.Byte[]";
                     }
-                    if ("java.sql.Timestamp".equals(columnClassName)) {
-                        columnClassName = "java.lang.String";
-                    }
-                    if ("java.time.LocalDateTime".equals(columnClassName)) {
-                        columnClassName = "java.lang.String";
-                    }
-                    if ("java.lang.Boolean".equals(columnClassName)) {
-                        columnClassName = "java.lang.Integer";
-                    }
-                    if ("java.math.BigDecimal".equals(columnClassName)) {
-                        columnClassName = "java.lang.Double";
-                    }
-                    if ("java.math.BigInteger".equals(columnClassName)) {
-                        columnClassName = "java.lang.Long";
-                    }
-                    tableInfo.columnDesc.add(columnDesc);
+                    tableInfo.columnDesc.add(map.get(columnName));
                     tableInfo.columnNames.add(columnName);
                     tableInfo.columnTypes.add(columnClassName);
                     tableInfo.columnSize.add(columnSize);
@@ -591,73 +635,111 @@ public class DataBaseImpl implements DataBase {
     public Connection getConnection() throws SQLException {
         Connection connection1 = connectionThreadLocal.get();
         if (connection1 != null) {
-            log.t("获取连接 缓存",connection1);
+            log.t("获取连接 缓存", connection1.getAutoCommit(), connection1);
             return connection1;
         }
         connection1 = hds.getConnection();
         try {
-            connection1.setAutoCommit(!isOpenTransaction());
+            Integer is = readTransactionState();
+            if (is == null) {
+                connection1.setAutoCommit(true);
+            } else if (is == 1) {
+                connection1.setAutoCommit(false);
+            } else if (is == 2) {
+                connection1.setAutoCommit(true);
+            } else {
+                log.w("事务类型异常 ", is);
+            }
         } catch (SQLException e) {
             log.e(e);
         }
         connectionThreadLocal.set(connection1);
-        log.t("获取连接 新的",connection1);
+        log.t("获取连接 新的", connection1.getAutoCommit(), connection1);
         return connection1;
     }
 
     @Override
-    public void setConnection(Connection connection) {
-        setConnection(connection, false);
-    }
-
-    @Override
-    public void setConnection(Connection connection0, boolean openTransaction0) {
-        log.t("框架 指定连接", connection0, "是否开启事物", openTransaction0);
-        openTransactionThreadLocal.set(openTransaction0);
-        connectionThreadLocal.set(connection0);
+    public void setConnection(Connection connection0) {
         try {
-            connection0.setAutoCommit(!openTransaction0);
+            log.t("框架 指定连接", connection0.getAutoCommit(), connection0);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+        connectionThreadLocal.set(connection0);
     }
+
     @Override
-    public boolean isOpenTransaction() {
-        return openTransactionThreadLocal.get() != null && openTransactionThreadLocal.get();
+    public Integer readTransactionState() {
+        return transactionSimulation.get();
     }
 
     //开启事务 主要是框架内部调用 当然 也可以手动
     @Override
-    public void openTransaction() {
-        log.t("框架 开启事物");
-        openTransactionThreadLocal.set(true);
+    public void openTransaction(boolean simulation) {
+        if (readTransactionState() != null) {
+            throw new GzbException0("事务已被开启，无法开启多次事务，如需要多次事务请改为多段事务，而不是同时开启多个事务\n" +
+                    "1.开启事务 openTransaction\n" +
+                    "2.提交事务 commit\n" +
+                    "3.回滚事务 rollback\n" +
+                    "4.关闭事务 endTransaction 如果手动开启事务那么必须调用本方法，框架开启 无需手动调用\n");
+        }
+        transactionSimulation.set(simulation ? 2 : 1);
+        log.t("开启事物", simulation ? "模拟" : "真实");
     }
 
     //关闭事务 主要是框架内部调用 当然 也可以手动
     @Override
     public void endTransaction() {
-        openTransactionThreadLocal.remove();
-        log.t("框架 关闭事物");
+        transactionSimulation.remove();
         close(null, null);
+        log.t("关闭事务", connectionThreadLocal.get(), connectionThreadLocal.get(), simulation_sql.get());
     }
 
     //提交并且关闭事务  同时也会归还连接 主要是框架内部调用 当然 也可以手动
     @Override
-    public void commit() throws SQLException {
-        Connection connection1 = connectionThreadLocal.get();
-        log.t("框架 提交事物", connection1);
-        if (connection1 != null) {
-            connection1.commit();
+    public void commit() throws Exception {
+        Integer x01 = readTransactionState();
+        if (x01 != null) {
+            if (x01 == 1) {
+                Connection connection1 = connectionThreadLocal.get();
+                log.t("真实事物 commit", connection1);
+                if (connection1 != null) {
+                    connection1.commit();
+                }
+            } else if (x01 == 2) {
+                log.t("模拟事务 commit 转化为真实事务提交", simulation_sql);
+                transactionSimulation.set(1);
+                Map<String, List<Object[]>> map1 = simulation_sql.get();
+                if (map1 != null) {
+                    try {
+                        for (Map.Entry<String, List<Object[]>> stringListEntry : map1.entrySet()) {
+                            if (stringListEntry.getKey() != null && stringListEntry.getValue() != null) {
+                                runSqlBatch(stringListEntry.getKey(), stringListEntry.getValue());
+                            }
+                        }
+                    } finally {
+                        simulation_sql.remove();
+                    }
+                }
+            }
         }
     }
 
     //回滚并且关闭事务  同时也会归还连接 主要是框架内部调用 当然 也可以手动
     @Override
     public void rollback() throws SQLException {
-        Connection connection1 = connectionThreadLocal.get();
-        log.t("框架 回滚事物", connection1);
-        if (connection1 != null) {
-            connection1.rollback();
+        Integer state = transactionSimulation.get();
+        if (state == null) {
+            log.w("回滚 无事物");
+        } else if (state == 1) {
+            log.t("回滚 真实事务");
+            Connection connection1 = connectionThreadLocal.get();
+            if (connection1 != null) {
+                connection1.rollback();
+            }
+        } else if (state == 2) {
+            log.t("回滚 模拟事务", simulation_sql.get());
+            simulation_sql.remove();
         }
     }
 
@@ -684,20 +766,23 @@ public class DataBaseImpl implements DataBase {
         Connection connection0 = connectionThreadLocal.get();
         if (connection0 != null) {
             try {
-
-                if (!isOpenTransaction()) {
-                    log.t("数据连接 由于未开启事物 数据库连接 归还", connection0);
-                    connection0.setAutoCommit(true);
+                Integer state = transactionSimulation.get();
+                if (state == null) {
+                    log.t("close 无事物", connection0.getAutoCommit(), connection0);
                     connection0.close();
                     connectionThreadLocal.remove();
-                } else {
-                    log.t("数据连接 由于已开启事务 数据库连接 不归还", connection0);
+                } else if (state == 1) {
+                    log.t("close 真实事务", connection0.getAutoCommit(), connection0);
+                } else if (state == 2) {
+                    log.t("close 模拟事务", connection0.getAutoCommit(), connection0);
+                    connection0.close();
+                    connectionThreadLocal.remove();
                 }
             } catch (SQLException e) {
                 log.e(e);
             }
         } else {
-            log.t("数据连接 为空 跳过");
+            log.t("close 数据连接 为空 跳过");
         }
     }
 
@@ -714,17 +799,17 @@ public class DataBaseImpl implements DataBase {
 
 
     @Override
-    public int getMaxId(String mapName, String idName) {
+    public int getMaxId(String tableName, String idName) {
         Connection conn = null;
         ResultSet resultSet = null;
         PreparedStatement preparedStatement = null;
         try {
             conn = getConnection();
-            preparedStatement = conn.prepareStatement("select " + idName + " from " + mapName + " order by " + idName + " desc limit 1");
+            preparedStatement = conn.prepareStatement("select " + idName + " from " + tableName + " order by " + idName + " desc limit 1");
             resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
                 String data = resultSet.getString(idName);
-                return Integer.valueOf(data);
+                return Integer.parseInt(data);
             } else {
                 return 0;
             }
@@ -736,28 +821,28 @@ public class DataBaseImpl implements DataBase {
         return 0;
     }
 
+    Map<String, AtomicInteger> mapCache = new ConcurrentHashMap<>();
+
     @Override
-    public int getOnlyIdNumber(String mapName, String idName) {
-        String key = "DataBaseMsql-getOnlyIdNumber-" + mapName + "-" + idName;
-        Lock lock = LockFactory.getLock(key);
-        int id;
-        lock.lock();
-        try {
-            id = Cache.gzbCache.getIncr(key);
-            if (id < 1) {
-                id = getMaxId(mapName, idName);
-                Cache.gzbCache.set(key, String.valueOf(id));
-            }
-        } finally {
-            lock.unlock();
+    public int getOnlyIdNumber(String tableName, String idName, boolean reset) {
+        String key = dataBaseConfig.name + "_" + tableName + "_" + idName;
+        if (reset) {
+            //log.d("重置缓存 ID", key);
+            mapCache.remove(key);
         }
-        return Integer.valueOf(String.valueOf(id));
+        AtomicInteger atomicInteger = mapCache.get(key);
+        if (atomicInteger == null) {
+            atomicInteger = new AtomicInteger(getMaxId(tableName, idName));
+            mapCache.put(key, atomicInteger);
+        }
+        //log.d("读取缓存 ID", atomicInteger.get() + 1);
+        return atomicInteger.incrementAndGet();
     }
 
 
     @Override
     public List<GzbMap> selectGzbMap(String sql) throws Exception {
-        return selectGzbMap(sql, new Object[]{});
+        return selectGzbMap(sql, defNullArray);
     }
 
     @Override
@@ -826,7 +911,7 @@ public class DataBaseImpl implements DataBase {
                     key = rsMetaData.getColumnLabel(i);
                     val = rs.getString(key);
                     if (val != null) {
-                        gzbMap.put(hump ? getName(key) : key, val);
+                        gzbMap.put(hump ? Tools.lowStr_hump(key) : key, val);
                     }
                 }
                 list.add(gzbMap);
@@ -851,7 +936,7 @@ public class DataBaseImpl implements DataBase {
 
     @Override
     public int runSql(String sql) throws Exception {
-        return runSql(sql, new Object[]{});
+        return runSql(sql, null);
     }
 
 
@@ -860,8 +945,26 @@ public class DataBaseImpl implements DataBase {
         ResultSet rs = null;
         PreparedStatement ps = null;
         long start = 0, end = 0;
-        if (sql == null || params == null) {
+        if (params == null) {
+            params = defNullArray;
+        }
+        if (sql == null) {
             return -1;
+        }
+        Integer x01 = readTransactionState();
+        if (x01 != null && x01 == 2) {
+            Map<String, List<Object[]>> map0 = simulation_sql.get();
+            if (map0 == null) {
+                map0 = new HashMap<>();
+                simulation_sql.set(map0);
+            }
+            List<Object[]> list = map0.get(sql);
+            if (list == null) {
+                list = new ArrayList<>();
+                map0.put(sql, list);
+            }
+            list.add(params);
+            return 0;
         }
         Connection connection = getConnection();
         try {
@@ -873,17 +976,6 @@ public class DataBaseImpl implements DataBase {
             int res = ps.executeUpdate();
             end = System.currentTimeMillis();
             return res;
-        } catch (SQLException e) {
-            StringBuilder stringBuilder1 = new StringBuilder(sql);
-            stringBuilder1.append(" -> data:[");
-            for (Object param : params) {
-                stringBuilder1.append(param).append(",");
-            }
-            stringBuilder1.append("]");
-            throw new RuntimeException("\n SQLException "+stringBuilder1.toString(),e);
-        } catch (Exception e) {
-            log.e(e, "Exception 非SQL异常");
-            throw e;
         } finally {
             close(rs, ps);
             log.s(sql, start, end);
@@ -898,6 +990,23 @@ public class DataBaseImpl implements DataBase {
         ResultSet rs = null;
         PreparedStatement ps = null;
         StringBuilder sb = null;
+        Integer x01 = readTransactionState();
+        if (x01 != null && x01 == 2) {
+            Map<String, List<Object[]>> map0 = simulation_sql.get();
+            if (map0 == null) {
+                map0 = new HashMap<>();
+                simulation_sql.set(map0);
+            }
+            List<Object[]> list = map0.get(sql);
+            if (list == null) {
+                list = new ArrayList<>();
+                map0.put(sql, list);
+            }
+            for (Object[] objects : list_parameter) {
+                list.add(objects);
+            }
+            return 0;
+        }
         Connection connection = getConnection();
         try {
             if (sql.lastIndexOf(";") > -1) {
@@ -936,9 +1045,10 @@ public class DataBaseImpl implements DataBase {
                             log.e("SQL执行失败：", Arrays.toString(list_parameter.get(j - (20 - i))));
                         }
                     }
-                    if (!isOpenTransaction()) {
+                    if (readTransactionState() == null) {
                         connection.commit();
                     }
+
                     c = System.currentTimeMillis();
                     allRow += rows.length;
                     sb.append(",[进度:").append(j + 1).append("/").append(list_parameter.size()).append("]");
@@ -964,19 +1074,18 @@ public class DataBaseImpl implements DataBase {
 
     @Override
     public int runSqlAsync(String sql, Object[] para) {
-        return asyncFactory.add(sql, para);
+        if (readTransactionState() != null) {
+            throw new GzbException0("事务开启时不支持异步执行，会打破事务原子性，如需异步请关闭事务");
+        }
+        return runSqlAsync(sql,para);
+    }
+    @Override
+    public int runSqlAsync(String sql, Object[] para,Runnable fail) {
+        if (readTransactionState() != null) {
+            throw new GzbException0("事务开启时不支持异步执行，会打破事务原子性，如需异步请关闭事务");
+        }
+        return asyncFactory.add(new AsyncFactory.Result(sql,para,fail));
     }
 
-    @Override
-    public int runSqlAsyncBatch(String sql, List<Object[]> list_parameter) {
-        if (isOpenTransaction()) {
-            throw new GzbException0("开启事务的时候无法使用异步执行");
-        }
-        int num = 0;
-        for (Object[] objects : list_parameter) {
-            num += runSqlAsync(sql, objects);
-        }
-        return num;
-    }
 
 }

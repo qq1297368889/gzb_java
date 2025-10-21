@@ -353,7 +353,7 @@ function addInputSingle (fid, id, title, defVal, desc) {
     let html = "<div class=\"layui-form-item\">\n" +
         (title == null ? "" : "                                <label class=\"layui-form-label\">" + title + "</label>\n") +
         "                                <div class=\"layui-input-block\" >\n" +
-        "                                    <input value='"+defVal+"' id='"+id+"' lay-com.verify=\"required\" placeholder=\"" + desc + "\" autocomplete=\"off\" class=\"layui-input\">\n" +
+        "                                    <input value='"+defVal+"' id='"+id+"' lay-verify=\"required\" placeholder=\"" + desc + "\" autocomplete=\"off\" class=\"layui-input\">\n" +
         "                                </div>\n" +
         "                            </div>";
     if (fid != null) {

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>后台管理选项选择器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- 配置Tailwind自定义主题 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#4080FF',
+                        neutral: '#F5F7FA',
+                        dark: '#1D2129',
+                        'gray-light': '#C9CDD4',
+                        'gray-medium': '#86909C'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+
+            .scrollbar-hide {
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+            }
+
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+
+            .option-hover {
+                @apply transition-all duration-200 hover:bg-primary/5;
+            }
+
+            .search-focus {
+                @apply focus:ring-2 focus:ring-primary/30 focus:border-primary;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 font-inter text-dark min-h-screen p-4 md:p-8">
+<!-- 主容器 -->
+<div class="max-w-2xl mx-auto">
+    <!-- 选项选择卡片 -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-md">
+        <!-- 搜索区域 -->
+        <div class="p-4 border-b border-gray-100">
+            <div class="relative">
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-medium"></i>
+                <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="搜索选项..."
+                        class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-light search-focus outline-none transition-all duration-200"
+                >
+            </div>
+        </div>
+
+        <!-- 选项列表区域 -->
+        <div class="max-h-[400px] overflow-y-auto scrollbar-hide" style="height: 50%">
+            <ul id="optionsList" class="divide-y divide-gray-50">
+                <!-- 选项将通过JavaScript动态生成 -->
+            </ul>
+        </div>
+
+        <!-- 选中结果区域 -->
+        <div id="selectedResult" class="p-4 bg-neutral border-t border-gray-100">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fa fa-check-circle text-primary mr-2"></i>
+                    <span id="selectedText" class="font-medium"></span>
+                </div>
+                <button id="clearSelection" class="text-gray-medium hover:text-dark transition-colors">
+                    <i class="fa fa-times-circle"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="mt-6 flex justify-end gap-3">
+        <button id="cancelBtn" class="px-4 py-2 border border-gray-light rounded-lg hover:bg-gray-50 transition-colors">
+            取消
+        </button>
+        <button id="confirmBtn"
+                class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            确认
+        </button>
+    </div>
+</div>
+
+<script src="layuiadmin/layui/layui.all.js"></script>
+<script src="js/libs.js"></script>
+<script>
+    gzb.init.public();
+    // --------------------------
+    // 配置区域 - 方便数据对接
+    // --------------------------
+    // 默认配置
+    const config = {
+        // 默认选中项的value
+        defaultSelectedValue: null,
+        // 基础选项数据 - 实际项目中可替换为接口返回数据
+        baseOptions: []
+    };
+    let req = JSON.parse(localStorage["编辑选择项-请求数据"]);
+    let data = JSON.parse(localStorage["编辑选择项-本行数据"]);
+    let field = JSON.parse(localStorage["编辑选择项-当前列"]);
+    config.defaultSelectedValue = data[field];
+    console.log(field, data,req)
+    if (gzb.params["no_update"] == null) {
+        gzb.params["no_update"]=["0"]
+    }
+    let no_update=gzb.params["no_update"][0];
+    let list;
+
+    list = gzb.selectRequest(req, data, false, field);
+    for (let datum of list) {
+        config.baseOptions.push({value: datum.sysOptionValue, label: datum.sysOptionTitle})
+    }
+    // --------------------------
+    // DOM元素
+    // --------------------------
+    const searchInput = document.getElementById('searchInput');
+    const optionsList = document.getElementById('optionsList');
+    const selectedResult = document.getElementById('selectedResult');
+    const selectedText = document.getElementById('selectedText');
+    const clearSelection = document.getElementById('clearSelection');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+
+    // --------------------------
+    // 状态变量
+    // --------------------------
+    let selectedOption = null; // 存储当前选中的选项对象
+    let debounceTimer = null;
+
+    let tid = null;
+
+    async function fetchOptionsFromBackend(searchTerm) {
+        if (tid != null) {
+            clearTimeout(tid)
+        }
+        let newData=JSON.parse(JSON.stringify(data))
+        newData[field] = encodeURIComponent(searchTerm);
+        list = gzb.selectRequest(req, newData, true, field);
+
+        let arr1 = [];
+        for (let datum of list) {
+            arr1.push({value: datum.sysOptionValue, label: datum.sysOptionTitle})
+        }
+        return arr1;
+    }
+
+    // 根据value查找选项
+    function findOptionByValue(value, options) {
+        return options.find(option => option.value === value) || null;
+    }
+
+    // --------------------------
+    // 渲染函数
+    // --------------------------
+    // 渲染选项列表
+    function renderOptions(options) {
+        optionsList.innerHTML = '';
+
+        if (options.length === 0) {
+            optionsList.innerHTML = `
+          <li class="flex items-center justify-center p-8 text-gray-medium">
+            <div class="text-center">
+              <i class="fa fa-exclamation-circle fa-2x mb-2 opacity-30"></i>
+              <p>未找到匹配的选项</p>
+            </div>
+          </li>
+        `;
+            return;
+        }
+
+        // 创建选项元素
+        options.forEach(option => {
+            const li = document.createElement('li');
+            li.className = `p-4 flex items-center justify-between option-hover cursor-pointer ${selectedOption?.value === option.value ? 'bg-primary/10' : ''}`;
+            li.innerHTML = `
+          <span>${option.label}</span>
+          ${selectedOption?.value === option.value ? '<i class="fa fa-check text-primary"></i>' : ''}
+        `;
+
+            // 点击事件
+            li.addEventListener('click', () => {
+                selectOption(option);
+            });
+
+            optionsList.appendChild(li);
+        });
+    }
+
+    // --------------------------
+    // 交互函数
+    // --------------------------
+    // 选择选项
+    function selectOption(option) {
+        selectedOption = option;
+        selectedText.textContent = option.label;
+        selectedResult.classList.remove('hidden');
+        confirmBtn.removeAttribute('disabled');
+
+        // 重新渲染列表以更新选中状态
+        handleSearch(true);
+
+        // 添加选中动画
+        selectedResult.classList.add('animate-pulse');
+        setTimeout(() => {
+            selectedResult.classList.remove('animate-pulse');
+        }, 500);
+    }
+
+    // 清除选择
+    function clearSelected() {
+        location.reload();
+    }
+
+    // 处理搜索
+    async function handleSearch(skipDebounce = false) {
+        const searchTerm = searchInput.value.trim();
+        // 跳过防抖直接执行（用于选择后刷新列表）
+        if (skipDebounce) {
+            const options = await fetchOptionsFromBackend(searchTerm);
+            renderOptions(options);
+            return;
+        }
+
+        // 防抖处理
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(async () => {
+            const options = await fetchOptionsFromBackend(searchTerm);
+            renderOptions(options);
+        }, 500);
+    }
+
+    // 初始化默认选项
+    async function initDefaultSelection() {
+        let sec=null;
+        if (config.baseOptions!=null && config.baseOptions[0] != null) {
+            sec=config.baseOptions[0]["label"]
+        }
+        if (sec == null) {
+            sec="";
+        }
+
+        // 获取全部选项
+        const allOptions = await fetchOptionsFromBackend(sec);
+        for (let allOption of allOptions) {
+            config.baseOptions.push(allOption)
+        }
+        // 查找默认选中项
+        const defaultOption = findOptionByValue(config.defaultSelectedValue, config.baseOptions);
+        console.log("查找默认选中项",defaultOption,config.defaultSelectedValue,config.baseOptions)
+        if (defaultOption) {
+            selectOption(defaultOption);
+        } else {
+            await handleSearch(true);
+            // 如果默认选项不存在，隐藏选中区域
+            selectedResult.classList.add('hidden');
+            confirmBtn.setAttribute('disabled', 'true');
+        }
+    }
+
+    // --------------------------
+    // 事件监听
+    // --------------------------
+    searchInput.addEventListener('input', handleSearch);
+    clearSelection.addEventListener('click', clearSelected);
+    cancelBtn.addEventListener('click', () => {
+        clearSelected();
+        searchInput.value = '';
+        handleSearch(true);
+    });
+    confirmBtn.addEventListener('click', () => {
+        if (selectedOption) {
+            if (no_update == "1") {
+                data[field] = selectedOption.value;
+                localStorage["编辑选择项-本行数据"] = JSON.stringify(data);
+                // 获取当前 iframe 对应的 layer 索引
+                var index = parent.layer.getFrameIndex(window.name);
+                // 调用父页面的 layer 关闭当前窗口
+                parent.layer.close(index);
+            }else{
+                data[field] = encodeURIComponent(selectedOption.value);
+                gzb.post(gzb.api.update, data, function (res) {
+                    if (gzb.jsonVerify(res, true)) {
+                        data[field] = selectedOption.value;
+                        localStorage["编辑选择项-本行数据"] = JSON.stringify(data);
+                        // 获取当前 iframe 对应的 layer 索引
+                        var index = parent.layer.getFrameIndex(window.name);
+                        // 调用父页面的 layer 关闭当前窗口
+                        parent.layer.close(index);
+                    }
+                });
+            }
+
+        }
+    });
+
+    // --------------------------
+    // 初始化
+    // --------------------------
+    window.addEventListener('load', async () => {
+        // 设置默认选中项
+        await initDefaultSelection();
+        // 输入框聚焦动画
+        setTimeout(() => {
+            searchInput.classList.add('animate-pulse');
+            setTimeout(() => {
+                searchInput.classList.remove('animate-pulse');
+                searchInput.focus();
+            }, 500);
+        }, 100);
+    });
+</script>
+</body>
+</html>

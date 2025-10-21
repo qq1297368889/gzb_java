@@ -1,22 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  ~ /*
-  ~  * Copyright [2025] [GZB ONE]
-  ~  *
-  ~  * Licensed under the Apache License, Version 2.0 (the "License");
-  ~  * you may not use this file except in compliance with the License.
-  ~  * You may obtain a copy of the License at
-  ~  *
-  ~  * http://www.apache.org/licenses/LICENSE-2.0
-  ~  *
-  ~  * Unless required by applicable law or agreed to in writing, software
-  ~  * distributed under the License is distributed on an "AS IS" BASIS,
-  ~  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~  * See the License for the specific language governing permissions and
-  ~  * limitations under the License.
-  ~  */
-  -->
-
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -27,25 +9,73 @@
     <version>1.0-SNAPSHOT</version>
 
     <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
     <dependencies>
         <dependency>
             <groupId>gzb</groupId>
             <artifactId>gzb.one</artifactId>
             <version>1.0.1</version>
         </dependency>
-<!--        <dependency>
-            <groupId>gzb</groupId>
-            <artifactId>frame.one</artifactId>
-            <version>1.0.0</version>
-            <scope>system</scope>
-            <systemPath>E:/gzb.one-1.0.0-fat.jar</systemPath>
-        </dependency>
-        -->
-
     </dependencies>
 
+    <build>
+        <finalName>${project.artifactId}</finalName>
+        <plugins>
+            <!-- 编译插件 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <encoding>UTF-8</encoding>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+
+            <!-- 使用 Shade 插件创建 Uber/Fat JAR -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.2</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <!-- 阻止 Shade 插件创建额外的依赖精简 POM 文件 -->
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <filters>
+                                <!-- 过滤掉不需要的文件，例如签名文件，避免冲突 -->
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <transformers>
+                                <!-- 指定主类 -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>gzb.start.DemoStart</mainClass>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

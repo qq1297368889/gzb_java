@@ -25,10 +25,15 @@ public class Application {
     public static void main(String[] args) throws Exception {
         run(Application.class);
     }
+    public static void run() throws Exception {
+        run(null);
+    }
     public static void run(Class<?>aClass) throws Exception {
-        String path = Tools.getProjectRoot(aClass);
+        if (aClass!=null) {
+            String path = Tools.getProjectRoot(aClass);
+            System.setProperty("this.dir", path);
+        }
         System.setProperty("file.encoding","UTF-8");
-        System.setProperty("this.dir", path);
         server = new NettyServer();
         if (Config.WS_PORT>0) {
 
@@ -40,7 +45,7 @@ public class Application {
 
         }
         if (Config.HTTP_PORT>0) {
-            server.startHTTPServer(Config.HTTP_PORT, Math.max(Config.cpu / 10, 1), Config.threadNum);
+            server.startHTTPServer(Config.HTTP_PORT);
         }
     }
 

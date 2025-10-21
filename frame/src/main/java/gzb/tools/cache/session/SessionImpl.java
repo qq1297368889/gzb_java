@@ -30,6 +30,7 @@ public class SessionImpl implements Session {
     private String id;
     private Response response;
     private boolean sendCookie;
+    private int key_size = 32;
 
     /**
      * 用于创建新会话的构造函数。
@@ -65,7 +66,8 @@ public class SessionImpl implements Session {
      * @return 新生成的会话 ID 字符串
      */
     private String getNewSessionId() {
-        return OnlyId.getDistributedString() + Tools.getRandomString(15);
+        String _id = OnlyId.getDistributedString();
+        return _id + Tools.getRandomString(key_size - _id.length());//被坑了下 这玩意 ID长度不固定 要动态计算
     }
 
     public Session sendHeader() {
@@ -130,7 +132,7 @@ public class SessionImpl implements Session {
      */
     @Override
     public String getString(String key) {
-        return gzbCache.getString(getId(), key, null);
+        return gzbCache.getMap(getId(), key);
     }
 
     /**
@@ -141,7 +143,7 @@ public class SessionImpl implements Session {
      */
     @Override
     public Object getObject(String key) {
-        return gzbCache.get(getId(), key);
+        return gzbCache.getMap(getId(), key);
     }
 
     /**
@@ -151,8 +153,9 @@ public class SessionImpl implements Session {
      * @return 被删除的对象
      */
     @Override
-    public Object delete(String key) {
-        return gzbCache.del(getId(), key);
+    public Session delete(String key) {
+        gzbCache.removeMap(getId(), key);
+        return this;
     }
 
     /**
@@ -179,7 +182,7 @@ public class SessionImpl implements Session {
      */
     @Override
     public Session delete() {
-        gzbCache.del(getId());
+        gzbCache.removeMap(getId());
         return this;
     }
 }

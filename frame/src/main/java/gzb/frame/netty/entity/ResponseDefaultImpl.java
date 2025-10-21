@@ -18,6 +18,7 @@
 
 package gzb.frame.netty.entity;
 
+import gzb.tools.AES_CBC_128;
 import gzb.tools.Config;
 import gzb.tools.Tools;
 import io.netty.buffer.Unpooled;
@@ -59,6 +60,7 @@ public class ResponseDefaultImpl implements Response {
         if (!isSendHeaders) {
             isSendHeaders = true;
             HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, status);
+            //response.headers().set("server", Config.frameName);
             response.headers().set(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
             if (headers != null) {
                 for (Map.Entry<String, String> entry : headers.entrySet()) {
@@ -123,12 +125,14 @@ public class ResponseDefaultImpl implements Response {
         FullHttpResponse response = new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
                 HttpResponseStatus.valueOf(200),
-                Unpooled.copiedBuffer(bytes));
+                Unpooled.wrappedBuffer(bytes));
+        //response.headers().set("server", Config.frameName);
         if (headers != null) {
             for (Map.Entry<String, String> entry : headers.entrySet()) {
                 response.headers().set(entry.getKey(), entry.getValue());
             }
         }
+
         if (cookies != null) {
             for (Cookie cookie : cookies) {
                 response.headers().set("Set-Cookie", encodeSingleCookie(cookie));

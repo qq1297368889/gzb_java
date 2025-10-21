@@ -41,11 +41,6 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import java.util.Arrays;
 
 public final class WebSocketServer {
-    static {
-
-        System.setProperty("file.encoding", "UTF-8");
-        System.setProperty("this.dir", Tools.getProjectRoot(WebSocketServer.class));
-    }
 
     private final int port;
 

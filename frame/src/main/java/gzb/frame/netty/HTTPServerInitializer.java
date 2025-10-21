@@ -26,7 +26,6 @@ import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 
-
 public class HTTPServerInitializer extends ChannelInitializer<SocketChannel> {
 
 
@@ -38,13 +37,13 @@ public class HTTPServerInitializer extends ChannelInitializer<SocketChannel> {
         if (!NettyServer.allowedDomains.contains("0.0.0.0")) {
             p.addLast(new HTTPDomainFilterHandler(NettyServer.allowedDomains));
         }
-        if (Config.maxPostSize > 0) {
-            p.addLast(new HttpObjectAggregator(Config.maxPostSize));
-        }
+
         // 编解码器：将字节流转换为 HTTP 消息对象
         p.addLast(new HttpServerCodec());
+
         // 消息聚合器：将分段的 HTTP 消息聚合为一个完整的请求/响应
-        p.addLast(new HttpObjectAggregator(Config.maxPostSize < 1 ? Integer.MAX_VALUE : Config.maxPostSize * 1024 * 1024));
+        p.addLast(new HttpObjectAggregator(Config.maxPostSize < 1 ? Integer.MAX_VALUE : Config.maxPostSize));
+
         // 请求处理器
         p.addLast(new HTTPRequestHandlerV4());
 

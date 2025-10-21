@@ -1,5 +1,8 @@
 package gzb.tools;
 
+import gzb.frame.db.BaseDao;
+import gzb.frame.db.DataBase;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -10,7 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class OnlyId {
     // 起始时间戳（UTC 2023-01-01 00:00:00）
-    private static final long EPOCH = 1672531200000L;
+    private static long EPOCH;
 
     // 服务器ID位数（支持2^8=256台服务器）
     private static final int SERVER_ID_BITS = 8;
@@ -36,10 +39,13 @@ public class OnlyId {
     private static long sequence = 0L;  // 普通变量+锁 比 AtomicLong 更可靠
 
     static {
-        System.setProperty("file.encoding", "UTF-8");
-        System.setProperty("this.dir", Tools.getProjectRoot(OnlyId.class));
-        serverId = Config.getInteger("gzb.system.server.name", 1);
-
+        serverId = Config.server_name;
+        EPOCH = Config.initTime;
+        if (EPOCH < 1L) {
+            EPOCH = System.currentTimeMillis();
+            Config.set("gzb.system.init.time", EPOCH + "");
+            Config.save();
+        }
         // 严格校验服务器ID
         if (serverId < 0 || serverId > MAX_SERVER_ID) {
             throw new IllegalArgumentException(String.format(

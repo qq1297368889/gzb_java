@@ -7,8 +7,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <link rel="stylesheet" href="/static/layuiadmin/layui/css/layui.css" media="all">
-    <link rel="stylesheet" href="/static/layuiadmin/style/admin.css" media="all">
+    <link rel="stylesheet" href="layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="layuiadmin/style/admin.css" media="all">
 
 </head>
 <body class="layui-layout-body">
@@ -16,7 +16,7 @@
 <div id="LAY_app">
     <div class="layui-layout layui-layout-admin">
         <div class="layui-header">
-            
+
             <ul class="layui-nav layui-layout-left">
                 <li class="layui-nav-item layadmin-flexible" lay-unselect>
                     <a href="javascript:;" layadmin-event="flexible" title="侧边伸缩">
@@ -36,8 +36,8 @@
                         <cite id="usersName"></cite>
                     </a>
                     <dl class="layui-nav-child" id="usersTab">
-                        
-                        
+
+
                     </dl>
                 </li>
                 <li class="layui-nav-item layui-show-xs-inline-block layui-hide-sm" lay-unselect>
@@ -46,7 +46,7 @@
             </ul>
         </div>
 
-        
+
         <div class="layui-side layui-side-menu">
             <div class="layui-side-scroll">
                 <div class="layui-logo" lay-href="" id="home-3">
@@ -57,7 +57,7 @@
                 </ul>
             </div>
         </div>
-        
+
         <div class="layadmin-pagetabs" id="LAY_app_tabs">
             <div class="layui-icon layadmin-tabs-control layui-icon-prev" layadmin-event="leftPage"></div>
             <div class="layui-icon layadmin-tabs-control layui-icon-next" layadmin-event="rightPage"></div>
@@ -82,100 +82,157 @@
         </div>
 
 
-        
+
         <div class="layui-body" id="LAY_app_body">
             <div class="layadmin-tabsbody-item layui-show">
                 <iframe src="" frameborder="0" class="layadmin-iframe" id="home-2"></iframe>
             </div>
         </div>
 
-        
+
         <div class="layadmin-body-shade" layadmin-event="shade"></div>
     </div>
 </div>
 </body>
 </html>
-
-
-<script src='/static/layuiadmin/layui/layui.all.js'></script>
-<script src="/static/js/layui.gzb.js"></script>
+<script src="layuiadmin/layui/layui.all.js"></script>
+<script src="js/libs.js"></script>
 <script>
-    let deleteToken=null;
+    gzb.init.index = function () {
+        let base = "/system";
+        gzb.api = {
+            option: base + "/v1.0.0/sysOption/list",//查询api 根据实体对象
+            mapping: base + "/v2/read/mapping",//读取元数据
+            upload: base + "/v2/upload",//上传文件api
+            user_info: base + "/v2/read/user/info",//上传文件api
+            user_exit:base + "/v2/exit/user",
+            read_permission:base + "/v2/read/permission"
+        }
+        //注册网页跳转，接管子页面内部跳转请求
+        gzb.registerIndex();
+        //初始化元数据 并 加载 config
+        gzb.init.public();
+        //获取登录用户信息
+        //gzb.read_user_info();
+        //获取界面元数据
+        gzb.readPageInfo();
+        $("#titleName").text("后台管理系统");
+    }
+    gzb.readPageInfo = function () {
+        console.log(gzb.api.read_permission)
+        gzb.get(gzb.api.read_permission, null, function (res) {
+            console.log(res)
+            if (!gzb.jsonVerify(res)) {
+                return;
+            }
+            let map_data = {};
+            let home="";
+            for (let ele of res.data) {
+                let sysPermissionId = ele["sysPermissionId"]
+                let sysPermissionSup = ele["sysPermissionSup"]
+                let sysPermissionDesc = ele["sysPermissionDesc"]
+                if (sysPermissionDesc != null && sysPermissionDesc == "HOME") {
+                    home=ele["sysPermissionName"]
+                }
+                if (sysPermissionSup == null) {
+                    continue;
+                }
+                if (sysPermissionSup == "0") {
+                    ele["data"] = [];
+                    map_data[sysPermissionId] = ele;
+                }
+            }
+            for (let ele of res.data) {
+                let sysPermissionSup = ele["sysPermissionSup"]
+                if (sysPermissionSup == null) {
+                    continue;
+                }
+                if (sysPermissionSup != "0") {
+                    if (map_data[sysPermissionSup] == null) {
+                        continue;
+                    }
+                    map_data[sysPermissionSup]["data"].push(ele);
+                }
+            }
+            $("#home-1").attr("lay-attr",home);
+            $("#home-1").attr("lay-id",home);
+            $("#home-2").attr("src",home);
+            $("#home-3").attr("lay-href",home);
+            gzb.appendNode(map_data);
+            element.init();
+        });
+    }
+    gzb.appendNode = function (data) {
+        console.log("gzb.appendNode data", data)
+        let html = "";
+        let i = 0;
+        for (let key in data) {
+            let json = data[key]
+            if (json.data == null) {
+                continue;
+            }
+            //layui-nav-itemed
+            html += "<li class=\"layui-nav-item " + (i == 0 ? "" : "") + "\" data-name='" + json.sysPermissionName + "'>" +
+                " <a href=\"javascript:;\" lay-tips=\"" + json.sysPermissionName + "\" lay-direction=\"2\">" +
+                " <i class=\"layui-icon\"></i>" +
+                " <cite>" + json.sysPermissionName + "</cite>" +
+                " <span class=\"layui-nav-more\"></span>" +
+                " </a>" +
+                " <dl class=\"layui-nav-child\">";
+            for (let list of json.data) {
+                if (i == 0) {
+                    html += "<dd>" +
+                        "<a lay-href=\"" + list.sysPermissionData + "\">" + list.sysPermissionName + "</a>" +
+                        "</dd>"
+                } else {
+                    html += "<dd >" +
+                        "<a lay-href=\"" + list.sysPermissionData + "\">" + list.sysPermissionName + "</a>" +
+                        "</dd>"
+                }
+                i++;
+            }
+            html += " </dl>" +
+                " </li>"
+        }
+        $("#LAY-system-side-menu").html(html);
+    }
+    gzb.read_user_info = function () {
+        gzb.get(gzb.api.user_info, null, function (res) {
+            if (!gzb.jsonVerify(res)) {
+                return;
+            }
+            let ele = $("#usersTab");
+            $("#usersName").text(res.data.sysUsersAcc)
+            ele.append("<dd style=\"text-align: center;\"><a>用户ID:" + res.data.sysUsersId + "</a></dd>")
+            ele.append("<dd style=\"text-align: center;\"><a href=\"javascript:gzb.exit();\">退出登录</a></dd>")
+        });
+    }
+    gzb.exit = function () {
+        gzb.get(gzb.api.user_exit, null, function (res) {
+            console.log(res)
+            location.reload();
+        });
+    }
+    gzb.registerIndex = function () {
+        setInterval(function () {
+            let add = localStorage["跳转地址"];
+            if (add != null) {
+                localStorage.removeItem("跳转地址");
+                if (add.trim().length > 0) {
+                    location.href = add.trim();
+                }
+            }
+        }, 1000);
+    }
+
     layui.config({
         base: '/static/layuiadmin/' //静态资源所在路径
     }).extend({
         index: 'lib/index' //主入口模块
     }).use(['index', 'form', 'laydate'], function () {
-        var $ = layui.$
-            , admin = layui.admin
-            , element = layui.element
-            , layer = layui.layer
-            , laydate = layui.laydate
-            , form = layui.form;
-        //api的状态 定义
-        let listAuthorityApi = "/system/v1.0.0/read/permission";
-        let userInfoApi = "/system/v1.0.0/read/user/info";
-        let exitUserApi = "/system/v1.0.0/exit/user";
-
-        $("#titleName").text("后台管理系统");
-        let leftData = {};
-        function initIndex(){
-            gzb.get(listAuthorityApi, null, function (res) {
-                if (gzb.jsonVerify(res)) {
-                    let home="";
-                    for (let json of res.data) {
-                        for (let sub of json.data) {
-                            let name=json.sysPermissionName;
-                            let subName=sub.sysPermissionName;
-                            let data=sub.sysPermissionData;
-                            if (subName.toLowerCase()==="home" || subName==="主页") {
-                                continue;
-                            }
-                            if (leftData[name] == null) {
-                                leftData[name]=[]
-                            }
-                            leftData[name].push({"frameAuthorityName":subName,"frameAuthorityPath":data});
-                        }
-                    }
-                    $("#home-1").attr("lay-attr",home);
-                    $("#home-1").attr("lay-id",home);
-                    $("#home-2").attr("src",home);
-                    $("#home-3").attr("lay-href",home);
-                    gzb.appendNode(leftData);
-                }
-            });
-            deleteToken=function () {
-                gzb.get(exitUserApi, null, function (res) {
-                    console.log(res)
-                    location.reload();
-                });
-            }
-            gzb.get(userInfoApi, null, function (res) {
-                if (gzb.jsonVerify(res)) {
-                    console.log("res1 " , res)
-                    $("#usersName").text(res.data.sysUsersAcc)
-                    $("#usersTab").append("<dd style=\"text-align: center;\"><a>用户ID:"+res.data.sysUsersId+"</a></dd>")
-                    $("#usersTab").append("<dd style=\"text-align: center;\"><a href=\"javascript:deleteToken();\">退出登录</a></dd>")
-                }
-            });
-            setInterval(function () {
-                let url = localStorage["主页跳转"]
-                localStorage.removeItem("主页跳转")
-                if (url==null) {
-                    return;
-                }
-                if (url=="null") {
-                    return;
-                }
-                if (url.length > 0) {
-                    console.log("跳转："+url)
-                    location.href = url;
-                }
-            },1000)
-
-        }
-        initIndex()
-
+        gzb.init.index();
     });
+
 </script>
+
 

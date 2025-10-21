@@ -1,60 +1,45 @@
 package com.frame.component;
-import com.frame.dao.SysPermissionDao;
-import com.frame.dao.SysUsersDao;
-import com.frame.entity.SysUsers;
+
+import com.frame.dao.*;
+import com.frame.entity.*;
 import gzb.frame.annotation.Decorator;
 import gzb.frame.annotation.DecoratorEnd;
 import gzb.frame.annotation.DecoratorStart;
 import gzb.frame.annotation.Resource;
-import gzb.frame.db.DataBase;
-import gzb.frame.db.DataBaseFactory;
 import gzb.frame.factory.ClassTools;
 import gzb.frame.netty.entity.Request;
-import gzb.frame.netty.entity.Response;
-import gzb.frame.server.http.entity.RunRes;
+import gzb.entity.RunRes;
 import gzb.tools.Config;
 import gzb.tools.DateTime;
-import gzb.tools.GzbMap;
 import gzb.tools.cache.session.Session;
+import gzb.tools.json.GzbJson;
 import gzb.tools.log.Log;
 
+import java.util.ArrayList;
 import java.util.List;
 
 //标注 这是一个装饰器
 @Decorator
 public class RequestDecorator {
 
+    private static final String sql = "select * from sys_permission where " +
+            "sys_permission.sys_permission_name = ? and " +
+            "sys_permission.sys_permission_id in (" +
+            "select sys_group_permission.sys_group_permission_pid from sys_group_permission where sys_group_permission.sys_group_permission_gid in (";
     @Resource
     Log log;
-    /// 依赖注入规则 和 控制器 一致 所有框架调度方法 都是一样的（线程模型例外，因为他没有 req resp）
 
-    //http请求进入后事件
-    //value 指定拦截的链接 默认为全部拦截 比如  请求链接 /a/b/c/d/e  value=/a/b/c/ 那么会拦截 只要从头开始 包含就会拦截
-    //type 指定为 true  只要链接 包含就会拦截 不再只匹配开头
-    //turn 指定为 true  原包含匹配 改为不包含匹配
-    //method 要匹配的方法 GET POST PUT DELETE
-    @DecoratorEnd("/test/")
-    public RunRes testEnd(RunRes runRes) {
-        //log.d("后验证 开始");
-        runRes.setState(200);
-        //runRes.setData(gzbJson.error("拦截并修改"));
-        //log.d("后验证 通过");
-        return runRes;
-    }
-    //http请求进入前事件
-    //value 指定拦截的链接 默认为全部拦截 比如  请求链接 /a/b/c/d/e  value=/a/b/c/ 那么会拦截 只要从头开始 包含就会拦截
-    //type 指定为 true  只要链接 包含就会拦截 不再只匹配开头
-    //turn 指定为 true  原包含匹配 改为不包含匹配
-    //method 要匹配的方法 GET POST PUT DELETE
-    //sort排序 越小越先执行
-    @DecoratorStart("/test/")
-    public RunRes testStart(RunRes runRes) {
-        //log.d("前验证 开始");
-        runRes.setState(200);
-        //data.put("sysUsersAcc",new ArrayList<>(Collections.singleton("调用前被修改了")));
-        //log.d("前验证 通过");
-        return runRes;
-    }
+    @Resource
+    SysRoleDao sysRoleDao;
+    @Resource
+    SysRoleGroupDao sysRoleGroupDao;
+    @Resource
+    SysPermissionDao sysPermissionDao;
+    @Resource
+    SysGroupDao sysGroupDao;
+    @Resource
+    SysUsersDao sysUsersDao;
+    /// 依赖注入规则 和 控制器 一致 所有框架调度方法 都是一样的（线程模型例外，因为他没有 req resp）
 
     //value 指定拦截的链接 默认为全部拦截 比如  请求链接 /a/b/c/d/e  value=/a/b/c/ 那么会拦截 只要从头开始 包含就会拦截
     //type 指定为 true  只要链接 包含就会拦截 不再只匹配开头
@@ -62,29 +47,30 @@ public class RequestDecorator {
     //method 要匹配的方法 GET POST PUT DELETE
     //sort排序 越小越先执行
     //登陆验证
-    @DecoratorStart(value = "/system/",sort = 0)
-    public RunRes authorization(Request request, RunRes runRes,SysUsersDao sysUsersDao) throws Exception {
-        Session session=request.getSession();
+    @DecoratorStart(value = "/system/", sort = 0)
+    public RunRes authorization(Request request, RunRes runRes, GzbJson gzbJson) throws Exception {
+        Session session = request.getSession();
         log.d("登陆验证 开始");
         String data = session.getString(Config.get("key.system.login.info"));
         if (data == null) {
-            return runRes.setState(400).setData("{\"code\":\"4\",\"message\":\"未登录或登录失效\",\"url\":\""+Config.get("key.system.login.page")+"\"}");
+            return runRes.setState(400).setData("{\"code\":\"4\",\"message\":\"未登录或登录失效\",\"url\":\"" + Config.get("key.system.login.page") + "\"}");
         }
         SysUsers sysUsers = new SysUsers(data);
         if (sysUsers.getSysUsersId() == null) {
-            return runRes.setState(400).setData("{\"code\":\"4\",\"message\":\"未登录或登录失效\",\"url\":\""+Config.get("key.system.login.page")+"\"}");
+            return runRes.setState(400).setData("{\"code\":\"4\",\"message\":\"未登录或登录失效\",\"url\":\"" + Config.get("key.system.login.page") + "\"}");
         }
-
-        List<SysUsers> list = sysUsersDao.query(new SysUsers().setSysUsersId(sysUsers.getSysUsersId()));;
-        if (list.size() != 1) {
-            return runRes.setState(400).setData("{\"code\":\"4\",\"message\":\"未登录或登录失效\",\"url\":\""+Config.get("key.system.login.page")+"\"}");
+        sysUsers = sysUsersDao.find(new SysUsers().setSysUsersId(sysUsers.getSysUsersId()));
+        if (sysUsers == null) {
+            return runRes.setState(400).setData(gzbJson.jump("未登录或登录失效", Config.get("key.system.login.page")));
         }
-        sysUsers = list.get(0);
+        if (sysUsers.getSysUsersStatus() < 0) {
+            return runRes.setState(400).setData(gzbJson.jump("未登录或登录失效", Config.get("key.system.login.page")));
+        }
         //超级管理员 无需校验
         if (sysUsers.getSysUsersType() != 4L) {
             if (sysUsers.getSysUsersStatus() < 1L) {
                 session.delete();
-                return runRes.setState(400).setData("{\"code\":\"4\",\"message\":\"未登录或登录失效\",\"url\":\""+Config.get("key.system.login.page")+"\"}");
+                return runRes.setState(400).setData("{\"code\":\"4\",\"message\":\"未登录或登录失效\",\"url\":\"" + Config.get("key.system.login.page") + "\"}");
             }
             if (sysUsers.getSysUsersType().equals(5L)) {
                 if (sysUsers.getSysUsersStartTime() == null || sysUsers.getSysUsersEndTime() == null) {
@@ -106,9 +92,9 @@ public class RequestDecorator {
         }
         runRes.setState(200);
         runRes.setData(sysUsers);
-        log.d("登录验证 通过");
         return runRes;
     }
+
 
     //value 指定拦截的链接 默认为全部拦截 比如  请求链接 /a/b/c/d/e  value=/a/b/c/ 那么会拦截 只要从头开始 包含就会拦截
     //type 指定为 true  只要链接 包含就会拦截 不再只匹配开头
@@ -116,26 +102,37 @@ public class RequestDecorator {
     //method 要匹配的方法 GET POST PUT DELETE
     //sort排序 越小越先执行
     //权限验证
-    @DecoratorStart(value = "/system/",sort = 1)
-    public RunRes verPermission(RunRes runRes, Request request, SysPermissionDao sysPermissionDao, SysUsers sysUsers) throws Exception {
-        log.d("权限验证 开始");
-        if (sysUsers.getSysUsersType()!=4) {
-            String path = ClassTools.webPathFormat(request.getUri()) + "-" + (request.getMethod().toUpperCase());
-            String sql = "select sys_permission.* from sys_permission where " +
-                    "sys_permission.sys_permission_name = ? and " +
-                    //"sys_permission.sys_permission_type = ? and " +
-                    "sys_permission.sys_permission_id in (select sys_group_permission_pid from sys_group_permission where " +
-                    "sys_group_permission_gid = (select sys_users.sys_users_group from sys_users where " +
-                    "sys_users_id = ?))";
-            if (sysPermissionDao.query(sql, new Object[]{path, sysUsers.getSysUsersId()},null,null,1,1,60).size() != 1) {
-                return runRes.setState(400).setData("{\"code\":\"2\",\"message\":\"无权限访问该地址\"}");
+    @DecoratorStart(value = "/system/", sort = 1)
+    public RunRes verPermission(RunRes runRes, Request request
+            , SysUsers sysUsers, GzbJson gzbJson) throws Exception {
+        log.d("权限验证 开始",sysUsers.getSysUsersType()==4L);
+        if (sysUsers.getSysUsersType()==4L) {
+            return runRes.setState(200);
+        }
+        SysRole sysRole = sysRoleDao.find(new SysRole().setSysRoleId(sysUsers.getSysUsersRole()));
+        if (sysRole == null) {
+            return runRes.setState(400).setData(gzbJson.fail("无权限访问-用户权限未分配"));
+        }
+        List<Object> listData = new ArrayList<>();
+        String path = ClassTools.webPathFormat(request.getUri()) + "-" + (request.getMethod().toUpperCase());
+        listData.add(path);
+        List<SysRoleGroup>listSysRoleGroup=sysRoleGroupDao.query(new SysRoleGroup().setSysRoleGroupRid(sysUsers.getSysUsersRole()));
+        if (listSysRoleGroup.size()<1) {
+            return runRes.setState(400).setData(gzbJson.fail("无权限访问-用户权限错误"));
+        }
+        StringBuilder sql_p = new StringBuilder(listSysRoleGroup.size() * 2);
+        for (int i = 0; i < listSysRoleGroup.size(); i++) {
+            listData.add(listSysRoleGroup.get(i).getSysRoleGroupGid());
+            sql_p.append("?");
+            if (i < listSysRoleGroup.size() - 1) {
+                sql_p.append(",");
             }
         }
-
-        runRes.setState(200);
-        log.d("权限验证 通过");
-
+        log.d(sql + sql_p + "))", listData.toArray());
+        List<SysPermission> listSysPermissionDao = sysPermissionDao.query(sql + sql_p + "))", listData.toArray(), null, null, 1, 1, 5);
+        if (listSysPermissionDao.size() != 1) {
+            return runRes.setState(400).setData(gzbJson.fail("无权限访问-非法访问"));
+        }
         return runRes;
     }
-
 }

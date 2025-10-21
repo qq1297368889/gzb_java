@@ -26,5 +26,6 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Transaction {
-    public boolean value() default true;
+    //是否开启模拟 ;注意模拟事务 可以保证同时成功或失败 其他的不保证     false是传统事务
+    public boolean simulate() default false;
 }

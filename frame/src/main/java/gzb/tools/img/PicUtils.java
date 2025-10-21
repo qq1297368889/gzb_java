@@ -162,8 +162,8 @@ public class PicUtils {
      * @param w int 新宽度
      * @throws IOException
      */
-    public static final byte[] resizeByWidth(File file, int w) throws IOException {
-        Image img = ImageIO.read(file);
+    public static final byte[] resizeByWidth(byte[]file, int w) throws IOException {
+        Image img = ImageIO.read(new ByteArrayInputStream(file));
         int width = img.getWidth(null); // 得到源图宽
         int height = img.getHeight(null); // 得到源图高
         int h = (int) (height * w / width);
@@ -176,8 +176,8 @@ public class PicUtils {
      * @param h int 新高度
      * @throws IOException
      */
-    public static final byte[] resizeByHeight(File file, int h) throws IOException {
-        Image img = ImageIO.read(file);
+    public static final byte[] resizeByHeight(byte[]file, int h) throws IOException {
+        Image img = ImageIO.read(new ByteArrayInputStream(file));
         int width = img.getWidth(null); // 得到源图宽
         int height = img.getHeight(null); // 得到源图高
         int w = (int) (width * h / height);

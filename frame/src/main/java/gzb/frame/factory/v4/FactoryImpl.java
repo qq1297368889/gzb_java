@@ -18,18 +18,17 @@
 
 package gzb.frame.factory.v4;
 
-import gzb.frame.ThreadLocalData;
+import gzb.frame.PublicData;
 import gzb.frame.annotation.*;
-import gzb.frame.db.DataBaseFactory;
-import gzb.frame.db.ForeignKeyFactory;
+import gzb.frame.db.EventFactory;
 import gzb.frame.factory.*;
-import gzb.frame.factory.v4.entity.ClassEntity;
-import gzb.frame.factory.v4.entity.DecoratorEntity;
-import gzb.frame.factory.v4.entity.HttpMapping;
-import gzb.frame.factory.v4.entity.ThreadEntity;
+import gzb.entity.ClassEntity;
+import gzb.entity.DecoratorEntity;
+import gzb.entity.HttpMapping;
+import gzb.entity.ThreadEntity;
 import gzb.frame.netty.entity.Request;
 import gzb.frame.netty.entity.Response;
-import gzb.frame.server.http.entity.RunRes;
+import gzb.entity.RunRes;
 import gzb.tools.*;
 
 import java.io.File;
@@ -38,46 +37,44 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import gzb.tools.cache.Cache;
-import gzb.tools.cache.GzbCache;
 import gzb.tools.json.GzbJson;
 import gzb.tools.json.GzbJsonImpl;
 import gzb.tools.json.ResultImpl;
 import gzb.tools.log.Log;
-import gzb.tools.log.LogImpl;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class FactoryImpl implements Factory {
+    public static Log log = Log.log;
     public static void main(String[] args) throws Exception {
-        System.setProperty("file.encoding", "UTF-8");
-        System.setProperty("this.dir", Tools.getProjectRoot(FactoryImpl.class));
         FactoryImpl factory = new FactoryImpl();
     }
 
     public Map<String, Map<String, Method>> mapClassMethod = new ConcurrentHashMap<>();
-    public static Log log = Config.log;
     public Map<String, ClassEntity> mapClassEntity = new ConcurrentHashMap<>();
     public Map<String, HttpMapping[]> mapHttpMapping0 = new ConcurrentHashMap<>();
     public Map<String, Object> mapObject0 = new ConcurrentHashMap<>();
-    List<DecoratorEntity> listDecoratorEntity = new ArrayList<>();
+    public List<DecoratorEntity> listDecoratorEntity = new ArrayList<>();
     public Map<String, Map<String, String>> mapHttpMappingOld0 = new ConcurrentHashMap<>();
-    public static int serverState = -1;
+    public int serverState = -1;
     public String[] met = Constant.requestMethod;
     public Map<String, ThreadEntity> mapListThreadEntity0 = new ConcurrentHashMap<>();
+
+    public GzbJson gzbJson=PublicData.gzbJson;
 
 
     public void loadJavaDir(String classDir, String pwd, String iv) throws Exception {
 
         //缓存对象
-        ClassTools.putObject(Cache.gzbCache.getClass(),null,mapObject0,Cache.gzbCache);
+        ClassTools.putObject(Cache.gzbCache.getClass(), null, mapObject0, Cache.gzbCache);
         //JSON对象
-        ClassTools.putObject(GzbJsonImpl.class,null,mapObject0,new GzbJsonImpl());
+        ClassTools.putObject(GzbJsonImpl.class, null, mapObject0, new GzbJsonImpl());
         //数据库事件对象
-        ClassTools.putObject(ForeignKeyFactory.class,null,mapObject0,new ForeignKeyFactory(mapObject0, log));
+        ClassTools.putObject(PublicData.eventFactory.getClass(), null, mapObject0, PublicData.eventFactory);
         //日志对象
-        ClassTools.putObject(Config.log.getClass(),null,mapObject0,Config.log);
+        ClassTools.putObject(Log.log.getClass(), null, mapObject0, Log.log);
         startFileScanning(classDir, pwd, iv);
         while (serverState == -1) {
             Tools.sleep(1);
@@ -91,10 +88,10 @@ public class FactoryImpl implements Factory {
                     List<File> listFile = new ArrayList<>();
                     String[] arr1 = classDir.split(",");
                     for (int i = 0; i < arr1.length; i++) {
-                        arr1[i] = Tools.pathFormat(arr1[i].trim());
-                        if (arr1[i].isEmpty()) {
+                        if (arr1[i]==null||arr1[i].isEmpty()) {
                             continue;
                         }
+                        arr1[i] = Tools.pathFormat(arr1[i].trim());
                         if (new File(arr1[i]).isDirectory()) {
                             List<File> list = Tools.fileSub(arr1[i], 2, ".java");
                             listFile.addAll(list);
@@ -275,11 +272,12 @@ public class FactoryImpl implements Factory {
         }
     }
 
-    public Map<String, Object> getMappingMap() {
-        // 先转换为原生类型，编译器会警告
-        Map rawMap = mapHttpMapping0;
-        // 再将原生类型转换为目标类型，编译器无法阻止
-        return (Map<String, Object>) rawMap;
+    public Map<String, Object> getMapObject() {
+        return mapObject0;
+    }
+    @Override
+    public void loadServerHttp() {
+
     }
 
     public RunRes request(Request request, Response response) {
@@ -333,15 +331,13 @@ public class FactoryImpl implements Factory {
             Map<String, List<Object>> parar = request.getParameter();
             /// 请求参数获取 结束
             /// 内置对象创建 开始
-            Object[] objects = new Object[]{runRes};//, request.getSession()
-            ThreadLocalData.this_request.set(request);
-            ThreadLocalData.this_response.set(response);
-            ThreadLocalData.this_requestMap.set(parar);
+            Object[] objects = new Object[]{runRes,gzbJson,log,request,response,parar};//, request.getSession()
+            PublicData.context.set(objects);
             //log.d("parar",parar);
             /// 内置对象创建 结束
             /// 装饰器(调用前) 开始
             for (DecoratorEntity decoratorEntity : httpMappings[index].start) {
-                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, objects, decoratorEntity.isOpenTransaction);
+                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar,gzbJson,log, objects);
                 if (runRes1 != null) {
                     if (runRes1.getState() != 200) {
                         //log.d("request", key, request.getMethod(), parar, 200, "请求被调用前拦截");
@@ -361,12 +357,12 @@ public class FactoryImpl implements Factory {
             /// 装饰器(调用前) 结束
 
             /// 调用映射端点函数 开始
-            Object obj02 = httpMappings[index].httpMappingFun._gzb_call_x01(httpMappings[index].id, mapObject0, request, response, parar, objects, httpMappings[index].isOpenTransaction);
+            Object obj02 = httpMappings[index].httpMappingFun._gzb_call_x01(httpMappings[index].id, mapObject0, request, response, parar,gzbJson,log, objects);
             runRes.setData(obj02);
             /// 调用映射端点函数 结束
             /// 装饰器(调用后) 开始
             for (DecoratorEntity decoratorEntity : httpMappings[index].end) {
-                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, objects, decoratorEntity.isOpenTransaction);
+                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar,gzbJson,log, objects);
                 if (runRes1 != null) {
                     if (runRes1.getState() != 200) {
                         //log.d("request", key, request.getMethod(), parar, 200, "请求被调用后拦截");
@@ -390,10 +386,7 @@ public class FactoryImpl implements Factory {
             if (index > -1 && httpMappings[index] != null && httpMappings[index].semaphore != null) {
                 httpMappings[index].semaphore.release();
             }
-            ThreadLocalData.this_request.remove();
-            ThreadLocalData.this_response.remove();
-            ThreadLocalData.this_requestMap.remove();
-            ThreadLocalData.depth.remove();
+            PublicData.context.remove();
 
             /// 函数执行 结束
             /// 输出调试信息
@@ -463,16 +456,13 @@ public class FactoryImpl implements Factory {
             times[4] = System.nanoTime();
 
             /// 内置对象创建 开始
-            Object[] objects = new Object[]{runRes};//, request.getSession()
-            ThreadLocalData.this_request.set(request);
-            ThreadLocalData.this_response.set(response);
-            ThreadLocalData.this_requestMap.set(parar);
-
+            Object[] objects = new Object[]{runRes,gzbJson,log,request,response,parar};//, request.getSession()
+            PublicData.context.set(objects);
             /// 内置对象创建 结束
             times[5] = System.nanoTime();
             /// 装饰器(调用前) 开始
             for (DecoratorEntity decoratorEntity : httpMappings[index].start) {
-                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, objects, decoratorEntity.isOpenTransaction);
+                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar,gzbJson,log, objects);
                 if (runRes1 != null) {
                     if (runRes1.getState() != 200) {
                         //log.d("request", key, request.getMethod(), parar, 200, "请求被调用前拦截");
@@ -493,13 +483,13 @@ public class FactoryImpl implements Factory {
 
             //调用映射端点
             /// 调用映射端点函数 开始
-            Object obj02 = httpMappings[index].httpMappingFun._gzb_call_x01(httpMappings[index].id, mapObject0, request, response, parar, objects, httpMappings[index].isOpenTransaction);
+            Object obj02 = httpMappings[index].httpMappingFun._gzb_call_x01(httpMappings[index].id, mapObject0, request, response, parar,gzbJson,log, objects);
             runRes.setData(obj02);
             /// 调用映射端点函数 结束
             times[7] = System.nanoTime();
             /// 装饰器(调用后) 开始
             for (DecoratorEntity decoratorEntity : httpMappings[index].end) {
-                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, objects, decoratorEntity.isOpenTransaction);
+                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar,gzbJson,log, objects);
                 if (runRes1 != null) {
                     if (runRes1.getState() != 200) {
                         //log.d("request", key, request.getMethod(), parar, 200, "请求被调用后拦截");
@@ -524,10 +514,7 @@ public class FactoryImpl implements Factory {
             if (index > -1 && httpMappings[index] != null && httpMappings[index].semaphore != null) {
                 httpMappings[index].semaphore.release();
             }
-            ThreadLocalData.this_request.remove();
-            ThreadLocalData.this_response.remove();
-            ThreadLocalData.this_requestMap.remove();
-            ThreadLocalData.depth.remove();
+            PublicData.context.remove();
             /// 函数执行 结束
             times[9] = System.nanoTime();
             Long res = (times[9] - times[0]) / 1000;
@@ -736,7 +723,7 @@ public class FactoryImpl implements Factory {
                 HttpMapping httpMapping2 = new HttpMapping();
                 httpMapping2.sign = ClassTools.getSing(method, aClass);
                 httpMapping2.id = id;
-                httpMapping2.isOpenTransaction = transaction != null && transaction.value();
+                httpMapping2.transaction = transaction != null ? (transaction.simulate() ? 2 : 1) : null;
                 httpMapping2.httpMappingFun = (GzbOneInterface) object;
                 httpMapping2.met = index;
                 httpMapping2.start = new ArrayList<>();
@@ -899,8 +886,8 @@ public class FactoryImpl implements Factory {
         Object object = null;
         if (dataBaseEventFactory != null) {
             classEntity.clazz = ClassTools.gen_call_code_v4_class(classEntity.clazz, classEntity.code);
-            ForeignKeyFactory foreignKeyFactory = (ForeignKeyFactory) mapObject.get(ForeignKeyFactory.class.getName());
-            foreignKeyFactory.register(classEntity.clazz, classEntity.code);
+            EventFactory eventFactory = (EventFactory) mapObject.get(EventFactory.class.getName());
+            eventFactory.register(classEntity.clazz, classEntity.code);
         }
         return object;
     }
@@ -1010,7 +997,7 @@ public class FactoryImpl implements Factory {
                         }
 
                         Object[] objects = new Object[]{threadEntity0.result.get(finalI), threadEntity0.lock};
-                        Object obj = gzbOneInterface._gzb_call_x01(id, mapObject0, null, null, new HashMap<>(), objects, transaction != null && transaction.value());
+                        Object obj = gzbOneInterface._gzb_call_x01(id, mapObject0, null, null, new HashMap<>(),gzbJson,log, objects);
                         if (obj != null) {
                             log.d("线程正常退出-释放线程状态-根据调用函数返回值决定", key);
                             //释放占用

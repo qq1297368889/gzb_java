@@ -40,7 +40,7 @@ public class UDPServer {
     public Map<String, Packet> waitConfirm = new ConcurrentHashMap<>();
     public DatagramSocket serverSocket;
     public UDP udp = new UDP();
-public static Log log= Config.log;
+public static Log log= Log.log;
     public void start(int port) {
         start(port, 0, 0);
     }
@@ -53,14 +53,14 @@ public static Log log= Config.log;
         if (handleThreadMaxNum == 0) {
             handleThreadMaxNum = num * 10;
         }
-        threadPool = new ThreadPool(handleThreadMinNum, handleThreadMaxNum);
+        threadPool = new ThreadPool();
 
         try {
             serverSocket = new DatagramSocket(port);
             log.i("start UDP[" + port + "]....");
-            threadPool.startThread(num, "ServerRead", new ServerRead(this));
-            threadPool.startThread(num, "ServerSend", new ServerSend(this));
-            threadPool.execute(1, new ServerHandle(this));
+            threadPool.startService(num, "ServerRead", new ServerRead(this));
+            threadPool.startService(num, "ServerSend", new ServerSend(this));
+            threadPool.execute(  new ServerHandle(this));
         } catch (Exception e) {
             e.printStackTrace();
         }

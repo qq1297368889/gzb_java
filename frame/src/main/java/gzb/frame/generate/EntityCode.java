@@ -19,8 +19,12 @@
 package gzb.frame.generate;
 
 import gzb.entity.TableInfo;
+import gzb.exception.GzbException0;
+import gzb.tools.Tools;
 
 import java.io.IOException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -50,12 +54,13 @@ public class EntityCode extends Base {
                     "import gzb.tools.json.ResultImpl;\n" +
                     "@EntityAttribute(name=\"" + tableInfo.getName() + "\",desc=\"" + tableInfo.getNameHumpLowerCase() + "\")\n" +
                     "public class " + tableInfo.getNameUpperCase() + " implements Serializable, JsonSerializable{\n" +
-                    "    private static final long serialVersionUID = 1000L;\n" +
-                    "    private static final String dataName= Config.get(\"json.entity.data\",\"data\");\n";
+                    "    private static final long serialVersionUID = 1000L;\n";
+                    int len=0;
             for (int i = 0; i < tableInfo.getColumnNames().size(); i++) {
                 code += "    @EntityAttribute(key=" + tableInfo.getColumnNames().get(i).equals(tableInfo.getId()) + ",size = " + tableInfo.getColumnSize().get(i) + "," +
-                        "name=\"" + tableInfo.getColumnNames().get(i) + "\",desc=\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\")\n" +
+                        "name=\"" + tableInfo.getColumnNames().get(i) + "\",desc=\"" + tableInfo.getColumnDesc().get(i) + "\",type=\""+tableInfo.columnTypesDb.get(i)+"\")\n" +
                         "    private " + tableInfo.getColumnTypes().get(i) + " " + tableInfo.getColumnNamesHumpLowerCase().get(i) + ";\n";
+                len+=tableInfo.getColumnNamesHumpLowerCase().get(i).length()+10;
             }
             code += "    private Object data;\n" +
                     "   public " + tableInfo.getNameUpperCase() + "() {}\n" +
@@ -72,10 +77,6 @@ public class EntityCode extends Base {
                     "    public " + tableInfo.getNameUpperCase() + "(String jsonString) {\n" +
                     "        Result result = new ResultImpl(jsonString);\n" +
                     "        loadJson(result);\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    public " + tableInfo.getNameUpperCase() + "(ResultSet resultSet, Set<String> names) throws SQLException {\n" +
-                    "        loadResultSet(resultSet,names);\n" +
                     "    }\n" +
                     "    public int save(" + tableInfo.getNameUpperCase() + "Dao " + tableInfo.getNameHumpLowerCase() + "Dao) throws Exception {\n" +
                     "        return " + tableInfo.getNameHumpLowerCase() + "Dao.save(this);\n" +
@@ -139,46 +140,48 @@ public class EntityCode extends Base {
                     "\n" +*/
                     "    @Override\n" +
                     "    public String toString() {\n" +
-                    "        StringBuilder sb = new StringBuilder(\"{\");\n" ;
+                    "        StringBuilder sb = new StringBuilder("+len+");\n" +
+                    "       boolean app01=false;\n" +
+                    "        sb.append(\"{\");\n";
+
             for (int i = 0; i < tableInfo.getColumnNames().size(); i++) {
                 //统一标准为 string  不再区分其他类型 因为遇到过各种实现差异导致的问题 比如 1意外转为1.0  长整数被科学计数法表示 等
-        /*        if (tableInfo.getColumnTypes().get(i).contains("Boolean") ||tableInfo.getColumnTypes().get(i).contains("boolean") ||
+               if (tableInfo.getColumnTypes().get(i).contains("Boolean") ||tableInfo.getColumnTypes().get(i).contains("boolean") ||
                         tableInfo.getColumnTypes().get(i).contains("Byte") ||tableInfo.getColumnTypes().get(i).contains("byte") ||
                         tableInfo.getColumnTypes().get(i).contains("Short") ||tableInfo.getColumnTypes().get(i).contains("short") ||
                         tableInfo.getColumnTypes().get(i).contains("Integer") ||tableInfo.getColumnTypes().get(i).contains("int") ||
                         tableInfo.getColumnTypes().get(i).contains("Long") ||tableInfo.getColumnTypes().get(i).contains("long") ||
                         tableInfo.getColumnTypes().get(i).contains("Float") ||tableInfo.getColumnTypes().get(i).contains("float") ||
                         tableInfo.getColumnTypes().get(i).contains("Double") ||tableInfo.getColumnTypes().get(i).contains("double")) {
-                    code +="        if (this."+tableInfo.getColumnNamesHumpLowerCase().get(i)+" != null) {\n" +
-                            "            sb.append(\"\\\""+tableInfo.getColumnNamesHumpLowerCase().get(i)+"\\\":\").append("+tableInfo.getColumnNamesHumpLowerCase().get(i)+").append(\",\");\n" +
-                            "        }\n";
+                   code += "        if (this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + " != null) {\n" +
+                           "            if(app01){sb.append(\",\");}app01=true;\n" +
+                           "            sb.append(\"\\\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\\\":\\\"\")" +
+                           ".append("+ tableInfo.getColumnNamesHumpLowerCase().get(i) +").append(\"\\\"\");\n" +
+                           "        }\n";
                 }else{
-                    code +="        if (this."+tableInfo.getColumnNamesHumpLowerCase().get(i)+" != null) {\n" +
-                            "            sb.append(\"\\\""+tableInfo.getColumnNamesHumpLowerCase().get(i)+"\\\":\\\"\").append("+tableInfo.getColumnNamesHumpLowerCase().get(i)+").append(\"\\\",\");\n" +
-                            "        }\n";
+                   code += "        if (this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + " != null) {\n" +
+                           "            if(app01){sb.append(\",\");}app01=true;\n" +
+                           "            sb.append(\"\\\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\\\":\");\n" +
+                           "            Tools.toJson(" + tableInfo.getColumnNamesHumpLowerCase().get(i) + ",sb);\n" +
+                           "        }\n";
                 }
-*/
-                code +="        if (this."+tableInfo.getColumnNamesHumpLowerCase().get(i)+" != null) {\n" +
-                        "            sb.append(\"\\\""+tableInfo.getColumnNamesHumpLowerCase().get(i)+"\\\":\\\"\")" +
-                        ".append("+tableInfo.getColumnNamesHumpLowerCase().get(i)+").append(\"\\\",\");\n" +
-                        "        }\n";
 
 
             }
 
-            code +="" +
+            code += "" +
                     "        if (this.data instanceof Map) {\n" +
                     "            for (Map.Entry<?, ?> entry : ((Map<?, ?>) this.data).entrySet()) {\n" +
-                    "                sb.append(\"\\\"\").append(entry.getKey()).append(\"\\\":\").append(Tools.toJson(entry.getValue())).append(\",\");\n" +
+                    "                if(app01){sb.append(\",\");}app01=true;\n" +
+                    "                sb.append(\"\\\"\").append(entry.getKey()).append(\"\\\":\");\n" +
+                    "                Tools.toJson(entry.getValue(),sb);\n" +
                     "            }\n" +
                     "        }else if(this.data != null){\n" +
-                    "            sb.append(\"\\\"\").append(dataName).append(\"\\\":\").append(Tools.toJson(this.data)).append(\",\");\n" +
+                    "            if(app01){sb.append(\",\");}app01=true;\n" +
+                    "            sb.append(\"\\\"\").append(Config.get(\"json.entity.data\",\"data\")).append(\"\\\":\");\n" +
+                    "            Tools.toJson(this.data,sb);\n" +
                     "        }\n";
 
-
-            code += "        if (sb.length()>1) {\n" +
-                    "            sb.delete(sb.length()-1, sb.length());\n" +
-                    "        }\n";
             code += "       return sb.append(\"}\").toString();\n" +
                     "    }\n" +
                     "\n" +
@@ -187,7 +190,7 @@ public class EntityCode extends Base {
             for (int i = 0; i < tableInfo.getColumnNames().size(); i++) {
                 code += "        result.set(\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\", " + tableInfo.getColumnNamesHumpLowerCase().get(i) + ");\n";
             }
-            code += "        result.set(dataName, data);\n" +
+            code += "        result.set(Config.get(\"json.entity.data\",\"data\"), data);\n" +
                     "        return result;\n" +
                     "    }\n" +
                     "\n" +
@@ -212,38 +215,28 @@ public class EntityCode extends Base {
                     code += "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "=result.getBoolean(\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\", null);\n";
                 } else if (tableInfo.getColumnTypes().get(i).endsWith("Float")) {
                     code += "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "=result.getFloat(\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\", null);\n";
+                } else if (tableInfo.getColumnTypes().get(i).endsWith("java.sql.Timestamp")) {
+                    code += "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "=result.getTimestamp(\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\", null);\n";
                 } else {
                     code += "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "=result.getObject(\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\", null);\n";
                 }
 
             }
-            code += "        Object obj = result.get(dataName,null);\n" +
+            code += "        Object obj = result.get(Config.get(\"json.entity.data\",\"data\"),null);\n" +
                     "        if (obj instanceof Map) {\n" +
                     "            this.data = (Map<String, Object>) obj;\n" +
                     "        }\n" +
-                    "    }\n" +
-                    "    public void loadResultSet(ResultSet resultSet, Set<String> names) throws SQLException {\n" +
-                    "        String temp=null;\n";
-            for (int i = 0; i < tableInfo.getColumnNames().size(); i++) {
-                code +="        if (names.contains(\""+ tableInfo.getColumnNames().get(i) +"\")) {\n" +
-                        "            temp=resultSet.getString(\"" + tableInfo.getColumnNames().get(i) + "\");\n" +
-                        "            if (temp!=null) {\n" +
-                        "                this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "=" + tableInfo.getColumnTypes().get(i) + ".valueOf(temp);\n" +
-                        "            }\n" +
-                        "        }\n";
-            }
-
-            code += "    }\n";
+                    "    }\n";
 
 
             for (int i = 0; i < tableInfo.getColumnNames().size(); i++) {
-                if (tableInfo.getColumnTypes().get(i).contains("Boolean") ||tableInfo.getColumnTypes().get(i).contains("boolean") ||
-                        tableInfo.getColumnTypes().get(i).contains("Byte") ||tableInfo.getColumnTypes().get(i).contains("byte") ||
-                        tableInfo.getColumnTypes().get(i).contains("Short") ||tableInfo.getColumnTypes().get(i).contains("short") ||
-                        tableInfo.getColumnTypes().get(i).contains("Integer") ||tableInfo.getColumnTypes().get(i).contains("int") ||
-                        tableInfo.getColumnTypes().get(i).contains("Long") ||tableInfo.getColumnTypes().get(i).contains("long") ||
-                        tableInfo.getColumnTypes().get(i).contains("Float") ||tableInfo.getColumnTypes().get(i).contains("float") ||
-                        tableInfo.getColumnTypes().get(i).contains("Double") ||tableInfo.getColumnTypes().get(i).contains("double")) {
+                if (tableInfo.getColumnTypes().get(i).contains("Boolean") || tableInfo.getColumnTypes().get(i).contains("boolean") ||
+                        tableInfo.getColumnTypes().get(i).contains("Byte") || tableInfo.getColumnTypes().get(i).contains("byte") ||
+                        tableInfo.getColumnTypes().get(i).contains("Short") || tableInfo.getColumnTypes().get(i).contains("short") ||
+                        tableInfo.getColumnTypes().get(i).contains("Integer") || tableInfo.getColumnTypes().get(i).contains("int") ||
+                        tableInfo.getColumnTypes().get(i).contains("Long") || tableInfo.getColumnTypes().get(i).contains("long") ||
+                        tableInfo.getColumnTypes().get(i).contains("Float") || tableInfo.getColumnTypes().get(i).contains("float") ||
+                        tableInfo.getColumnTypes().get(i).contains("Double") || tableInfo.getColumnTypes().get(i).contains("double")) {
                     code += "    public " + tableInfo.getColumnTypes().get(i) + " get" + tableInfo.getColumnNamesHumpUpperCase().get(i) + "() {\n" +
                             "        return " + tableInfo.getColumnNamesHumpLowerCase().get(i) + ";\n" +
                             "    }\n" +
@@ -251,14 +244,14 @@ public class EntityCode extends Base {
                             "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + " = " + tableInfo.getColumnNamesHumpLowerCase().get(i) + ";\n" +
                             "        return this;\n" +
                             "    }\n";
-                }else{
+                } else {
                     code += "    public " + tableInfo.getColumnTypes().get(i) + " get" + tableInfo.getColumnNamesHumpUpperCase().get(i) + "() {\n" +
                             "        return " + tableInfo.getColumnNamesHumpLowerCase().get(i) + ";\n" +
                             "    }\n" +
                             "    public " + tableInfo.getNameHumpUpperCase() + " set" + tableInfo.getColumnNamesHumpUpperCase().get(i) + "(" + tableInfo.getColumnTypes().get(i) + " " + tableInfo.getColumnNamesHumpLowerCase().get(i) + ") {\n" +
                             "        int size0 = Tools.textLength(" + tableInfo.getColumnNamesHumpLowerCase().get(i) + ");\n" +
                             "        if (size0 > " + tableInfo.getColumnSize().get(i) + ") {\n" +
-                            "            throw new RuntimeException(\"" + tableInfo.getNameHumpUpperCase() + "." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "最大长度为:" + tableInfo.getColumnSize().get(i) + ",实际长度为:\"+ size0 +\",数据为:\"+" + tableInfo.getColumnNamesHumpLowerCase().get(i) + ");\n" +
+                            "            throw new gzb.exception.GzbException0(\"" + tableInfo.getNameHumpUpperCase() + "." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "最大长度为:" + tableInfo.getColumnSize().get(i) + ",实际长度为:\"+ size0 +\",数据为:\"+" + tableInfo.getColumnNamesHumpLowerCase().get(i) + ");\n" +
                             "        }\n" +
                             "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + " = " + tableInfo.getColumnNamesHumpLowerCase().get(i) + ";\n" +
                             "        return this;\n" +
@@ -271,7 +264,7 @@ public class EntityCode extends Base {
 
             }
 
-            code += "    public "+ tableInfo.getNameHumpUpperCase() +" setList(List<?> data) {\n" +
+            code += "    public " + tableInfo.getNameHumpUpperCase() + " setList(List<?> data) {\n" +
                     "        this.data = data;\n" +
                     "        return this;\n" +
                     "    }\n" +
@@ -289,27 +282,32 @@ public class EntityCode extends Base {
                     "        return null;\n" +
                     "    }\n" +
                     "\n" +
-                    "    public "+ tableInfo.getNameHumpUpperCase() +" setMap(Map<String, Object> data) {\n" +
+                    "    public " + tableInfo.getNameHumpUpperCase() + " setMap(Map<String, Object> data) {\n" +
                     "        this.data = data;\n" +
                     "        return this;\n" +
                     "    }\n" +
                     "\n" +
-                    "    public "+ tableInfo.getNameHumpUpperCase() +" putMap(String key, Object value) {\n" +
+                    "    public " + tableInfo.getNameHumpUpperCase() + " putMap(String key, Object value) {\n" +
                     "        if (this.data == null) {\n" +
+                    "            // 自动初始化\n" +
                     "            this.data = new HashMap<>();\n" +
+                    "        } else if (!(this.data instanceof Map)) {\n" +
+                    "            // 无法转换，抛出业务异常\n" +
+                    "            throw new gzb.exception.GzbException0(\"无法将\"+this.data+\" 转换为MAP\");\n" +
                     "        }\n" +
-                    "        ((Map<String, Object>)this.data).put(key, value);\n" +
+                    "        // 安全地进行 put 操作 (可能需要抑制一下警告)\n" +
+                    "        @SuppressWarnings(\"unchecked\")\n" +
+                    "        Map<String, Object> mapData = (Map<String, Object>) this.data;\n" +
+                    "        mapData.put(key, value);\n" +
                     "        return this;\n" +
                     "    }\n" +
-                    "\n" +
                     "    public Object getData() {\n" +
                     "        return data;\n" +
                     "    }\n" +
-                    "\n" +
-                    "    public "+ tableInfo.getNameHumpUpperCase() +" setData(Object data) {\n" +
+                    "    public " + tableInfo.getNameHumpUpperCase() + " setData(Object data) {\n" +
                     "        this.data = data;\n" +
                     "        return this;\n" +
-                    "    }" +
+                    "    }\n" +
                     "}\n";
             outCodeEntity(save, code, tableInfo.getDbNameHumpLowerCase(), tableInfo.getNameHumpLowerCase());
         }

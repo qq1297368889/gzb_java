@@ -31,7 +31,7 @@ public interface Session {
 
     Object getObject(String key);
 
-    Object delete(String key);
+    Session delete(String key);
 
     int getIncr(String key);
 

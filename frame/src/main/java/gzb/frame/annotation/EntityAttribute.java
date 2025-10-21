@@ -28,4 +28,5 @@ public @interface EntityAttribute {
     int size() default  0;//0不限制 大于0会检查
     String name() default  "";//0不限制 大于0会检查
     String desc() default  "";//备注信息
+    String type() default  "";//备注信息
 }

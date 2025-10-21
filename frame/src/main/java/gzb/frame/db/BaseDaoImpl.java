@@ -19,8 +19,7 @@
 package gzb.frame.db;
 
 import gzb.entity.SqlTemplate;
-import gzb.exception.GzbException0;
-import gzb.frame.annotation.Resource;
+import gzb.frame.PublicData;
 import gzb.frame.annotation.Service;
 import gzb.frame.factory.ClassTools;
 import gzb.tools.*;
@@ -37,11 +36,10 @@ import java.util.concurrent.locks.Lock;
 
 @Service
 public abstract class BaseDaoImpl<T> implements BaseDao<T> {
+    public Log log = Log.log;
 
-    @Resource
-    public ForeignKeyFactory foreignKeyFactory;
-    @Resource
-    public Log log;
+    public EventFactory eventFactory = PublicData.eventFactory;
+
 
     private final GzbCache gzbCache = Cache.dataBaseCache;
     public T t;
@@ -95,6 +93,13 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (t == null) {
             return null;
         }
+        if (page == null) {
+            page = 1;
+        }
+        if (size == null) {
+            size = 10;
+        }
+
         JSONResult jsonResult = new JSONResult();
         int count = dataBase.count(sql, objects);
         if (count <= (page - 1) * size) {
@@ -116,7 +121,93 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
     }
 
     @Override
-    public List<T> query(String sql, Object[] params, String sortField, String sortType, int page, int size, int second) {
+    public T find(String sql, Object[] params) throws Exception {
+        return find(sql, params, -1);
+    }
+
+    @Override
+    public T find(String sql, Object[] params, int second) throws Exception {
+
+        Connection connection = null;
+        ResultSet rs = null;
+        PreparedStatement ps = null;
+        long[] times = new long[5];
+        String key = Tools.toKey(sql, params);
+        T _t01 = null;
+        if (second > 0) {
+            _t01 = gzbCache.getObject(key);
+            if (_t01 != null) {
+                log.d("缓存命中 1", second, key);
+                return _t01;
+            }
+        }
+        StringBuilder sb = new StringBuilder(key.length() + 50);
+        sb.append(key);
+        Lock lock = null;
+        if (second > 0) {
+            lock = LockFactory.getLock(key, second);
+            lock.lock();
+        }
+        try {
+            if (second > 0) {
+                _t01 = gzbCache.getObject(key);
+            }
+            if (_t01 == null) {
+                if (params == null) {
+                    params = Tools.toArray();
+                }
+                times[0] = System.currentTimeMillis();
+                connection = getConnect();
+                times[1] = System.currentTimeMillis();
+                ps = connection.prepareStatement(sql);
+                for (int i = 0; i < params.length; i++) {
+                    ps.setObject(i + 1, params[i]);
+                }
+                rs = ps.executeQuery();
+                times[2] = System.currentTimeMillis();
+                ResultSetMetaData rsMetaData = rs.getMetaData();
+                int columnCount = rsMetaData.getColumnCount();
+                Set<String> names = new HashSet<>();
+                for (int i = 0; i < columnCount; i++) {
+                    names.add(rsMetaData.getColumnLabel(i + 1));
+                }
+                if (!names.isEmpty()) {
+                    while (rs.next()) {
+                        _t01 = ClassTools.loadResultSet(t.getClass(), rs, names);
+                        if (rs.next()) {
+                            _t01 = null;
+                            log.d("find 方法查询到多条记录，视为失败", key);
+                        }
+                        break;
+                    }
+                }
+                times[3] = System.currentTimeMillis();
+                if (second > 0) {
+                    gzbCache.setObject(key, _t01, second);
+                }
+            } else {
+                log.d("缓存命中 2", key);
+            }
+
+        } finally {
+            dataBase.close(rs, ps);
+            if (lock != null) {
+                lock.unlock();
+            }
+            if (times[0] > 0) {
+                times[4] = System.currentTimeMillis();
+                sb.append(",[连接：").append(times[1] - times[0]).append("ms]");
+                sb.append(",[执行：").append(times[2] - times[1]).append("ms]");
+                sb.append(",[组装：").append(times[3] - times[2]).append("ms]");
+                log.s(sb.toString(), times[0], times[4]);
+            }
+        }
+
+        return _t01;
+    }
+
+    @Override
+    public List<T> query(String sql, Object[] params, String sortField, String sortType, int page, int size, int second) throws Exception {
         String pageSql = sql.toLowerCase();
         if (pageSql.endsWith(";")) {
             pageSql = pageSql.substring(0, pageSql.length() - 1);
@@ -131,12 +222,12 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         ResultSet rs = null;
         PreparedStatement ps = null;
         long[] times = new long[5];
-        String key = toKey(pageSql, params);
+        String key = Tools.toKey(pageSql, params);
         List<T> list = null;
         if (second > 0) {
-            list = gzbCache.getObject(key, null);
+            list = gzbCache.getObject(key);
             if (list != null) {
-                log.d("缓存命中-0", key);
+                log.d("缓存命中 1", second, key);
                 return list;
             }
         }
@@ -149,7 +240,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         }
         try {
             if (second > 0) {
-                list = gzbCache.getObject(key, null);
+                list = gzbCache.getObject(key);
             }
             if (list == null) {
                 list = new ArrayList<>();
@@ -165,7 +256,6 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
                 }
                 rs = ps.executeQuery();
                 times[2] = System.currentTimeMillis();
-                Constructor<T> constructor = null;
                 ResultSetMetaData rsMetaData = rs.getMetaData();
                 int columnCount = rsMetaData.getColumnCount();
                 Set<String> names = new HashSet<>();
@@ -173,9 +263,8 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
                     names.add(rsMetaData.getColumnLabel(i + 1));
                 }
                 if (!names.isEmpty()) {
-                    constructor = (Constructor<T>) t.getClass().getDeclaredConstructor(ResultSet.class, Set.class);
                     while (rs.next()) {
-                        list.add(constructor.newInstance(rs, names));
+                        list.add(ClassTools.loadResultSet(t.getClass(), rs, names));
                     }
                 }
                 times[3] = System.currentTimeMillis();
@@ -183,11 +272,9 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
                     gzbCache.setObject(key, list, second);
                 }
             } else {
-                log.d("缓存命中", key);
+                log.d("缓存命中 2", key);
             }
 
-        } catch (Exception e) {
-            log.e(sb.toString(), e);
         } finally {
             dataBase.close(rs, ps);
             if (lock != null) {
@@ -211,13 +298,17 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (t == null) {
             return null;
         }
+        if (!eventFactory.eventSelect(t, true)) {
+            return new JSONResult().fail("查询被拦截");
+        }
         SqlTemplate sqlTemplate = ClassTools.toSelectSql(t);
         if (sqlTemplate == null) {
             return null;
         }
-        foreignKeyFactory.eventSelect(t,true);
         JSONResult result = queryPage(sqlTemplate.getSql(), sqlTemplate.getObjects(), sortField, sortType, page, size, maxPage, maxSize, second);
-        foreignKeyFactory.eventSelect(t,false);
+        if (!eventFactory.eventSelect(t, false)) {
+            return new JSONResult().fail("查询被拦截");
+        }
         return result;
     }
 
@@ -227,14 +318,37 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
     }
 
     @Override
+    public T find(T t, int second) throws Exception {
+        if (t == null) {
+            t = this.t;
+        }
+        if (!eventFactory.eventSelect(t, true)) {
+            return null;
+        }
+        SqlTemplate sqlTemplate = ClassTools.toSelectSql(t);
+        if (sqlTemplate == null) {
+            return null;
+        }
+        return find(sqlTemplate.getSql(), sqlTemplate.getObjects(), second);
+    }
+
+
+    @Override
     public int count(T t) throws Exception {
+        if (t == null) {
+            return -1;
+        }
+        if (!eventFactory.eventSelect(t, true)) {
+            return -4;
+        }
         SqlTemplate sqlTemplate = ClassTools.toSelectSql(t);
         if (sqlTemplate == null) {
             return -1;
         }
-        foreignKeyFactory.eventSelect(t,true);
         int size = dataBase.count(sqlTemplate.getSql(), sqlTemplate.getObjects());
-        foreignKeyFactory.eventSelect(t,false);
+        if (!eventFactory.eventSelect(t, false)) {
+            return -4;
+        }
         return size;
     }
 
@@ -271,20 +385,6 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
     }
 
 
-    private String toKey(String sql, Object[] params) {
-        StringBuilder key = new StringBuilder(sql).append("_");
-        if (params != null) {
-            for (int i = 0; i < params.length; i++) {
-                key.append(params[i].toString());
-                if (i < params.length - 1) {
-                    key.append("_");
-                }
-            }
-        }
-        return key.toString();
-    }
-
-
     @Override
     public List<T> query(T t, int second) throws Exception {
         return query(t, null, null, 0, 0, second);
@@ -304,15 +404,19 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
     @Override
     public List<T> query(T t, String sortField, String sortType, int page, int size, int second) throws Exception {
         if (t == null) {
+            t = this.t;
+        }
+        if (!eventFactory.eventSelect(t, true)) {
             return null;
         }
         SqlTemplate sqlTemplate = ClassTools.toSelectSql(t);
         if (sqlTemplate == null) {
-            return null;
+            return new ArrayList<>();
         }
-        foreignKeyFactory.eventSelect(t,true);
         List<T> res = query(sqlTemplate.getSql(), sqlTemplate.getObjects(), sortField, sortType, page, size, second);
-        foreignKeyFactory.eventSelect(t,false);
+        if (!eventFactory.eventSelect(t, false)) {
+            return new ArrayList<>();
+        }
         return res;
     }
 
@@ -321,13 +425,31 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (t == null) {
             return -1;
         }
-        SqlTemplate sqlTemplate = ClassTools.toSaveSql(t);
+        if (!eventFactory.eventSave(t, true)) {
+            return -4;
+        }
+        SqlTemplate sqlTemplate = ClassTools.toSaveSql(t, dataBase, false);
         if (sqlTemplate == null) {
             return -2;
         }
-        foreignKeyFactory.eventSave(t,true);
-        int size = dataBase.runSql(sqlTemplate.getSql(), sqlTemplate.getObjects());
-        foreignKeyFactory.eventSave(t,false);
+        int size = -3;
+        try {
+            size = dataBase.runSql(sqlTemplate.getSql(), sqlTemplate.getObjects());
+        } catch (SQLException e) {
+            if (e.getMessage().endsWith("for key 'PRIMARY'")) {
+                //触发更新id
+                sqlTemplate = ClassTools.toSaveSql(t, dataBase, true);
+                if (sqlTemplate == null) {
+                    return -2;
+                }
+                size = dataBase.runSql(sqlTemplate.getSql(), sqlTemplate.getObjects());
+            } else {
+                throw e;
+            }
+        }
+        if (!eventFactory.eventSave(t, false)) {
+            return -4;
+        }
         return size;
     }
 
@@ -336,13 +458,17 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (t == null) {
             return -1;
         }
+        if (!eventFactory.eventUpdate(t, true)) {
+            return -4;
+        }
         SqlTemplate sqlTemplate = ClassTools.toUpdateSql(t);
         if (sqlTemplate == null) {
             return -2;
         }
-        foreignKeyFactory.eventUpdate(t,true);
         int size = dataBase.runSql(sqlTemplate.getSql(), sqlTemplate.getObjects());
-        foreignKeyFactory.eventUpdate(t,false);
+        if (!eventFactory.eventUpdate(t, false)) {
+            return -4;
+        }
         return size;
     }
 
@@ -351,37 +477,49 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (t == null) {
             return -1;
         }
+        if (!eventFactory.eventDelete(t, true)) {
+            return -4;
+        }
         SqlTemplate sqlTemplate = ClassTools.toDeleteSql(t);
         if (sqlTemplate == null) {
             return -2;
         }
-        foreignKeyFactory.eventDelete(t,true);
         int size = dataBase.runSql(sqlTemplate.getSql(), sqlTemplate.getObjects());
-        foreignKeyFactory.eventDelete(t,false);
+        if (!eventFactory.eventDelete(t, false)) {
+            return -4;
+        }
         return size;
     }
 
     @Override
     public int saveAsync(T t) throws Exception {
-        if (dataBase.isOpenTransaction()) {
-            throw new RuntimeException("开启事务的时候无法使用异步执行");
-        }
         if (t == null) {
             return -1;
         }
-        SqlTemplate sqlTemplate = ClassTools.toSaveSql(t);
+        SqlTemplate sqlTemplate = ClassTools.toSaveSql(t, dataBase, false);
         if (sqlTemplate == null) {
             return -2;
         }
-        int size = dataBase.runSqlAsync(sqlTemplate.getSql(), sqlTemplate.getObjects());
+        int size = dataBase.runSqlAsync(sqlTemplate.getSql(), sqlTemplate.getObjects(), null);
+        return size;
+    }
+
+
+    @Override
+    public int saveAsync(T t, Runnable fail) throws Exception {
+        if (t == null) {
+            return -1;
+        }
+        SqlTemplate sqlTemplate = ClassTools.toSaveSql(t, dataBase, false);
+        if (sqlTemplate == null) {
+            return -2;
+        }
+        int size = dataBase.runSqlAsync(sqlTemplate.getSql(), sqlTemplate.getObjects(), fail);
         return size;
     }
 
     @Override
     public int updateAsync(T t) throws Exception {
-        if (dataBase.isOpenTransaction()) {
-            throw new RuntimeException("开启事务的时候无法使用异步执行");
-        }
         if (t == null) {
             return -1;
         }
@@ -393,11 +531,22 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         return size;
     }
 
+
+    @Override
+    public int updateAsync(T t, Runnable fail) throws Exception {
+        if (t == null) {
+            return -1;
+        }
+        SqlTemplate sqlTemplate = ClassTools.toUpdateSql(t);
+        if (sqlTemplate == null) {
+            return -2;
+        }
+        int size = dataBase.runSqlAsync(sqlTemplate.getSql(), sqlTemplate.getObjects(), fail);
+        return size;
+    }
+
     @Override
     public int deleteAsync(T t) throws Exception {
-        if (dataBase.isOpenTransaction()) {
-            throw new RuntimeException("开启事务的时候无法使用异步执行");
-        }
         if (t == null) {
             return -1;
         }
@@ -406,6 +555,20 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             return -2;
         }
         int size = dataBase.runSqlAsync(sqlTemplate.getSql(), sqlTemplate.getObjects());
+        return size;
+    }
+
+
+    @Override
+    public int deleteAsync(T t, Runnable fail) throws Exception {
+        if (t == null) {
+            return -1;
+        }
+        SqlTemplate sqlTemplate = ClassTools.toDeleteSql(t);
+        if (sqlTemplate == null) {
+            return -2;
+        }
+        int size = dataBase.runSqlAsync(sqlTemplate.getSql(), sqlTemplate.getObjects(), fail);
         return size;
     }
 

@@ -23,15 +23,16 @@ import com.alibaba.fastjson2.JSONWriter;
 import com.alibaba.fastjson2.TypeReference;
 import gzb.entity.PagingEntity;
 import gzb.entity.TableInfo;
-import gzb.entity.UploadEntity;
+import gzb.exception.GzbException0;
 import gzb.frame.db.DataBase;
 import gzb.frame.factory.ClassTools;
 import gzb.frame.factory.Constant;
-import gzb.frame.factory.v4.entity.HttpMapping;
+import gzb.entity.HttpMapping;
 import gzb.frame.netty.entity.Response;
 import gzb.tools.http.HTTP;
 import gzb.tools.img.GifCaptcha;
 import gzb.tools.json.JsonSerializable;
+import gzb.tools.json.Result;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -43,8 +44,13 @@ import java.net.*;
 import java.security.CodeSource;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
@@ -53,6 +59,10 @@ import java.util.jar.JarFile;
 
 
 public class Tools {
+    public static void main(String[] args) {
+        System.out.println(escapeJsonString("123哈哈哈\"` \n \r\n \t 哈sjsj"));
+    }
+
     private static Map<String, String> humpMap = new HashMap<>();
     public static String[] ss1 = "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm0123456789".split("|");
     public static Lock lock = new ReentrantLock();
@@ -60,28 +70,48 @@ public class Tools {
     public static int[] arrCheck = {1, 0, 88, 9, 8, 7, 6, 5, 4, 3, 2};
     public static Random random = new Random(new Date().getTime() + 100);
 
-    public static String getName(String name) {
-        if (name == null) {
+    public final static DateTimeFormatter[] FORMATTER = new DateTimeFormatter[]{
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss"),
+            DateTimeFormatter.ofPattern("yyyy/MM/dd/HH/mm/ss"),
+            DateTimeFormatter.ofPattern("yyyy年MM月dd号HH点mm分ss秒"),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd"),
+            DateTimeFormatter.ofPattern("yyyy-MM"),
+            DateTimeFormatter.ofPattern("yyyy"),
+            DateTimeFormatter.ofPattern("HH:mm:ss"),
+            DateTimeFormatter.ofPattern("HH:mm"),
+            DateTimeFormatter.ofPattern("HH"),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
+    };
+
+    public static java.sql.Timestamp getTimestamp() {
+        return new Timestamp(System.currentTimeMillis());
+    }
+
+    public static java.sql.Timestamp getTimestamp(long time) {
+        return new Timestamp(time);
+    }
+
+    public static java.sql.Timestamp getTimestamp(Result result, String key) {
+        String str = result.getString(key);
+        if (str == null) {
             return null;
         }
-        String nameHump = humpMap.get(name);
-        if (nameHump != null) {
-            return nameHump;
-        }
-        String[] arr1 = name.split("_");
-        String n = arr1[0];
-        for (int i = 1; i < arr1.length; i++) {
-            char[] chars = arr1[i].toCharArray();
-            for (int i1 = 0; i1 < chars.length; i1++) {
-                if (i1 == 0) {
-                    n += String.valueOf(chars[i1]).toUpperCase();
-                } else {
-                    n += String.valueOf(chars[i1]).toLowerCase();
+        return Timestamp.valueOf(str);
+    }
+
+
+    public static String toKey(String sql, Object[] params) {
+        StringBuilder key = new StringBuilder(sql).append("_");
+        if (params != null) {
+            for (int i = 0; i < params.length; i++) {
+                key.append(params[i].toString());
+                if (i < params.length - 1) {
+                    key.append("_");
                 }
             }
         }
-        humpMap.put(name, n);
-        return n;
+        return key.toString();
     }
 
     public static int textLength(String str) {
@@ -144,63 +174,652 @@ public class Tools {
         }
     }
 
+    // 预定义数字字符的ASCII值（0-9）
+    private static final byte[] DIGITS = {48, 49, 50, 51, 52, 53, 54, 55, 56, 57};
+    // 预定义boolean常量字节数组
+    private static final byte[] TRUE_BYTES = "true".getBytes();
+    private static final byte[] FALSE_BYTES = "false".getBytes();
+    // 预定义null字节数组
+    private static final byte[] NULL_BYTES = "null".getBytes();
+
+    // ThreadLocal缓冲区复用（减少数组创建开销）
+    private static final ThreadLocal<byte[]> BUFFER = ThreadLocal.withInitial(() -> new byte[32]);
+
+    /**
+     * boolean转换为byte[]
+     */
+    public static byte[] toBytes(boolean value) {
+        return value ? TRUE_BYTES : FALSE_BYTES;
+    }
+
+    /**
+     * byte转换为byte[]
+     */
+    public static byte[] toBytes(byte value) {
+        // 直接复用int转换（byte范围小，无需单独实现）
+        return toBytes(value);
+    }
+
+    /**
+     * short转换为byte[]
+     */
+    public static byte[] toBytes(short value) {
+        if (value == 0) {
+            return new byte[]{48};
+        }
+
+        int len = 0;
+        int temp = value;
+        boolean negative = value < 0;
+        if (negative) {
+            len++;
+            temp = -temp;
+        }
+
+        // 计算数字长度（short最大32767，最多5位）
+        while (temp > 0) {
+            temp /= 10;
+            len++;
+        }
+
+        byte[] bytes = new byte[len];
+        int pos = len - 1;
+        temp = negative ? -value : value;
+
+        // 填充数字字节
+        while (temp > 0) {
+            bytes[pos--] = DIGITS[temp % 10];
+            temp /= 10;
+        }
+
+        // 处理负数符号
+        if (negative) {
+            bytes[0] = '-';
+        }
+
+        return bytes;
+    }
+
+    /**
+     * int转换为byte[]
+     */
+    public static byte[] toBytes(int value) {
+        if (value == 0) {
+            return new byte[]{48};
+        }
+
+        int len = 0;
+        int temp = value;
+        boolean negative = value < 0;
+        if (negative) {
+            len++;
+            temp = -temp;
+        }
+
+        // 计算数字长度
+        while (temp > 0) {
+            temp /= 10;
+            len++;
+        }
+
+        byte[] bytes = new byte[len];
+        int pos = len - 1;
+        temp = negative ? -value : value;
+
+        // 填充数字字节
+        while (temp > 0) {
+            bytes[pos--] = DIGITS[temp % 10];
+            temp /= 10;
+        }
+
+        // 处理负数符号
+        if (negative) {
+            bytes[0] = '-';
+        }
+
+        return bytes;
+    }
+
+    /**
+     * long转换为byte[]
+     */
+    public static byte[] toBytes(long value) {
+        if (value == 0) {
+            return new byte[]{48};
+        }
+
+        int len = 0;
+        long temp = value;
+        boolean negative = value < 0;
+        if (negative) {
+            len++;
+            temp = -temp;
+        }
+
+        // 计算数字长度
+        while (temp > 0) {
+            temp /= 10;
+            len++;
+        }
+
+        byte[] bytes = new byte[len];
+        int pos = len - 1;
+        temp = negative ? -value : value;
+
+        // 填充数字字节
+        while (temp > 0) {
+            bytes[pos--] = DIGITS[(int) (temp % 10)];
+            temp /= 10;
+        }
+
+        // 处理负数符号
+        if (negative) {
+            bytes[0] = '-';
+        }
+
+        return bytes;
+    }
+
+    /**
+     * float转换为byte[]（保留6位小数精度）
+     */
+    public static byte[] toBytes(float value) {
+        // 处理特殊值
+        if (Float.isNaN(value)) return "NaN".getBytes();
+        if (Float.isInfinite(value)) return value > 0 ? "Infinity".getBytes() : "-Infinity".getBytes();
+
+        // 简单处理：四舍五入保留6位小数
+        long scaled = Math.round(value * 1000000);
+        byte[] intPart = toBytes(scaled / 1000000);
+        int decimalPart = Math.abs((int) (scaled % 1000000));
+
+        // 拼接整数和小数部分
+        byte[] buffer = BUFFER.get();
+        int pos = 0;
+
+        // 复制整数部分
+        System.arraycopy(intPart, 0, buffer, pos, intPart.length);
+        pos += intPart.length;
+
+        // 添加小数点
+        buffer[pos++] = '.';
+
+        // 处理小数部分（补零）
+        for (int i = 5; i >= 0; i--) {
+            int divisor = (int) Math.pow(10, i);
+            buffer[pos++] = DIGITS[(decimalPart / divisor) % 10];
+        }
+
+        // 截取有效部分
+        byte[] result = new byte[pos];
+        System.arraycopy(buffer, 0, result, 0, pos);
+        return result;
+    }
+
+    /**
+     * double转换为byte[]（保留6位小数精度）
+     */
+    public static byte[] toBytes(double value) {
+        // 处理特殊值
+        if (Double.isNaN(value)) return "NaN".getBytes();
+        if (Double.isInfinite(value)) return value > 0 ? "Infinity".getBytes() : "-Infinity".getBytes();
+
+        // 简单处理：四舍五入保留6位小数
+        long scaled = Math.round(value * 1000000);
+        byte[] intPart = toBytes(scaled / 1000000);
+        int decimalPart = Math.abs((int) (scaled % 1000000));
+
+        // 拼接整数和小数部分
+        byte[] buffer = BUFFER.get();
+        int pos = 0;
+
+        // 复制整数部分
+        System.arraycopy(intPart, 0, buffer, pos, intPart.length);
+        pos += intPart.length;
+
+        // 添加小数点
+        buffer[pos++] = '.';
+
+        // 处理小数部分（补零）
+        for (int i = 5; i >= 0; i--) {
+            int divisor = (int) Math.pow(10, i);
+            buffer[pos++] = DIGITS[(decimalPart / divisor) % 10];
+        }
+
+        // 截取有效部分
+        byte[] result = new byte[pos];
+        System.arraycopy(buffer, 0, result, 0, pos);
+        return result;
+    }
+
+    /**
+     * char转换为byte[]（UTF-8编码）
+     */
+    public static byte[] toBytes(char value) {
+        if (value < 0x80) {
+            // 单字节UTF-8
+            return new byte[]{(byte) value};
+        } else if (value < 0x800) {
+            // 双字节UTF-8
+            byte[] bytes = new byte[2];
+            bytes[0] = (byte) (0xC0 | (value >> 6));
+            bytes[1] = (byte) (0x80 | (value & 0x3F));
+            return bytes;
+        } else {
+            // 三字节UTF-8（基本多文种平面）
+            byte[] bytes = new byte[3];
+            bytes[0] = (byte) (0xE0 | (value >> 12));
+            bytes[1] = (byte) (0x80 | ((value >> 6) & 0x3F));
+            bytes[2] = (byte) (0x80 | (value & 0x3F));
+            return bytes;
+        }
+    }
+
+    /**
+     * String转换为byte[]（UTF-8编码，提供兼容性）
+     */
+    public static byte[] toBytes(String value) {
+        if (value == null) return NULL_BYTES;
+        return value.getBytes();
+    }
+
+
+    public static byte[] toJsonBytes(Object obj) throws IOException {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(256);
+        toJsonBytes(obj, byteArrayOutputStream);
+        return byteArrayOutputStream.toByteArray();
+    }
+
+    public static void toJsonBytes(Object obj, ByteArrayOutputStream byteArrayOutputStream) throws IOException {
+        if (obj == null) {
+            byteArrayOutputStream.write(NULL_BYTES);
+            return;
+        }
+        if (obj instanceof Map) {
+            mapToJsonByte((Map<?, ?>) obj, byteArrayOutputStream);
+            return;
+        }
+        if (obj instanceof Iterable) {
+            iterableToJsonByte((Iterable<?>) obj, byteArrayOutputStream);
+            return;
+        }
+        if (obj.getClass().isArray()) {
+            arrayToJsonByte(obj, byteArrayOutputStream);
+            return;
+        }
+        if (obj instanceof GzbMap) {
+            mapToJsonByte(((GzbMap) obj).getMap(), byteArrayOutputStream);
+            return;
+        }
+        if (obj instanceof Class<?> || obj instanceof File || obj instanceof CharSequence || obj instanceof Character || obj instanceof Number || obj instanceof Boolean) {
+            byteArrayOutputStream.write(34);
+            escapeJsonStringByte(obj.toString(), byteArrayOutputStream);
+            byteArrayOutputStream.write(34);
+            return;
+        }
+        if (obj instanceof JsonSerializable) {
+            byteArrayOutputStream.write(obj.toString().getBytes(Config.encoding));
+            return;
+        }
+        if (obj instanceof Exception) {
+            byteArrayOutputStream.write(34);
+            escapeJsonStringByte(getExceptionInfo((Exception) obj), byteArrayOutputStream);
+            byteArrayOutputStream.write(34);
+            return;
+        }
+        if (obj instanceof Timestamp) {
+            byteArrayOutputStream.write(34);
+            escapeJsonStringByte(new DateTime((Timestamp) obj).toString(), byteArrayOutputStream);
+            byteArrayOutputStream.write(34);
+            return;
+        }
+        byteArrayOutputStream.write(Objects.requireNonNull(ClassTools.toJsonObjectByte(obj)));
+    }
+
+
+    // 预定义JSON常用字符的字节常量（避免频繁创建byte[]）
+    private static final byte[] JSON_NULL = "null".getBytes();
+    private static final byte[] JSON_LBRACE = "{".getBytes();
+    private static final byte[] JSON_RBRACE = "}".getBytes();
+    private static final byte[] JSON_LBRACKET = "[".getBytes();
+    private static final byte[] JSON_RBRACKET = "]".getBytes();
+    private static final byte[] JSON_COMMA = ",".getBytes();
+    private static final byte[] JSON_COLON = ":".getBytes();
+    private static final byte[] JSON_QUOTE = "\"".getBytes();
+    // 转义字符字节常量
+    private static final byte[] ESC_BACKSLASH = "\\\\".getBytes();
+    private static final byte[] ESC_QUOTE = "\\\"".getBytes();
+    private static final byte[] ESC_B = "\\b".getBytes();
+    private static final byte[] ESC_F = "\\f".getBytes();
+    private static final byte[] ESC_N = "\\n".getBytes();
+    private static final byte[] ESC_R = "\\r".getBytes();
+    private static final byte[] ESC_T = "\\t".getBytes();
+
+
+    /**
+     * Map序列化（字节版）：直接写入ByteArrayOutputStream，不返回内容
+     * 完全保留原mapToJson逻辑：空map处理、键值非空判断、逗号分隔规则
+     */
+    public static void mapToJsonByte(Map<?, ?> map, ByteArrayOutputStream byteArrayOutputStream) {
+        if (map == null) {
+            byteArrayOutputStream.write(JSON_NULL, 0, JSON_NULL.length);
+            return;
+        }
+
+        // 写入JSON对象开始符 '{'
+        byteArrayOutputStream.write(JSON_LBRACE, 0, JSON_LBRACE.length);
+        boolean first = true;
+
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            // 保留原逻辑：仅处理键和值都非空的条目
+            if (entry.getKey() != null && entry.getValue() != null) {
+                if (!first) {
+                    // 非首次条目，先写入逗号
+                    byteArrayOutputStream.write(JSON_COMMA, 0, JSON_COMMA.length);
+                }
+                first = false;
+
+                // 写入键：引号 + 转义后的键字符串 + 引号 + 冒号
+                byteArrayOutputStream.write(JSON_QUOTE, 0, JSON_QUOTE.length);
+                // 转义键字符串并写入字节流
+                escapeJsonStringByte(entry.getKey().toString(), byteArrayOutputStream);
+                byteArrayOutputStream.write(JSON_QUOTE, 0, JSON_QUOTE.length);
+                byteArrayOutputStream.write(JSON_COLON, 0, JSON_COLON.length);
+
+                // 写入值（调用字节版toJson）
+                toJsonByte(entry.getValue(), byteArrayOutputStream);
+            }
+        }
+
+        // 写入JSON对象结束符 '}'
+        byteArrayOutputStream.write(JSON_RBRACE, 0, JSON_RBRACE.length);
+    }
+
+
+    /**
+     * Iterable序列化（字节版）：直接写入ByteArrayOutputStream，不返回内容
+     * 完全保留原iterableToJson逻辑：空Iterable处理、逗号分隔规则
+     */
+    public static void iterableToJsonByte(Iterable<?> iterable, ByteArrayOutputStream byteArrayOutputStream) {
+        if (iterable == null) {
+            byteArrayOutputStream.write(JSON_NULL, 0, JSON_NULL.length);
+            return;
+        }
+
+        // 写入JSON数组开始符 '['
+        byteArrayOutputStream.write(JSON_LBRACKET, 0, JSON_LBRACKET.length);
+        boolean first = true;
+        Iterator<?> iterator = iterable.iterator();
+
+        while (iterator.hasNext()) {
+            Object obj = iterator.next();
+            if (!first) {
+                // 非首次元素，先写入逗号
+                byteArrayOutputStream.write(JSON_COMMA, 0, JSON_COMMA.length);
+            }
+            first = false;
+
+            // 写入元素（调用字节版toJson）
+            toJsonByte(obj, byteArrayOutputStream);
+        }
+
+        // 写入JSON数组结束符 ']'
+        byteArrayOutputStream.write(JSON_RBRACKET, 0, JSON_RBRACKET.length);
+    }
+
+
+    /**
+     * 数组序列化（字节版）：直接写入ByteArrayOutputStream，不返回内容
+     * 完全保留原arrayToJson逻辑：空数组处理、索引判断逗号规则
+     */
+    public static void arrayToJsonByte(Object array, ByteArrayOutputStream byteArrayOutputStream) {
+        if (array == null) {
+            byteArrayOutputStream.write(JSON_NULL, 0, JSON_NULL.length);
+            return;
+        }
+
+        // 保留原逻辑：通过Array.getLength获取数组长度
+        int length = java.lang.reflect.Array.getLength(array);
+        // 写入JSON数组开始符 '['
+        byteArrayOutputStream.write(JSON_LBRACKET, 0, JSON_LBRACKET.length);
+
+        for (int i = 0; i < length; i++) {
+            if (i > 0) {
+                // 索引>0时，先写入逗号（保留原逻辑）
+                byteArrayOutputStream.write(JSON_COMMA, 0, JSON_COMMA.length);
+            }
+
+            // 写入数组元素（调用字节版toJson）
+            Object element = java.lang.reflect.Array.get(array, i);
+            toJsonByte(element, byteArrayOutputStream);
+        }
+
+        // 写入JSON数组结束符 ']'
+        byteArrayOutputStream.write(JSON_RBRACKET, 0, JSON_RBRACKET.length);
+    }
+
+
+    /**
+     * JSON字符串转义（字节版）：直接写入ByteArrayOutputStream，不返回内容
+     * 完全保留原escapeJsonString逻辑：特殊字符转义、ASCII<32控制字符转义规则
+     */
+    public static void escapeJsonStringByte(String str, ByteArrayOutputStream byteArrayOutputStream) {
+        if (str == null) {
+            return; // 原逻辑返回空字符串，此处对应不写入任何内容
+        }
+
+        int strLen = str.length();
+        for (int i = 0; i < strLen; i++) {
+            char c = str.charAt(i);
+            switch (c) {
+                case '"':
+                    // 双引号转义：" → \"
+                    byteArrayOutputStream.write(ESC_QUOTE, 0, ESC_QUOTE.length);
+                    break;
+                case '\\':
+                    // 反斜杠转义：\ → \\
+                    byteArrayOutputStream.write(ESC_BACKSLASH, 0, ESC_BACKSLASH.length);
+                    break;
+                case '\b':
+                    // 退格转义：\b
+                    byteArrayOutputStream.write(ESC_B, 0, ESC_B.length);
+                    break;
+                case '\f':
+                    // 换页转义：\f
+                    byteArrayOutputStream.write(ESC_F, 0, ESC_F.length);
+                    break;
+                case '\n':
+                    // 换行转义：\n
+                    byteArrayOutputStream.write(ESC_N, 0, ESC_N.length);
+                    break;
+                case '\r':
+                    // 回车转义：\r
+                    byteArrayOutputStream.write(ESC_R, 0, ESC_R.length);
+                    break;
+                case '\t':
+                    // 制表符转义：\t
+                    byteArrayOutputStream.write(ESC_T, 0, ESC_T.length);
+                    break;
+                default:
+                    if (c < ' ') {
+                        // 保留原逻辑：ASCII<32的控制字符转义为 \ u XXXX
+                        String unicodeEsc = String.format("\\u%04x", (int) c);
+                        byte[] unicodeBytes = unicodeEsc.getBytes();
+                        byteArrayOutputStream.write(unicodeBytes, 0, unicodeBytes.length);
+                    } else {
+                        // 普通字符直接写入（转成UTF-8字节）
+                        byteArrayOutputStream.write((byte) c);
+                    }
+                    break;
+            }
+        }
+    }
+
+
+    /**
+     * 核心序列化分发（字节版）：根据对象类型调用对应字节版方法
+     * （需根据原toJson逻辑补充完整类型判断，此处保留核心逻辑框架）
+     */
+    private static void toJsonByte(Object obj, ByteArrayOutputStream byteArrayOutputStream) {
+        if (obj == null) {
+            byteArrayOutputStream.write(JSON_NULL, 0, JSON_NULL.length);
+            return;
+        }
+
+        Class<?> objClass = obj.getClass();
+        // 处理基本类型包装类（boolean/Byte/Short/Integer/Long/Float/Double/Character）
+        if (objClass == Boolean.class) {
+            boolean value = (Boolean) obj;
+            byte[] boolBytes = value ? "true".getBytes() : "false".getBytes();
+            byteArrayOutputStream.write(boolBytes, 0, boolBytes.length);
+        } else if (objClass == Byte.class) {
+            byte[] byteBytes = toBytes((Byte) obj); // 复用之前的基本类型转byte[]工具
+            byteArrayOutputStream.write(byteBytes, 0, byteBytes.length);
+        } else if (objClass == Short.class) {
+            byte[] shortBytes = toBytes((Short) obj);
+            byteArrayOutputStream.write(shortBytes, 0, shortBytes.length);
+        } else if (objClass == Integer.class) {
+            byte[] intBytes = toBytes((Integer) obj);
+            byteArrayOutputStream.write(intBytes, 0, intBytes.length);
+        } else if (objClass == Long.class) {
+            byte[] longBytes = toBytes((Long) obj);
+            byteArrayOutputStream.write(longBytes, 0, longBytes.length);
+        } else if (objClass == Float.class) {
+            byte[] floatBytes = toBytes((Float) obj);
+            byteArrayOutputStream.write(floatBytes, 0, floatBytes.length);
+        } else if (objClass == Double.class) {
+            byte[] doubleBytes = toBytes((Double) obj);
+            byteArrayOutputStream.write(doubleBytes, 0, doubleBytes.length);
+        } else if (objClass == Character.class) {
+            byte[] charBytes = toBytes((Character) obj);
+            byteArrayOutputStream.write(charBytes, 0, charBytes.length);
+        }
+        // 处理字符串
+        else if (objClass == String.class) {
+            byteArrayOutputStream.write(JSON_QUOTE, 0, JSON_QUOTE.length);
+            escapeJsonStringByte((String) obj, byteArrayOutputStream);
+            byteArrayOutputStream.write(JSON_QUOTE, 0, JSON_QUOTE.length);
+        }
+        // 处理Map
+        else if (Map.class.isAssignableFrom(objClass)) {
+            mapToJsonByte((Map<?, ?>) obj, byteArrayOutputStream);
+        }
+        // 处理Iterable（List/Set等）
+        else if (Iterable.class.isAssignableFrom(objClass)) {
+            iterableToJsonByte((Iterable<?>) obj, byteArrayOutputStream);
+        }
+        // 处理数组
+        else if (objClass.isArray()) {
+            arrayToJsonByte(obj, byteArrayOutputStream);
+        }
+        // 处理其他自定义对象（需根据原toJson逻辑补充，此处暂留默认实现）
+        else {
+            // 若原逻辑是调用toString，此处保持一致（转成JSON字符串格式）
+            byteArrayOutputStream.write(JSON_QUOTE, 0, JSON_QUOTE.length);
+            escapeJsonStringByte(obj.toString(), byteArrayOutputStream);
+            byteArrayOutputStream.write(JSON_QUOTE, 0, JSON_QUOTE.length);
+        }
+    }
+
+
     public static String toJson0(Object obj) {
         return JSON.toJSONString(obj, JSONWriter.Feature.WriteNonStringValueAsString);
     }
 
     public static String toJson(Object obj) {
+        StringBuilder stringBuilder = new StringBuilder(1024);
+        toJson(obj, stringBuilder);
+        return stringBuilder.toString();
+    }
+
+    public static void toJson(Object obj, StringBuilder stringBuilder) {
         if (obj == null) {
-            return "null";
+            stringBuilder.append("null");
+            return;
+        }
+        Class<?> ac = obj.getClass();
+        if (ac.isPrimitive()
+                || ac == String.class
+                || ac == Long.class
+                || ac == Integer.class
+                || ac == Double.class
+                || ac == Float.class
+                || ac == Short.class
+                || ac == Boolean.class
+                || ac == Byte.class
+                || ac == Character.class
+        ) {
+            stringBuilder.append("\"");
+            escapeJsonString(obj.toString(), stringBuilder);
+            stringBuilder.append("\"");
+            return;
+        }
+        if (obj instanceof Class<?> || obj instanceof File || obj instanceof CharSequence) {
+            stringBuilder.append("\"");
+            escapeJsonString(obj.toString(), stringBuilder);
+            stringBuilder.append("\"");
+            return;
         }
         if (obj instanceof Map) {
-            return mapToJson((Map<?, ?>) obj);
+            mapToJson((Map<?, ?>) obj, stringBuilder);
+            return;
         }
         if (obj instanceof Iterable) {
-            return iterableToJson((Iterable<?>) obj);
+            iterableToJson((Iterable<?>) obj, stringBuilder);
+            return;
         }
         if (obj.getClass().isArray()) {
-            return arrayToJson(obj);
+            arrayToJson(obj, stringBuilder);
+            return;
         }
-        if (obj instanceof GzbMap) {
-            return obj.toString();
-        }
-        if (obj instanceof Class<?>) {
-            return "\"" + obj.toString() + "\"";
-        }
-        if (obj instanceof File) {
-            return "\"" + obj.toString() + "\"";
-        }
-        if (obj instanceof JsonSerializable) {
-            return obj.toString();
-        }
-        if (obj instanceof CharSequence) {
-            return "\"" + escapeJsonString(obj.toString()) + "\"";
-        }
-        if (obj instanceof Character) {
-            return "\"" + escapeJsonString(String.valueOf(obj)) + "\"";
-        }
-        if (obj instanceof Number || obj instanceof Boolean) {
-            return "\"" + (obj.toString()) + "\"";
+        if (obj instanceof GzbMap) {//已知类处理
+            mapToJson(((GzbMap) obj).getMap(), stringBuilder);
+            return;
         }
         if (obj instanceof Exception) {
-            return "\"" + escapeJsonString(getExceptionInfo((Exception) obj)) + "\"";
+            stringBuilder.append("\"");
+            escapeJsonString(getExceptionInfo((Exception) obj), stringBuilder);
+            stringBuilder.append("\"");
+            return;
         }
-        try {
-            String res = ClassTools.toJsonObject(obj.getClass(), obj, null);
-            return res == null ? obj.toString() : res;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+        if (obj instanceof Timestamp) {
+            stringBuilder.append("\"");
+            escapeJsonString(new DateTime((Timestamp) obj).toString(), stringBuilder);
+            stringBuilder.append("\"");
+            return;
+        }
+        if (obj instanceof LocalDateTime) {
+            stringBuilder.append("\"");
+            escapeJsonString(new DateTime((LocalDateTime) obj).toString(), stringBuilder);
+            stringBuilder.append("\"");
+            return;
+        }
+        if (obj instanceof Date) {
+            stringBuilder.append("\"");
+            escapeJsonString(new DateTime((Date) obj).toString(), stringBuilder);
+            stringBuilder.append("\"");
+            return;
+        }
+        int size1=stringBuilder.length();
+        ClassTools.toJsonObject(obj,stringBuilder);
+        if (size1 == stringBuilder.length()) {
+            stringBuilder.append(obj.toString());
         }
     }
 
 
-    // Helper method to serialize a Map
     public static String mapToJson(Map<?, ?> map) {
+        StringBuilder stringBuilder = new StringBuilder();
+        mapToJson(map, stringBuilder);
+        return stringBuilder.toString();
+    }
+
+    // Helper method to serialize a Map
+    public static void mapToJson(Map<?, ?> map, StringBuilder sb) {
         if (map == null) {
-            return "null";
+            sb.append("null");
+            return;
         }
-        StringBuilder sb = new StringBuilder();
         sb.append("{");
         boolean first = true;
         for (Map.Entry<?, ?> entry : map.entrySet()) {
@@ -209,21 +828,28 @@ public class Tools {
                     sb.append(",");
                 }
                 first = false;
-                sb.append("\"").append(escapeJsonString((entry.getKey().toString()))).append("\":");
+                sb.append("\"");
+                escapeJsonString((entry.getKey().toString()), sb);
+                sb.append("\":");
                 sb.append(toJson(entry.getValue()));
             }
 
         }
         sb.append("}");
-        return sb.toString();
+    }
+
+    public static String iterableToJson(Iterable<?> iterable) {
+        StringBuilder stringBuilder = new StringBuilder();
+        iterableToJson(iterable, stringBuilder);
+        return stringBuilder.toString();
     }
 
     // Helper method to serialize an Iterable (e.g., List, Set)
-    public static String iterableToJson(Iterable<?> iterable) {
+    public static void iterableToJson(Iterable<?> iterable, StringBuilder sb) {
         if (iterable == null) {
-            return "null";
+            sb.append("null");
+            return;
         }
-        StringBuilder sb = new StringBuilder();
         sb.append("[");
         if (iterable != null) {
             boolean first = true;
@@ -236,35 +862,135 @@ public class Tools {
             }
         }
         sb.append("]");
-        return sb.toString();
+    }
+
+    public static String arrayToJson(Object array) {
+        StringBuilder stringBuilder = new StringBuilder();
+        arrayToJson(array, stringBuilder);
+        return stringBuilder.toString();
     }
 
     // Helper method to serialize an Array
-    public static String arrayToJson(Object array) {
+    public static void arrayToJson(Object array, StringBuilder sb) {
         if (array == null) {
-            return "null";
+            sb.append("null");
+            return;
         }
         int length = Array.getLength(array);
-        StringBuilder sb = new StringBuilder();
         sb.append("[");
         for (int i = 0; i < length; i++) {
             if (i > 0) {
                 sb.append(",");
             }
-            sb.append(toJson(Array.get(array, i)));
+            toJson(Array.get(array, i), sb);
         }
         sb.append("]");
-        return sb.toString();
     }
 
-    // Helper method to escape special JSON characters
     public static String escapeJsonString(String str) {
+        StringBuilder stringBuilder = new StringBuilder(str.length() + 10);
+        escapeJsonString(str, stringBuilder);
+        return stringBuilder.toString();
+    }
+
+    public static void escapeJsonString(String str, StringBuilder sb) {
         if (str == null) {
-            return "";
+            return;
         }
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < str.length(); i++) {
+
+        final int len = str.length();
+        int last = 0; // 上一次追加的起点索引
+
+        for (int i = 0; i < len; i++) {
             char c = str.charAt(i);
+
+            // 检查字符是否需要转义
+            switch (c) {
+                case '"':
+                    // 追加上一段普通字符串
+                    if (last < i) {
+                        sb.append(str, last, i);
+                    }
+                    sb.append("\\\"");
+                    last = i + 1;
+                    break;
+                case '\\':
+                    if (last < i) {
+                        sb.append(str, last, i);
+                    }
+                    sb.append("\\\\");
+                    last = i + 1;
+                    break;
+                case '\b':
+                    if (last < i) {
+                        sb.append(str, last, i);
+                    }
+                    sb.append("\\b");
+                    last = i + 1;
+                    break;
+                case '\f':
+                    if (last < i) {
+                        sb.append(str, last, i);
+                    }
+                    sb.append("\\f");
+                    last = i + 1;
+                    break;
+                case '\n':
+                    if (last < i) {
+                        sb.append(str, last, i);
+                    }
+                    sb.append("\\n");
+                    last = i + 1;
+                    break;
+                case '\r':
+                    if (last < i) {
+                        sb.append(str, last, i);
+                    }
+                    sb.append("\\r");
+                    last = i + 1;
+                    break;
+                case '\t':
+                    if (last < i) {
+                        sb.append(str, last, i);
+                    }
+                    sb.append("\\t");
+                    last = i + 1;
+                    break;
+                default:
+                    // 检查控制字符 (< ASCII 32)
+                    if (c < ' ') {
+                        if (last < i) {
+                            sb.append(str, last, i);
+                        }
+                        sb.append("\\u00");
+                        // 快速转换 4-bit 为 16 进制字符（需实现高效的 toHexChar 辅助方法）
+                        sb.append(HEX_CHARS[(c >> 4) & 0xF]); // 高 4 位
+                        sb.append(HEX_CHARS[c & 0xF]);        // 低 4 位
+                        last = i + 1;
+                    }
+                    break;
+            }
+        }
+
+        // 循环结束后，追加最后一段普通字符串
+        if (last < len) {
+            sb.append(str, last, len);
+        }
+    }
+
+    // 辅助常量：用于将 int 0-15 快速转换为 16 进制字符
+    private static final char[] HEX_CHARS = {
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+    };
+
+    // Helper method to escape special JSON characters
+    public static void escapeJsonString0(String str, StringBuilder sb) {
+        if (str == null) {
+            return;
+        }
+        char[] chars = str.toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            char c = chars[i];
             switch (c) {
                 case '"':
                     sb.append("\\\"");
@@ -297,7 +1023,6 @@ public class Tools {
                     break;
             }
         }
-        return sb.toString();
     }
 
     /**
@@ -591,7 +1316,9 @@ public class Tools {
             }
 
         }
-        List<GzbMap> list_sys_permission = dataBase.selectGzbMap("select * from sys_permission");
+        //只生成 对应权限范围的 映射信息
+
+  /*      List<GzbMap> list_sys_permission = dataBase.selectGzbMap("select * from sys_permission");
         for (GzbMap gzbMap : list_sys_permission) {
             if (sysGroupId != null) {
                 dataBase.runSql("INSERT INTO sys_group_permission(" +
@@ -607,7 +1334,7 @@ public class Tools {
                         });
             }
         }
-
+*/
         return 1;
     }
 
@@ -713,30 +1440,48 @@ public class Tools {
     }
 
     //首字母转大写
-    public static String lowStr_d(String s) {
-        return s.substring(0, 1).toUpperCase() + (s.substring(1, s.length()));
+    public static String lowStr_d(String str) {
+        return str.substring(0, 1).toUpperCase() + (str.substring(1));
     }
 
     //首字母转小写
-    public static String lowStr_x(String s) {
-        return s.substring(0, 1).toLowerCase() + (s.substring(1, s.length()));
+    public static String lowStr_x(String str) {
+        return str.substring(0, 1).toLowerCase() + (str.substring(1));
     }
 
-    public static String lowStr_hump(String str) {
-        String[] ss1 = str.split("_");
-        if (ss1.length == 1) {
-            return str;
+    public static String lowStr_hump(String name) {
+        return lowStr_hump(name, true);
+    }
+
+    public static String lowStr_hump(String name, boolean d) {
+        if (name == null) {
+            return null;
         }
-        String newString = "";
-        for (int i = 0; i < ss1.length; i++) {
-            if (i == 0) {
-                newString += (ss1[i]).toLowerCase();
-            } else {
-                newString += lowStr_d(ss1[i]);
+        String nameHump = humpMap.get(name);
+        if (nameHump != null) {
+            return nameHump;
+        }
+        String[] arr1 = name.split("_");
+        StringBuilder n = new StringBuilder(arr1[0]);
+        for (int i = 1; i < arr1.length; i++) {
+            char[] chars = arr1[i].toCharArray();
+            for (int i1 = 0; i1 < chars.length; i1++) {
+                if (i1 == 0) {
+                    if (d) {
+                        n.append(String.valueOf(chars[i1]).toUpperCase());
+                    } else {
+                        n.append(String.valueOf(chars[i1]).toLowerCase());
+                    }
+
+                } else {
+                    n.append(String.valueOf(chars[i1]).toLowerCase());
+                }
             }
         }
-        return newString;
+        humpMap.put(name, n.toString());
+        return n.toString();
     }
+
 
     public static Map<String, Object> mapArrayToNoArray(Map<String, Object> map) {
         Map<String, Object> map0 = new HashMap<>();
@@ -943,7 +1688,15 @@ public class Tools {
     }
 
     public static String getProjectRoot() {
-        return getProjectRoot(Tools.class);
+        StackTraceElement[] stackTrace = new Throwable().getStackTrace();
+        if (stackTrace.length > 0) {
+            try {
+                return getProjectRoot(Class.forName(stackTrace[stackTrace.length - 1].getClassName()));
+            } catch (ClassNotFoundException e) {
+                System.err.println(e.getMessage());
+            }
+        }
+        return null;
     }
 
     public static String getProjectRoot(Class<?> aClass) {
@@ -1061,68 +1814,6 @@ public class Tools {
         } catch (URISyntaxException e) {
             return url.getPath();
         }
-    }
-
-    public static <T> T[] toArrayType(Object[] data, T[] arr) throws Exception {
-        if (data == null) {
-            return null;
-        }
-        if (arr == null) {
-            return null;
-        }
-        if (data.length > arr.length) {
-            arr = (T[]) Array.newInstance(arr.getClass().getComponentType(), data.length);
-        }
-        Method method = null;
-        int type01 = 0;
-        Class aClass = arr.getClass().getComponentType();
-        if (aClass.getComponentType() != null) {
-            aClass = aClass.getComponentType();
-        }
-        if (aClass.getName().equals("java.lang.Character")) {
-            method = aClass.getMethod("valueOf", char.class);
-            type01 = 1;
-        } else if (aClass.getName().equals("java.lang.String")) {
-            method = null;
-            type01 = 2;
-        } else if (aClass.getName().equals("gzb.frame.entity.UploadEntity") || aClass.getName().equals("java.io.File")) {
-            method = null;
-            type01 = 4;
-        } else {
-            method = aClass.getMethod("valueOf", String.class);
-            type01 = 3;
-        }
-        for (int i = 0; i < data.length; i++) {
-            if (data[i] == null) {
-                arr[i] = null;
-                continue;
-            }
-            if (data.length == 0) {
-                if (type01 == 2) {
-                    arr[i] = arr[i];
-                } else {
-                    arr[i] = null;
-                }
-                continue;
-            }
-            if (type01 == 1) {
-                arr[i] = (T) method.invoke(null, data[i].toString().toCharArray()[0]);
-            } else if (type01 == 2) {
-                arr[i] = (T) data[i].toString();
-            } else if (type01 == 4 && data[i].getClass().getName().equals("gzb.frame.entity.UploadEntity")) {
-                if (aClass.getName().equals("gzb.frame.entity.UploadEntity")) {
-                    arr[i] = (T) ((UploadEntity) data[i]);
-                }
-                if (aClass.getName().equals("java.io.File")) {
-                    arr[i] = (T) ((UploadEntity) data[i]).getFile();
-                }
-            } else {
-                if (method != null) {
-                    arr[i] = (T) method.invoke(null, data[i].toString());
-                }
-            }
-        }
-        return arr;
     }
 
     public static int[] toArrayType(Object[] data, int[] arr) {
@@ -1986,10 +2677,30 @@ public class Tools {
             out = new ByteArrayOutputStream();
             pout = new PrintStream(out);
             ex.printStackTrace(pout);
-            ret = new String(out.toByteArray());
+            ret = out.toString();
             out.close();
         } catch (Exception e) {
             return ex.getMessage();
+        } finally {
+            if (pout != null) {
+                pout.close();
+            }
+        }
+        return ret;
+    }
+
+    public static String getExceptionInfo(Throwable throwable) {
+        ByteArrayOutputStream out = null;
+        PrintStream pout = null;
+        String ret = "";
+        try {
+            out = new ByteArrayOutputStream();
+            pout = new PrintStream(out);
+            throwable.printStackTrace(pout);
+            ret = out.toString();
+            out.close();
+        } catch (Exception e) {
+            return throwable.getMessage();
         } finally {
             if (pout != null) {
                 pout.close();
@@ -2527,8 +3238,6 @@ public class Tools {
         }
         return ret_list;
     }
-
-    public static Map<String, String> mapIsReg = new HashMap<>();
 
     //压缩 参数1 被压缩文件   参数2 压缩到文件
     public static void fileZipEncoder(String fileUrl, String target) {

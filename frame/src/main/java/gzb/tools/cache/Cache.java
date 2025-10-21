@@ -29,22 +29,25 @@ public class Cache {
     public static GzbCache dataBaseCache;
     //全局缓存 是map实现 避免一些对象无法存入redis 并且重启会消失
     public static GzbCache gzbMap;
-    static{
+    public static GzbQueue gzbQueue;
+
+    static {
+        gzbQueue = new GzbQueueImpl();
         gzbMap = new GzbCacheMap();
         if (Config.cacheType.equals("redis")) {
             gzbCache = new GzbCacheRedis();
         } else {
-            gzbCache = new GzbCacheMap(Config.thisPath+ "main.cache");
+            gzbCache = new GzbCacheMap(Config.thisPath + "main.cache", 120);
         }
         if (Config.sessionType.equals("redis")) {
             session = new GzbCacheRedis();
         } else {
-            session = new GzbCacheMap(Config.thisPath+ "session.cache");
+            session = new GzbCacheMap(Config.thisPath + "session.cache", 120);
         }
         if (Config.dataBaseCache.equals("redis")) {
             dataBaseCache = new GzbCacheRedis();
         } else {
-            dataBaseCache = new GzbCacheMap(Config.thisPath+  "db.cache");
+            dataBaseCache = new GzbCacheMap(Config.thisPath + "db.cache", 120);
         }
     }
 }

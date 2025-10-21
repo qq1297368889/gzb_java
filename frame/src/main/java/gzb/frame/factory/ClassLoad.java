@@ -15,12 +15,10 @@
  *  * limitations under the License.
  *
  */
-
 package gzb.frame.factory;
 
+import gzb.exception.GzbException0;
 import gzb.tools.Config;
-import gzb.tools.FileTools;
-import gzb.tools.Tools;
 import gzb.tools.log.Log;
 
 import javax.tools.*;
@@ -30,7 +28,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,19 +40,11 @@ import java.util.regex.Pattern;
  * 本方案为每次加载使用独立的类加载器，以支持热更新。
  */
 public class ClassLoad {
-    public static Log log = Config.log;
+    public static Log log = Log.log;
+    //public static final ClassLoadV2 load = new ClassLoadV2();
+    //public static final ClassLoadV1 load = new ClassLoadV1();
 
-    /**
-     * 从文件编译 Java 代码。
-     *
-     * @param file Java 源文件
-     * @return 编译后的 Class 对象
-     * @throws Exception 编译或加载失败
-     */
-    public static Class<?> compileJavaCode(File file) throws Exception {
-        String javaCode = FileTools.readString(file);
-        return compileJavaCode(javaCode);
-    }
+    // --- 现有方法：用于单个源代码编译和加载 ---
 
     /**
      * 从字符串编译 Java 代码。
@@ -62,155 +55,53 @@ public class ClassLoad {
      */
     public static Class<?> compileJavaCode(String javaCode) throws Exception {
         String className = extractPublicClassName(javaCode);
+        return compileJavaCode(javaCode,className);
+    }
+    public static Class<?> compileJavaCode(String javaCode,String className) throws Exception {
         long start = System.currentTimeMillis();
-        Class<?> class1 = compileJavaCode(javaCode, className);
+        Class<?> class1 = new ClassLoadV1().compileAndLoad(javaCode, className);
         long end = System.currentTimeMillis();
-        log.i("编译", "java", class1.getName(), "耗时", end - start);
+        log.d("编译耗时", end - start, class1.getName());
         return class1;
     }
-
-    /**
-     * 核心编译和加载方法。
-     *
-     * @param javaCode  Java 源代码
-     * @param className 类的全限定名
-     * @return 编译后的 Class 对象
-     * @throws Exception 编译或加载失败
-     */
-    public static Class<?> compileJavaCode(String javaCode, String className) throws Exception {
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        if (compiler == null) {
-            throw new IllegalStateException("无法获取 Java 编译器，请确保 JDK 已正确安装。");
-        }
-
-        JavaFileObject source = new JavaSourceFromString(className, javaCode);
-        JavaClassInMemory classInMemory = new JavaClassInMemory(className, JavaFileObject.Kind.CLASS);
-
-        List<JavaFileObject> compilationUnits = new ArrayList<>();
-        compilationUnits.add(source);
-        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-
-        StandardJavaFileManager standardFileManager = compiler.getStandardFileManager(diagnostics, null, null);
-        JavaFileManager fileManager = new ForwardingJavaFileManager<StandardJavaFileManager>(standardFileManager) {
-            @Override
-            public JavaFileObject getJavaFileForOutput(Location location, String className, JavaFileObject.Kind kind, FileObject sibling) throws IOException {
-                return classInMemory;
-            }
-        };
-
-        List<String> options = new ArrayList<>();
-        options.add("-parameters");
-        options.add("-encoding");
-        options.add(Config.encoding.name());
-        String jarPath = System.getProperty("java.class.path");
-        String separator = File.pathSeparator;
-        String completeClasspath = jarPath + separator + ".";
-
-        options.add("-classpath");
-        options.add(completeClasspath);
-
-        //log.t("-classpath", completeClasspath);
-        JavaCompiler.CompilationTask task =
-                compiler.getTask(null, fileManager, diagnostics, options, null, compilationUnits);
-        boolean success = task.call();
-
-        if (!success) {
-            StringBuilder errorMessage = new StringBuilder();
-            diagnostics.getDiagnostics().forEach(
-                    d -> errorMessage.append(d.getMessage(null)).append("\n"));
-            throw new Exception("编译失败：" + "\r\n" + errorMessage + "\r\n" + className + "\r\n" + javaCode);
-        }
-
-        byte[] bytes = classInMemory.getBytes();
-        if (bytes.length == 0) {
-            throw new Exception("编译后的字节码为空，可能存在依赖缺失或语法错误");
-        }
-
-        // 关键步骤：为每次加载创建一个新的、独立的类加载器
-        HotSwapClassLoader classLoader = new HotSwapClassLoader(Thread.currentThread().getContextClassLoader());
-        return classLoader.loadFromBytes(className, bytes);
+    public static Map<String, Class<?>> compileJavaCode(Map<String, String> sourcesMap) throws Exception {
+        long start = System.currentTimeMillis();
+        Map<String, Class<?>> map = new ClassLoadV1().compileAndLoad(sourcesMap);
+        long end = System.currentTimeMillis();
+        log.d("编译耗时", end - start, map.size(), "个类");
+        return map;
     }
 
+    public static Map<String, Class<?>> compileJavaCode0(Map<String, String> sourcesMap) throws Exception {
+        Map<String, Class<?>> map = new HashMap<>();
+        for (Map.Entry<String, String> stringStringEntry : sourcesMap.entrySet()) {
+            map.put(stringStringEntry.getKey(), compileJavaCode(stringStringEntry.getValue(),stringStringEntry.getKey()));
+        }
+        return map;
+    }
     /**
      * 快速提取公共类名，用于命名虚拟文件。
-     * 这个方法使用轻量级的字符串查找，比 JavaParser 快无数倍。
-     *
-     * @param javaCode Java 源代码
-     * @return 类的全限定名
+     * (保持原样，未修改)
      */
-    private static String extractPublicClassName(String javaCode) {
+    public static String extractPublicClassName(String javaCode) {
         String packageName = "";
         String publicClassName = "InMemory"; // 默认名称
 
-        // 1. 使用正则表达式匹配包名
-        Pattern packagePattern = Pattern.compile("package\\s+([a-zA-Z0-9_\\.]+)\\s*;", Pattern.MULTILINE);
+        Pattern packagePattern = Pattern.compile("package\\s+([a-zA-Z0-9_.]+)\\s*;", Pattern.MULTILINE);
         Matcher packageMatcher = packagePattern.matcher(javaCode);
         if (packageMatcher.find()) {
             packageName = packageMatcher.group(1).trim();
         }
 
-        // 2. 使用正则表达式匹配公共类、接口或抽象类名
         Pattern classPattern = Pattern.compile(
-                "public\\s+(?:(?:abstract|final)\\s+)?(?:class|interface|enum)\\s+([a-zA-Z0-9_\\$]+)",
+                "public\\s+(?:(?:abstract|final)\\s+)?(?:class|interface|enum)\\s+([a-zA-Z0-9_$]+)",
                 Pattern.MULTILINE);
         Matcher classMatcher = classPattern.matcher(javaCode);
         if (classMatcher.find()) {
             publicClassName = classMatcher.group(1).trim();
         }
-
-        return packageName.isEmpty() ? publicClassName : packageName + "." + publicClassName;
+        String name = packageName.isEmpty() ? publicClassName : packageName + "." + publicClassName;
+        return name;
     }
 
-    static class JavaSourceFromString extends SimpleJavaFileObject {
-        final String code;
-
-        JavaSourceFromString(String name, String code) {
-            super(URI.create("string:///" + name.replace('.', '/') + Kind.SOURCE.extension), Kind.SOURCE);
-            this.code = code;
-        }
-
-        @Override
-        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-            return code;
-        }
-    }
-
-    static class JavaClassInMemory extends SimpleJavaFileObject {
-        private final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-
-        JavaClassInMemory(String name, Kind kind) {
-            super(URI.create("string:///" + name.replace('.', '/') + kind.extension), kind);
-        }
-
-        @Override
-        public OutputStream openOutputStream() throws IOException {
-            return bos;
-        }
-
-        public byte[] getBytes() {
-            return bos.toByteArray();
-        }
-    }
-
-    /**
-     * 为热插拔场景设计的类加载器。
-     * 每次加载新版本类时，都使用一个新的 HotSwapClassLoader 实例。
-     */
-    static class HotSwapClassLoader extends ClassLoader {
-        public HotSwapClassLoader(ClassLoader parent) {
-            super(parent);
-        }
-
-        public Class<?> loadFromBytes(String name, byte[] bytecode) {
-            // 直接定义类，避免重复定义，并且将类定义在这个新的加载器实例中
-            return defineClass(name, bytecode, 0, bytecode.length);
-        }
-
-        @Override
-        protected Class<?> findClass(String name) throws ClassNotFoundException {
-            // 对于 HotSwapClassLoader 而言，它只负责加载我们传给它的那个类。
-            // 依赖的其它类（如 GzbOneInterface）则委托给父加载器。
-            return super.findClass(name);
-        }
-    }
 }

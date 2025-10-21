@@ -20,6 +20,11 @@ package gzb.tools;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 public class DateTime {
@@ -29,53 +34,82 @@ public class DateTime {
             "yyyy-MM-dd-HH-mm-ss",
             "yyyy/MM/dd/HH/mm/ss",
             "yyyy年MM月dd号HH点mm分ss秒",
+            "yyyy-MM-dd HH:mm:ss.SSS",
             "yyyy-MM-dd",
-            "HH:mm:ss",
             "yyyy-MM",
-            "yyyy"
+            "yyyy",
+            "HH:mm:ss",
+            "HH:mm",
+            "HH"
     );
     public DateTime() {
         t = System.currentTimeMillis();
     }
-
+    public DateTime(Date date) {
+        t = date.getTime();
+    }
+    public DateTime(java.sql.Timestamp timestamp) {
+        t = timestamp.getTime();
+    }
+    public DateTime(java.time.LocalDateTime localDateTime,String zone) {
+        this(localDateTime,ZoneId.of(zone));
+    }
+    public DateTime(java.time.LocalDateTime localDateTime) {
+        this(localDateTime,ZoneId.systemDefault());
+    }
+    public DateTime(java.time.LocalDateTime localDateTime,ZoneId zoneId) {
+        ZonedDateTime zdt = localDateTime.atZone(zoneId);
+        Instant instant = zdt.toInstant();
+        t = instant.toEpochMilli(); // 毫秒级时间戳（13位）
+        //long epochNano = instant.getNano();       // 纳秒数（0-999,999,999）
+    }
     public DateTime(long t) {
         this.t = t;
     }
 
     public DateTime(int t) {
-        this.t = t * 1000;
+        this.t = t * 1000L;
     }
 
-    public DateTime(String t, String format) {
-        try {
-            this.t = new SimpleDateFormat(format).parse(t).getTime();
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
+    public DateTime(String t, String format) throws ParseException {
+        this.t = new SimpleDateFormat(format).parse(t).getTime();
     }
 
-    public DateTime(String t, int i) {
-        try {
-            this.t = new SimpleDateFormat(SJ[i]).parse(t).getTime();
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
+    public DateTime(String t, int i) throws ParseException {
+        this.t = new SimpleDateFormat(SJ[i]).parse(t).getTime();
     }
 
-    public DateTime(String t) {
-        try {
-            this.t = new SimpleDateFormat(SJ[0]).parse(t).getTime();
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
+    public DateTime(String t) throws ParseException {
+        this.t = new SimpleDateFormat(SJ[0]).parse(t).getTime();
     }
 
     public int toStampInt() {
-        return Integer.valueOf((t + "").substring(0, 10));
+        return Integer.parseInt(String.valueOf(t /10));
+    }
+
+    public java.sql.Timestamp toTimestamp() {
+        return new java.sql.Timestamp(t);
     }
 
     public long toStampLong() {
         return t;
+    }
+
+
+    public LocalDateTime toLocalDateTime(String zone) {
+        return LocalDateTime.ofInstant(
+                Instant.ofEpochMilli(t),
+                ZoneId.of(zone)
+        );
+    }
+    public LocalDateTime toLocalDateTime(ZoneId zoneId) {
+        return LocalDateTime.ofInstant(
+                Instant.ofEpochMilli(t),
+                zoneId
+        );
+    }
+    public LocalDateTime toLocalDateTime() {
+        return toLocalDateTime(ZoneId.systemDefault());
     }
 
     public Date toDate() {
@@ -88,19 +122,19 @@ public class DateTime {
     }
 
     public String formatYear() {
-        return new SimpleDateFormat(SJ[7]).format(new Date(t)).toString();
+        return new SimpleDateFormat(SJ[7]).format(new Date(t));
     }
 
     public String formatMont() {
-        return new SimpleDateFormat(SJ[6]).format(new Date(t)).toString();
+        return new SimpleDateFormat(SJ[6]).format(new Date(t));
     }
 
     public String formatDate() {
-        return new SimpleDateFormat(SJ[4]).format(new Date(t)).toString();
+        return new SimpleDateFormat(SJ[4]).format(new Date(t));
     }
 
     public String formatTime() {
-        return new SimpleDateFormat(SJ[5]).format(new Date(t)).toString();
+        return new SimpleDateFormat(SJ[5]).format(new Date(t));
     }
 
     public String formatDateTime() {
@@ -108,8 +142,7 @@ public class DateTime {
     }
 
     public String formatDateTime(String format) {
-        String time = new SimpleDateFormat(format).format(new Date(t)).toString();
-        return time;
+        return new SimpleDateFormat(format).format(new Date(t));
     }
 
     /**

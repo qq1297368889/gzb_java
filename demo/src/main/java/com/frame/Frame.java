@@ -6,7 +6,7 @@ public class Frame<T> extends BaseDaoImpl<T> {
     public Frame() {
         try {
             //对应配置文件里的 db.mysql.xxx 的 xxx
-            init("db001");
+            init("db002");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

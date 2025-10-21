@@ -81,6 +81,9 @@ public class ActionCode extends Base {
                     "    @DecoratorOpen\n" +
                     "    @GetMapping(\"list\")\n" +
                     "    public Object list(GzbJson result," + tableInfo.getNameHumpUpperCase() + " " + tableInfo.getNameHumpLowerCase() + ", String sortField, String sortType, Integer page, Integer size) throws Exception {\n" +
+                    "        if("+ tableInfo.getNameHumpLowerCase() +" == null){\n" +
+                    "           " + tableInfo.getNameHumpLowerCase() + " = new "+ tableInfo.getNameHumpUpperCase() +"();\n" +
+                    "        }\n" +
                     "        return " + tableInfo.getNameHumpLowerCase() + "Dao.queryPage(" + tableInfo.getNameHumpLowerCase() + ", sortField, sortType, page, size, 100, 1000);\n" +
                     "    }\n" +
                     "\n" +
@@ -92,7 +95,7 @@ public class ActionCode extends Base {
                     "    @DecoratorOpen\n" +
                     "    @GetMapping(\"query\")\n" +
                     "    public Object query(GzbJson result, String[] field, String[] symbol, String[] value, String[] montage, String sortField, String sortType, Integer page, Integer limit) throws Exception {\n" +
-                    "        SqlTemplate sqlTemplate = " + tableInfo.getNameHumpLowerCase() + "Dao.getDataBase().toSelect(\"" + tableInfo.getName() + "\", field, symbol, value, montage, sortField, sortType);\n" +
+                    "        SqlTemplate sqlTemplate = " + tableInfo.getNameHumpLowerCase() + "Dao.getDataBase().toSelect(\"" + tableInfo.getName() + "\", field, symbol, value, montage, null, null);\n" +
                     "        return " + tableInfo.getNameHumpLowerCase() + "Dao.queryPage(sqlTemplate.getSql(), sqlTemplate.getObjects(), sortField, sortType, page, limit, 0, 0);\n" +
                     "    }\n" +
                     "\n" +
@@ -150,14 +153,14 @@ public class ActionCode extends Base {
                     "     * */\n" +
                     "    @DecoratorOpen\n" +
                     "    @DeleteMapping(\"deleteAll\")\n" +
-                    "    public Object deleteAll(GzbJson result, Long[] " + tableInfo.getIdHumpLowerCase() + ") throws Exception {\n" +
+                    "    public Object deleteAll(GzbJson result, "+tableInfo.getIdType()+"[] " + tableInfo.getIdHumpLowerCase() + ") throws Exception {\n" +
                     "        if (" + tableInfo.getIdHumpLowerCase() + " == null || " + tableInfo.getIdHumpLowerCase() + ".length < 1) {\n" +
                     "            return result.fail(\"delete 输入参数错误\");\n" +
                     "        }\n" +
                     "        int num = 0;\n" +
                     "        " + tableInfo.getNameHumpUpperCase() + " " + tableInfo.getDbNameLowerCase() + " = new " + tableInfo.getNameHumpUpperCase() + "();\n" +
-                    "        for (Long aLong : " + tableInfo.getIdHumpLowerCase() + ") {\n" +
-                    "            " + tableInfo.getNameHumpLowerCase() + "Dao.delete(" + tableInfo.getDbNameLowerCase() + ".set" + tableInfo.getIdHumpUpperCase() + "(aLong));\n" +
+                    "        for ("+tableInfo.getIdType()+" _id : " + tableInfo.getIdHumpLowerCase() + ") {\n" +
+                    "            " + tableInfo.getNameHumpLowerCase() + "Dao.delete(" + tableInfo.getDbNameLowerCase() + ".set" + tableInfo.getIdHumpUpperCase() + "(_id));\n" +
                     "            num++;\n" +
                     "        }\n" +
                     "        return result.success(\"成功删除[\" + num + \"]条数据\");\n" +

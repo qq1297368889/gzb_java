@@ -17,12 +17,15 @@
  */
 
 package gzb.tools;
+import gzb.tools.log.Log;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class GzbMap implements Serializable {
+    public Log log=Log.log;
     public Map<String, Object> map = new HashMap<>();
     public Object get(String key) {
         return get(key,null);
@@ -129,7 +132,7 @@ public class GzbMap implements Serializable {
                 return object;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.e(e);
         }
         return def;
     }
@@ -141,7 +144,7 @@ public class GzbMap implements Serializable {
                 return String.valueOf(object.toString());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.e(e);
         }
         return def;
     }
@@ -163,7 +166,7 @@ public class GzbMap implements Serializable {
 
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.e(e);
         }
         return def;
     }
@@ -175,7 +178,7 @@ public class GzbMap implements Serializable {
                 return string.split(split);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.e(e);
         }
         return def;
     }
@@ -187,7 +190,7 @@ public class GzbMap implements Serializable {
                 return Tools.textMid(string, q, h).toArray(new String[]{});
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.e(e);
         }
         return def;
     }
@@ -229,7 +232,7 @@ public class GzbMap implements Serializable {
 
     @Override
     public String toString() {
-        return Tools.toJson(map);
+        return Tools.mapToJson(map);
     }
 
     public Map<String, Object> getMap() {
@@ -238,10 +241,6 @@ public class GzbMap implements Serializable {
 
     public GzbMap setMap(Map<String, Object> map) {
         this.map = map;
-        return this;
-    }
-    public GzbMap setMap(Object map) {
-        this.map = (Map<String, Object>)map;
         return this;
     }
 }

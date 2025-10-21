@@ -145,6 +145,7 @@ gzb.jsonVerify = function (json, successMsg, sucFun, failFun, errFun, jumpFun) {
         status = json["code"];
     }
     if (status == null) {
+        console.log("返回状态码为空")
         gzb.msgErr("访问服务器失败，请稍后重试[1002]");
         return false;
     }
@@ -484,6 +485,7 @@ gzb.findOption = function (option, val) {
 }
 
 gzb.getSelect = function (json, id, title, css1, css2) {
+
     let opHtml = "";
     opHtml += "<option value=\"\">请选择或输入</option>";
     for (let jsonElement of json) {
@@ -625,10 +627,11 @@ gzb.initInput = function (json, eleId, isField, defVal, cssText) {
     if (ele1 == null) {
         return null;
     }
+
     if (json[isField] != null && Number(json[isField]) === 1) {
         let id = gzb.getQueryInputId(json.sysMappingVal);
         let html = "";
-        if (json.sysMappingSelect != null && json.sysMappingSelect.toString().length > 0) {
+        if (json.sysMappingSelect != null && json.sysMappingTitle.toString().length > 0) {
             html = gzb.getSelect(json.sysMappingSelect, id, json.sysMappingTitle, css1, css2);
         } else if (json.sysMappingDate != null && json.sysMappingDate.toString().length > 0) {
             html = gzb.getInput(null, id, json.sysMappingTitle, css1, css2);
@@ -649,10 +652,21 @@ gzb.initInput = function (json, eleId, isField, defVal, cssText) {
             });
         }
         let val = json[defVal]
-        console.log("def id ",val)
-        if (val != null && val.length > 0) {
-            $("#" + id).val(val);
+        console.log("def id ",val,json)
+        if (val != null) {
+            if (val == "date") {
+                $("#" + id).val(new Date().Format("yyyy-MM-dd"));
+            } else if (val == "time") {
+                $("#" + id).val(new Date().Format("hh:mm:ss"));
+            }else if (val == "datetime") {
+                $("#" + id).val(new Date().Format("yyyy-MM-dd hh:mm:ss"));
+            }else{
+                if (val != null && val.length > 0) {
+                    $("#" + id).val(val);
+                }
+            }
         }
+
         gzb.eleInit();
         num++;
 
@@ -1230,6 +1244,10 @@ gzb.getMappingJSON = function (suc) {
         let array1 = [];
         for (let sysGroupColumn of sysGroup.sysGroupColumn) {
             let mapping1 = sysGroupColumn.mapping;
+
+            if (mapping1.sysMappingSelect!=null && mapping1.sysMappingSelect.toString().startsWith("req:")) {
+                console.log("mapping1.opt ",mapping1.sysMappingSelect.toString())
+            }
             mapping1.sysMappingTableShow = sysGroupColumn.sysGroupColumnTable
             mapping1.sysMappingTableUpdateShow = sysGroupColumn.sysGroupColumnUpdate
             mapping1.sysMappingTableEditShow = sysGroupColumn.sysGroupColumnEdit

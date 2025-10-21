@@ -50,6 +50,7 @@ public class TableInfo {
     public List<String> columnNamesHumpLowerCase;
     public List<String> columnNamesHumpUpperCase;
     public List<String> columnTypes;
+    public List<String> columnTypesDb;
     public List<Integer> columnSize;
 
     public void setColumnNames(List<String> list,String dbName) {

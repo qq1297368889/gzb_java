@@ -20,6 +20,7 @@ package gzb.tools.json;
 
 import gzb.tools.DateTime;
 
+import java.sql.Timestamp;
 import java.util.Map;
 
 public interface Result {
@@ -74,5 +75,8 @@ public interface Result {
     String[] getStringMid(String key, String q, String h, String[] def);
     String getStringMidIndex(String key, String q, String h, Integer index, String def);
     String toJson();
+
+    public java.sql.Timestamp getTimestamp(String key);
+    public java.sql.Timestamp getTimestamp(String key,java.sql.Timestamp def);
 
 }

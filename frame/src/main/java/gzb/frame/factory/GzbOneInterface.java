@@ -20,6 +20,8 @@ package gzb.frame.factory;
 
 import gzb.frame.netty.entity.Request;
 import gzb.frame.netty.entity.Response;
+import gzb.tools.json.GzbJson;
+import gzb.tools.log.Log;
 
 import java.util.Map;
 
@@ -36,7 +38,8 @@ public Object _gzb_call_x01(
         Request _g_p_req,
         Response _g_p_resp,
         java.util.Map<String, java.util.List<Object>> _gzb_one_c_requestMap,
-        Object[] arrayObject,
-        boolean _gzb_x001_openTransaction
+        GzbJson _g_p_gzbJson,
+        Log _g_p_log,
+        Object[] arrayObject
 )throws Exception;
 }

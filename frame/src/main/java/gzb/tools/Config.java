@@ -18,21 +18,15 @@
 
 package gzb.tools;
 
-import gzb.tools.cache.GzbCache;
-import gzb.tools.cache.GzbCacheMap;
-import gzb.tools.cache.GzbCacheRedis;
-import gzb.tools.log.Log;
-import gzb.tools.log.LogImpl;
+import gzb.tools.thread.ThreadPool;
 
 import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Array;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Config {
+    public static final String frameName = "gzb.one";
     public static Map<String, String> config = new ConcurrentHashMap<>();
     public static String thisPath = null;
     public static File configFile = null;
@@ -45,8 +39,11 @@ public class Config {
     public static int TCP_PORT;
     public static int UDP_PORT;
     public static int WS_PORT;
-    public static int threadNum;
-    public static int maxAwaitNum;
+    public static int mainThreadNum;
+    public static int ioThreadNum;
+    public static int bizThreadNum;
+    public static int bizAwaitNum;
+
     public static int maxPostSize;
     public static int compressionMinSize;
     public static boolean compression;
@@ -76,25 +73,48 @@ public class Config {
     public static String sizeName;
     public static String totalName;
 
-    public static Log log;
-    static{
+    public static Long version;
+    public static Long initTime;
+
+    public static String code_type;
+    public static String code_http_ip;
+    public static Integer code_http_port;
+    public static String code_http_key;
+    public static Long code_http_aid;
+
+    public static Long server_name;
+
+    static {
         init();
     }
 
     public static void update() {
+
+        initTime = Config.getLong("gzb.system.init.time", 0L);
+        version = Config.getLong("gzb.system.server.version", 0L);
+        server_name = Config.getLong("gzb.system.server.name", 1L);
+        code_type = Config.get("gzb.system.code.type", "file");
+        code_http_ip = Config.get("gzb.system.code.http.ip", null);
+        code_http_port = Config.getInteger("gzb.system.code.http.port", null);
+        code_http_key = Config.get("gzb.system.code.http.key", null);
+        code_http_aid = Config.getLong("gzb.system.code.http.aid", null);
+
         domain = Config.get("gzb.system.server.http.domain", "0.0.0.0");
         HTTP_PORT = Config.getInteger("gzb.system.server.http.port", 8080);
         TCP_PORT = Config.getInteger("gzb.system.server.tcp.port", 0);
         UDP_PORT = Config.getInteger("gzb.system.server.udp.port", 0);
         WS_PORT = Config.getInteger("gzb.system.server.ws.port", 0);
-        threadNum = Config.getInteger("gzb.system.server.http.thread.num", cpu * 2);
-        maxAwaitNum = Config.getInteger("gzb.system.server.http.await.num", cpu * 1000);
-        maxPostSize = Config.getInteger("gzb.system.server.http.post.size", 1024 * 1024 * 10);
+
+         mainThreadNum=getInteger("gzb.system.server.main.thread.num", Math.max(cpu / 10, 1));
+        ioThreadNum=getInteger("gzb.system.server.io.thread.num", cpu * 2);
+         bizThreadNum=getInteger("gzb.system.server.biz.thread.num", cpu * 2);
+        bizAwaitNum = Config.getInteger("gzb.system.server.biz.await.num", cpu * 100);
+        maxPostSize = Config.getInteger("gzb.system.server.http.post.size", 1024 * 1024 * 5);
         compressionMinSize = Config.getInteger("gzb.system.server.http.compression.min.size", 1024 * 5);
         compression = Config.getBoolean("gzb.system.server.http.compression", false);
-        codeDir = Config.get("gzb.system.code.dir", null);
-        codePwd = Config.get("gzb.system.code.pwd", null);
-        codeIv = Config.get("gzb.system.code.iv", null);
+        codeDir = Config.get("gzb.system.code.file.dir", null);
+        codePwd = Config.get("gzb.system.code.file.pwd", null);
+        codeIv = Config.get("gzb.system.code.file.iv", null);
         permissionsOpen = Config.getBoolean("gzb.system.permissions.open", false);
         staticDir = Config.get("gzb.system.server.http.static.dir", thisPath);
         frameDbKey = Config.get("db.frame.key", "frame");
@@ -116,15 +136,15 @@ public class Config {
         failVal = Config.getInteger("json.fail.code", 2);
         errorVal = Config.getInteger("json.error.code", 3);
         jumpVal = Config.getInteger("json.jump.code", 4);
-
     }
 
     private static void init() {
         try {
             cpu = Tools.getCPUNum();
             encoding = Charset.forName(System.getProperty("file.encoding", "UTF-8"));
-            thisPath = System.getProperty("this.dir");
+            thisPath = System.getProperty("this.dir", Tools.getProjectRoot());
             tempDir = Config.get("gzb.system.server.http.tmp.dir", System.getProperty("java.io.tmpdir"));
+            //更改前提示  虽然不需要了 但是现在也保留吧
             if (thisPath == null || thisPath.isEmpty()) {
                 System.err.println("请注意找不到项目根目录,程序已停止,请按照提示操作, \n" +
                         "你必须传递环境变量: this.dir = 你的项目根目录\n" +
@@ -149,30 +169,39 @@ public class Config {
                 configFile = file;
             }
             load(configFile);
-            log = new LogImpl();
-            new Thread(() -> {
-                while (true) {
-                    try {
-                        Tools.sleep(3000);
-                        load(configFile);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
+            ThreadPool.startService(new Runnable() {
+                @Override
+                public void run() {
+                    thread = Thread.currentThread();
+                    while (true) {
+                        try {
+                            load(configFile);
+                        } catch (Exception e) { //这里不允许出错， 也无法记录日志 因为会循环依赖
+                            e.printStackTrace();
+                        }
+                        try {
+                            Thread.sleep(3000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();//响应中断
+                            break;
+                        }
+
                     }
                 }
-            }).start();
+            }, "config-auto-update-服务线程");
         } catch (Exception e) {
             System.err.println("程序配置 缓存初始化错误" + Tools.getExceptionInfo(e));
         }
     }
 
-    public static void load(File file) throws Exception {
-        if (file.exists()) {
-            if (configTime == file.lastModified()) {
-                return;
-            }
-            configTime = file.lastModified();
+    public static Thread thread = null;
+    static String configData;
 
-            String[] ss1 = FileTools.readArray(file);
+    public static Map<String, String> toMap(String configFileData) {
+        configData = configFileData;
+        Map<String, String> map0 = new ConcurrentHashMap<>();
+        if (configFileData != null) {
+            String[] ss1 = configFileData.split("\n");
             for (String s : ss1) {
                 if (s == null || s.length() < 2) {
                     continue;
@@ -189,14 +218,14 @@ public class Config {
                         if (!new File(n1).exists()) {
                             n1 = ss2[1].replaceAll("classpath:", thisPath());
                         }
-                        String[]arr1=n1.split(",");
-                        StringBuilder newString= new StringBuilder();
+                        String[] arr1 = n1.split(",");
+                        StringBuilder newString = new StringBuilder();
                         for (String string : arr1) {
                             FileTools.mkdir(new File(string.trim()));
                             newString.append(string).append(",");
                         }
                         if (newString.toString().endsWith(",")) {
-                            newString.delete(newString.length()-1,newString.length());
+                            newString.delete(newString.length() - 1, newString.length());
                         }
                         ss2[1] = newString.toString();
                     }
@@ -205,39 +234,70 @@ public class Config {
                         if (!new File(n1).exists()) {
                             n1 = ss2[1].replaceAll("this:", thisPath());
                         }
-                        String[]arr1=n1.split(",");
-                        StringBuilder newString= new StringBuilder();
+                        String[] arr1 = n1.split(",");
+                        StringBuilder newString = new StringBuilder();
                         for (String string : arr1) {
                             FileTools.mkdir(new File(string.trim()));
                             newString.append(string).append(",");
                         }
                         if (newString.toString().endsWith(",")) {
-                            newString.delete(newString.length()-1,newString.length());
+                            newString.delete(newString.length() - 1, newString.length());
                         }
                         ss2[1] = newString.toString();
                     }
-                    if (config.get(ss2[0]) == null) {
-                        config.put(ss2[0], ss2[1]);
-                        //log.t("config","add",ss2[0] + "=" + config.get(ss2[0]));
-                    } else if (!config.get(ss2[0]).equals(ss2[1])) {
-                        config.put(ss2[0], ss2[1]);
-                        //log.t("config","upd",ss2[0] + "=" + config.get(ss2[0]));
-                    }
+                    map0.put(ss2[0].trim(), ss2[1]);
                 }
             }
+        }
+        return map0;
+
+    }
+
+    public static void load(File file) throws Exception {
+        if (file.exists()) {
+            if (configTime == file.lastModified()) {
+                return;
+            }
+            configTime = file.lastModified();
+            config = toMap(FileTools.readString(file));
             update();
         } else {
             System.err.println("config 配置文件不存在：" + file.getPath());
         }
     }
 
-    public static void save(){
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String> en : config.entrySet()) {
-            sb.append(en.getKey()).append("=").append(en.getValue()).append("\n");
+    /**
+     * 更新配置文件  保留原有格式
+     */
+    public static void save() {
+        Map<String, String> mapConfig = new ConcurrentHashMap<>(config);
+        StringBuilder newConfigData = new StringBuilder(configData.length());
+        String[] ss1 = configData.split("\n");
+        for (String s : ss1) {
+            if (s == null || s.length() < 2) {
+                continue;
+            }
+            s = s.trim();
+            String[] ss2 = s.split("=", 2);
+            if (ss2.length == 2 && ss2[0] != null && ss2[1] != null && !ss2[0].isEmpty() && !ss2[1].isEmpty()) {
+                String key = ss2[0];
+                String val = mapConfig.remove(key);
+                if (val == null) {
+                    val = "";
+                }
+                val = val.trim().replace(thisPath(), "this:");//还原 符号 this: 和
+                newConfigData.append(key).append("=").append(val).append("\n");
+            } else {
+                newConfigData.append(s).append("\n");
+            }
         }
-        System.out.println(sb.toString());
-        FileTools.save(configFile, sb.toString());
+        if (mapConfig.size() > 0) {
+            newConfigData.append("# 新增配置 -- ").append(new DateTime()).append("\n");
+            for (Map.Entry<String, String> stringStringEntry : mapConfig.entrySet()) {
+                newConfigData.append(stringStringEntry.getKey()).append("=").append(stringStringEntry.getValue()).append("\n");
+            }
+        }
+        FileTools.save(configFile, newConfigData.toString());
     }
 
     public static String get(String key, String defVal) {
@@ -250,6 +310,14 @@ public class Config {
 
     public static String get(String key) {
         return get(key, null);
+    }
+
+    public static Double getDouble(String key, Double defVal) {
+        String val = config.get(key);
+        if (val == null) {
+            return defVal;
+        }
+        return Double.parseDouble(val);
     }
 
     public static Integer getInteger(String key, Integer defVal) {

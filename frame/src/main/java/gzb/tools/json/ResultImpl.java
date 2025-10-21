@@ -24,6 +24,7 @@ import gzb.tools.DateTime;
 import gzb.tools.Tools;
 import gzb.tools.log.Log;
 
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +32,7 @@ import java.util.Objects;
 
 public class ResultImpl implements Result, java.io.Serializable {
 
-    public static Log log= Config.log;
+    public static Log log= Log.log;
     private static final long serialVersionUID = 1256544882241L;
     Map<String, Object> rootMap;
 
@@ -95,6 +96,22 @@ public class ResultImpl implements Result, java.io.Serializable {
     public Short getShort(String key) {
         return getShort(key,null);
     }
+    @Override
+    public java.sql.Timestamp getTimestamp(String key){
+        String str=getString(key);
+        if (str==null) {
+            return null;
+        }
+        return Timestamp.valueOf(str);
+    }
+    @Override
+    public java.sql.Timestamp getTimestamp(String key,java.sql.Timestamp def){
+        String str=getString(key);
+        if (str==null) {
+            return def;
+        }
+        return Timestamp.valueOf(str);
+    }
 
     @Override
     public <T> T getObject(String key) {
@@ -117,7 +134,10 @@ public class ResultImpl implements Result, java.io.Serializable {
             if (obj == null) {
                 return def;
             }
-            return obj.toString();
+            if (obj instanceof String) {
+                return (String) obj;
+            }
+            return String.valueOf(obj);
         } catch (Exception e) {
             log.e(e, "Result getString error ", key,obj, def);
             return def;
@@ -128,8 +148,11 @@ public class ResultImpl implements Result, java.io.Serializable {
     public Integer getInteger(String key, Integer def) {
         Object obj = get(key);
         try {
-            if (obj == null || obj.toString().isEmpty()) {
+            if (obj == null) {
                 return def;
+            }
+            if (obj instanceof Integer) {
+                return (Integer) obj;
             }
             return Integer.parseInt(obj.toString());
         } catch (Exception e) {
@@ -142,8 +165,11 @@ public class ResultImpl implements Result, java.io.Serializable {
     public Long getLong(String key, Long def) {
         Object obj = get(key);
         try {
-            if (obj == null || obj.toString().isEmpty()) {
+            if (obj == null) {
                 return def;
+            }
+            if (obj instanceof Long) {
+                return (Long) obj;
             }
             return Long.parseLong(obj.toString());
         } catch (Exception e) {
@@ -156,12 +182,15 @@ public class ResultImpl implements Result, java.io.Serializable {
     public Double getDouble(String key, Double def) {
         Object obj = get(key);
         try {
-            if (obj == null || obj.toString().isEmpty()) {
+            if (obj == null) {
                 return def;
+            }
+            if (obj instanceof Double) {
+                return (Double) obj;
             }
             return Double.parseDouble(obj.toString());
         } catch (Exception e) {
-            log.e(e, "Result Double error ", key,obj, def);
+            log.e(e, "Result getDouble error ", key,obj, def);
             return def;
         }
     }
@@ -170,8 +199,11 @@ public class ResultImpl implements Result, java.io.Serializable {
     public Boolean getBoolean(String key, Boolean def) {
         Object obj = get(key);
         try {
-            if (obj == null || obj.toString().isEmpty()) {
+            if (obj == null) {
                 return def;
+            }
+            if (obj instanceof Boolean) {
+                return (Boolean) obj;
             }
             return Boolean.parseBoolean(obj.toString());
         } catch (Exception e) {
@@ -184,8 +216,11 @@ public class ResultImpl implements Result, java.io.Serializable {
     public Float getFloat(String key, Float def) {
         Object obj = get(key);
         try {
-            if (obj == null || obj.toString().isEmpty()) {
+            if (obj == null) {
                 return def;
+            }
+            if (obj instanceof Float) {
+                return (Float) obj;
             }
             return Float.parseFloat(obj.toString());
         } catch (Exception e) {
@@ -198,8 +233,11 @@ public class ResultImpl implements Result, java.io.Serializable {
     public Short getShort(String key, Short def) {
         Object obj = get(key);
         try {
-            if (obj == null || obj.toString().isEmpty()) {
+            if (obj == null) {
                 return def;
+            }
+            if (obj instanceof Short) {
+                return (Short) obj;
             }
             return Short.parseShort(obj.toString());
         } catch (Exception e) {

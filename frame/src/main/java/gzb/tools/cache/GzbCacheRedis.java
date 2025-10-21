@@ -1,21 +1,3 @@
-/*
- *
- *  * Copyright [2025] [GZB ONE]
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  * http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
- *
- */
-
 package gzb.tools.cache;
 
 import gzb.tools.Config;
@@ -23,17 +5,41 @@ import gzb.tools.log.Log;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.exceptions.JedisNoScriptException;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 public class GzbCacheRedis implements GzbCache {
-    public static Log log= Config.log;
+    public static Log log = Log.log;
     public JedisPool jedisPool = null;
+
+    private static final java.nio.charset.Charset UTF_8 =Config.encoding;
+
+    // --- Lua 脚本定义 (保持不变) ---
+    private static final String ATOMIC_INCR_EXPIRE_LUA =
+            "local current = redis.call('INCR', KEYS[1]); " +
+                    "if (current == 1 and tonumber(ARGV[1]) > 0) then " +
+                    "    redis.call('EXPIRE', KEYS[1], ARGV[1]); " +
+                    "end; " +
+                    "return current;";
+
+    private static final String ATOMIC_HINCR_EXPIRE_LUA =
+            "local current = redis.call('HINCRBY', KEYS[1], ARGV[1], 1); " +
+                    "if (tonumber(ARGV[2]) > 0) then " +
+                    "    redis.call('EXPIRE', KEYS[1], ARGV[2]); " +
+                    "end; " +
+                    "return current;";
+
+    // --- 脚本 SHA1 缓存字段 (保持不变) ---
+    private volatile String incrSha = null;
+    private volatile String hIncrSha = null;
+
+
+    // --- 构造函数和初始化方法 (保持不变) ---
     public GzbCacheRedis() {
         this(Config.get("db.cache.key", "cache1"));
     }
@@ -57,542 +63,300 @@ public class GzbCacheRedis implements GzbCache {
                 jedisPool = new JedisPool(jedisPoolConfig, ip, port, overtime, pwd, index);
             }
             log.d("GzbCacheRedis,初始化成功");
+
+            // *** 性能优化点：预加载 Lua 脚本 ***
+            try (Jedis jedis = jedisPool.getResource()) {
+                incrSha = jedis.scriptLoad(ATOMIC_INCR_EXPIRE_LUA);
+                hIncrSha = jedis.scriptLoad(ATOMIC_HINCR_EXPIRE_LUA);
+                log.d("Lua 脚本预加载成功.");
+            } catch (Exception e) {
+                log.e(e, "GzbCacheRedis, Lua 脚本预加载失败，将使用 EVAL 模式。");
+            }
         } catch (Exception e) {
             log.e(e, "GzbCacheRedis,初始化失败");
             throw new RuntimeException(e);
         }
     }
 
-    // --- Core Operations ---
-
-    @Override
-    public int getIncr(String key) {
+    // --- 核心执行逻辑封装 (evaluateScript) ---
+    private Long evaluateScript(String script, String sha, List<String> keys, List<String> args) {
         try (Jedis jedis = jedisPool.getResource()) {
-            Long result = jedis.incr(key);
-            if (result != null) {
-                return result.intValue();
+            if (sha != null) {
+                try {
+                    return (Long) jedis.evalsha(sha, keys, args);
+                } catch (JedisNoScriptException e) {
+                    Object result = jedis.eval(script, keys, args);
+                    String newSha = jedis.scriptLoad(script);
+                    if (script.equals(ATOMIC_INCR_EXPIRE_LUA)) {
+                        incrSha = newSha;
+                    } else if (script.equals(ATOMIC_HINCR_EXPIRE_LUA)) {
+                        hIncrSha = newSha;
+                    }
+                    return (Long) result;
+                }
+            } else {
+                return (Long) jedis.eval(script, keys, args);
             }
         } catch (Exception e) {
-            log.e(e);
+            return null;
         }
-        return 0;
+    }
+
+    // --- GzbCache 接口实现方法 (保持不变) ---
+    @Override
+    public Long getIncrLong(String key, int second) {
+        if (key == null || key.isEmpty()) return 0L;
+        List<String> keys = Collections.singletonList(key);
+        List<String> args = Collections.singletonList(String.valueOf(second));
+        Long result = evaluateScript(ATOMIC_INCR_EXPIRE_LUA, incrSha, keys, args);
+        if (result == null) {
+            log.e(new Exception("Redis operation failed"), "getIncrLong error for key: " + key);
+            return 0L;
+        }
+        return result;
     }
 
     @Override
-    public int getIncr(String key, String mapKey) {
+    public Long getIncrLong(String key, String subKey, int second) {
+        if (key == null || subKey == null || key.isEmpty() || subKey.isEmpty()) return 0L;
+        List<String> keys = Collections.singletonList(key);
+        List<String> args = Arrays.asList(subKey, String.valueOf(second));
+        Long result = evaluateScript(ATOMIC_HINCR_EXPIRE_LUA, hIncrSha, keys, args);
+        if (result == null) {
+            log.e(new Exception("Redis operation failed"), "getIncrLong error for key: " + key + ", subKey: " + subKey);
+            return 0L;
+        }
+        return result;
+    }
+
+    @Override
+    public Integer getIncr(String key, int second) {
+        Long result = getIncrLong(key, second);
+        return result.intValue();
+    }
+
+    @Override
+    public Integer getIncr(String key, String subKey, int second) {
+        Long result = getIncrLong(key, subKey, second);
+        return result.intValue();
+    }
+
+    @Override
+    public void set(String key, String val, int second) {
+        if (key == null || val == null || key.isEmpty()) {
+            return;
+        }
+        byte[] keyBytes = key.getBytes(UTF_8);
+        byte[] valBytes = val.getBytes(UTF_8);
         try (Jedis jedis = jedisPool.getResource()) {
-            Long result = jedis.hincrBy(key, mapKey, 1);
-            if (result != null) {
-                return result.intValue();
+            if (second > 0) {
+                jedis.setex(keyBytes, second, valBytes);
+            } else {
+                jedis.set(keyBytes, valBytes);
             }
         } catch (Exception e) {
-            log.e(e);
+            log.e(e, "set error for key: " + key);
         }
-        return 0;
     }
 
     @Override
-    public Object get(String key) {
+    public String get(String key) {
+        if (key == null || key.isEmpty()) return null;
+        byte[] keyBytes = key.getBytes(UTF_8);
         try (Jedis jedis = jedisPool.getResource()) {
-            return jedis.get(key);
+            byte[] bytes = jedis.get(keyBytes);
+            if (bytes != null) {
+                return new String(bytes, UTF_8);
+            }
+            return null;
         } catch (Exception e) {
-            log.e(e);
+            log.e(e, "get error for key: " + key);
+            return null;
         }
-        return null;
     }
 
     @Override
-    public Object get(String key, String mapKey) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            return jedis.hget(key, mapKey);
-        } catch (Exception e) {
-            log.e(e);
+    public void setMap(String key, String subKey, String val, int second) {
+        if (key == null || subKey == null || val == null || key.isEmpty() || subKey.isEmpty()) {
+            return;
         }
-        return null;
-    }
-
-    @Override
-    public Object get(String key, int index) {
+        byte[] keyBytes = key.getBytes(UTF_8);
+        byte[] subKeyBytes = subKey.getBytes(UTF_8);
+        byte[] valBytes = val.getBytes(UTF_8);
         try (Jedis jedis = jedisPool.getResource()) {
-            List<String> list = jedis.lrange(key, index, index);
-            if (list != null && !list.isEmpty()) {
-                return list.get(0);
+            jedis.hset(keyBytes, subKeyBytes, valBytes);
+            if (second > 0) {
+                jedis.expire(keyBytes, second);
             }
         } catch (Exception e) {
-            log.e(e);
-        }
-        return null;
-    }
-
-    @Override
-    public void set(String key, Object val) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.set(key, Objects.toString(val));
-        } catch (Exception e) {
-            log.e(e);
+            log.e(e, "setMap error for key: " + key + ", subKey: " + subKey);
         }
     }
 
     @Override
-    public void setMap(String key, String mapKey, Object val) {
+    public String getMap(String key, String subKey) {
+        if (key == null || subKey == null || key.isEmpty() || subKey.isEmpty()) return null;
+        byte[] keyBytes = key.getBytes(UTF_8);
+        byte[] subKeyBytes = subKey.getBytes(UTF_8);
         try (Jedis jedis = jedisPool.getResource()) {
-            jedis.hset(key, mapKey, Objects.toString(val));
-        } catch (Exception e) {
-            log.e(e);
-        }
-    }
-
-    @Override
-    public void setList(String key, int index, Object val) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.lset(key, index, Objects.toString(val));
-        } catch (Exception e) {
-            log.e(e);
-        }
-    }
-
-    @Override
-    public void set(String key, Object val, int second) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.setex(key, second, Objects.toString(val));
-        } catch (Exception e) {
-            log.e(e);
-        }
-    }
-
-    @Override
-    public void setMap(String key, String mapKey, Object val, int second) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.hset(key, mapKey, Objects.toString(val));
-            jedis.expire(key, second);
-        } catch (Exception e) {
-            log.e(e);
-        }
-    }
-
-    @Override
-    public void setList(String key, int index, Object val, int second) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.lset(key, index, Objects.toString(val));
-            jedis.expire(key, second);
-        } catch (Exception e) {
-            log.e(e);
-        }
-    }
-
-    @Override
-    public void add(String key, Object val) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.rpush(key, Objects.toString(val));
-        } catch (Exception e) {
-            log.e(e);
-        }
-    }
-
-    @Override
-    public Object del(String key) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            Object val = get(key); // 获取值以便返回
-            jedis.del(key);
-            return val;
-        } catch (Exception e) {
-            log.e(e);
-        }
-        return null;
-    }
-
-    @Override
-    public Object del(String key, String mapKey) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            Object val = get(key, mapKey); // 获取值以便返回
-            jedis.hdel(key, mapKey);
-            return val;
-        } catch (Exception e) {
-            log.e(e);
-        }
-        return null;
-    }
-
-    @Override
-    public Object del(String key, int index) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            Object val = get(key, index); // 获取值以便返回
-            // Redis 没有直接的 ldel 命令，需要 Lua 脚本或事务来保证原子性
-            String script = "local val = redis.call('LINDEX', KEYS[1], ARGV[1])\n" +
-                    "if val then\n" +
-                    "  redis.call('LSET', KEYS[1], ARGV[1], '__DEL__')\n" +
-                    "  redis.call('LREM', KEYS[1], 1, '__DEL__')\n" +
-                    "end\n" +
-                    "return val";
-            jedis.eval(script, 1, key, String.valueOf(index));
-            return val;
-        } catch (Exception e) {
-            log.e(e);
-        }
-        return null;
-    }
-
-    // --- 类型转换方法 ---
-    private Integer getIntegerInternal(Object value) {
-        if (value instanceof String) {
-            try {
-                return Integer.parseInt((String) value);
-            } catch (NumberFormatException e) {
-                return null;
+            byte[] bytes = jedis.hget(keyBytes, subKeyBytes);
+            if (bytes != null) {
+                return new String(bytes, UTF_8);
             }
-        }
-        return null;
-    }
-
-    @Override
-    public Integer getInteger(String key, Integer defVal) {
-        Object val = get(key);
-        Integer result = getIntegerInternal(val);
-        return result != null ? result : defVal;
-    }
-
-    @Override
-    public Integer getInteger(String key, String mapKey, Integer defVal) {
-        Object val = get(key, mapKey);
-        Integer result = getIntegerInternal(val);
-        return result != null ? result : defVal;
-    }
-
-    @Override
-    public Integer getInteger(String key, int index, Integer defVal) {
-        Object val = get(key, index);
-        Integer result = getIntegerInternal(val);
-        return result != null ? result : defVal;
-    }
-
-    private String getStringInternal(Object value) {
-        if (value != null) return value.toString();
-        return null;
-    }
-
-    @Override
-    public String getString(String key, String defVal) {
-        Object val = get(key);
-        String result = getStringInternal(val);
-        return result != null ? result : defVal;
-    }
-
-    @Override
-    public String getString(String key, String mapKey, String defVal) {
-        Object val = get(key, mapKey);
-        String result = getStringInternal(val);
-        return result != null ? result : defVal;
-    }
-
-    @Override
-    public String getString(String key, int index, String defVal) {
-        Object val = get(key, index);
-        String result = getStringInternal(val);
-        return result != null ? result : defVal;
-    }
-
-    private Boolean getBooleanInternal(Object value) {
-        if (value instanceof String) return Boolean.parseBoolean((String) value);
-        return null;
-    }
-
-    @Override
-    public Boolean getBoolean(String key, Boolean defVal) {
-        Object val = get(key);
-        Boolean result = getBooleanInternal(val);
-        return result != null ? result : defVal;
-    }
-
-    @Override
-    public Boolean getBoolean(String key, String mapKey, Boolean defVal) {
-        Object val = get(key, mapKey);
-        Boolean result = getBooleanInternal(val);
-        return result != null ? result : defVal;
-    }
-
-    @Override
-    public Boolean getBoolean(String key, int index, Boolean defVal) {
-        Object val = get(key, index);
-        Boolean result = getBooleanInternal(val);
-        return result != null ? result : defVal;
-    }
-
-    private Long getLongInternal(Object value) {
-        if (value instanceof String) {
-            try {
-                return Long.parseLong((String) value);
-            } catch (NumberFormatException e) {
-                return null;
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public Long getLong(String key, Long defVal) {
-        Object val = get(key);
-        Long result = getLongInternal(val);
-        return result != null ? result : defVal;
-    }
-
-    @Override
-    public Long getLong(String key, String mapKey, Long defVal) {
-        Object val = get(key, mapKey);
-        Long result = getLongInternal(val);
-        return result != null ? result : defVal;
-    }
-
-    @Override
-    public Long getLong(String key, int index, Long defVal) {
-        Object val = get(key, index);
-        Long result = getLongInternal(val);
-        return result != null ? result : defVal;
-    }
-
-    private Double getDoubleInternal(Object value) {
-        if (value instanceof String) {
-            try {
-                return Double.parseDouble((String) value);
-            } catch (NumberFormatException e) {
-                return null;
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public Double getDouble(String key, Double defVal) {
-        Object val = get(key);
-        Double result = getDoubleInternal(val);
-        return result != null ? result : defVal;
-    }
-
-    @Override
-    public Double getDouble(String key, String mapKey, Double defVal) {
-        Object val = get(key, mapKey);
-        Double result = getDoubleInternal(val);
-        return result != null ? result : defVal;
-    }
-
-    @Override
-    public Double getDouble(String key, int index, Double defVal) {
-        Object val = get(key, index);
-        Double result = getDoubleInternal(val);
-        return result != null ? result : defVal;
-    }
-
-    private byte[] getByteArrayInternal(Object value) {
-        if (value instanceof byte[]) {
-            return (byte[]) value;
-        }
-        return null;
-    }
-
-    @Override
-    public byte[] getByteArray(String key, byte[] defVal) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            byte[] bytes = jedis.get(key.getBytes(Config.encoding));
-            return bytes != null ? bytes : defVal;
+            return null;
         } catch (Exception e) {
-            log.e(e);
+            log.e(e, "getMap error for key: " + key + ", subKey: " + subKey);
+            return null;
         }
-        return defVal;
     }
 
     @Override
-    public byte[] getByteArray(String key, String mapKey, byte[] defVal) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            byte[] bytes = jedis.hget(key.getBytes(Config.encoding), mapKey.getBytes(Config.encoding));
-            return bytes != null ? bytes : defVal;
-        } catch (Exception e) {
-            log.e(e);
+    public void remove(String key) {
+        if (key == null || key.isEmpty()) {
+            return;
         }
-        return defVal;
+        byte[] keyBytes = key.getBytes(UTF_8);
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.del(keyBytes);
+        } catch (Exception e) {
+            log.e(e, "remove error for key: " + key);
+        }
     }
 
     @Override
-    public byte[] getByteArray(String key, int index, byte[] defVal) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            List<byte[]> bytesList = jedis.lrange(key.getBytes(Config.encoding), index, index);
-            if (bytesList != null && !bytesList.isEmpty()) {
-                return bytesList.get(0);
-            }
-        } catch (Exception e) {
-            log.e(e);
+    public void removeMap(String key, String subKey) {
+        if (key == null || subKey == null || key.isEmpty() || subKey.isEmpty()) {
+            return;
         }
-        return defVal;
+        byte[] keyBytes = key.getBytes(UTF_8);
+        byte[] subKeyBytes = subKey.getBytes(UTF_8);
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.hdel(keyBytes, subKeyBytes);
+        } catch (Exception e) {
+            log.e(e, "removeMap error for key: " + key + ", subKey: " + subKey);
+        }
     }
 
-    // --- 序列化方法 ---
+    @Override
+    public void removeMap(String key) {
+        remove(key);
+    }
 
+    /// 下列各种方法 带序列化和反序列化 其他规则和上述同名方法一致   删除方法共享
+    /**
+     * 将 Object 序列化为 byte 数组。
+     * @param obj 要序列化的对象。
+     * @return 序列化后的 byte 数组，失败返回 null。
+     */
     private byte[] serialize(Object obj) {
         if (obj == null) return null;
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
              ObjectOutputStream oos = new ObjectOutputStream(bos)) {
             oos.writeObject(obj);
             return bos.toByteArray();
-        } catch (Exception e) {
-            log.e(e);
+        } catch (IOException e) {
+            log.e(e, "Error serializing object.");
             return null;
         }
     }
 
-    private Object deserialize(byte[] bytes) {
-        if (bytes == null || bytes.length == 0) return null;
+    /**
+     * 将 byte 数组反序列化为 Object。
+     * @param bytes 序列化后的 byte 数组。
+     * @return 反序列化后的 Object，失败返回 null。
+     */
+    @SuppressWarnings("unchecked")
+    private <T> T deserialize(byte[] bytes) {
+        if (bytes == null) return null;
         try (ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
              ObjectInputStream ois = new ObjectInputStream(bis)) {
-            return ois.readObject();
-        } catch (Exception e) {
-            log.e(e);
+            return (T) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            log.e(e, "Error deserializing object.");
             return null;
         }
     }
+
+// --- 新增 Object 存取方法 (使用 byte[] 进行序列化) ---
 
     @Override
     public void setObject(String key, Object val, int second) {
+        if (key == null || val == null || key.isEmpty()) {
+            return;
+        }
+        byte[] keyBytes = key.getBytes(UTF_8);
+        byte[] valBytes = serialize(val);
+        if (valBytes == null) return;
+
         try (Jedis jedis = jedisPool.getResource()) {
-            byte[] bytes = serialize(val);
+            if (second > 0) {
+                // 使用 SETEX 原子地设置值和过期时间
+                jedis.setex(keyBytes, second, valBytes);
+            } else {
+                jedis.set(keyBytes, valBytes);
+            }
+        } catch (Exception e) {
+            log.e(e, "setObject error for key: " + key);
+        }
+    }
+
+    @Override
+    public <T> T getObject(String key) {
+        if (key == null || key.isEmpty()) return null;
+        byte[] keyBytes = key.getBytes(UTF_8);
+
+        try (Jedis jedis = jedisPool.getResource()) {
+            byte[] bytes = jedis.get(keyBytes);
             if (bytes != null) {
-                jedis.setex(key.getBytes(Config.encoding), second, bytes);
+                // 反序列化 byte[] 为 Object
+                return deserialize(bytes);
             }
+            return null;
         } catch (Exception e) {
-            log.e(e);
+            log.e(e, "getObject error for key: " + key);
+            return null;
         }
     }
 
     @Override
-    public void setObject(String key, String mapKey, Object val, int second) {
+    public void setMapObject(String key, String subKey, Object val, int second) {
+        if (key == null || subKey == null || val == null || key.isEmpty() || subKey.isEmpty()) {
+            return;
+        }
+        byte[] keyBytes = key.getBytes(UTF_8);
+        byte[] subKeyBytes = subKey.getBytes(UTF_8);
+        byte[] valBytes = serialize(val);
+        if (valBytes == null) return;
+
         try (Jedis jedis = jedisPool.getResource()) {
-            byte[] bytes = serialize(val);
+            // HSET 是原子操作
+            jedis.hset(keyBytes, subKeyBytes, valBytes);
+            if (second > 0) {
+                // EXPIRE 不是原子操作，但在客户端层面通常可以接受
+                jedis.expire(keyBytes, second);
+            }
+        } catch (Exception e) {
+            log.e(e, "setMapObject error for key: " + key + ", subKey: " + subKey);
+        }
+    }
+
+    @Override
+    public <T> T getMapObject(String key, String subKey) {
+        if (key == null || subKey == null || key.isEmpty() || subKey.isEmpty()) return null;
+        byte[] keyBytes = key.getBytes(UTF_8);
+        byte[] subKeyBytes = subKey.getBytes(UTF_8);
+
+        try (Jedis jedis = jedisPool.getResource()) {
+            byte[] bytes = jedis.hget(keyBytes, subKeyBytes);
             if (bytes != null) {
-                jedis.hset(key.getBytes(Config.encoding), mapKey.getBytes(Config.encoding), bytes);
-                jedis.expire(key, second);
+                // 反序列化 byte[] 为 Object
+                return deserialize(bytes);
             }
+            return null;
         } catch (Exception e) {
-            log.e(e);
+            log.e(e, "getMapObject error for key: " + key + ", subKey: " + subKey);
+            return null;
         }
     }
 
-    @Override
-    public void setObject(String key, int index, Object val, int second) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            byte[] bytes = serialize(val);
-            if (bytes != null) {
-                jedis.lset(key.getBytes(Config.encoding), index, bytes);
-                jedis.expire(key, second);
-            }
-        } catch (Exception e) {
-            log.e(e);
-        }
-    }
-
-    @Override
-    public void addObject(String key, Object val) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            byte[] bytes = serialize(val);
-            if (bytes != null) {
-                jedis.rpush(key.getBytes(Config.encoding), bytes);
-            }
-        } catch (Exception e) {
-            log.e(e);
-        }
-    }
-
-    @Override
-    public <T> T getObject(String key, T defVal) {
-        byte[] bytes = getByteArray(key, null);
-        Object obj = deserialize(bytes);
-        return obj != null ? (T) obj : defVal;
-    }
-
-    @Override
-    public <T> T getObject(String key, String mapKey, T defVal) {
-        byte[] bytes = getByteArray(key, mapKey, null);
-        Object obj = deserialize(bytes);
-        return obj != null ? (T) obj : defVal;
-    }
-
-    @Override
-    public <T> T getObject(String key, int index, T defVal) {
-        byte[] bytes = getByteArray(key, index, null);
-        Object obj = deserialize(bytes);
-        return obj != null ? (T) obj : defVal;
-    }
-
-    // --- 队列方法 ---
-
-    @Override
-    public void queueProduction(String key, Object val) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.lpush(key, Objects.toString(val));
-        } catch (Exception e) {
-            log.e(e);
-        }
-    }
-
-    @Override
-    public Object queueConsumption(String key) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            return jedis.rpop(key);
-        } catch (Exception e) {
-            log.e(e);
-        }
-        return null;
-    }
-
-    @Override
-    public Object queueConsumptionBlock(String key, int second) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            List<String> result = jedis.brpop(second, key);
-            if (result != null && !result.isEmpty()) {
-                // BRPOP 返回一个列表，第一个元素是键名，第二个是值
-                return result.get(1);
-            }
-        } catch (Exception e) {
-            log.e(e);
-        }
-        return null;
-    }
-
-    @Override
-    public <T> void queueProductionObject(String key, T val) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            byte[] bytes = serialize(val);
-            if (bytes != null) {
-                jedis.lpush(key.getBytes(Config.encoding), bytes);
-            }
-        } catch (Exception e) {
-            log.e(e);
-        }
-    }
-
-    @Override
-    public <T> T queueConsumptionObject(String key) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            byte[] bytes = jedis.rpop(key.getBytes(Config.encoding));
-            return (T) deserialize(bytes);
-        } catch (Exception e) {
-            log.e(e);
-        }
-        return null;
-    }
-
-    @Override
-    public <T> T queueConsumptionBlockObject(String key) {
-        return queueConsumptionBlockObject(key, 0); // 0表示无限期阻塞
-    }
-
-    @Override
-    public <T> T queueConsumptionBlockObject(String key, int second) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            List<byte[]> bytesList = jedis.brpop(second, key.getBytes(Config.encoding));
-            if (bytesList != null && !bytesList.isEmpty()) {
-                byte[] bytes = bytesList.get(1); // BRPOP 返回一个列表，第一个元素是键名，第二个是值
-                return (T) deserialize(bytes);
-            }
-        } catch (Exception e) {
-            log.e(e);
-        }
-        return null;
-    }
 }

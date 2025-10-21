@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class UDP {
     static {
-        ThreadPool threadPool = new ThreadPool(1, 1);
+        ThreadPool threadPool = new ThreadPool();
         threadPool.execute(() -> {
             while (true) {
                 try {
