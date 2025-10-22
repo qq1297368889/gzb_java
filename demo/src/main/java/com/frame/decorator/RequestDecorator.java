@@ -1,9 +1,8 @@
-package com.frame.component;
+package com.frame.decorator;
 
 import com.frame.dao.*;
 import com.frame.entity.*;
 import gzb.frame.annotation.Decorator;
-import gzb.frame.annotation.DecoratorEnd;
 import gzb.frame.annotation.DecoratorStart;
 import gzb.frame.annotation.Resource;
 import gzb.frame.factory.ClassTools;

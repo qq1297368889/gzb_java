@@ -334,7 +334,7 @@ public class FactoryImplV2 implements Factory {
             for (int i = 0; i < met.length; i++) {
                 if (metName.equals(met[i])) {
                     if (httpMappings[i] == null) {
-                        return runRes.setState(404);
+                        return runRes.setState(404);//目的是检查静态资源
                     }
                     index = i;
                     break;
@@ -343,7 +343,7 @@ public class FactoryImplV2 implements Factory {
             if (index == -1) {
                 return runRes.setState(404);
             }
-            if (httpMappings[index].header != null && !httpMappings[index].header.isEmpty()) {
+            if (httpMappings[index].header.size()>0) {
                 response.setHeaders(new HashMap<>(httpMappings[index].header));
             }
             if (httpMappings[index].isCrossDomainOrigin) {
@@ -396,7 +396,7 @@ public class FactoryImplV2 implements Factory {
                     request.getMethod(),
                     request.getParameter(),
                     e);
-            return runRes.setState(500).setData(gzbJson.error("访问出现错误"));
+            return runRes.setState(200).setData(gzbJson.error("访问出现错误"));
         } finally {
             //限流如果开启 解除占用
             if (index > -1 && httpMappings[index] != null && httpMappings[index].semaphore != null) {
@@ -410,38 +410,16 @@ public class FactoryImplV2 implements Factory {
     public RunRes request0(Request request, Response response) {
         GzbTiming gzbTiming =new GzbTiming();
         gzbTiming.record();
-        RunRes runRes = null;
+        RunRes runRes = new RunRes();
         Object[] objects;
-        objects = PublicData.context.get();
-        gzbTiming.record("细化1");
-        if (objects == null) {
-            runRes = new RunRes();
-            objects = new Object[]{
-                    runRes,
-                    gzbJson,
-                    log,
-                    request,
-                    response,
-                    null  // 请求参数
-            };
-            PublicData.context.set(objects);
-        } else {
-            objects[3] = request;
-            objects[4] = response;
-            runRes = (RunRes) objects[0];
-            runRes.setData(null);
-        }
-        gzbTiming.record("细化2");
         runRes.setState(200);
         String key = ClassTools.webPathFormat(request.getUri());
-        gzbTiming.record("细化3");
         String metName = request.getMethod();
         HttpMapping[] httpMappings = mapHttpMapping0.get(key);
         if (httpMappings == null) {
             return runRes.setState(404);
         }
-        gzbTiming.record("细化4");
-        //gzbTiming.record("获取端点");
+       gzbTiming.record("获取端点");
         int index = -1;
         try {
             for (int i = 0; i < met.length; i++) {
@@ -457,7 +435,13 @@ public class FactoryImplV2 implements Factory {
                 return runRes.setState(404);
             }
             gzbTiming.record("确定方法");
-            if (httpMappings[index].header != null && !httpMappings[index].header.isEmpty()) {
+
+            if (httpMappings[index].semaphore != null && !httpMappings[index].semaphore.tryAcquire()) {
+                return runRes.setState(200).setData(gzbJson.fail("请求量超过限流阈值，请稍后重试"));
+            }
+
+            gzbTiming.record("限流");
+            if (httpMappings[index].header.size()>0) {
                 response.setHeaders(new HashMap<>(httpMappings[index].header));
             }
             if (httpMappings[index].isCrossDomainOrigin) {
@@ -468,14 +452,25 @@ public class FactoryImplV2 implements Factory {
                 response.setHeader("access-control-allow-origin", host);
             }
             gzbTiming.record("预设协议");
-
-            if (httpMappings[index].semaphore != null && !httpMappings[index].semaphore.tryAcquire()) {
-                return runRes.setState(200).setData(gzbJson.fail("请求量超过限流阈值，请稍后重试"));
-            }
-
-            gzbTiming.record("限流");
             Map<String, List<Object>> parar = request.getParameter();
-            objects[5] = parar;
+
+            objects = PublicData.context.get();
+            if (objects == null) {
+                objects = new Object[]{
+                        runRes,
+                        gzbJson,
+                        log,
+                        request,
+                        response,
+                        parar  // 请求参数
+                };
+                PublicData.context.set(objects);
+            } else {
+                objects[3] = request;
+                objects[4] = response;
+                objects[5] = parar;
+            }
+            gzbTiming.record("线程变量");
             for (DecoratorEntity decoratorEntity : httpMappings[index].start) {
                 RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, objects);
                 if (runRes1 != null) {
@@ -494,10 +489,7 @@ public class FactoryImplV2 implements Factory {
                 }
             }
             gzbTiming.record("装饰器-前");
-
-            Object obj02 = httpMappings[index].httpMappingFun._gzb_call_x01(httpMappings[index].id, mapObject0, request, response, parar, gzbJson, log, objects);
-            runRes.setData(obj02);
-
+            runRes.setData(httpMappings[index].httpMappingFun._gzb_call_x01(httpMappings[index].id, mapObject0, request, response, parar, gzbJson, log, objects));
             gzbTiming.record("端点调用");
             for (DecoratorEntity decoratorEntity : httpMappings[index].end) {
                 RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, objects);
@@ -529,7 +521,7 @@ public class FactoryImplV2 implements Factory {
             /// 输出调试信息
             log.t(gzbTiming.read());
             /// 后台统计 汇总
-            AtomicInteger atomicInteger = reqInfo.computeIfAbsent(gzbTiming.all, k -> new AtomicInteger());
+            AtomicInteger atomicInteger = reqInfo.computeIfAbsent(gzbTiming.all/1000, k -> new AtomicInteger());
             atomicInteger.addAndGet(1);
         }
 
@@ -751,7 +743,6 @@ public class FactoryImplV2 implements Factory {
                     log.t("HTTP端点", "添加", id, path, met[index], httpMapping2.sign);
                 }
                 httpMapping2.header = new HashMap<>();
-                httpMapping2.header.put("content-type", ContentType.json);
                 if (headerClass != null) {
                     for (HeaderItem headerItem : headerClass.item()) {
                         if (headerItem.key().isEmpty() || headerItem.val().isEmpty()) {

@@ -79,4 +79,6 @@ public interface Result {
     public java.sql.Timestamp getTimestamp(String key);
     public java.sql.Timestamp getTimestamp(String key,java.sql.Timestamp def);
 
+    public java.time.LocalDateTime getLocalDateTime(String key);
+    public java.time.LocalDateTime getLocalDateTime(String key,java.time.LocalDateTime def);
 }

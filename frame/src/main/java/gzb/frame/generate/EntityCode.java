@@ -217,6 +217,8 @@ public class EntityCode extends Base {
                     code += "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "=result.getFloat(\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\", null);\n";
                 } else if (tableInfo.getColumnTypes().get(i).endsWith("java.sql.Timestamp")) {
                     code += "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "=result.getTimestamp(\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\", null);\n";
+                } else if (tableInfo.getColumnTypes().get(i).endsWith("java.time.LocalDateTime")) {
+                    code += "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "=result.getLocalDateTime(\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\", null);\n";
                 } else {
                     code += "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "=result.getObject(\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\", null);\n";
                 }
@@ -230,13 +232,7 @@ public class EntityCode extends Base {
 
 
             for (int i = 0; i < tableInfo.getColumnNames().size(); i++) {
-                if (tableInfo.getColumnTypes().get(i).contains("Boolean") || tableInfo.getColumnTypes().get(i).contains("boolean") ||
-                        tableInfo.getColumnTypes().get(i).contains("Byte") || tableInfo.getColumnTypes().get(i).contains("byte") ||
-                        tableInfo.getColumnTypes().get(i).contains("Short") || tableInfo.getColumnTypes().get(i).contains("short") ||
-                        tableInfo.getColumnTypes().get(i).contains("Integer") || tableInfo.getColumnTypes().get(i).contains("int") ||
-                        tableInfo.getColumnTypes().get(i).contains("Long") || tableInfo.getColumnTypes().get(i).contains("long") ||
-                        tableInfo.getColumnTypes().get(i).contains("Float") || tableInfo.getColumnTypes().get(i).contains("float") ||
-                        tableInfo.getColumnTypes().get(i).contains("Double") || tableInfo.getColumnTypes().get(i).contains("double")) {
+                if (!tableInfo.getColumnTypes().get(i).contains("String")) {
                     code += "    public " + tableInfo.getColumnTypes().get(i) + " get" + tableInfo.getColumnNamesHumpUpperCase().get(i) + "() {\n" +
                             "        return " + tableInfo.getColumnNamesHumpLowerCase().get(i) + ";\n" +
                             "    }\n" +

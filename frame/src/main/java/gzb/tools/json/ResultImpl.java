@@ -112,6 +112,22 @@ public class ResultImpl implements Result, java.io.Serializable {
         }
         return Timestamp.valueOf(str);
     }
+    @Override
+    public java.time.LocalDateTime getLocalDateTime(String key){
+        String str=getString(key);
+        if (str==null) {
+            return null;
+        }
+        return Timestamp.valueOf(str).toLocalDateTime();
+    }
+    @Override
+    public java.time.LocalDateTime getLocalDateTime(String key,java.time.LocalDateTime def){
+        String str=getString(key);
+        if (str==null) {
+            return def;
+        }
+        return Timestamp.valueOf(str).toLocalDateTime();
+    }
 
     @Override
     public <T> T getObject(String key) {

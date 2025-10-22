@@ -692,7 +692,7 @@ public class DataBaseImpl implements DataBase {
     public void endTransaction() {
         transactionSimulation.remove();
         close(null, null);
-        log.t("关闭事务", connectionThreadLocal.get(), connectionThreadLocal.get(), simulation_sql.get());
+        log.t("关闭事务", connectionThreadLocal.get(), connectionThreadLocal.get());
     }
 
     //提交并且关闭事务  同时也会归还连接 主要是框架内部调用 当然 也可以手动
@@ -707,19 +707,21 @@ public class DataBaseImpl implements DataBase {
                     connection1.commit();
                 }
             } else if (x01 == 2) {
-                log.t("模拟事务 commit 转化为真实事务提交", simulation_sql);
-                transactionSimulation.set(1);
                 Map<String, List<Object[]>> map1 = simulation_sql.get();
-                if (map1 != null) {
-                    try {
+                transactionSimulation.set(1);
+                simulation_sql.remove();
+                try {
+                    if (map1 != null) {
                         for (Map.Entry<String, List<Object[]>> stringListEntry : map1.entrySet()) {
                             if (stringListEntry.getKey() != null && stringListEntry.getValue() != null) {
                                 runSqlBatch(stringListEntry.getKey(), stringListEntry.getValue());
                             }
                         }
-                    } finally {
-                        simulation_sql.remove();
                     }
+                    commit();
+                }catch (Exception e){
+                    rollback();
+                    throw e;
                 }
             }
         }
@@ -739,7 +741,6 @@ public class DataBaseImpl implements DataBase {
             }
         } else if (state == 2) {
             log.t("回滚 模拟事务", simulation_sql.get());
-            simulation_sql.remove();
         }
     }
 
@@ -768,13 +769,13 @@ public class DataBaseImpl implements DataBase {
             try {
                 Integer state = transactionSimulation.get();
                 if (state == null) {
-                    log.t("close 无事物", connection0.getAutoCommit(), connection0);
+                    log.t("close 无事物", connection0);
                     connection0.close();
                     connectionThreadLocal.remove();
                 } else if (state == 1) {
-                    log.t("close 真实事务", connection0.getAutoCommit(), connection0);
+                    log.t("close 真实事务", connection0);
                 } else if (state == 2) {
-                    log.t("close 模拟事务", connection0.getAutoCommit(), connection0);
+                    log.t("close 模拟事务", connection0);
                     connection0.close();
                     connectionThreadLocal.remove();
                 }
@@ -1077,14 +1078,15 @@ public class DataBaseImpl implements DataBase {
         if (readTransactionState() != null) {
             throw new GzbException0("事务开启时不支持异步执行，会打破事务原子性，如需异步请关闭事务");
         }
-        return runSqlAsync(sql,para);
+        return runSqlAsync(sql, para);
     }
+
     @Override
-    public int runSqlAsync(String sql, Object[] para,Runnable fail) {
+    public int runSqlAsync(String sql, Object[] para, Runnable fail) {
         if (readTransactionState() != null) {
             throw new GzbException0("事务开启时不支持异步执行，会打破事务原子性，如需异步请关闭事务");
         }
-        return asyncFactory.add(new AsyncFactory.Result(sql,para,fail));
+        return asyncFactory.add(new AsyncFactory.Result(sql, para, fail));
     }
 
 

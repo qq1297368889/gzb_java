@@ -4,8 +4,10 @@ import com.frame.dao.*;
 import com.frame.entity.*;
 import gzb.entity.FileUploadEntity;
 import gzb.entity.TableInfo;
+import gzb.frame.PublicData;
 import gzb.frame.annotation.*;
 import gzb.frame.db.DataBase;
+import gzb.frame.factory.v4.FactoryImplV2;
 import gzb.frame.generate.GenerateJavaCode;
 import gzb.frame.netty.entity.Request;
 import gzb.frame.netty.entity.Response;
@@ -22,6 +24,7 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Controller
 //@CrossDomain(allowCredentials = false)
@@ -58,6 +61,14 @@ public class SystemApiV2 {
     SysOptionSqlDao sysOptionSqlDao;
     @Resource
     SysOptionRequestDao sysOptionRequestDao;
+
+
+    @GetMapping(value = "read/data")
+    public Object readData() {
+        Object obj=FactoryImplV2.reqInfo;
+        FactoryImplV2.reqInfo=new ConcurrentHashMap<>();
+        return obj;
+    }
 
     //获取验证码  /system/v2/image/code
     @Header(item = {@HeaderItem(key = "content-type", val = "image/gif")})
@@ -263,12 +274,12 @@ public class SystemApiV2 {
             sysRoleColumn.setData(sysMappingColumn);
             // 配置表寻找
             if (sysMappingColumn.getSysMappingColumnOption() != null && sysMappingColumn.getSysMappingColumnOption().length() > 0) {
-                List<SysOption> list=sysOptionDao.query("select sys_option_value,sys_option_title from sys_option where sys_option_key=?",
-                        new Object[]{sysMappingColumn.getSysMappingColumnOption()},null, null, 0, 0, 10);
+                List<SysOption> list = sysOptionDao.query("select sys_option_value,sys_option_title from sys_option where sys_option_key=?",
+                        new Object[]{sysMappingColumn.getSysMappingColumnOption()}, null, null, 0, 0, 10);
                 sysMappingColumn.putMap("sysMappingColumnOption", list);
                 sysMappingColumn.setSysMappingColumnOption(null);
-                if (list.size()==0) {
-                    log.w("无效的配置表KEY ",sysMappingColumn.getSysMappingColumnName()," -> ",sysMappingColumn.getSysMappingColumnOption());
+                if (list.size() == 0) {
+                    log.w("无效的配置表KEY ", sysMappingColumn.getSysMappingColumnName(), " -> ", sysMappingColumn.getSysMappingColumnOption());
                 }
             }
             //从sql查询
@@ -295,25 +306,25 @@ public class SystemApiV2 {
                         list2.add(map);
                     }
                     sysMappingColumn.putMap("sysMappingColumnOption", list2);
-                }else{
-                    log.w("无效的配置项SQL KEY ",sysMappingColumn.getSysMappingColumnName()," -> ",sysMappingColumn.getSysMappingColumnSql());
+                } else {
+                    log.w("无效的配置项SQL KEY ", sysMappingColumn.getSysMappingColumnName(), " -> ", sysMappingColumn.getSysMappingColumnSql());
                 }
                 sysMappingColumn.setSysMappingColumnSql(null);
             }
             //请求方式 允许可变参数 需要从客户端请求
             if (sysMappingColumn.getSysMappingColumnRequest() != null) {
                 SysOptionRequest sysOptionRequest = sysOptionRequestDao.find(new SysOptionRequest().setSysOptionRequestKey(sysMappingColumn.getSysMappingColumnRequest()));
-                if (sysOptionRequest==null) {
-                    log.w("无效的引用KEY ",sysMappingColumn.getSysMappingColumnName()," -> ",sysMappingColumn.getSysMappingColumnRequest());
+                if (sysOptionRequest == null) {
+                    log.w("无效的引用KEY ", sysMappingColumn.getSysMappingColumnName(), " -> ", sysMappingColumn.getSysMappingColumnRequest());
                 }
                 sysMappingColumn.putMap("sysMappingColumnRequest", sysOptionRequest);
                 sysMappingColumn.setSysMappingColumnRequest(null);
             }
         }
+        log.d("sysRoleTable0",sysRoleTable0.getMap());
         //写入 表 标题
-        sysRoleTable0.putMap("sysRoleTableTitle", sysMappingTable.getSysMappingTableTitle());
-        sysRoleTable0.putMap("data", listSysRoleColumn);
-
+        //sysRoleTable0.putMap("sysRoleTableTitle", sysMappingTable.getSysMappingTableTitle());
+        sysRoleTable0.setData(listSysRoleColumn);
         return res.success("映射信息读取成功", sysRoleTable0);
     }
 

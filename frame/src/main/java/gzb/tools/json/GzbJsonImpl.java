@@ -35,8 +35,7 @@ public class GzbJsonImpl implements GzbJson {
         sb.append("{");
         sb.append("\"").append(Config.stateName).append("\":\"").append(code).append("\"");
 
-        // 第一次添加time字段
-        //sb.append(",\"").append(Config.timeName).append("\":\"").append(System.currentTimeMillis()).append("\"");
+        sb.append(",\"").append(Config.timeName).append("\":\"").append(System.currentTimeMillis()).append("\"");
 
         if (msg != null) {
             sb.append(",\"").append(Config.messageName).append("\":\"").append(Tools.escapeJsonString(msg)).append("\"");
@@ -118,8 +117,8 @@ public class GzbJsonImpl implements GzbJson {
         }
         sb.append("{\"")
                 .append(Config.stateName).append("\":\"").append(code).append("\"")
-                //.append(",\"")
-                //.append(Config.timeName).append("\":\"").append(System.currentTimeMillis()).append("\"")
+                .append(",\"")
+                .append(Config.timeName).append("\":\"").append(System.currentTimeMillis()).append("\"")
         ;
 
         if (msg != null) {

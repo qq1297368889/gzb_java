@@ -26,6 +26,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http.multipart.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.*;
@@ -43,6 +45,7 @@ class TempFile {
 
 public class HTTPRequestParameters {
     private static final ConcurrentLinkedQueue<TempFile> tempFile = new ConcurrentLinkedQueue<>();
+    private static final Logger log = LoggerFactory.getLogger(HTTPRequestParameters.class);
 
     static {
         Thread thread = new Thread(() -> {

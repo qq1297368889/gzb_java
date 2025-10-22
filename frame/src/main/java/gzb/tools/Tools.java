@@ -754,6 +754,14 @@ public class Tools {
             stringBuilder.append("\"");
             return;
         }
+        if (obj instanceof JsonSerializable) {
+            mapToJson(((JsonSerializable)obj).toJson().getRootMap(), stringBuilder);
+            return;
+        }
+        if (obj.getClass().isArray()) {
+            arrayToJson(obj, stringBuilder);
+            return;
+        }
         if (obj instanceof Class<?> || obj instanceof File || obj instanceof CharSequence) {
             stringBuilder.append("\"");
             escapeJsonString(obj.toString(), stringBuilder);
@@ -766,10 +774,6 @@ public class Tools {
         }
         if (obj instanceof Iterable) {
             iterableToJson((Iterable<?>) obj, stringBuilder);
-            return;
-        }
-        if (obj.getClass().isArray()) {
-            arrayToJson(obj, stringBuilder);
             return;
         }
         if (obj instanceof GzbMap) {//已知类处理

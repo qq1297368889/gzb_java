@@ -1,4 +1,4 @@
-package com.frame.component;
+package com.frame.thread;
 import com.frame.dao.SysUsersDao;
 import gzb.frame.annotation.ThreadFactory;
 import gzb.frame.annotation.ThreadInterval;
