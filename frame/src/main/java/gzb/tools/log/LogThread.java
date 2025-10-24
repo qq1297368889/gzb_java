@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class LogThread {
-    public static File rootPathFile;
+
     public static String[] lvNames = new String[]{"trace", "debug", "info ", "warn ", "error"};
     private static final List<ConcurrentLinkedQueue<byte[]>> logQueues = new ArrayList<>();
     public static File[] logFile = new File[]{null, null, null, null, null};
@@ -39,6 +39,9 @@ public class LogThread {
     public static String[] lvColour = new String[]{"\u001B[90m", "\u001B[32m", "\u001B[94m", "\u001B[33m", "\u001B[31m", "\u001B[0m"};
     public static byte[] BYTES_RN = "\r\n".getBytes();
     public static int buff_size = 1024 * 1024;
+    public static String lastDeleteDateStr = "";
+    public static int days = 30;
+
 
     static {
         //加载配置
@@ -62,13 +65,48 @@ public class LogThread {
         }, "LogThread.update.config-服务线程");
     }
 
+
+    public static void deleteOldLogFiles() throws Exception {
+        DateTime dateTime = new DateTime();
+        String dateStr = dateTime.formatDateTime("yyyy/MM/dd");
+        //确保每天运行一次
+        if (!lastDeleteDateStr.equals(dateStr)) {
+            lastDeleteDateStr = dateStr;
+            long time0 = 1000L * 60 * 60 * 24 * days;
+            dateTime.operation(-time0);
+            for (File logDir : logFile) {
+                //只删除 前一天的 如果前边有 说明程序运行中断 不管删除
+                String path = logDir.getPath().trim() + File.separator + getDay(dateTime) + ".log";
+                File file = new File(path).getParentFile();
+                if (file.exists()) {
+                    List<File> list =FileTools.subFileAll(file,3);
+                    for (File file1 : list) {
+                        file1.delete();
+                    }
+                    list = FileTools.subFileAll(file, 2);
+                    for (File file1 : list) {
+                        file1.delete();
+                    }
+                    file.delete();
+                }
+            }
+        }
+    }
+
+    public static String getDay(DateTime dateTime) {
+        if (dateTime == null) {
+            dateTime = new DateTime();
+        }
+        return dateTime.formatDateTime("yyyy" + File.separator + "MM" + File.separator + "dd" + File.separator + "HH");
+    }
+
     public static void startSave() {
         ThreadPool.startService(new Runnable() {
             @Override
             public void run() {
-                int sleep_sec = 1000;
+                int sleep_sec = 5000;
                 while (true) {
-                    String time0 = new DateTime().formatDateTime("yyyy-MM-dd_HH");
+                    String time0 = getDay(null);
                     for (int i = 0; i < logFile.length; i++) {
                         byte[] buffer = new byte[(int) (buff_size)];
                         int size = 0;
@@ -131,20 +169,20 @@ public class LogThread {
 
     public static void save(int i, String time0, byte[] data, int size) {
         if (size > 0 && data != null && data.length > 0) {
-            String file = logFile[i].getPath().trim()
-                    + "/"
-                    + time0
-                    + ".log";
-            try (FileOutputStream fos = new FileOutputStream(file, true)) { // true 表示追加模式
-                fos.write(data, 0, size);
-            } catch (IOException e) {
-                e.printStackTrace();
+            String path = logFile[i].getPath().trim() + File.separator + time0;
+            File dir = new File(path).getParentFile();
+
+            if (!FileTools.mkdir(dir)) {
+                System.err.println("save 创建日志目录失败:" + dir);
+            } else {
+                path += ".log";
+                try (FileOutputStream fos = new FileOutputStream(path, true)) { // true 表示追加模式
+                    fos.write(data, 0, size);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
-
-    }
-
-    public LogThread() {
 
     }
 
@@ -155,11 +193,22 @@ public class LogThread {
                 logFile[i] = new File(Config.get("gzb.log.path") + lvNames[i].trim());
             }
             if (!logFile[i].exists()) {
-                if (!logFile[i].mkdirs()) {
-                    System.out.println("创建日志目录失败:" + logFile[i].getPath());
+                if (!FileTools.mkdir(logFile[i])) {
+                    System.err.println("loadConfig 创建日志目录失败:" + logFile[i].getPath());
                 }
             }
         }
+        days = Config.getInteger("gzb.log.save.days", 30);
+        try {
+            deleteOldLogFiles();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+
+    public LogThread() {
+
     }
 
     public void addLog(int index, Class<?> aClass, Object[] log) {
@@ -238,10 +287,6 @@ public class LogThread {
         } else {
             sb.append("null");
         }
-  /*      System.out.println("类名: " + element.getClassName() +
-                ", 方法名: " + element.getMethodName() +
-                ", 文件名: " + element.getFileName() +
-                ", 行号: " + element.getLineNumber());*/
         return sb.toString();
     }
 

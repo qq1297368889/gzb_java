@@ -47,6 +47,9 @@ public class DataBaseImpl implements DataBase {
             if (object == null) {
                 return null;
             }
+            if (object.toString().isEmpty()) {
+                return null;
+            }
             if (object.getClass() == clazz) {
                 return object;
             }

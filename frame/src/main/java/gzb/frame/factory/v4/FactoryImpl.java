@@ -93,8 +93,7 @@ public class FactoryImpl implements Factory {
                         }
                         arr1[i] = Tools.pathFormat(arr1[i].trim());
                         if (new File(arr1[i]).isDirectory()) {
-                            List<File> list = Tools.fileSub(arr1[i], 2, ".java");
-                            listFile.addAll(list);
+                            listFile.addAll(FileTools.subFileAll(new File(arr1[i]),2,".java"));
                         } else {
                             log.w("代码目录不存在或错误", arr1[i]);
                         }
@@ -231,7 +230,7 @@ public class FactoryImpl implements Factory {
             log.e("编译 代码目录不存在", file.getPath());
             return listClassEntity;
         }
-        List<File> list = Tools.fileSub(folder, 2, ".java");
+        List<File> list =FileTools.subFileAll(new File(folder),2,".java");
         for (File file1 : list) {
             ClassEntity classEntity = loadFile(file1, pwd, iv, mapClassEntity);
             if (classEntity != null) {

@@ -46,11 +46,7 @@ public class ClassLoadV1 {
 
 
     public  Map<String, Class<?>> compileAndLoad(Map<String, String> sourcesMap) throws Exception {
-        long start = System.currentTimeMillis();
-        Map<String, Class<?>> map = compile(sourcesMap);
-        long end = System.currentTimeMillis();
-        log.d("编译耗时", end - start, map.size(), "个类");
-        return map;
+        return compile(sourcesMap);
     }
 
     /**
@@ -214,7 +210,7 @@ public class ClassLoadV1 {
         }
         if (sourcesMap_new.size() > 0) {
             if (compiledClasses.size() > 0) {
-                log.d("重新编译", sourcesMap_new);
+                //log.d("重新编译", sourcesMap_new.size(),"个类");
                 Map<String, Class<?>> compiledClasses0 = compile(sourcesMap_new);
                 for (Map.Entry<String, Class<?>> stringClassEntry : compiledClasses0.entrySet()) {
                     compiledClasses.put(stringClassEntry.getKey(), stringClassEntry.getValue());

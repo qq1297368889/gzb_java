@@ -24,9 +24,12 @@ public class ThreadPool {
         }
     }
 
+    public static void startService(Runnable runnable) {
+        startService(runnable,null);
+    }
     public static void startService(Runnable runnable, String name) {
         if (name == null) {
-            name = "默认线程名-" + OnlyId.getDistributed();
+            name = Tools.getUUID()+"-" + OnlyId.getDistributed();
         }
         Thread thread = new Thread(runnable, name);
         List<Thread> list = serviceThread.get(name);
@@ -57,7 +60,7 @@ public class ThreadPool {
         for (int i = 0; i < THREAD_NUM; i++) {
             startWork(i);
         }
-        log.d("线程池启动成功",THREAD_NUM);
+        log.t("线程池启动成功",THREAD_NUM);
     }
 
     public int THREAD_NUM = 1;

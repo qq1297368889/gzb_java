@@ -283,7 +283,7 @@ public class SystemApiV2 {
                 }
             }
             //从sql查询
-            if (sysMappingColumn.getSysMappingColumnSql() != null) {
+            if (sysMappingColumn.getSysMappingColumnSql() != null && sysMappingColumn.getSysMappingColumnSql().length() > 0) {
                 SysOptionSql sysOptionSql = sysOptionSqlDao.find(new SysOptionSql().setSysOptionSqlKey(sysMappingColumn.getSysMappingColumnSql()));
                 if (sysOptionSql != null) {
                     if (sysOptionSql.getSysOptionSqlTitleName() == null) {
@@ -312,7 +312,7 @@ public class SystemApiV2 {
                 sysMappingColumn.setSysMappingColumnSql(null);
             }
             //请求方式 允许可变参数 需要从客户端请求
-            if (sysMappingColumn.getSysMappingColumnRequest() != null) {
+            if (sysMappingColumn.getSysMappingColumnRequest() != null && sysMappingColumn.getSysMappingColumnRequest().length() > 0) {
                 SysOptionRequest sysOptionRequest = sysOptionRequestDao.find(new SysOptionRequest().setSysOptionRequestKey(sysMappingColumn.getSysMappingColumnRequest()));
                 if (sysOptionRequest == null) {
                     log.w("无效的引用KEY ", sysMappingColumn.getSysMappingColumnName(), " -> ", sysMappingColumn.getSysMappingColumnRequest());
@@ -321,7 +321,6 @@ public class SystemApiV2 {
                 sysMappingColumn.setSysMappingColumnRequest(null);
             }
         }
-        log.d("sysRoleTable0",sysRoleTable0.getMap());
         //写入 表 标题
         //sysRoleTable0.putMap("sysRoleTableTitle", sysMappingTable.getSysMappingTableTitle());
         sysRoleTable0.setData(listSysRoleColumn);
@@ -519,10 +518,10 @@ public class SystemApiV2 {
         if (gid == null) {
             return gzbJson.fail("请指定组");
         }
-        list_all = sysPermissionDao.query(new SysPermission(), "sys_permission_sort,sys_permission_id", "asc", 0, 0, 10);
+        list_all = sysPermissionDao.query(new SysPermission(), "sys_permission_sort,sys_permission_id", "asc", 0, 0, -1);
         List<SysPermission> list_all2 = new ArrayList<>();
         Map<Object, SysPermission> map0 = new HashMap<>();
-        list_group = sysPermissionDao.query(sql_read_per2, new Object[]{gid}, "sys_permission_sort,sys_permission_id", "asc", 0, 0, 10);
+        list_group = sysPermissionDao.query(sql_read_per2, new Object[]{gid}, "sys_permission_sort,sys_permission_id", "asc", 0, 0, -1);
         for (SysPermission sysPermission : list_group) {
             map0.put(sysPermission.getSysPermissionId(), sysPermission);
         }
@@ -580,9 +579,74 @@ public class SystemApiV2 {
         return gzbJson.success("权限更新成功");
     }
 
+    @DecoratorOpen
+    @GetMapping(value = "read/group/all")
+    public Object readGroupAll(SysUsers sysUsers, GzbJson gzbJson, Long rid) throws Exception {
+        if (sysUsers.getSysUsersType() != 4L) {
+            return gzbJson.fail("越权操作");
+        }
+        //获取角色 对应权限组
+        List<SysGroup> list_all = null;
+        List<SysGroup> list_group = null;
+        if (rid == null) {
+            return gzbJson.fail("请指定角色");
+        }
+        list_all = sysGroupDao.query(new SysGroup(), "sys_group_id", "asc", 0, 0, -1);
+        List<SysGroup> list_all2 = new ArrayList<>();
+        Map<Object, SysGroup> map0 = new HashMap<>();
+        list_group = sysGroupDao.query("select * from sys_group where sys_group_id in (select sys_role_group_gid from sys_role_group where sys_role_group_rid = ?)",
+                new Object[]{rid}, "sys_group_id", "asc", 0, 0, -1);
+        for (SysGroup sysGroup : list_group) {
+            map0.put(sysGroup.getSysGroupId(), sysGroup);
+        }
+        for (SysGroup sysGroup : list_all) {
+            if (map0.get(sysGroup.getSysGroupId()) == null) {
+                list_all2.add(sysGroup);
+            }
+        }
+        Map<Object, List<SysGroup>> map = new HashMap<>();
+        map.put("all", list_all2);
+        map.put("group", list_group);
+        return gzbJson.success("权限查询成功", map);
+    }
 
-    //授权
 
-    //取消授权
+    /// 授权或取消授权  type=1授权给组  type=2取消对组的授权
+    @DecoratorOpen
+    @GetMapping(value = "update/group/all")
+    public Object updateGroupAll(SysUsers sysUsers, GzbJson gzbJson, Long rid, Long[] gid, int type) throws Exception {
+        if (sysUsers.getSysUsersType() != 4L) {
+            return gzbJson.fail("越权操作");
+        }
+        if (rid == null || gid == null) {
+            return gzbJson.fail("缺乏必要参数");
+        }
+        SysRole sysRole = sysRoleDao.find(new SysRole().setSysRoleId(rid));
+        if (sysRole == null) {
+            return gzbJson.fail("角色不存在");
+        }
+
+        for (Long id : gid) {
+            SysGroup sysGroup = sysGroupDao.find(new SysGroup().setSysGroupId(id));
+            if (sysGroup == null) {
+                return gzbJson.fail("权限不存在");
+            }
+            if (type == 1) {
+                SysRoleGroup sysRoleGroup=new SysRoleGroup().setSysRoleGroupRid(rid).setSysRoleGroupGid(id);
+                if (sysRoleGroupDao.find(sysRoleGroup) == null) {
+                    sysRoleGroupDao.save(sysRoleGroup);
+                }
+            }
+            if (type == 2) {
+                SysRoleGroup sysRoleGroup=new SysRoleGroup().setSysRoleGroupRid(rid).setSysRoleGroupGid(id);
+                if (sysRoleGroupDao.find(sysRoleGroup) != null) {
+                    sysRoleGroupDao.delete(sysRoleGroup);
+                }
+            }
+
+        }
+        return gzbJson.success("权限更新成功");
+    }
+
 
 }

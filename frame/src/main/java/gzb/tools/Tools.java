@@ -755,7 +755,7 @@ public class Tools {
             return;
         }
         if (obj instanceof JsonSerializable) {
-            mapToJson(((JsonSerializable)obj).toJson().getRootMap(), stringBuilder);
+            stringBuilder.append(((JsonSerializable) obj).toString());
             return;
         }
         if (obj.getClass().isArray()) {
@@ -804,8 +804,8 @@ public class Tools {
             stringBuilder.append("\"");
             return;
         }
-        int size1=stringBuilder.length();
-        ClassTools.toJsonObject(obj,stringBuilder);
+        int size1 = stringBuilder.length();
+        ClassTools.toJsonObject(obj, stringBuilder);
         if (size1 == stringBuilder.length()) {
             stringBuilder.append(obj.toString());
         }
@@ -3105,142 +3105,6 @@ public class Tools {
      */
     public static String fileToMd5(String file) throws Exception {
         return fileToMd5(new File(file));
-    }
-
-    /**
-     * 获取目录下文件和目录名
-     * 参数1:目录地址 例如 "d:/a.txt"
-     * 参数2:retType 为1 返回全部 目录和文件名.为2返回文件名 为3返回目录名
-     *
-     * @throws Exception
-     */
-    public static List<String> fileSubNames(File file, int retType, String suffix) throws Exception {
-        List<String> list = new ArrayList<String>();
-        if (!file.exists() || !file.isDirectory()) {
-            return list;
-        }
-        File[] files = file.listFiles();
-        String[] arr1 = null;
-        if (suffix != null) {
-            arr1 = suffix.split("/");
-        }
-        if (files == null) {
-            return list;
-        }
-        for (File f : files) {
-            if (retType == 2) {
-                if (f.isFile()) {
-                    if (suffix == null || suffix.length() == 0 || suffix.indexOf("*") > -1) {
-                        list.add(f.getName());
-                    }
-                    if (arr1 != null) {
-                        for (String string : arr1) {
-                            if (f.getName().endsWith(string)) {
-                                list.add(f.getName());
-                            }
-                        }
-                    }
-
-                }
-            } else if (retType == 3) {
-                if (f.isDirectory()) {
-                    list.add(f.getName());
-                }
-            } else {
-                if (arr1 != null) {
-                    for (String string : arr1) {
-                        if (f.getName().endsWith(string)) {
-                            list.add(f.getName());
-                        }
-                    }
-                }
-            }
-        }
-        return list;
-    }
-
-    public static List<String> fileSubNames(File file, int retType) throws Exception {
-        return fileSubNames(file, retType, null);
-    }
-
-    public static PagingEntity fileSubNames(String path, int retType, String suffix, int page, int size) throws Exception {
-        List<String> list = fileSubNames(new File(path), retType, suffix);
-        PagingEntity pagingEntity = new PagingEntity();
-        pagingEntity.setList(list, page, size);
-        return pagingEntity;
-    }
-
-    /**
-     * 获取目录下文件和目录名  子目录下 也会获取
-     * 参数1:目录地址 例如 "d:/a.txt"
-     * 参数2:retType 为1 返回全部 目录和文件名.为2返回文件名 为3返回目录名
-     *
-     * @throws Exception
-     */
-    public static List<File> fileSub(String path, int retType) throws Exception {
-        return fileSub(path, retType, 0, 999);
-    }
-
-    public static List<File> fileSub(String path, int retType, String suffix) throws Exception {
-        return fileSub(path, retType, suffix, 0, 999);
-    }
-
-    public static List<File> fileSub(String path, int retType, int page, int size) throws Exception {
-        return fileSub(path, retType, null, page, size);
-    }
-
-    public static PagingEntity fileSubPaging(String path, int retType, String suffix, int page, int size) throws Exception {
-        List<File> list = fileSub(path, retType, suffix, 1, 999);
-        PagingEntity pagingEntity = new PagingEntity();
-        pagingEntity.setList(list, page, size);
-        return pagingEntity;
-    }
-
-    public static List<File> fileSub(String path, int retType, String suffix, int page, int size) throws Exception {
-        List<String> path_list = new ArrayList<String>();
-        List<File> ret_list = new ArrayList<File>();
-        path_list.add(path);
-        int start = 0;
-        if (page >= 1) {
-            start = (page - 1) * size;
-        }
-        int thisNum = 0;
-        while (path_list.size() > 0) {
-            String path1 = path_list.remove(0);
-            File file = new File(path1);
-            List<String> list = fileSubNames(file, 2, suffix);
-            for (String s : list) {
-                if (retType == 2 || retType == 1) {
-                    thisNum++;
-                    if (thisNum > start) {
-                        ret_list.add(new File(path1, s));
-                        if (ret_list.size() >= size) {
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (ret_list.size() < size) {
-                list = fileSubNames(file, 3);
-                for (String s : list) {
-                    if (retType == 3 || retType == 1) {
-                        thisNum++;
-                        if (thisNum > start) {
-                            ret_list.add(new File(path1, s));
-                            if (ret_list.size() >= size) {
-                                break;
-                            }
-                        }
-                    }
-                    path_list.add(path1 + "/" + s);
-                }
-            }
-            if (ret_list.size() >= size) {
-                break;
-            }
-        }
-        return ret_list;
     }
 
     //压缩 参数1 被压缩文件   参数2 压缩到文件

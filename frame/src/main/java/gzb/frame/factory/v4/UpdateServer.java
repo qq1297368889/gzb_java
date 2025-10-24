@@ -3,6 +3,7 @@ package gzb.frame.factory.v4;
 import gzb.exception.GzbException0;
 import gzb.frame.factory.ClassLoad;
 import gzb.tools.Config;
+import gzb.tools.FileTools;
 import gzb.tools.Tools;
 import gzb.tools.http.HTTP_V3;
 import gzb.tools.log.Log;
@@ -179,7 +180,8 @@ public class UpdateServer {
         HTTP_V3 httpV3 = new HTTP_V3();
         int num = 0;
         for (String string : arr1) {
-            List<File> list1 = Tools.fileSub(string.trim(), 2, ".java");
+
+            List<File> list1 = FileTools.subFileAll(new File(string.trim()),2,".java");
             for (File file : list1) {
                 Map<String, List<File>> files = new HashMap<>();
                 List<File> list0 = new ArrayList<>();

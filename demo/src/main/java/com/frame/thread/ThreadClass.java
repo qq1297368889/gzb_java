@@ -8,30 +8,22 @@ import java.util.concurrent.locks.Lock;
 //标注 这是一个需要被框架调度的类
 @ThreadFactory
 public class ThreadClass {
-    //需要注意 如果更改了类 或 方法签名 前 一定要修改num为0 这时候框架会终止线程 否则的话可能会出现失控线程
+    //注意 这个类 在运行中 不能直接被删除 否则线程失控。（重新创建并有一致签名 即可接着影响线程的行为）
     //之所以提供线程模型是因为 热更新 需要的对象 通过 参数通过  可以防止使用旧版本对象
 
-
+    /// 修改方法内容 不修改签名的话 可以在不丢失 状态的情况下 热更新
+    /// 修改签名的话会丢失状态 重新开始调度
     //定义 这是一个需要被调度的方法 num是启动线程数量  value 是 调度周期 单位毫秒
-    @ThreadInterval(num=0,value=1000)
-    public Object test001(SysUsersDao sysUsersDao, Result result, Log log, Lock lock) {
+    @ThreadInterval(num=0 ,value=1000)
+    public Object test001(SysUsersDao sysUsersDao, Result result, Log log,Lock lock) {
+        //sysUsersDao @service 实现类
+        //私有变量 不会有并发问题 但是多次被调用时 会记录状态  专属 result
+        //方法专属锁 lock  仅该方法内部使用 启用多个线程的时候 防止并发  和其他被调度的方法 不是同一个锁
         int intx=result.getInteger("intx",0);
-        if (intx>20){
-            //return false;//非null代表停止
-        }
         intx++;
         result.set("intx",intx);
-        log.d("3.00",Thread.currentThread().getName(),intx,result.hashCode(),sysUsersDao);
-        return null;//继续循环 如果不需要主动停止 可以直接设置为 void方法
+        log.d(intx,lock,result.hashCode(),sysUsersDao);
+        return null;//继续循环 如果不需要主动停止 可以直接设置为 void方法  返回非null 即可停止被框架调度 本次启动无法再次被调度 除非方法签名出现变法
     }
-    //定义 这是一个需要被调度的方法 num是启动线程数量  value 是 调度周期 单位毫秒
-    @ThreadInterval(num=0,value=1000)
-    public Object test002(SysUsersDao sysUsersDao, Result result, Log log, Lock lock) {
-        return test001(sysUsersDao,result,log,lock);
-    }
-    //定义 这是一个需要被调度的方法 num是启动线程数量  value 是 调度周期 单位毫秒
-    @ThreadInterval(num=0,value=1000)
-    public Object test003(SysUsersDao sysUsersDao, Result result, Log log, Lock lock) {
-        return test001(sysUsersDao,result,log,lock);
-    }
+
 }

@@ -838,7 +838,7 @@ public class ClassTools {
         int num = 0;
         Field[] fields = aClass.getDeclaredFields();
         String className = aClass.getName();
-        String code = "public class " + (className.replaceAll("\\.", "_")) + "_sub implements gzb.frame.factory.GzbEntityInterface{\n";
+        String code = "public class " + (className.replaceAll("\\.", "_")) + "_inner implements gzb.frame.factory.GzbEntityInterface{\n";
         for (Field field : fields) {
             code += "byte[]_" + field.getName() + "_bytes=new byte[]{";
             byte[] bytes = field.getName().getBytes(Config.encoding);

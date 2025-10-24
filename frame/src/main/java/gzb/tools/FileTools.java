@@ -19,6 +19,7 @@
 package gzb.tools;
 
 import gzb.frame.netty.entity.Request;
+import gzb.tools.cache.Cache;
 import gzb.tools.json.GzbJson;
 
 import java.io.File;
@@ -31,8 +32,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class FileTools {
     // 预定义的测试文件名
@@ -127,26 +127,201 @@ public class FileTools {
     }
     // 统一使用 UTF-8 编码，防止乱码
     private static final Charset ENCODING = StandardCharsets.UTF_8;
+    public static List<File> subFileAll(File file, int retType){
+        return subFileAll(file, retType, null);
+    }
+    public static List<File> subFileAll(File file, int retType, String suffix){
+        return subFileAll(file, retType, suffix, 0, 0);
+    }
+    /**
+     * 获取目录下文件和目录名  包括 子目录下的文件和目录 无限循环
+     * @param file:目录 例如 "d:/a.txt" file
+     * @param retType 为1 返回全部 目录和文件名.为2返回文件名 为3返回目录名
+     * @param suffix 后缀 例如 ".txt/.jpg" 多个用 / 分割
+     * @param page 分页页码
+     * @param size 分页长度
+     */
+    public static List<File> subFileAll(File file, int retType, String suffix, int page, int size) {
+        String key = file.getPath()+"-"+retType+"-"+suffix+"-"+page+"-"+size;
+        List<File> listRes =Cache.gzbMap.getObject(key);
+        if (listRes!=null) {
+            return listRes;
+        }
+        listRes = new ArrayList<>();
+        String[]arrSuffix=null;
+        if (suffix!=null && !suffix.isEmpty()) {
+            arrSuffix=suffix.split("/");
+        }else{
+            arrSuffix=new String[0];
+        }
+        if (page < 0) {
+            page = 0;
+        }
+        if (size < 0) {
+            size = 0;
+        }
+        int start = 0;
+        if (size == 0 || page == 0) {
+            size = Integer.MAX_VALUE;
+        } else {
+            start = (page - 1) * size;
+        }
+        List<File> list = new ArrayList<>();
+        if (!file.exists() || !file.isDirectory()) {
+            return list;
+        }
+        List<File> list0 = new ArrayList<>();
+        List<File> listDir = new ArrayList<>();
+        List<File> listFile = new ArrayList<>();
+        list0.add(file);
+        while (list0.size() > 0) {
+            File[]files=list0.remove(0).listFiles();
+            if (files != null) {
+                for (int i = 0; i < files.length; i++) {
+                    if (files[i].isDirectory()) {
+                        listDir.add(files[i]);
+                        list0.add(files[i]);
+                    }
+                    if (files[i].isFile() && (retType == 2 || retType == 1)) {
+                        String name = files[i].getName();
+                        boolean suc=false;
+                        for (String str : arrSuffix) {
+                            if (name.endsWith(str)) {
+                                suc=true;
+                                break;
+                            }
+                        }
+                        if (suc) {
+                            listFile.add(files[i]);
+                        }
+                    }
+                }
+            }
+        }
+        if (retType == 2) {
+            for (int i = 0; i < listFile.size(); i++) {
+                if (i < start) {
+                    continue;
+                }
+                listRes.add(listFile.get(i));
+                if (listRes.size()==size) {
+                    break;
+                }
+            }
+        }
+        if (retType == 3) {
+            for (int i = 0; i < listDir.size(); i++) {
+                if (i < start) {
+                    continue;
+                }
+                listRes.add(listDir.get(listDir.size() - 1 - i));
+                if (listRes.size()==size) {
+                    break;
+                }
+            }
+        }
+        if (retType == 1) {
+            for (int i = 0; i < listDir.size(); i++) {
+                listFile.add(listDir.get(listDir.size() - 1 - i));
+            }
+            for (int i = 0; i < listFile.size(); i++) {
+                if (i < start) {
+                    continue;
+                }
+                listRes.add(listFile.get(i));
+                if (listRes.size()==size) {
+                    break;
+                }
+            }
+        }
+        Cache.gzbMap.setObject(key,listRes,22);
+        return listRes;
+    }
 
+    public static List<File> subFile(File file, int retType){
+        return subFile(file, retType, null);
+    }
+    public static List<File> subFile(File file, int retType, String suffix){
+        return subFile(file, retType, suffix, 0, 0);
+    }
+    //不会获取子目录下的文件和目录 只会获取当前目录下的文件和目录
+    public static List<File> subFile(File file, int retType, String suffix, int page, int size) {
+        List<File> list = new ArrayList<>();
+        if (!file.exists() || !file.isDirectory()) {
+            return list;
+        }
+        File[] files = file.listFiles();
+        String[] arr1 = null;
+        if (suffix != null && !suffix.isEmpty()) {
+            arr1 = suffix.split("/");
+        }
+        if (files == null || files.length == 0) {
+            return list;
+        }
+        if (page < 0) {
+            page = 0;
+        }
+        if (size < 0) {
+            size = 0;
+        }
+        int start = 0;
+        if (size == 0 || page == 0) {
+            size = Integer.MAX_VALUE;
+        } else {
+            start = (page - 1) * size;
+        }
+        for (int i = 0; i < files.length; i++) {
+            if (i < start) {
+                continue;
+            }
+            File file0 = files[i];
+            //包含 文件 和 目录都要过滤
+            if (!file0.isDirectory() && arr1 != null) {
+                boolean suc = false;
+                for (String string : arr1) {
+                    if (file0.getName().endsWith(string)) {
+                        suc = true;
+                        break;
+                    }
+                }
+                if (!suc) {
+                    continue;
+                }
+            }
+            if (file0.isDirectory() && retType == 3) {
+                list.add(file0);
+            } else if (file0.isFile() && retType == 2) {
+                list.add(file0);
+            }else if (file0.exists() && retType == 1) {
+                list.add(file0);
+            }
+            if (list.size() == size) {
+                break;
+            }
+        }
+        return list;
+    }
     /**
      * 循环创建目录（包括所有不存在的父目录）。
      * 性能优化：使用 Files.createDirectories (JDK 7+)。
      * @param file 要创建的目录
      */
-    public static void mkdir(File file) {
+    public static boolean mkdir(File file) {
         if (file == null) {
-            return;
+            return false;
         }
         // 检查是否已存在或已是目录，如果是则直接返回
         if (file.exists() && file.isDirectory()) {
-            return;
+            return true;
         }
         try {
             // NIO API，高效地递归创建所有不存在的父目录
             Files.createDirectories(file.toPath());
+            return true;
         } catch (IOException e) {
             System.err.println("创建目录失败：" + file.toPath().toAbsolutePath());
             e.printStackTrace();
+            return false;
         }
     }
     // --- 读取操作 (Read Operations) ---

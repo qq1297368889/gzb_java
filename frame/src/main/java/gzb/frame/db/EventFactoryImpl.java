@@ -131,6 +131,7 @@ public class EventFactoryImpl implements EventFactory {
                 continue;
             }
             if (obj == null) {
+               /* obj = (GzbOneInterface) mapObject.get(declaringClass.getName());*/
                 obj = (GzbOneInterface) ClassTools.gen_call_code_v4_object(declaringClass, code);
                 mapObject.put(declaringClass.getName(), obj);
             }

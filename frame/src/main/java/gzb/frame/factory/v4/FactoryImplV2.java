@@ -86,7 +86,7 @@ public class FactoryImplV2 implements Factory {
                     log.e(e);
                 }
                 serverState = 1;
-                Tools.sleep(1000 * 2);
+                Tools.sleep(1000 * 3);
             }
         });
         thread.start();
@@ -217,13 +217,24 @@ public class FactoryImplV2 implements Factory {
         String[] arr1 = classDir.split(",");
         Map<String, File> fileMap = new HashMap<>();
         Map<String, String> sourcesMap = new HashMap<>();
+        File[] files = new File[arr1.length];
         for (int i = 0; i < arr1.length; i++) {
             arr1[i] = Tools.pathFormat(arr1[i].trim());
             if (arr1[i].isEmpty()) {
                 continue;
             }
-            if (new File(arr1[i]).isDirectory()) {
-                List<File> list = Tools.fileSub(arr1[i], 2, ".java");
+            File file = new File(arr1[i]);
+            files[i] = file;
+        }
+        for (int i = 0; i < files.length; i++) {
+            if (files[i] == null) {
+                continue;
+            }
+            if (files[i].isDirectory()) {
+                //long start = System.nanoTime();
+                List<File> list = FileTools.subFileAll(files[i], 2, ".java");
+                //long end = System.nanoTime();
+                //log.w(end-start);
                 listFile.addAll(list);
             } else {
                 log.w("代码目录不存在或错误", arr1[i]);
@@ -343,7 +354,7 @@ public class FactoryImplV2 implements Factory {
             if (index == -1) {
                 return runRes.setState(404);
             }
-            if (httpMappings[index].header.size()>0) {
+            if (httpMappings[index].header.size() > 0) {
                 response.setHeaders(new HashMap<>(httpMappings[index].header));
             }
             if (httpMappings[index].isCrossDomainOrigin) {
@@ -408,7 +419,7 @@ public class FactoryImplV2 implements Factory {
     }
 
     public RunRes request0(Request request, Response response) {
-        GzbTiming gzbTiming =new GzbTiming();
+        GzbTiming gzbTiming = new GzbTiming();
         gzbTiming.record();
         RunRes runRes = new RunRes();
         Object[] objects;
@@ -419,7 +430,7 @@ public class FactoryImplV2 implements Factory {
         if (httpMappings == null) {
             return runRes.setState(404);
         }
-       gzbTiming.record("获取端点");
+        gzbTiming.record("获取端点");
         int index = -1;
         try {
             for (int i = 0; i < met.length; i++) {
@@ -441,7 +452,7 @@ public class FactoryImplV2 implements Factory {
             }
 
             gzbTiming.record("限流");
-            if (httpMappings[index].header.size()>0) {
+            if (httpMappings[index].header.size() > 0) {
                 response.setHeaders(new HashMap<>(httpMappings[index].header));
             }
             if (httpMappings[index].isCrossDomainOrigin) {
@@ -521,7 +532,7 @@ public class FactoryImplV2 implements Factory {
             /// 输出调试信息
             log.t(gzbTiming.read());
             /// 后台统计 汇总
-            AtomicInteger atomicInteger = reqInfo.computeIfAbsent(gzbTiming.all/1000, k -> new AtomicInteger());
+            AtomicInteger atomicInteger = reqInfo.computeIfAbsent(gzbTiming.all / 1000, k -> new AtomicInteger());
             atomicInteger.addAndGet(1);
         }
 
@@ -884,8 +895,19 @@ public class FactoryImplV2 implements Factory {
                 }
                 if (aClass == ThreadFactory.class) {
                     Method[] methods = classEntity.clazz.getMethods();
+                    Map<String,Method>mapMethodThreadFactory0=new ConcurrentHashMap<>(mapMethodThreadFactory);
                     for (int i = 0; i < methods.length; i++) {
-                        startThreadFactory(i, classEntity.clazz, methods[i], (GzbOneInterface) obj, mapObject);
+                        ThreadInterval threadInterval = methods[i].getDeclaredAnnotation(ThreadInterval.class);
+                        if (threadInterval == null) {
+                           continue;
+                        }
+                        startThreadFactory(classEntity.clazz, methods[i],mapObject,threadInterval);
+                        String key = ClassTools.getSing(methods[i], classEntity.clazz);
+                        mapMethodThreadFactory0.remove(key);
+                        mapMethodThreadFactory.put(key,methods[i]);
+                    }
+                    for (Map.Entry<String, Method> stringMethodEntry : mapMethodThreadFactory0.entrySet()) {
+                        mapMethodThreadFactory.remove(ClassTools.getSing(stringMethodEntry.getValue(), classEntity.clazz));
                     }
                 }
                 if (aClass == Decorator.class) {
@@ -916,25 +938,19 @@ public class FactoryImplV2 implements Factory {
 
         return listClassEntity;
     }
-
+    Map<String,Method>mapMethodThreadFactory=new ConcurrentHashMap<>();
     /// 注意要点
     /// 1 改变方法签名的时候必须修改 num=0 停止正在运行的线程 否则线程无法停止 补救措施就是恢复签名 改为0停止
     /// 2 num=0后会清楚运行线程的状态保存  num=1改为2 新新增一个线程 线程1保存原有状态 线程2是全新线程
     /// 3 方法内部返回非null 会终止进程 并清理状态数据
     /// 4 线程数量不变 方法签名不变 修改代码可以无缝热更新 这是非常稳定的模式
     /// 5 方法内部禁止阻塞 除非你明白你在做什么
-
-    public void startThreadFactory(int id, Class<?> aClass, Method method, GzbOneInterface gzbOneInterface
-            , Map<String, Object> mapObject) throws Exception {
-        ThreadInterval threadInterval = method.getDeclaredAnnotation(ThreadInterval.class);
-        Transaction transaction = method.getDeclaredAnnotation(Transaction.class);
-        if (threadInterval == null) {
-            return;
-        }
+    public void startThreadFactory(Class<?> aClass, Method method,Map<String, Object> mapObject,ThreadInterval threadInterval) throws Exception {
         String key = ClassTools.getSing(method, aClass);
         ThreadEntity threadEntity = mapListThreadEntity0.get(key);
         if (threadEntity == null) {
             threadEntity = new ThreadEntity();
+            threadEntity.method = method;
             threadEntity.result = new LinkedList<>();
             threadEntity.thread = new LinkedList<>();
             threadEntity.lock = new ReentrantLock();
@@ -986,17 +1002,32 @@ public class FactoryImplV2 implements Factory {
         for (int i = threadEntity.thread.size(); i < threadInterval.num(); i++) {
             int finalI = i;
             Thread thread = new Thread(() -> {
-                log.d("线程启动", key, Thread.currentThread());
+                String key2=key;
+                log.d("线程启动", key2, Thread.currentThread());
                 while (true) {
                     try {
                         Tools.sleep(Math.max(threadInterval.value(), 100));
-                        ThreadEntity threadEntity0 = mapListThreadEntity0.get(key);
+                        ThreadEntity threadEntity0 = mapListThreadEntity0.get(key2);
                         if (threadEntity0.thread.size() < finalI + 1) {
-                            log.d(key, "线程正常退出");
+                            log.d("线程正常退出",key2);
                             break;
                         }
-
+                        key2 = ClassTools.getSing(threadEntity0.method, aClass);
+                        if (mapMethodThreadFactory.get(key2)==null) {
+                            threadEntity0.result.set(finalI, null);
+                            threadEntity0.thread.set(finalI, null);
+                            log.d("方法签名变化 本线程已经失控 退出",key2);
+                            break;
+                        }
                         Object[] objects = new Object[]{threadEntity0.result.get(finalI), threadEntity0.lock};
+                        int id=ClassTools.getSingInt(method,aClass);
+                        GzbOneInterface gzbOneInterface=(GzbOneInterface)mapObject.get(aClass.getName());
+                        if (gzbOneInterface==null) {
+                            threadEntity0.result.set(finalI, null);
+                            threadEntity0.thread.set(finalI, null);
+                            log.d("GzbOneInterface 对象不存在",key2);
+                            break;
+                        }
                         Object obj = gzbOneInterface._gzb_call_x01(id, mapObject0, null, null, new HashMap<>(), gzbJson, log, objects);
                         if (obj != null) {
                             log.d("线程正常退出-释放线程状态-根据调用函数返回值决定", key);
@@ -1006,7 +1037,7 @@ public class FactoryImplV2 implements Factory {
                             break;
                         }
                     } catch (Exception e) {
-                        log.e("线程出现错误，但不会中断", key, Thread.currentThread(), e);
+                        log.e("线程出现错误，但不会中断", key, e);
                     }
                 }
             });

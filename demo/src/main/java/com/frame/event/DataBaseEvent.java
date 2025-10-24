@@ -33,7 +33,6 @@ public class DataBaseEvent {
         //删除该角色全部权限关联
         new SysRoleGroup().setSysRoleGroupRid(sysRole.getSysRoleId()).deleteAsync(sysRoleGroupDao);
     }
-
     @DataBaseEventSave(entity = SysGroupPermission.class, executionBefore = false, depth = 5)
     public void saveSysGroupPermission(SysGroupPermission sysGroupPermission) throws Exception {
         log.i("saveSysGroupPermission", sysGroupPermission);
