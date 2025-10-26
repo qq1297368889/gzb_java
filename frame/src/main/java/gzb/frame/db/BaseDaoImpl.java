@@ -26,6 +26,7 @@ import gzb.tools.*;
 import gzb.tools.cache.Cache;
 import gzb.tools.cache.GzbCache;
 import gzb.tools.log.Log;
+import io.netty.util.concurrent.FastThreadLocal;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.ParameterizedType;
@@ -171,6 +172,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
                 for (int i = 0; i < columnCount; i++) {
                     names.add(rsMetaData.getColumnLabel(i + 1));
                 }
+
                 if (!names.isEmpty()) {
                     while (rs.next()) {
                         _t01 = ClassTools.loadResultSet(t.getClass(), rs, names);

@@ -25,8 +25,8 @@ public class GzbCacheMap implements GzbCache {
         // UID 用于序列化版本控制
         private static final long serialVersionUID = 1L;
 
-        volatile Object value;
-        volatile long expireTime;
+         Object value;
+         long expireTime;
 
         public CacheEntry(Object value, int second) {
             this.value = value;

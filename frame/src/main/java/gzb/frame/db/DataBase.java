@@ -27,6 +27,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.ParseException;
 import java.util.List;
 
 public interface DataBase {
@@ -46,7 +47,7 @@ public interface DataBase {
     EntityClassInfo getEntityInfo(Object t);
 
     //各种方式 拼接(主要用于复杂sql生成 数据可能来自用户输入 但这里做了列 表存在性校验) 和 实体类 转 sql
-    SqlTemplate toSelect(String tableName, String[] fields, String[] symbol, String[] value, String[] montage, String sortField, String sortType);
+    SqlTemplate toSelect(String tableName, String[] fields, String[] symbol, String[] value, String[] montage, String sortField, String sortType) throws ParseException;
 
     SqlTemplate toSelect(Object t, int page, int size, String sortField, String sortType);
 

@@ -21,6 +21,12 @@ package gzb.entity;
 public class RunRes {
     private int state = 0;
     private Object data;
+    public RunRes(int state){
+        this.state = state;
+    }
+    public RunRes(){
+        this.state = 200;
+    }
     public int getState() {
         return state;
     }

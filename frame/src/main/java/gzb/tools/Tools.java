@@ -725,17 +725,14 @@ public class Tools {
     public static String toJson0(Object obj) {
         return JSON.toJSONString(obj, JSONWriter.Feature.WriteNonStringValueAsString);
     }
-
-    public static String toJson(Object obj) {
-        StringBuilder stringBuilder = new StringBuilder(1024);
-        toJson(obj, stringBuilder);
-        return stringBuilder.toString();
+    public static void toJson(Object obj,StringBuilder stringBuilder) {
+        stringBuilder.append(toJson(obj));
     }
 
-    public static void toJson(Object obj, StringBuilder stringBuilder) {
+
+    public static String toJson(Object obj) {
         if (obj == null) {
-            stringBuilder.append("null");
-            return;
+            return "null";
         }
         Class<?> ac = obj.getClass();
         if (ac.isPrimitive()
@@ -749,81 +746,52 @@ public class Tools {
                 || ac == Byte.class
                 || ac == Character.class
         ) {
-            stringBuilder.append("\"");
-            escapeJsonString(obj.toString(), stringBuilder);
-            stringBuilder.append("\"");
-            return;
+            return "\""+escapeJsonString(obj.toString())+"\"";
         }
         if (obj instanceof JsonSerializable) {
-            stringBuilder.append(((JsonSerializable) obj).toString());
-            return;
+            return obj.toString();
         }
         if (obj.getClass().isArray()) {
-            arrayToJson(obj, stringBuilder);
-            return;
-        }
-        if (obj instanceof Class<?> || obj instanceof File || obj instanceof CharSequence) {
-            stringBuilder.append("\"");
-            escapeJsonString(obj.toString(), stringBuilder);
-            stringBuilder.append("\"");
-            return;
+            return arrayToJson(obj);
         }
         if (obj instanceof Map) {
-            mapToJson((Map<?, ?>) obj, stringBuilder);
-            return;
+            return mapToJson((Map<?, ?>)obj);
         }
         if (obj instanceof Iterable) {
-            iterableToJson((Iterable<?>) obj, stringBuilder);
-            return;
+            return iterableToJson((Iterable<?>)obj);
         }
         if (obj instanceof GzbMap) {//已知类处理
-            mapToJson(((GzbMap) obj).getMap(), stringBuilder);
-            return;
+            return mapToJson(((GzbMap) obj).getMap());
+        }
+        if (obj instanceof Class<?> || obj instanceof File || obj instanceof CharSequence) {
+            return "\""+escapeJsonString(obj.toString())+"\"";
         }
         if (obj instanceof Exception) {
-            stringBuilder.append("\"");
-            escapeJsonString(getExceptionInfo((Exception) obj), stringBuilder);
-            stringBuilder.append("\"");
-            return;
+            return "\""+escapeJsonString(getExceptionInfo((Exception) obj))+"\"";
         }
         if (obj instanceof Timestamp) {
-            stringBuilder.append("\"");
-            escapeJsonString(new DateTime((Timestamp) obj).toString(), stringBuilder);
-            stringBuilder.append("\"");
-            return;
+            return "\""+escapeJsonString(new DateTime((Timestamp) obj).toString())+"\"";
         }
         if (obj instanceof LocalDateTime) {
-            stringBuilder.append("\"");
-            escapeJsonString(new DateTime((LocalDateTime) obj).toString(), stringBuilder);
-            stringBuilder.append("\"");
-            return;
+            return "\""+escapeJsonString(new DateTime((LocalDateTime) obj).toString())+"\"";
         }
         if (obj instanceof Date) {
-            stringBuilder.append("\"");
-            escapeJsonString(new DateTime((Date) obj).toString(), stringBuilder);
-            stringBuilder.append("\"");
-            return;
+            return "\""+escapeJsonString(new DateTime((Date) obj).toString())+"\"";
         }
-        int size1 = stringBuilder.length();
-        ClassTools.toJsonObject(obj, stringBuilder);
-        if (size1 == stringBuilder.length()) {
-            stringBuilder.append(obj.toString());
+        String data=ClassTools.toJsonObject(obj);
+        if (data==null) {
+            return obj.toString();
         }
+        return data;
     }
 
-
-    public static String mapToJson(Map<?, ?> map) {
-        StringBuilder stringBuilder = new StringBuilder();
-        mapToJson(map, stringBuilder);
-        return stringBuilder.toString();
-    }
 
     // Helper method to serialize a Map
-    public static void mapToJson(Map<?, ?> map, StringBuilder sb) {
+    public static String mapToJson(Map<?, ?> map) {
         if (map == null) {
-            sb.append("null");
-            return;
+            return "null";
         }
+        StringBuilder sb = new StringBuilder(128);
         sb.append("{");
         boolean first = true;
         for (Map.Entry<?, ?> entry : map.entrySet()) {
@@ -833,27 +801,21 @@ public class Tools {
                 }
                 first = false;
                 sb.append("\"");
-                escapeJsonString((entry.getKey().toString()), sb);
+                sb.append(entry.getKey());
                 sb.append("\":");
                 sb.append(toJson(entry.getValue()));
             }
 
         }
         sb.append("}");
+        return sb.toString();
     }
-
-    public static String iterableToJson(Iterable<?> iterable) {
-        StringBuilder stringBuilder = new StringBuilder();
-        iterableToJson(iterable, stringBuilder);
-        return stringBuilder.toString();
-    }
-
     // Helper method to serialize an Iterable (e.g., List, Set)
-    public static void iterableToJson(Iterable<?> iterable, StringBuilder sb) {
+    public static String iterableToJson(Iterable<?> iterable) {
         if (iterable == null) {
-            sb.append("null");
-            return;
+            return "null";
         }
+        StringBuilder sb = new StringBuilder(256);
         sb.append("[");
         if (iterable != null) {
             boolean first = true;
@@ -866,42 +828,33 @@ public class Tools {
             }
         }
         sb.append("]");
-    }
-
-    public static String arrayToJson(Object array) {
-        StringBuilder stringBuilder = new StringBuilder();
-        arrayToJson(array, stringBuilder);
-        return stringBuilder.toString();
+        return sb.toString();
     }
 
     // Helper method to serialize an Array
-    public static void arrayToJson(Object array, StringBuilder sb) {
+    public static String arrayToJson(Object array) {
         if (array == null) {
-            sb.append("null");
-            return;
+            return "null";
         }
+        StringBuilder sb = new StringBuilder();
         int length = Array.getLength(array);
         sb.append("[");
         for (int i = 0; i < length; i++) {
             if (i > 0) {
                 sb.append(",");
             }
-            toJson(Array.get(array, i), sb);
+            sb.append(toJson(Array.get(array, i)));
         }
         sb.append("]");
+        return sb.toString();
     }
+
 
     public static String escapeJsonString(String str) {
-        StringBuilder stringBuilder = new StringBuilder(str.length() + 10);
-        escapeJsonString(str, stringBuilder);
-        return stringBuilder.toString();
-    }
-
-    public static void escapeJsonString(String str, StringBuilder sb) {
         if (str == null) {
-            return;
+            return "null";
         }
-
+        StringBuilder sb = new StringBuilder(str.length() + 10);
         final int len = str.length();
         int last = 0; // 上一次追加的起点索引
 
@@ -980,6 +933,7 @@ public class Tools {
         if (last < len) {
             sb.append(str, last, len);
         }
+        return sb.toString();
     }
 
     // 辅助常量：用于将 int 0-15 快速转换为 16 进制字符

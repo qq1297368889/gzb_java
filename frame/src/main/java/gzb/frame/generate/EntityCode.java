@@ -162,7 +162,7 @@ public class EntityCode extends Base {
                    code += "        if (this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + " != null) {\n" +
                            "            if(app01){sb.append(\",\");}app01=true;\n" +
                            "            sb.append(\"\\\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\\\":\");\n" +
-                           "            Tools.toJson(" + tableInfo.getColumnNamesHumpLowerCase().get(i) + ",sb);\n" +
+                           "            sb.append(Tools.toJson(" + tableInfo.getColumnNamesHumpLowerCase().get(i) +"));" +
                            "        }\n";
                 }
 
@@ -174,12 +174,12 @@ public class EntityCode extends Base {
                     "            for (Map.Entry<?, ?> entry : ((Map<?, ?>) this.data).entrySet()) {\n" +
                     "                if(app01){sb.append(\",\");}app01=true;\n" +
                     "                sb.append(\"\\\"\").append(entry.getKey()).append(\"\\\":\");\n" +
-                    "                Tools.toJson(entry.getValue(),sb);\n" +
+                    "                sb.append(Tools.toJson(entry.getValue()));\n" +
                     "            }\n" +
                     "        }else if(this.data != null){\n" +
                     "            if(app01){sb.append(\",\");}app01=true;\n" +
                     "            sb.append(\"\\\"\").append(Config.get(\"json.entity.data\",\"data\")).append(\"\\\":\");\n" +
-                    "            Tools.toJson(this.data,sb);\n" +
+                    "            sb.append(Tools.toJson(this.data));\n" +
                     "        }\n";
 
             code += "       return sb.append(\"}\").toString();\n" +

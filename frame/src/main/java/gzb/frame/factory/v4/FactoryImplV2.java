@@ -33,6 +33,7 @@ import gzb.frame.netty.entity.Response;
 import gzb.entity.RunRes;
 import gzb.tools.*;
 import gzb.tools.cache.Cache;
+import gzb.tools.cache.GzbNodeMap;
 import gzb.tools.json.GzbJson;
 import gzb.tools.json.GzbJsonImpl;
 import gzb.tools.json.ResultImpl;
@@ -57,7 +58,21 @@ public class FactoryImplV2 implements Factory {
     public Map<String, Map<String, Method>> mapClassMethod = new ConcurrentHashMap<>();
     public static Log log = Log.log;
     public Map<String, ClassEntity> mapClassEntity = new ConcurrentHashMap<>();
-    public Map<String, HttpMapping[]> mapHttpMapping0 = new ConcurrentHashMap<>();
+    // public Map<String, HttpMapping[]> mapHttpMapping0 = new ConcurrentHashMap<>();
+/*   public GzbNodeMap<HttpMapping[]> gzbNodeMap = new GzbNodeMap<>();
+    public Map<String, HttpMapping[]> mapHttpMapping0 = new ConcurrentHashMap<String, HttpMapping[]>(){
+        @Override
+        public HttpMapping[] put(String key, HttpMapping[] value) {
+            gzbNodeMap.put((String)key,(HttpMapping[])value);
+            return super.put(key,value);
+        }
+
+        @Override
+        public HttpMapping[] get(Object key) {
+            return gzbNodeMap.get((String)key);
+        }
+    };*/
+    public  Map<String, HttpMapping[]> mapHttpMapping0 = new ConcurrentHashMap<String, HttpMapping[]>();
     public Map<String, Object> mapObject0 = new ConcurrentHashMap<>();
     List<DecoratorEntity> listDecoratorEntity = new ArrayList<>();
     public Map<String, Map<String, String>> mapHttpMappingOld0 = new ConcurrentHashMap<>();
@@ -310,9 +325,7 @@ public class FactoryImplV2 implements Factory {
         return mapObject0;
     }
 
-    ThreadLocal<RunRes> runResThreadLocal = new ThreadLocal<>();
-
-    public RunRes request(Request request, Response response) {
+    public RunRes request0(Request request, Response response) {
         RunRes runRes = null;
         Object[] objects;
         objects = PublicData.context.get();
@@ -418,7 +431,128 @@ public class FactoryImplV2 implements Factory {
         return runRes;
     }
 
-    public RunRes request0(Request request, Response response) {
+    public RunRes request(Request request, Response response) {
+        GzbTiming gzbTiming = new GzbTiming();
+        gzbTiming.record();
+        RunRes runRes = null;
+        Object[] objects;
+        objects = PublicData.context.get();
+        if (objects == null) {
+            runRes = new RunRes();
+            objects = new Object[]{
+                    runRes,
+                    gzbJson,
+                    log,
+                    request,
+                    response,
+                    null  // 请求参数
+            };
+            PublicData.context.set(objects);
+        } else {
+            objects[3] = request;
+            objects[4] = response;
+            runRes = (RunRes) objects[0];
+            runRes.setData(null);
+        }
+        gzbTiming.record("线程变量");
+        String key = ClassTools.webPathFormat(request.getUri());
+        gzbTiming.record("格式化请求地址");
+        long start = System.nanoTime();
+        HttpMapping[] httpMappings = mapHttpMapping0.get(key);
+        if (httpMappings == null) {
+            return runRes.setState(404);
+        }
+        long end = System.nanoTime();
+        gzbTiming.record("端点获取");
+        int index = -1;
+        String metName = request.getMethod();
+        try {
+            for (int i = 0; i < met.length; i++) {
+                if (metName.equals(met[i])) {
+                    if (httpMappings[i] == null) {
+                        return runRes.setState(404);//目的是检查静态资源
+                    }
+                    index = i;
+                    break;
+                }
+            }
+            if (index == -1) {
+                return runRes.setState(404);
+            }
+            gzbTiming.record("请求方法");
+            if (httpMappings[index].header.size() > 0) {
+                response.setHeaders(new HashMap<>(httpMappings[index].header));
+            }
+            if (httpMappings[index].isCrossDomainOrigin) {
+                String host = request.getOrigin();
+                if (host == null) {
+                    host = request.getDomain();
+                }
+                response.setHeader("access-control-allow-origin", host);
+            }
+            gzbTiming.record("协议头");
+            if (httpMappings[index].semaphore != null && !httpMappings[index].semaphore.tryAcquire()) {
+                return runRes.setState(200).setData(gzbJson.fail("请求量超过限流阈值，请稍后重试"));
+            }
+            gzbTiming.record("限流");
+            Map<String, List<Object>> parar = request.getParameter();
+            objects[5] = parar;
+            for (DecoratorEntity decoratorEntity : httpMappings[index].start) {
+                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, objects);
+                if (runRes1 != null) {
+                    if (runRes1.getState() != 200) {
+                        //log.d("request", key, request.getMethod(), parar, 200, "请求被调用前拦截");
+                        return runRes1;
+                    } else {
+                        objects[0] = runRes1;
+                        runRes = runRes1;
+                        if (runRes1.getData() != null) {
+                            Object[] newArray = Arrays.copyOf(objects, objects.length + 1);
+                            newArray[newArray.length - 1] = runRes1.getData();
+                            objects = newArray;
+                        }
+                    }
+                }
+            }
+            gzbTiming.record("装饰器-前");
+            Object obj02 = httpMappings[index].httpMappingFun._gzb_call_x01(httpMappings[index].id, mapObject0, request, response, parar, gzbJson, log, objects);
+            gzbTiming.record("端点调用");
+            runRes.setData(obj02);
+            for (DecoratorEntity decoratorEntity : httpMappings[index].end) {
+                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, objects);
+                if (runRes1 != null) {
+                    if (runRes1.getState() != 200) {
+                        //log.d("request", key, request.getMethod(), parar, 200, "请求被调用后拦截");
+                        return runRes1;
+                    } else {
+                        objects[0] = runRes1;
+                        runRes = runRes1;
+                    }
+                }
+            }
+            gzbTiming.record("装饰器-后");
+        } catch (Exception e) {
+            log.e("框架层错误日志",
+                    key,
+                    request.getMethod(),
+                    request.getParameter(),
+                    e);
+            return runRes.setState(200).setData(gzbJson.error("访问出现错误"));
+        } finally {
+            //限流如果开启 解除占用
+            if (index > -1 && httpMappings[index] != null && httpMappings[index].semaphore != null) {
+                httpMappings[index].semaphore.release();
+            }
+        }
+
+        log.t((end - start), gzbTiming.read());
+        /// 后台统计 汇总
+        AtomicInteger atomicInteger = reqInfo.computeIfAbsent(gzbTiming.all / 1000, k -> new AtomicInteger());
+        atomicInteger.addAndGet(1);
+        return runRes;
+    }
+
+    public RunRes request2(Request request, Response response) {
         GzbTiming gzbTiming = new GzbTiming();
         gzbTiming.record();
         RunRes runRes = new RunRes();
@@ -895,16 +1029,16 @@ public class FactoryImplV2 implements Factory {
                 }
                 if (aClass == ThreadFactory.class) {
                     Method[] methods = classEntity.clazz.getMethods();
-                    Map<String,Method>mapMethodThreadFactory0=new ConcurrentHashMap<>(mapMethodThreadFactory);
+                    Map<String, Method> mapMethodThreadFactory0 = new ConcurrentHashMap<>(mapMethodThreadFactory);
                     for (int i = 0; i < methods.length; i++) {
                         ThreadInterval threadInterval = methods[i].getDeclaredAnnotation(ThreadInterval.class);
                         if (threadInterval == null) {
-                           continue;
+                            continue;
                         }
-                        startThreadFactory(classEntity.clazz, methods[i],mapObject,threadInterval);
+                        startThreadFactory(classEntity.clazz, methods[i], mapObject, threadInterval);
                         String key = ClassTools.getSing(methods[i], classEntity.clazz);
                         mapMethodThreadFactory0.remove(key);
-                        mapMethodThreadFactory.put(key,methods[i]);
+                        mapMethodThreadFactory.put(key, methods[i]);
                     }
                     for (Map.Entry<String, Method> stringMethodEntry : mapMethodThreadFactory0.entrySet()) {
                         mapMethodThreadFactory.remove(ClassTools.getSing(stringMethodEntry.getValue(), classEntity.clazz));
@@ -938,14 +1072,16 @@ public class FactoryImplV2 implements Factory {
 
         return listClassEntity;
     }
-    Map<String,Method>mapMethodThreadFactory=new ConcurrentHashMap<>();
+
+    Map<String, Method> mapMethodThreadFactory = new ConcurrentHashMap<>();
+
     /// 注意要点
     /// 1 改变方法签名的时候必须修改 num=0 停止正在运行的线程 否则线程无法停止 补救措施就是恢复签名 改为0停止
     /// 2 num=0后会清楚运行线程的状态保存  num=1改为2 新新增一个线程 线程1保存原有状态 线程2是全新线程
     /// 3 方法内部返回非null 会终止进程 并清理状态数据
     /// 4 线程数量不变 方法签名不变 修改代码可以无缝热更新 这是非常稳定的模式
     /// 5 方法内部禁止阻塞 除非你明白你在做什么
-    public void startThreadFactory(Class<?> aClass, Method method,Map<String, Object> mapObject,ThreadInterval threadInterval) throws Exception {
+    public void startThreadFactory(Class<?> aClass, Method method, Map<String, Object> mapObject, ThreadInterval threadInterval) throws Exception {
         String key = ClassTools.getSing(method, aClass);
         ThreadEntity threadEntity = mapListThreadEntity0.get(key);
         if (threadEntity == null) {
@@ -1002,30 +1138,30 @@ public class FactoryImplV2 implements Factory {
         for (int i = threadEntity.thread.size(); i < threadInterval.num(); i++) {
             int finalI = i;
             Thread thread = new Thread(() -> {
-                String key2=key;
+                String key2 = key;
                 log.d("线程启动", key2, Thread.currentThread());
                 while (true) {
                     try {
                         Tools.sleep(Math.max(threadInterval.value(), 100));
                         ThreadEntity threadEntity0 = mapListThreadEntity0.get(key2);
                         if (threadEntity0.thread.size() < finalI + 1) {
-                            log.d("线程正常退出",key2);
+                            log.d("线程正常退出", key2);
                             break;
                         }
                         key2 = ClassTools.getSing(threadEntity0.method, aClass);
-                        if (mapMethodThreadFactory.get(key2)==null) {
+                        if (mapMethodThreadFactory.get(key2) == null) {
                             threadEntity0.result.set(finalI, null);
                             threadEntity0.thread.set(finalI, null);
-                            log.d("方法签名变化 本线程已经失控 退出",key2);
+                            log.d("方法签名变化 本线程已经失控 退出", key2);
                             break;
                         }
                         Object[] objects = new Object[]{threadEntity0.result.get(finalI), threadEntity0.lock};
-                        int id=ClassTools.getSingInt(method,aClass);
-                        GzbOneInterface gzbOneInterface=(GzbOneInterface)mapObject.get(aClass.getName());
-                        if (gzbOneInterface==null) {
+                        int id = ClassTools.getSingInt(method, aClass);
+                        GzbOneInterface gzbOneInterface = (GzbOneInterface) mapObject.get(aClass.getName());
+                        if (gzbOneInterface == null) {
                             threadEntity0.result.set(finalI, null);
                             threadEntity0.thread.set(finalI, null);
-                            log.d("GzbOneInterface 对象不存在",key2);
+                            log.d("GzbOneInterface 对象不存在", key2);
                             break;
                         }
                         Object obj = gzbOneInterface._gzb_call_x01(id, mapObject0, null, null, new HashMap<>(), gzbJson, log, objects);

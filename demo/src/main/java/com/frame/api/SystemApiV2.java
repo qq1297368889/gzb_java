@@ -497,13 +497,6 @@ public class SystemApiV2 {
             "(" +
             "select sys_group_permission.sys_group_permission_pid from sys_group_permission where sys_group_permission.sys_group_permission_gid = ?" +
             ")";
-    String sql_read_per4 = "select sys_permission.* from sys_permission where sys_permission.sys_permission_id in" +
-            "(" +
-            "select sys_group_permission.sys_group_permission_pid from sys_group_permission where sys_group_permission.sys_group_permission_gid in" +
-            "(" +
-            "select sys_role_group.sys_role_group_gid from sys_role_group where sys_role_group_rid = ?" +
-            ")" +
-            ")";
 
     /// read/permission/all?gid=
     @DecoratorOpen

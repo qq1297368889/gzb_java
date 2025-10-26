@@ -35,8 +35,8 @@ public class GzbCacheRedis implements GzbCache {
                     "return current;";
 
     // --- 脚本 SHA1 缓存字段 (保持不变) ---
-    private volatile String incrSha = null;
-    private volatile String hIncrSha = null;
+    private  String incrSha = null;
+    private  String hIncrSha = null;
 
 
     // --- 构造函数和初始化方法 (保持不变) ---

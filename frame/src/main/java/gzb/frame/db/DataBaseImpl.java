@@ -31,6 +31,8 @@ import gzb.tools.log.Log;
 
 import java.lang.reflect.Field;
 import java.sql.*;
+import java.text.ParseException;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -43,7 +45,7 @@ public class DataBaseImpl implements DataBase {
         public String name;
         public Class<?> clazz;
 
-        public Object toValue(Object object) {
+        public Object toValue(Object object) throws ParseException {
             if (object == null) {
                 return null;
             }
@@ -62,7 +64,13 @@ public class DataBaseImpl implements DataBase {
             if (clazz == Boolean.class) return Boolean.valueOf(object.toString());
             if (clazz == byte[].class) return object.toString().getBytes(Config.encoding);
 
-            return null;
+            if (clazz == Timestamp.class){
+                return new DateTime((String) object).toTimestamp();
+            }
+            if (clazz == LocalDateTime.class){
+                return new DateTime((String) object).toLocalDateTime();
+            }
+           throw new GzbException0("转换为数据库类型失败 DataBaseImpl.Column.toValue(Object object) 转换的值为:"+object+" 类型为："+clazz.getName());
         }
     }
 
@@ -248,7 +256,7 @@ public class DataBaseImpl implements DataBase {
     }
 
     @Override
-    public SqlTemplate toSelect(String tableName, String[] fields, String[] symbol, String[] value, String[] montage, String sortField, String sortType) {
+    public SqlTemplate toSelect(String tableName, String[] fields, String[] symbol, String[] value, String[] montage, String sortField, String sortType) throws ParseException {
         StringBuilder sb = new StringBuilder(50);
         StringBuilder sb2 = new StringBuilder(100);
         List<Object> list = new ArrayList<>();
@@ -701,33 +709,34 @@ public class DataBaseImpl implements DataBase {
     //提交并且关闭事务  同时也会归还连接 主要是框架内部调用 当然 也可以手动
     @Override
     public void commit() throws Exception {
-        Integer x01 = readTransactionState();
-        if (x01 != null) {
-            if (x01 == 1) {
-                Connection connection1 = connectionThreadLocal.get();
-                log.t("真实事物 commit", connection1);
-                if (connection1 != null) {
-                    connection1.commit();
-                }
-            } else if (x01 == 2) {
-                Map<String, List<Object[]>> map1 = simulation_sql.get();
-                transactionSimulation.set(1);
-                simulation_sql.remove();
-                try {
-                    if (map1 != null) {
-                        for (Map.Entry<String, List<Object[]>> stringListEntry : map1.entrySet()) {
-                            if (stringListEntry.getKey() != null && stringListEntry.getValue() != null) {
-                                runSqlBatch(stringListEntry.getKey(), stringListEntry.getValue());
-                            }
+        Integer state = transactionSimulation.get();
+        if (state == null) {
+            log.w("commit 无事物");
+        } else if (state == 1) {
+            Connection connection1 = connectionThreadLocal.get();
+            log.t("commit 真实事物", connection1);
+            if (connection1 != null) {
+                connection1.commit();
+            }
+        } else if (state == 2) {
+            Map<String, List<Object[]>> map1 = simulation_sql.get();
+            log.t("commit 模拟事物 转化真实事务", map1);
+            transactionSimulation.set(1);
+            try {
+                if (map1 != null) {
+                    for (Map.Entry<String, List<Object[]>> stringListEntry : map1.entrySet()) {
+                        if (stringListEntry.getKey() != null && stringListEntry.getValue() != null) {
+                            runSqlBatch(stringListEntry.getKey(), stringListEntry.getValue());
                         }
                     }
-                    commit();
-                }catch (Exception e){
-                    rollback();
-                    throw e;
                 }
+                commit();
+            }catch (Exception e){
+                rollback();
+                throw e;
             }
         }
+
     }
 
     //回滚并且关闭事务  同时也会归还连接 主要是框架内部调用 当然 也可以手动
@@ -735,15 +744,16 @@ public class DataBaseImpl implements DataBase {
     public void rollback() throws SQLException {
         Integer state = transactionSimulation.get();
         if (state == null) {
-            log.w("回滚 无事物");
+            log.w("rollback 无事物");
         } else if (state == 1) {
-            log.t("回滚 真实事务");
             Connection connection1 = connectionThreadLocal.get();
+            log.t("rollback 真实事务",connection1);
             if (connection1 != null) {
                 connection1.rollback();
             }
         } else if (state == 2) {
-            log.t("回滚 模拟事务", simulation_sql.get());
+            log.t("rollback 模拟事务");
+            simulation_sql.remove();
         }
     }
 
@@ -957,6 +967,7 @@ public class DataBaseImpl implements DataBase {
         }
         Integer x01 = readTransactionState();
         if (x01 != null && x01 == 2) {
+            log.t("收集SQL",sql,params);
             Map<String, List<Object[]>> map0 = simulation_sql.get();
             if (map0 == null) {
                 map0 = new HashMap<>();
@@ -1067,8 +1078,7 @@ public class DataBaseImpl implements DataBase {
             }
         } catch (Exception e) {
             connection.rollback();
-            log.e(e, "异常：" + sb);
-            throw e;
+            throw new RuntimeException("异常：" + sb,e);
         } finally {
             close(rs, ps);
         }

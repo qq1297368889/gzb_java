@@ -278,7 +278,7 @@ public class LogThread {
                 } else if (log[i] instanceof Throwable) {
                     sb.append(deduplication(Tools.getExceptionInfo((Throwable) log[i]), index));
                 } else {
-                    Tools.toJson(log[i], sb);
+                    sb.append(Tools.toJson(log[i]));
                 }
                 if (i < log.length - 1) {
                     sb.append(" | ");

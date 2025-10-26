@@ -45,7 +45,7 @@ public class ThreadPoolV2 {
     }
 
     private final int await_sec = 15;
-    public volatile LinkedBlockingQueue<Runnable> runnableQueue = null;
+    public  LinkedBlockingQueue<Runnable> runnableQueue = null;
     public ThreadPoolV2() {
         this(Config.cpu, Config.cpu * 100);
     }

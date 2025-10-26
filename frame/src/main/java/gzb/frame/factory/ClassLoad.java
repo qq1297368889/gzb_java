@@ -62,7 +62,7 @@ public class ClassLoad {
     }
     public static Map<String, Class<?>> compileJavaCode(Map<String, String> sourcesMap) throws Exception {
         //批量编译 虽然快 但有些其他问题
-    /*    long start = System.currentTimeMillis();
+  long start = System.currentTimeMillis();
         Map<String, Class<?>> map = new ClassLoadV1().compile(sourcesMap);
         long end = System.currentTimeMillis();
         List<String>list=new ArrayList<>();
@@ -70,13 +70,16 @@ public class ClassLoad {
             list.add(stringClassEntry.getKey());
         }
         log.d("编译","耗时", end - start, "数量",list.size(), list);
-        return map;*/
+        return map;
+        /*
         Map<String, Class<?>> map = new ConcurrentHashMap<>();
         for (Map.Entry<String, String> stringStringEntry : sourcesMap.entrySet()) {
             Class<?> aClass = compileJavaCode(stringStringEntry.getValue(),stringStringEntry.getKey());
             map.put(stringStringEntry.getKey(),aClass);
         }
         return map;
+        */
+
     }
 
     /**

@@ -1,5 +1,5 @@
 package gzb.tools.cache;
-
+/// 目前2个实现类 redis  map
 /// key 是主key  subKey 是主key的val中的子键 index同理也是
 /// 注意 所有方法不允许抛出异常 只能返回null
 /// 注意 对子键的操作 需要确保原子性

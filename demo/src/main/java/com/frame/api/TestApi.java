@@ -23,6 +23,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Controller
 @RequestMapping("test/api")
@@ -42,18 +47,18 @@ public class TestApi {
         Map<String, List<File>> files = new HashMap<>();
         files.put("file", list1);
         files.put("files", list2);
-        for (int i = 0; i < 1000; i++) {
-            httpV3.request("http://127.0.0.1:10003/test/api/post1", "POST", "", null, null, 10000L);
+        for (int i = 0; i < 0; i++) {
+            httpV3.request("http://127.0.0.1:2080/test/api/post1", "POST", "", null, null, 10000L);
             System.out.println(httpV3.asString());
-            httpV3.request("http://127.0.0.1:10003/test/api/post2", "POST", "", null, null, 10000L);
+            httpV3.request("http://127.0.0.1:2080/test/api/post2", "POST", "", null, null, 10000L);
             System.out.println(httpV3.asString());
-            httpV3.request("http://127.0.0.1:10003/test/api/post3", "POST", "", null, null, 10000L);
+            httpV3.request("http://127.0.0.1:2080/test/api/post3", "POST", "", null, null, 10000L);
             System.out.println(httpV3.asString());
-            httpV3.request("http://127.0.0.1:10003/test/api/post4", "POST", "", null, null, 10000L);
+            httpV3.request("http://127.0.0.1:2080/test/api/post4", "POST", "", null, null, 10000L);
             System.out.println(httpV3.asString());
 
         }
-        httpV3.request("http://127.0.0.1:10003/test/api/post", "POST", postData, null, files, 10000L);
+        httpV3.request("http://127.0.0.1:2080/test/api/post", "POST", postData, null, files, 10000L);
         System.out.println(httpV3.asString());
     }
 
@@ -61,6 +66,7 @@ public class TestApi {
     public Object get1(String msg, GzbJson gzbJson) throws Exception {
         return gzbJson.success(msg);
     }
+
     @Transaction(simulate = false)
     @PostMapping("post1")
     public Object post1(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
@@ -218,17 +224,17 @@ public class TestApi {
         } catch (Exception e0) {
             log.e("预期中 的错误", e0);
         }
-        String[] msg = new String[1];
+        Semaphore semaphore = new Semaphore(0);
         sysUsersDao.saveAsync(sysUsers, new Runnable() {
             @Override
             public void run() {
-                log.d("保存失败回调");
-                msg[0] = "保存失败回调";
+                log.d("保存回调完成");
+                semaphore.release();
             }
         });
-        Tools.sleep(1000);//等异步完成
-        if (msg[0] == null) {
-            return gzbJson.fail("异步插入 回调失败");
+        if (!semaphore.tryAcquire(2000L, TimeUnit.MILLISECONDS)) {
+            // 如果 2000 毫秒内未能获取到许可（回调未触发）
+            return gzbJson.fail("异步插入回调超时");
         }
         if (sysUsersDao.find(sysUsers) == null) {
             return gzbJson.fail("数据库查询失败");
@@ -244,7 +250,6 @@ public class TestApi {
         if (sysUsersDao.delete(sysUsers) < 0) {
             return gzbJson.fail("数据库删除失败");
         }
-        //手动事务 对等于 注解事务
         //开启真实事务
         sysUsersDao.getDataBase().openTransaction(false);
         sysUsersDao.save(sysUsers);
@@ -272,7 +277,6 @@ public class TestApi {
             return gzbJson.fail("数据库事务提交 失败");
         }
         sysUsersDao.delete(sysUsers);
-
         //开启模拟事务 只保证一起成功或失败 本质是收集 统一提交
         sysUsersDao.getDataBase().openTransaction(true);
         sysUsersDao.save(sysUsers);
@@ -285,5 +289,10 @@ public class TestApi {
 
         /// 测试结束
         return gzbJson.success("OK");
+    }
+
+    public TestApi() {
+
+        System.out.println("------TestApi-----------");
     }
 }

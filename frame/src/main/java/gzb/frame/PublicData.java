@@ -11,14 +11,15 @@ import gzb.tools.Config;
 import gzb.tools.json.GzbJson;
 import gzb.tools.json.GzbJsonImpl;
 import gzb.tools.log.Log;
+import io.netty.util.concurrent.FastThreadLocal;
 
 import java.util.List;
 import java.util.Map;
 
 public class PublicData {
     //这个不用担心泄露 泄露也没关系 省的下次 == null  用于数据库事件
-    public static final ThreadLocal<Object[]> context = new ThreadLocal<>();
-    public static final ThreadLocal<Integer> depth = new ThreadLocal<>();
+    public static final FastThreadLocal<Object[]> context = new FastThreadLocal<>();
+    public static final FastThreadLocal<Integer> depth = new FastThreadLocal<>();
 
     public static final GzbJson gzbJson=new GzbJsonImpl();
     public static final Factory factory;

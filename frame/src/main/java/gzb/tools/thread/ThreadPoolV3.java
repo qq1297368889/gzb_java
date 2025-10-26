@@ -45,9 +45,9 @@ public class ThreadPoolV3 {
     }
 
     private boolean AUTO_MATIC = true;
-    private volatile double CPU_LOAD = 0.0;
+    private  double CPU_LOAD = 0.0;
     private final int await_sec = 15;
-    public volatile LinkedBlockingQueue<Runnable> runnableQueue = null;
+    public  LinkedBlockingQueue<Runnable> runnableQueue = null;
     AtomicInteger thrNum = new AtomicInteger(0);
     public int THREAD_MIN_NUM = 10;
     public int THREAD_MAX_NUM = Config.cpu * 600;

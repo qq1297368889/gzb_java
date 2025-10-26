@@ -31,9 +31,8 @@ public class GzbJsonImpl implements GzbJson {
 
     @Override
     public String initJson(Integer code, String msg, String url, Object data, Integer page, Integer size, Integer total) {
-        StringBuilder sb = new StringBuilder(1024);
-        sb.append("{");
-        sb.append("\"").append(Config.stateName).append("\":\"").append(code).append("\"");
+        StringBuilder sb=new StringBuilder(50);
+        sb.append("{").append("\"").append(Config.stateName).append("\":\"").append(code).append("\"");
 
         sb.append(",\"").append(Config.timeName).append("\":\"").append(System.currentTimeMillis()).append("\"");
 
@@ -109,17 +108,10 @@ public class GzbJsonImpl implements GzbJson {
      */
     @Override
     public String response(int code, String msg, String url, Object data) {
-        StringBuilder sb = null;
-        if (data==null) {
-            sb = new StringBuilder(40);
-        }else{
-            sb = new StringBuilder(1024);
-        }
-        sb.append("{\"")
-                .append(Config.stateName).append("\":\"").append(code).append("\"")
+        StringBuilder sb=new StringBuilder(50);
+        sb.append("{").append(Config.stateName).append("\":\"").append(code).append("\"")
                 .append(",\"")
-                .append(Config.timeName).append("\":\"").append(System.currentTimeMillis()).append("\"")
-        ;
+                .append(Config.timeName).append("\":\"").append(System.currentTimeMillis()).append("\"");
 
         if (msg != null) {
             sb.append(",\"").append(Config.messageName).append("\":\"").append(Tools.escapeJsonString(msg)).append("\"");
