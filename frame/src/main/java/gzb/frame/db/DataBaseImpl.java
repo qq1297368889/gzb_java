@@ -24,7 +24,9 @@ import gzb.entity.EntityClassInfo;
 import gzb.entity.SqlTemplate;
 import gzb.entity.TableInfo;
 import gzb.exception.GzbException0;
+import gzb.frame.PublicData;
 import gzb.frame.annotation.EntityAttribute;
+import gzb.frame.db.entity.TransactionEntity;
 import gzb.tools.*;
 import gzb.tools.cache.Cache;
 import gzb.tools.log.Log;
@@ -70,17 +72,14 @@ public class DataBaseImpl implements DataBase {
             if (clazz == LocalDateTime.class){
                 return new DateTime((String) object).toLocalDateTime();
             }
-           throw new GzbException0("转换为数据库类型失败 DataBaseImpl.Column.toValue(Object object) 转换的值为:"+object+" 类型为："+clazz.getName());
+            throw new GzbException0("转换为数据库类型失败 DataBaseImpl.Column.toValue(Object object) 转换的值为:"+object+" 类型为："+clazz.getName());
         }
     }
 
     static Object[] defNullArray = new Object[0];
     //数据库连接
     private final ThreadLocal<Connection> connectionThreadLocal = new ThreadLocal<>();
-    //数据库事务是否开启 null关闭 1开启 2模拟
-    private final ThreadLocal<Integer> transactionSimulation = new ThreadLocal<>();
-
-    private final ThreadLocal<Map<String, List<Object[]>>> simulation_sql = new ThreadLocal<>();
+    public static final ThreadLocal<TransactionEntity> open_transaction = new ThreadLocal<>();
 
     public AsyncFactory asyncFactory = null;
 
@@ -681,7 +680,11 @@ public class DataBaseImpl implements DataBase {
 
     @Override
     public Integer readTransactionState() {
-        return transactionSimulation.get();
+        TransactionEntity transaction =open_transaction.get();
+        if (transaction==null) {
+            return null;
+        }
+        return transaction.simulate;
     }
 
     //开启事务 主要是框架内部调用 当然 也可以手动
@@ -694,14 +697,14 @@ public class DataBaseImpl implements DataBase {
                     "3.回滚事务 rollback\n" +
                     "4.关闭事务 endTransaction 如果手动开启事务那么必须调用本方法，框架开启 无需手动调用\n");
         }
-        transactionSimulation.set(simulation ? 2 : 1);
+        open_transaction.set(new TransactionEntity(simulation ? 2 : 1));
         log.t("开启事物", simulation ? "模拟" : "真实");
     }
 
     //关闭事务 主要是框架内部调用 当然 也可以手动
     @Override
     public void endTransaction() {
-        transactionSimulation.remove();
+        open_transaction.remove();
         close(null, null);
         log.t("关闭事务", connectionThreadLocal.get(), connectionThreadLocal.get());
     }
@@ -709,19 +712,20 @@ public class DataBaseImpl implements DataBase {
     //提交并且关闭事务  同时也会归还连接 主要是框架内部调用 当然 也可以手动
     @Override
     public void commit() throws Exception {
-        Integer state = transactionSimulation.get();
-        if (state == null) {
+
+        TransactionEntity transaction =open_transaction.get();
+        if (transaction==null) {
             log.w("commit 无事物");
-        } else if (state == 1) {
+        } else if (transaction.simulate == 1) {
             Connection connection1 = connectionThreadLocal.get();
             log.t("commit 真实事物", connection1);
             if (connection1 != null) {
                 connection1.commit();
             }
-        } else if (state == 2) {
-            Map<String, List<Object[]>> map1 = simulation_sql.get();
+        } else if (transaction.simulate == 2) {
+            Map<String, List<Object[]>> map1 = transaction.data;
             log.t("commit 模拟事物 转化真实事务", map1);
-            transactionSimulation.set(1);
+            transaction.simulate=1;
             try {
                 if (map1 != null) {
                     for (Map.Entry<String, List<Object[]>> stringListEntry : map1.entrySet()) {
@@ -742,18 +746,45 @@ public class DataBaseImpl implements DataBase {
     //回滚并且关闭事务  同时也会归还连接 主要是框架内部调用 当然 也可以手动
     @Override
     public void rollback() throws SQLException {
-        Integer state = transactionSimulation.get();
-        if (state == null) {
+        TransactionEntity transaction =open_transaction.get();
+        if (transaction==null) {
             log.w("rollback 无事物");
-        } else if (state == 1) {
+        } else if (transaction.simulate == 1) {
             Connection connection1 = connectionThreadLocal.get();
             log.t("rollback 真实事务",connection1);
             if (connection1 != null) {
                 connection1.rollback();
             }
-        } else if (state == 2) {
+        } else if (transaction.simulate == 2) {
             log.t("rollback 模拟事务");
-            simulation_sql.remove();
+            transaction.data = null;
+        }
+    }
+
+    /**
+     * @param runnable
+     * @throws SQLException
+     */
+    @Override
+    public void transaction(Runnable runnable) throws SQLException {
+        transaction(runnable,false);
+    }
+
+    /**
+     * @param runnable
+     * @param simulation
+     * @throws SQLException
+     */
+    @Override
+    public void transaction(Runnable runnable, boolean simulation) throws SQLException {
+        openTransaction(simulation);
+        try {
+            runnable.run();
+            commit();
+        }catch (Exception e){
+            rollback();
+        }finally {
+            endTransaction();
         }
     }
 
@@ -780,14 +811,14 @@ public class DataBaseImpl implements DataBase {
         Connection connection0 = connectionThreadLocal.get();
         if (connection0 != null) {
             try {
-                Integer state = transactionSimulation.get();
-                if (state == null) {
+                TransactionEntity transaction =open_transaction.get();
+                if (transaction==null) {
                     log.t("close 无事物", connection0);
                     connection0.close();
                     connectionThreadLocal.remove();
-                } else if (state == 1) {
+                } else if (transaction.simulate == 1) {
                     log.t("close 真实事务", connection0);
-                } else if (state == 2) {
+                } else if (transaction.simulate == 2) {
                     log.t("close 模拟事务", connection0);
                     connection0.close();
                     connectionThreadLocal.remove();
@@ -965,18 +996,17 @@ public class DataBaseImpl implements DataBase {
         if (sql == null) {
             return -1;
         }
-        Integer x01 = readTransactionState();
-        if (x01 != null && x01 == 2) {
+        String key = PublicData.open_transaction_key.get();
+        if (key!=null && !key.equals(dataBaseConfig.getSign())) {
+            throw new GzbException0("数据库["+key+"]的事务中出现了数据库["+dataBaseConfig.getSign()+"]的调用");
+        }
+        TransactionEntity transaction =open_transaction.get();
+        if (transaction!=null && transaction.simulate == 2) {
             log.t("收集SQL",sql,params);
-            Map<String, List<Object[]>> map0 = simulation_sql.get();
-            if (map0 == null) {
-                map0 = new HashMap<>();
-                simulation_sql.set(map0);
-            }
-            List<Object[]> list = map0.get(sql);
+            List<Object[]> list = transaction.data.get(sql);
             if (list == null) {
                 list = new ArrayList<>();
-                map0.put(sql, list);
+                transaction.data.put(sql, list);
             }
             list.add(params);
             return 0;
@@ -1005,18 +1035,18 @@ public class DataBaseImpl implements DataBase {
         ResultSet rs = null;
         PreparedStatement ps = null;
         StringBuilder sb = null;
-        Integer x01 = readTransactionState();
-        if (x01 != null && x01 == 2) {
-            Map<String, List<Object[]>> map0 = simulation_sql.get();
-            if (map0 == null) {
-                map0 = new HashMap<>();
-                simulation_sql.set(map0);
-            }
-            List<Object[]> list = map0.get(sql);
+        String key = PublicData.open_transaction_key.get();
+        if (key!=null && !key.equals(dataBaseConfig.getSign())) {
+            throw new GzbException0("数据库["+key+"]的事务中出现了数据库["+dataBaseConfig.getSign()+"]的调用");
+        }
+        TransactionEntity transaction =open_transaction.get();
+        if (transaction!=null && transaction.simulate == 2) {
+            List<Object[]> list = transaction.data.get(sql);
             if (list == null) {
                 list = new ArrayList<>();
-                map0.put(sql, list);
+                transaction.data.put(sql, list);
             }
+            log.t("收集SQL",sql,list_parameter);
             for (Object[] objects : list_parameter) {
                 list.add(objects);
             }

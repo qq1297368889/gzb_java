@@ -130,7 +130,6 @@ public class HTTPStaticFileHandler {
         } catch (Exception e) {
             return null;
         }
-
         // 转换为文件路径
         URI normalized = new URI(uri);
         String path = normalized.getPath();

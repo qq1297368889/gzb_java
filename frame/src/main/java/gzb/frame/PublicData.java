@@ -1,8 +1,10 @@
 package gzb.frame;
 
 import gzb.entity.Context;
+import gzb.frame.db.DataBase;
 import gzb.frame.db.EventFactory;
 import gzb.frame.db.EventFactoryImpl;
+import gzb.frame.db.entity.TransactionEntity;
 import gzb.frame.factory.Factory;
 import gzb.frame.factory.v4.FactoryImplV2;
 import gzb.frame.netty.entity.Request;
@@ -21,8 +23,11 @@ public class PublicData {
     public static final FastThreadLocal<Object[]> context = new FastThreadLocal<>();
     public static final FastThreadLocal<Integer> depth = new FastThreadLocal<>();
 
-    public static final GzbJson gzbJson=new GzbJsonImpl();
+    public static final ThreadLocal<String> open_transaction_key = new ThreadLocal<>();
+
+    public static final GzbJson gzbJson = new GzbJsonImpl();
     public static final Factory factory;
+
     static {
         try {
             factory = new FactoryImplV2();
@@ -30,6 +35,7 @@ public class PublicData {
             throw new RuntimeException(e);
         }
     }
+
     public static final EventFactory eventFactory = new EventFactoryImpl(PublicData.factory.getMapObject(), Log.log);
 
 }

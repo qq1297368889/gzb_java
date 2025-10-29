@@ -49,36 +49,39 @@ public class ClassLoad {
 
     public static Class<?> compileJavaCode(String code) throws Exception {
         String className = extractPublicClassName(code);
-        return compileJavaCode(code,className);
+        return compileJavaCode(code, className);
     }
-    public static Class<?> compileJavaCode(String code,String className) throws Exception {
-        long start=System.currentTimeMillis();
-        Map<String, String> sourcesMap= new HashMap<>();
-        sourcesMap.put(className,code);
-        Map<String, Class<?>> map = new ClassLoadV1().compile(sourcesMap);
-        long end=System.currentTimeMillis();
-        log.d("编译耗时",end-start,map);
-        return map.get(className);
-    }
-    public static Map<String, Class<?>> compileJavaCode(Map<String, String> sourcesMap) throws Exception {
-        //批量编译 虽然快 但有些其他问题
-  long start = System.currentTimeMillis();
+
+    public static Class<?> compileJavaCode(String code, String className) throws Exception {
+        long start = System.currentTimeMillis();
+        Map<String, String> sourcesMap = new HashMap<>();
+        sourcesMap.put(className, code);
         Map<String, Class<?>> map = new ClassLoadV1().compile(sourcesMap);
         long end = System.currentTimeMillis();
-        List<String>list=new ArrayList<>();
-        for (Map.Entry<String, Class<?>> stringClassEntry : map.entrySet()) {
-            list.add(stringClassEntry.getKey());
+        log.d("编译耗时", end - start, map);
+        return map.get(className);
+    }
+
+    public static Map<String, Class<?>> compileJavaCode(Map<String, String> sourcesMap) throws Exception {
+        if (sourcesMap.size() > Integer.MAX_VALUE) {
+            //批量编译 虽然快 但无法卸载 会泄露 目前先停用
+            long start = System.currentTimeMillis();
+            Map<String, Class<?>> map = new ClassLoadV1().compile(sourcesMap);
+            long end = System.currentTimeMillis();
+            List<String> list = new ArrayList<>();
+            for (Map.Entry<String, Class<?>> stringClassEntry : map.entrySet()) {
+                list.add(stringClassEntry.getKey());
+            }
+            log.d("编译", "耗时", end - start, "数量", list.size(), list);
+            return map;
+        } else {
+            Map<String, Class<?>> map = new ConcurrentHashMap<>();
+            for (Map.Entry<String, String> stringStringEntry : sourcesMap.entrySet()) {
+                Class<?> aClass = compileJavaCode(stringStringEntry.getValue(), stringStringEntry.getKey());
+                map.put(stringStringEntry.getKey(), aClass);
+            }
+            return map;
         }
-        log.d("编译","耗时", end - start, "数量",list.size(), list);
-        return map;
-        /*
-        Map<String, Class<?>> map = new ConcurrentHashMap<>();
-        for (Map.Entry<String, String> stringStringEntry : sourcesMap.entrySet()) {
-            Class<?> aClass = compileJavaCode(stringStringEntry.getValue(),stringStringEntry.getKey());
-            map.put(stringStringEntry.getKey(),aClass);
-        }
-        return map;
-        */
 
     }
 

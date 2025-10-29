@@ -21,6 +21,7 @@ package gzb.frame.db;
 import gzb.entity.EntityClassInfo;
 import gzb.entity.SqlTemplate;
 import gzb.entity.TableInfo;
+import gzb.frame.db.entity.TransactionEntity;
 import gzb.tools.GzbMap;
 
 import java.sql.Connection;
@@ -118,4 +119,8 @@ public interface DataBase {
     void commit() throws Exception;
 
     void rollback() throws SQLException;
+
+
+    public void transaction(Runnable runnable) throws SQLException;
+    public void transaction(Runnable runnable,boolean simulation) throws SQLException;
 }

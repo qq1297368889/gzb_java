@@ -32,7 +32,7 @@ public class GzbJsonImpl implements GzbJson {
     @Override
     public String initJson(Integer code, String msg, String url, Object data, Integer page, Integer size, Integer total) {
         StringBuilder sb=new StringBuilder(50);
-        sb.append("{").append("\"").append(Config.stateName).append("\":\"").append(code).append("\"");
+        sb.append("{\"").append(Config.stateName).append("\":\"").append(code).append("\"");
 
         sb.append(",\"").append(Config.timeName).append("\":\"").append(System.currentTimeMillis()).append("\"");
 
@@ -109,7 +109,7 @@ public class GzbJsonImpl implements GzbJson {
     @Override
     public String response(int code, String msg, String url, Object data) {
         StringBuilder sb=new StringBuilder(50);
-        sb.append("{").append(Config.stateName).append("\":\"").append(code).append("\"")
+        sb.append("{\"").append(Config.stateName).append("\":\"").append(code).append("\"")
                 .append(",\"")
                 .append(Config.timeName).append("\":\"").append(System.currentTimeMillis()).append("\"");
 

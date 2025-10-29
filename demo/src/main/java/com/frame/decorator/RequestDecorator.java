@@ -40,6 +40,14 @@ public class RequestDecorator {
     SysUsersDao sysUsersDao;
     /// 依赖注入规则 和 控制器 一致 所有框架调度方法 都是一样的（线程模型例外，因为他没有 req resp）
 
+    //登陆验证
+    @DecoratorStart(value = "/system/", sort = 2)
+    public RunRes shabi2(Request request, RunRes runRes, GzbJson gzbJson) throws Exception {
+
+        runRes.setState(200);
+        runRes.setData("自定义对象");
+        return runRes;
+    }
     //value 指定拦截的链接 默认为全部拦截 比如  请求链接 /a/b/c/d/e  value=/a/b/c/ 那么会拦截 只要从头开始 包含就会拦截
     //type 指定为 true  只要链接 包含就会拦截 不再只匹配开头
     //turn 指定为 true  原包含匹配 改为不包含匹配

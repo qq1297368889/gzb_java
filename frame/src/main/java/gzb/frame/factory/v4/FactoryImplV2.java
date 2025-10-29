@@ -401,7 +401,8 @@ public class FactoryImplV2 implements Factory {
                 }
             }
             Object obj02 = httpMappings[index].httpMappingFun._gzb_call_x01(httpMappings[index].id, mapObject0, request, response, parar, gzbJson, log, objects);
-            runRes.setData(obj02);
+            runRes.setData(obj02).setState(200);
+
             for (DecoratorEntity decoratorEntity : httpMappings[index].end) {
                 RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, objects);
                 if (runRes1 != null) {
@@ -517,7 +518,7 @@ public class FactoryImplV2 implements Factory {
             gzbTiming.record("装饰器-前");
             Object obj02 = httpMappings[index].httpMappingFun._gzb_call_x01(httpMappings[index].id, mapObject0, request, response, parar, gzbJson, log, objects);
             gzbTiming.record("端点调用");
-            runRes.setData(obj02);
+            runRes.setData(obj02).setState(200);
             for (DecoratorEntity decoratorEntity : httpMappings[index].end) {
                 RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, objects);
                 if (runRes1 != null) {
@@ -634,7 +635,8 @@ public class FactoryImplV2 implements Factory {
                 }
             }
             gzbTiming.record("装饰器-前");
-            runRes.setData(httpMappings[index].httpMappingFun._gzb_call_x01(httpMappings[index].id, mapObject0, request, response, parar, gzbJson, log, objects));
+            runRes.setData(httpMappings[index].httpMappingFun._gzb_call_x01(httpMappings[index].id, mapObject0, request, response, parar, gzbJson, log, objects)).setState(200);
+
             gzbTiming.record("端点调用");
             for (DecoratorEntity decoratorEntity : httpMappings[index].end) {
                 RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, objects);
@@ -877,7 +879,7 @@ public class FactoryImplV2 implements Factory {
                 HttpMapping[] httpMappings = mapHttpMapping.get(path);
                 httpMapping2.path = path;
                 if (httpMappings != null && httpMappings[index] != null) {
-                    if (!httpMappings[index].httpMappingFun.getClass().getName().equals(httpMapping2.httpMappingFun.getClass().getName())) {
+                    if (httpMappings[index]!=null && httpMappings[index].httpMappingFun!=null && !httpMappings[index].httpMappingFun.getClass().getName().equals(httpMapping2.httpMappingFun.getClass().getName())) {
                         log.w("HTTP端点", "异常替换", id,
                                 "由",
                                 httpMappings[index].sign, httpMappings[index].path, met[httpMappings[index].met],

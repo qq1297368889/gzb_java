@@ -162,4 +162,16 @@ public class DateTime {
         this.t += j;
         return this;
     }
+    public static DateTime valueOf(String t, String format) throws ParseException {
+        return new DateTime(t, format);
+    }
+    public static DateTime valueOf(String t) throws ParseException {
+        return new DateTime(t);
+    }
+    public static DateTime parseDateTime(String t, String format) throws ParseException {
+        return new DateTime(t, format);
+    }
+    public static DateTime parseDateTime(String t) throws ParseException {
+        return new DateTime(t);
+    }
 }

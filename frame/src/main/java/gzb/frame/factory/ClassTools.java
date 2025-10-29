@@ -28,9 +28,7 @@ import gzb.entity.FileUploadEntity;
 import gzb.frame.db.DataBase;
 import gzb.frame.netty.entity.Request;
 import gzb.frame.netty.entity.Response;
-import gzb.tools.Config;
-import gzb.tools.FileTools;
-import gzb.tools.Tools;
+import gzb.tools.*;
 import gzb.tools.json.GzbJson;
 import gzb.tools.json.Result;
 import gzb.tools.log.Log;
@@ -97,19 +95,6 @@ public class ClassTools {
     static Map<Class<?>, Object> mapLoadObjectObject = new ConcurrentHashMap<>();
     public static Map<String, Field[]> mapField = new ConcurrentHashMap<>();
 
-    private static final Set<Class<?>> WRAPPER_TYPES = new HashSet<>();
-
-    static {
-        WRAPPER_TYPES.add(Byte.class);
-        WRAPPER_TYPES.add(Short.class);
-        WRAPPER_TYPES.add(Integer.class);
-        WRAPPER_TYPES.add(Long.class);
-        WRAPPER_TYPES.add(Float.class);
-        WRAPPER_TYPES.add(Double.class);
-        WRAPPER_TYPES.add(Boolean.class);
-        WRAPPER_TYPES.add(Character.class);
-    }
-
     static Lock lock = new ReentrantLock();
 
 
@@ -155,17 +140,6 @@ public class ClassTools {
         return toName(type, false);
     }
 
-
-    public static boolean isWrapperOrPrimitive(Class<?> type) {
-        if (type == null) {
-            return false;
-        }
-        if (type == String.class) {
-            return true;
-        }
-
-        return type.isPrimitive() || WRAPPER_TYPES.contains(type);
-    }
 /*
         public static List<String> getParameterNames(Method method) {
             List<String> paramNames = new ArrayList<>();
@@ -682,13 +656,13 @@ public class ClassTools {
         }
     }
 
-    public static SqlTemplate toSaveSql(Object object,gzb.frame.db.DataBase dataBase,boolean reset) {
+    public static SqlTemplate toSaveSql(Object object, gzb.frame.db.DataBase dataBase, boolean reset) {
         GzbEntityInterface gzbEntityInterface = readObject(object.getClass());
         if (gzbEntityInterface == null) {
             return null;
         }
         try {
-            return gzbEntityInterface.toSaveSql(object,dataBase,reset);
+            return gzbEntityInterface.toSaveSql(object, dataBase, reset);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -835,11 +809,18 @@ public class ClassTools {
         if (!Modifier.isPublic(aClass.getModifiers())) {
             return null;
         }
+        if (aClass.getName().contains("gzb.frame") || aClass.getName().contains("gzb.tools")) {
+            return null;
+        }
         int num = 0;
         Field[] fields = aClass.getDeclaredFields();
         String className = aClass.getName();
         String code = "public class " + (className.replaceAll("\\.", "_")) + "_inner implements gzb.frame.factory.GzbEntityInterface{\n";
         for (Field field : fields) {
+            if (field.getType() == byte.class || field.getType() == Byte.class
+                    || field.getType() == byte[].class || field.getType() == Byte[].class) {
+                continue;
+            }
             code += "byte[]_" + field.getName() + "_bytes=new byte[]{";
             byte[] bytes = field.getName().getBytes(Config.encoding);
             for (int i = 0; i < bytes.length; i++) {
@@ -860,6 +841,10 @@ public class ClassTools {
                 "           " + className + " obj0=(" + className + ")object;\n";
 
         for (Field field : fields) {
+            if (field.getType() == byte.class || field.getType() == Byte.class
+                    || field.getType() == byte[].class || field.getType() == Byte[].class) {
+                continue;
+            }
             String name = (field.getName());
             String name_d = Tools.lowStr_d(field.getName());
         /*    if (!ClassTools.isWrapperOrPrimitive(field.getType())) {
@@ -984,6 +969,10 @@ public class ClassTools {
                 "           " + className + " obj0=(" + className + ")object;\n";
 
         for (Field field : fields) {
+            if (field.getType() == byte.class || field.getType() == Byte.class
+                    || field.getType() == byte[].class || field.getType() == Byte[].class) {
+                continue;
+            }
             String name = (field.getName());
             String name_d = Tools.lowStr_d(field.getName());
             if (Modifier.isFinal(field.getModifiers())) {
@@ -1012,7 +1001,6 @@ public class ClassTools {
             }
 
             if (Modifier.isPublic(field.getModifiers())) {
-
                 if (type == 0) {
                     code += (field.getType().isPrimitive() ? "" : "           if (obj0." + name + "!=null) {\n") +
                             "               sb.append(\"\\\"" + name + "\\\":\").append(gzb.tools.Tools.toJson(obj0." + name + ")).append(\",\");\n" +
@@ -1071,6 +1059,10 @@ public class ClassTools {
                 "           " + className + " obj0=(" + className + ")object;\n";
 
         for (Field field : fields) {
+            if (field.getType() == byte.class || field.getType() == Byte.class
+                    || field.getType() == byte[].class || field.getType() == Byte[].class) {
+                continue;
+            }
             String name = (field.getName());
             String name_d = Tools.lowStr_d(field.getName());
             if (Modifier.isFinal(field.getModifiers())) {
@@ -1182,13 +1174,20 @@ public class ClassTools {
                     "        java.util.List<Object> list = null;\n" +
                     "        try {\n";
             for (Field field : fields) {
-                if (!ClassTools.isWrapperOrPrimitive(field.getType())) {
+                if (field.getType() == byte.class || field.getType() == Byte.class
+                        || field.getType() == byte[].class || field.getType() == Byte[].class) {
+                    continue;
+                }
+                if (field.getType().isArray()) {
+                    continue;
+                }
+                if (!ClassTools.isBasicTypes(field.getType())) {
                     continue;
                 }
                 if (Modifier.isFinal(field.getModifiers())) {
                     continue;
                 }
-                String tName = ClassTools.toName(field.getType());
+                String tName = ClassTools.toName(field.getType(),true);
                 if (Modifier.isPublic(field.getModifiers())) {
                     code += "            list = map.get(\"" + field.getName() + "\");\n" +
                             "            if (list!=null) {\n" +
@@ -1196,15 +1195,24 @@ public class ClassTools {
                             "                    returnObj=new java.util.ArrayList<>(list.size());\n" +
                             "                }\n" +
                             "                for (int i = 0; i < list.size(); i++) {\n" +
-                            "                    if(list.get(i)==null || list.get(i).toString().length()==0 || " +
-                            "list.get(0).equals(\"undefined\")){\n" +
+                            "                    if(list.get(i)==null || list.get(i).toString().length()==0 || list.get(0).equals(\"undefined\")){\n" +
                             "                        continue;" +
                             "                    }\n" +
                             "                    if (i>returnObj.size()-1) {\n" +
                             "                        returnObj.add(new " + className + "());\n" +
                             "                    }\n";
-                    code += "                    returnObj.get(i)." + field.getName() + "=" + tName + ".valueOf(list.get(i).toString());\n" +
-                            "                }\n" +
+                    if (field.getType() == java.time.LocalDateTime.class) {
+                        code += "                    returnObj.get(i)." + field.getName() + "=new gzb.tools.DateTime(list.get(i).toString()).toLocalDateTime();\n";
+                    } else if (field.getType() == java.sql.Timestamp.class) {
+                        code += "                    returnObj.get(i)." + field.getName() + "=new gzb.tools.DateTime(list.get(i).toString()).toTimestamp();\n";
+                    } else if (field.getType() == DateTime.class) {
+                        code += "                    returnObj.get(i)." + field.getName() + "=new gzb.tools.DateTime(list.get(i).toString());\n";
+                    } else if (field.getType() == Date.class) {
+                        code += "                    returnObj.get(i)." + field.getName() + "=new gzb.tools.DateTime(list.get(i).toString()).toDate();\n";
+                    } else {
+                        code += "                    returnObj.get(i)." + field.getName() + "=" + tName + ".valueOf(list.get(i).toString());\n";
+                    }
+                    code += "                }\n" +
                             "            }\n";
 
                     num++;
@@ -1224,8 +1232,18 @@ public class ClassTools {
                                 "                    if (i>returnObj.size()-1) {\n" +
                                 "                        returnObj.add(new " + className + "());\n" +
                                 "                    }\n";
-                        code += "                    returnObj.get(i).set" + name_d + "(" + tName + ".valueOf(list.get(i).toString()));\n" +
-                                "                }\n" +
+                        if (field.getType() == java.time.LocalDateTime.class) {
+                            code += "                    returnObj.get(i).set" + name_d + "(new gzb.tools.DateTime(list.get(i).toString()).toLocalDateTime());\n";
+                        } else if (field.getType() == java.util.Date.class) {
+                            code += "                    returnObj.get(i).set" + name_d + "(new gzb.tools.DateTime(list.get(i).toString()).toDate());\n";
+                        } else if (field.getType() == java.sql.Timestamp.class) {
+                            code += "                    returnObj.get(i).set" + name_d + "(new gzb.tools.DateTime(list.get(i).toString()).toTimestamp());\n";
+                        } else if (field.getType() == DateTime.class) {
+                            code += "                    returnObj.get(i).set" + name_d + "(new gzb.tools.DateTime(list.get(i).toString()));\n";
+                        } else {
+                            code += "                    returnObj.get(i).set" + name_d + "(" + tName + ".valueOf(list.get(i).toString()));\n";
+                        }
+                        code += "                }\n" +
                                 "            }\n";
                         num++;
                     } catch (Exception e) {
@@ -1251,38 +1269,42 @@ public class ClassTools {
         if (classAttribute != null) {
             try {
                 aClass.getDeclaredConstructor();
-                code +="        " + className + " obj = new " + className + "();\n";
+                code += "        " + className + " obj = new " + className + "();\n";
                 for (Field field : fields) {
-                        EntityAttribute fieldAttribute = field.getAnnotation(EntityAttribute.class);
-                        if (fieldAttribute == null) {
-                            continue;
-                        }
-                        String name = (field.getName());
-                        String name_d = Tools.lowStr_d(field.getName());
-                        if (Modifier.isPublic(field.getModifiers())) {
+                    if (field.getType() == byte.class || field.getType() == Byte.class
+                            || field.getType() == byte[].class || field.getType() == Byte[].class) {
+                        continue;
+                    }
+                    EntityAttribute fieldAttribute = field.getAnnotation(EntityAttribute.class);
+                    if (fieldAttribute == null) {
+                        continue;
+                    }
+                    String name = (field.getName());
+                    String name_d = Tools.lowStr_d(field.getName());
+                    if (Modifier.isPublic(field.getModifiers())) {
+                        num++;
+                        code += "        if (names.contains(\"" + fieldAttribute.name() + "\")) {\n" +
+                                "            obj." + name + " = resultSet.getObject(\"" + fieldAttribute.name() + "\"," + field.getType().getName() + ".class);\n" +
+                                "        }\n";
+
+                    } else {
+                        try {
+                            aClass.getMethod("set" + name_d, field.getType());
+                            code += "        if (names.contains(\"" + fieldAttribute.name() + "\")) {\n";
+                            code += "            obj.set" + name_d + "(resultSet.getObject(\"" + fieldAttribute.name() + "\"," + field.getType().getName() + ".class));\n";
+                            code += "        }\n";
+
                             num++;
-                            code += "        if (names.contains(\"" + fieldAttribute.name() + "\")) {\n" +
-                                    "            obj." + name + " = resultSet.getObject(\"" + fieldAttribute.name() + "\"," + field.getType().getName() + ".class);\n" +
-                                    "        }\n";
-
-                        } else {
-                            try {
-                                aClass.getMethod("set" + name_d, field.getType());
-                                code += "        if (names.contains(\"" + fieldAttribute.name() + "\")) {\n";
-                                code += "            obj.set" + name_d + "(resultSet.getObject(\"" + fieldAttribute.name() + "\"," + field.getType().getName() + ".class));\n";
-                                code += "        }\n";
-
-                                num++;
-                            } catch (Exception e) {
-                                //e.printStackTrace();
-                            }
+                        } catch (Exception e) {
+                            //e.printStackTrace();
                         }
                     }
+                }
             } catch (Exception e) {
-                code +="        " + className + " obj = null;\n";
+                code += "        " + className + " obj = null;\n";
             }
-        }else{
-            code +="        " + className + " obj = null;\n";
+        } else {
+            code += "        " + className + " obj = null;\n";
         }
         code += "        return obj;\n" +
                 "    }\n";
@@ -1294,6 +1316,10 @@ public class ClassTools {
                     "        StringBuilder stringBuilder = new StringBuilder();\n" +
                     "        java.util.List<Object> params = new java.util.ArrayList<>();\n";
             for (Field field : fields) {
+                if (field.getType() == byte.class || field.getType() == Byte.class
+                        || field.getType() == byte[].class || field.getType() == Byte[].class) {
+                    continue;
+                }
                 EntityAttribute fieldAttribute = field.getAnnotation(EntityAttribute.class);
                 if (fieldAttribute == null) {
                     continue;
@@ -1316,6 +1342,10 @@ public class ClassTools {
                         "        }\n";
             }
             for (Field field : fields) {
+                if (field.getType() == byte.class || field.getType() == Byte.class
+                        || field.getType() == byte[].class || field.getType() == Byte[].class) {
+                    continue;
+                }
                 EntityAttribute fieldAttribute = field.getAnnotation(EntityAttribute.class);
                 if (fieldAttribute == null) {
                     continue;
@@ -1355,6 +1385,10 @@ public class ClassTools {
             String ids1 = "";
             String ids2 = "";
             for (Field field : fields) {
+                if (field.getType() == byte.class || field.getType() == Byte.class
+                        || field.getType() == byte[].class || field.getType() == Byte[].class) {
+                    continue;
+                }
                 EntityAttribute fieldAttribute = field.getAnnotation(EntityAttribute.class);
                 if (fieldAttribute == null) {
                     continue;
@@ -1384,6 +1418,10 @@ public class ClassTools {
                     "        StringBuilder stringBuilder = new StringBuilder();\n" +
                     "        java.util.List<Object> params = new java.util.ArrayList<>();\n";
             for (Field field : fields) {
+                if (field.getType() == byte.class || field.getType() == Byte.class
+                        || field.getType() == byte[].class || field.getType() == Byte[].class) {
+                    continue;
+                }
                 EntityAttribute fieldAttribute = field.getAnnotation(EntityAttribute.class);
                 if (fieldAttribute == null) {
                     continue;
@@ -1423,6 +1461,10 @@ public class ClassTools {
                     "        StringBuilder values = new StringBuilder();\n" +
                     "        java.util.List<Object> params = new java.util.ArrayList<>();\n";
             for (Field field : fields) {
+                if (field.getType() == byte.class || field.getType() == Byte.class
+                        || field.getType() == byte[].class || field.getType() == Byte[].class) {
+                    continue;
+                }
                 EntityAttribute fieldAttribute = field.getAnnotation(EntityAttribute.class);
                 if (fieldAttribute == null) {
                     continue;
@@ -1438,13 +1480,13 @@ public class ClassTools {
                 }
                 if (key) {
                     //dataBase.getOnlyIdNumber(classAttribute.name(),fieldAttribute.name())
-                    if (field.getType() == Integer.class ||  field.getType() ==int.class) {
+                    if (field.getType() == Integer.class || field.getType() == int.class) {
                         code += "        if (obj.get" + c_h_d_name + "()==null || reset) {\n" +
-                                "            obj.set" + c_h_d_name + "(dataBase.getOnlyIdNumber(\""+classAttribute.name()+"\",\""+fieldAttribute.name()+"\",reset));\n" +
+                                "            obj.set" + c_h_d_name + "(dataBase.getOnlyIdNumber(\"" + classAttribute.name() + "\",\"" + fieldAttribute.name() + "\",reset));\n" +
                                 "        }\n";
 
                     }
-                    if (field.getType() == Long.class ||  field.getType() ==long.class) {
+                    if (field.getType() == Long.class || field.getType() == long.class) {
                         code += "        if (obj.get" + c_h_d_name + "()==null) {\n" +
                                 "            obj.set" + c_h_d_name + "(dataBase.getOnlyIdDistributed());\n" +
                                 "        }\n";
@@ -1460,6 +1502,10 @@ public class ClassTools {
             }
 
             for (Field field : fields) {
+                if (field.getType() == byte.class || field.getType() == Byte.class
+                        || field.getType() == byte[].class || field.getType() == Byte[].class) {
+                    continue;
+                }
                 EntityAttribute fieldAttribute = field.getAnnotation(EntityAttribute.class);
                 if (fieldAttribute == null) {
                     continue;
@@ -1500,6 +1546,10 @@ public class ClassTools {
                     "        StringBuilder stringBuilder = new StringBuilder();\n" +
                     "        java.util.List<Object> params = new java.util.ArrayList<>();\n";
             for (Field field : fields) {
+                if (field.getType() == byte.class || field.getType() == Byte.class
+                        || field.getType() == byte[].class || field.getType() == Byte[].class) {
+                    continue;
+                }
                 EntityAttribute fieldAttribute = field.getAnnotation(EntityAttribute.class);
                 if (fieldAttribute == null) {
                     continue;
@@ -1522,6 +1572,10 @@ public class ClassTools {
             }
 
             for (Field field : fields) {
+                if (field.getType() == byte.class || field.getType() == Byte.class
+                        || field.getType() == byte[].class || field.getType() == Byte[].class) {
+                    continue;
+                }
                 EntityAttribute fieldAttribute = field.getAnnotation(EntityAttribute.class);
                 if (fieldAttribute == null) {
                     continue;
@@ -1560,6 +1614,29 @@ public class ClassTools {
         }
         //System.out.println(code);
         return code;
+    }
+
+    public static boolean isBasicTypes(Class<?> aClass) {
+        if (aClass == null) {
+            return false;
+        }
+        if (aClass.isArray()) {
+            aClass = aClass.getComponentType();
+        }
+
+        return aClass == String.class
+                || aClass == int.class || aClass == Integer.class
+                || aClass == long.class || aClass == Long.class
+                || aClass == short.class || aClass == Short.class
+                || aClass == byte.class || aClass == Byte.class
+                || aClass == boolean.class || aClass == Boolean.class
+                || aClass == float.class || aClass == Float.class
+                || aClass == double.class || aClass == Double.class
+                || aClass == char.class || aClass == Character.class
+                || aClass == Date.class
+                || aClass == LocalDateTime.class
+                || aClass == DateTime.class
+                || aClass == Timestamp.class;
     }
 
     //可维护性堪忧 不过应该不需要维护其实
@@ -1680,28 +1757,7 @@ public class ClassTools {
                 } else if (typeName.startsWith("java.util.Map")) {
 
                 } else {
-                    boolean res01 = types[i1] != Boolean.class &&
-                            types[i1] != Byte.class &&
-                            types[i1] != Short.class &&
-                            types[i1] != Integer.class &&
-                            types[i1] != Long.class &&
-                            types[i1] != Float.class &&
-                            types[i1] != Double.class &&
-                            types[i1] != Character.class &&
-                            types[i1] != String.class
-                            && !types[i1].isPrimitive();
-                    if (types[i1].getComponentType() != null) {
-                        res01 = types[i1].getComponentType() != Boolean.class
-                                && types[i1].getComponentType() != Byte.class
-                                && types[i1].getComponentType() != Short.class
-                                && types[i1].getComponentType() != Integer.class
-                                && types[i1].getComponentType() != Long.class
-                                && types[i1].getComponentType() != Float.class
-                                && types[i1].getComponentType() != Double.class
-                                && types[i1].getComponentType() != Character.class
-                                && types[i1].getComponentType() != String.class
-                                && !types[i1].getComponentType().isPrimitive();
-                    }
+                    boolean res01 = !isBasicTypes(types[i1]);
                     if (res01) {
                         code += "                if (_c_u_" + names[i1] + "==null && " + types[i1].getCanonicalName() + ".class.isAssignableFrom(object.getClass())) {\n" +
                                 "                    _c_u_" + names[i1] + "=(" + types[i1].getCanonicalName() + ") object;\n" +
@@ -1719,32 +1775,10 @@ public class ClassTools {
                 } else if (typeName.startsWith("gzb.frame.netty.entity.Response")) {
                 } else if (typeName.startsWith("java.util.Map")) {
                 } else {
-                    boolean res01 = types[i1] != Boolean.class &&
-                            types[i1] != Byte.class &&
-                            types[i1] != Short.class &&
-                            types[i1] != Integer.class &&
-                            types[i1] != Long.class &&
-                            types[i1] != Float.class &&
-                            types[i1] != Double.class &&
-                            types[i1] != Character.class &&
-                            types[i1] != String.class
-                            && !types[i1].isPrimitive();
-                    if (types[i1].getComponentType() != null) {
-                        res01 = types[i1].getComponentType() != Boolean.class
-                                && types[i1].getComponentType() != Byte.class
-                                && types[i1].getComponentType() != Short.class
-                                && types[i1].getComponentType() != Integer.class
-                                && types[i1].getComponentType() != Long.class
-                                && types[i1].getComponentType() != Float.class
-                                && types[i1].getComponentType() != Double.class
-                                && types[i1].getComponentType() != Character.class
-                                && types[i1].getComponentType() != String.class
-                                && !types[i1].getComponentType().isPrimitive();
-                    }
-
+                    boolean res01 = !isBasicTypes(types[i1]);
                     code += "                if (_c_u_" + names[i1] + "==null) {\n";
 
-
+                    //System.out.println(aClass.getName() + " " + res01 + " " + types[i1].getName());
                     if (res01) {
                         //尝试注入 service 等注解对象
                         code += "                //复杂对象\n" +
@@ -1794,7 +1828,13 @@ public class ClassTools {
                                 "                t_map_list = _gzb_one_c_requestMap.get(\"" + names[i1] + "\");";
                         if (types[i1].isArray()) {
                             String funName = "parse";
-                            if (types[i1].getComponentType().getSimpleName().contains("String")) {
+                            if (types[i1] == String[].class) {
+                                funName = "valueOf";
+                            } else if (types[i1] == LocalDateTime[].class) {
+                                funName = "valueOf";
+                            } else if (types[i1] == Timestamp[].class) {
+                                funName = "valueOf";
+                            } else if (types[i1] == Date[].class) {
                                 funName = "valueOf";
                             } else {
                                 funName += ClassTools.toName(types[i1], true);
@@ -1809,10 +1849,22 @@ public class ClassTools {
                                     "                    if(t_map_list.get(i)==null){\n" +
                                     "                       continue;\n" +
                                     "                    }\n" +
-                                    "                    _c_u_" + names[i1] + "[i] = " +
-                                    ClassTools.toName(types[i1].getComponentType()) + "." + funName +
-                                    "(" + ("t_map_list.get(i) instanceof String ? (String) t_map_list.get(i) : t_map_list.get(i).toString()") + ");\n" +
-                                    "                }\n" +
+                                    "                    _c_u_" + names[i1] + "[i] = ";
+                            if (types[i1] == LocalDateTime[].class) {
+                                code += "new gzb.tools.DateTime(t_map_list.get(i).toString()).toLocalDateTime();\n";
+                            } else if (types[i1] == Date[].class) {
+                                code += "new gzb.tools.DateTime(t_map_list.get(i).toString()).toDate();\n";
+                            } else if (types[i1] == Timestamp[].class) {
+                                code += "new gzb.tools.DateTime(t_map_list.get(i).toString()).toTimestamp();\n";
+                            } else if (types[i1] == DateTime[].class) {
+                                code += "new gzb.tools.DateTime(t_map_list.get(i).toString());\n";
+                            } else {
+                                code += ClassTools.toName(types[i1].getComponentType()) + "." + funName +
+                                        "(" + ("t_map_list.get(i) instanceof String ? (String) t_map_list.get(i) : t_map_list.get(i).toString()") + ");\n";
+                            }
+
+
+                            code += "                }\n" +
                                     "            }\n";
                         } else {
                             String funName = "parse";
@@ -1825,10 +1877,23 @@ public class ClassTools {
                             }
                             code += "            //如果不是数组 则这样输出\n" +
                                     "            if (t_map_list != null && t_map_list.size() > 0 && t_map_list.get(0)!=null){\n" +
-                                    "                _c_u_" + names[i1] + " = " +
-                                    ClassTools.toName(types[i1]) + "." + funName +
-                                    "(" + ("t_map_list.get(0) instanceof String ? (String) t_map_list.get(0) : t_map_list.get(0).toString()") + ");\n" +
-                                    "            }\n";
+                                    "                _c_u_" + names[i1] + " = ";
+                            if (types[i1] == LocalDateTime.class) {
+                                code += "new gzb.tools.DateTime(t_map_list.get(0).toString()).toLocalDateTime();\n";
+                            } else if (types[i1] == Date.class) {
+                                code += "new gzb.tools.DateTime(t_map_list.get(0).toString()).toDate();\n";
+                            } else if (types[i1] == Timestamp.class) {
+                                code += "new gzb.tools.DateTime(t_map_list.get(0).toString()).toTimestamp();\n";
+                            }  else if (types[i1] == DateTime.class) {
+                                code += "new gzb.tools.DateTime(t_map_list.get(0).toString());\n";
+                            } else {
+                                code += ClassTools.toName(types[i1]) + "." + funName +
+                                        "(" + ("t_map_list.get(0) instanceof String ? (String) t_map_list.get(0) : t_map_list.get(0).toString()") + ");\n";
+                            }
+
+
+                            code += "            }\n";
+
                             //这里可能存在特殊情况 基本数据类型 如果存在基本数据类型 且为null 直接提示某个参数不能为空
                             if (types[i1].isPrimitive()) {
                                 code += "                                if (_c_u_" + names[i1] + " == null){\n" +
@@ -2772,13 +2837,13 @@ public class ClassTools {
                 continue;
             }
             map.put(anInterface.getName(), object);
-            log.t("储存对象",anInterface.getName(), object.toString());
+            log.t("储存对象", anInterface.getName(), object.toString());
         }
         map.put(clazz.getName(), object);
-        log.t("储存对象",clazz.getName(), object.toString());
+        log.t("储存对象", clazz.getName(), object.toString());
         if (name != null && !name.isEmpty()) {
             map.put(name, object);
-            log.t("储存对象",name, object.toString());
+            log.t("储存对象", name, object.toString());
         }
         return object;
     }

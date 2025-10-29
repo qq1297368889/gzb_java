@@ -179,7 +179,7 @@ public class ClassLoadV1 {
             StringBuilder errorMessage = new StringBuilder();
             diagnostics.getDiagnostics().forEach(
                     d -> errorMessage.append(d.getMessage(null)).append("\n"));
-            throw new Exception("批量编译失败：" + "\r\n" + errorMessage);
+            throw new Exception("批量编译失败：" + "\r\n" + errorMessage+sourcesMap);
         }
 
         // 6. 加载所有编译成功的类

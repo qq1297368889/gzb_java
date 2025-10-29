@@ -1,14 +1,18 @@
 package com.frame.api;
 
 import com.frame.dao.SysFileDao;
+import com.frame.dao.SysPermissionDao;
 import com.frame.dao.SysUsersDao;
 import com.frame.entity.SysFile;
+import com.frame.entity.SysPermission;
 import com.frame.entity.SysUsers;
 import gzb.entity.FileUploadEntity;
 import gzb.exception.GzbException0;
 import gzb.frame.DDOS;
 import gzb.frame.annotation.*;
+import gzb.frame.factory.GzbOneInterface;
 import gzb.tools.Config;
+import gzb.tools.DateTime;
 import gzb.tools.Tools;
 import gzb.tools.http.HTTPV2;
 import gzb.tools.http.HTTP_V3;
@@ -18,17 +22,16 @@ import gzb.tools.log.Log;
 import gzb.tools.log.LogImpl;
 
 import java.io.File;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+/// 功能测试  依赖注入web解析  文件上传  dao功能   事务处理
 @Controller
 @RequestMapping("test/api")
 public class TestApi {
@@ -47,53 +50,112 @@ public class TestApi {
         Map<String, List<File>> files = new HashMap<>();
         files.put("file", list1);
         files.put("files", list2);
-        for (int i = 0; i < 0; i++) {
+        for (int i = 0; i < 1; i++) {
             httpV3.request("http://127.0.0.1:2080/test/api/post1", "POST", "", null, null, 10000L);
-            System.out.println(httpV3.asString());
+            System.out.println("post 1 " + httpV3.asString());
             httpV3.request("http://127.0.0.1:2080/test/api/post2", "POST", "", null, null, 10000L);
-            System.out.println(httpV3.asString());
+            System.out.println("post 2 " + httpV3.asString());
             httpV3.request("http://127.0.0.1:2080/test/api/post3", "POST", "", null, null, 10000L);
-            System.out.println(httpV3.asString());
+            System.out.println("post 3 " + httpV3.asString());
             httpV3.request("http://127.0.0.1:2080/test/api/post4", "POST", "", null, null, 10000L);
-            System.out.println(httpV3.asString());
+            System.out.println("post 4 " + httpV3.asString());
 
         }
         httpV3.request("http://127.0.0.1:2080/test/api/post", "POST", postData, null, files, 10000L);
         System.out.println(httpV3.asString());
+
+
+        httpV3.request("http://127.0.0.1:2080/test/api/get3?" +
+                        "localDateTime=2020-01-01%2001:01:01" +
+                        "&localDateTimes=2020-01-01%2001:01:01" +
+                        "&timestamp=2020-01-01%2001:01:01" +
+                        "&timestamps=2020-01-01%2001:01:01" +
+                        "&dateTime=2020-01-01%2001:01:01" +
+                        "&dateTimes=2020-01-01%2001:01:01" +
+                        "&date=2020-01-01%2001:01:01" +
+                        "&dates=2020-01-01%2001:01:01"
+                , "GET", "", null, null, 10000L);
+        System.out.println("get 3 " + httpV3.asString());
+
+        httpV3.request("http://127.0.0.1:2080/test/api/get2?" +
+                        "localDateTime=2020-01-01%2001:01:01" +
+                        "&localDateTimes=2020-01-01%2001:01:01" +
+                        "&timestamp=2020-01-01%2001:01:01" +
+                        "&timestamps=2020-01-01%2001:01:01" +
+                        "&dateTime=2020-01-01%2001:01:01" +
+                        "&dateTimes=2020-01-01%2001:01:01" +
+                        "&date=2020-01-01%2001:01:01" +
+                        "&dates=2020-01-01%2001:01:01"
+                , "GET", "", null, null, 10000L);
+        System.out.println("get 2 " + httpV3.asString());
+
     }
+
+
+    @Resource
+    SysPermissionDao sysPermissionDao;
 
     @GetMapping("get1")
     public Object get1(String msg, GzbJson gzbJson) throws Exception {
         return gzbJson.success(msg);
     }
 
+    public Object testApi(SysFileDao sysFileDao, SysFile[] files, SysUsers sysUsers, GzbJson gzbJson) throws Exception {
+        if (sysUsers.getSysUsersStatus() < 1) {
+            return gzbJson.fail("登陆失效");
+        }
+        if (files == null) {
+            return gzbJson.fail("对象传递失败");
+        }
+        for (SysFile file : files) {
+            sysFileDao.saveAsync(file);
+        }
+        return gzbJson.success("OK");
+    }
+
+    //http://127.0.0.1:2080/test/api/get3?localDateTime=2020-01-01%2001:01:01&localDateTimes=2020-01-01%2001:01:01&timestamp=2020-01-01%2001:01:01&timestamps=2020-01-01%2001:01:01&dateTime=2020-01-01%2001:01:01&dateTimes=2020-01-01%2001:01:01
+    @GetMapping("get3")
+    public Object get3(Log log, GzbJson gzbJson
+            , LocalDateTime localDateTime, LocalDateTime[] localDateTimes
+            , Timestamp timestamp, Timestamp[] timestamps
+            , Date date, Date[] dates
+            , DateTime dateTime, DateTime[] dateTimes) throws Exception {
+        return gzbJson.success("OK", new Object[]{localDateTime, localDateTimes, timestamp, timestamps, dateTime, dateTimes, date, dates});
+    }
+
+    @GetMapping("get2")
+    public Object get2(TestEntity testEntity, Log log, GzbJson gzbJson) throws Exception {
+        return gzbJson.success("OK", testEntity);
+    }
+
     @Transaction(simulate = false)
     @PostMapping("post1")
     public Object post1(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
-        sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x"));
+        sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x-1"));
         throw new GzbException0("抛出错误");
     }
 
     @Transaction(simulate = false)
     @PostMapping("post2")
     public Object post2(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
-        sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x"));
+        sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x-2"));
         return gzbJson.success("成功");
     }
 
     @Transaction(simulate = true)
     @PostMapping("post3")
     public Object post3(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
-        sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x"));
+        sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x-3"));
         throw new GzbException0("抛出错误");
     }
 
     @Transaction(simulate = true)
     @PostMapping("post4")
     public Object post4(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
-        sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x"));
+        sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x-4"));
         return gzbJson.success("成功");
     }
+
 
     @PostMapping("post")
     public Object testApi(
@@ -293,6 +355,8 @@ public class TestApi {
 
     public TestApi() {
 
-        System.out.println("------TestApi-----------");
+        System.out.println("------TestApi 创建对象-----------");
     }
+
+
 }

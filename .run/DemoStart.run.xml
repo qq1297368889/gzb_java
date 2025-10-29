@@ -1,0 +1,17 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="DemoStart" type="Application" factoryName="Application" nameIsGenerated="true">
+    <option name="MAIN_CLASS_NAME" value="gzb.start.DemoStart" />
+    <module name="demo" />
+    <projectPathOnTarget name="projectPathOnTarget" value="{exitCode=0, timeout=false, cancelled=false, stdout=/tmp/tmp.s5mFb6uYZt , stderr=}/250913_code" />
+    <target name="@@@LOCAL@@@" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="gzb.start.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
