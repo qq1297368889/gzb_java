@@ -7,11 +7,12 @@ import gzb.tools.log.LogImpl;
 
 import java.lang.management.ThreadMXBean;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class test21 {
     public static void main(String[] args) throws Exception {
         Log log =new LogImpl();
-
+System.out.println(LocalDateTime.now());
     }
 }

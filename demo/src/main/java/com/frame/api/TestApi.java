@@ -156,6 +156,18 @@ public class TestApi {
         return gzbJson.success("成功");
     }
 
+    @PostMapping("test")
+    public Object test(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
+        SysUsers sysUsers = new SysUsers().setSysUsersAcc("123456");
+        sysUsersDao.saveAsync(sysUsers, new Runnable() {
+            @Override
+            public void run() {
+                //这里有完整上下文信息 因为开发者可以自由引用当前可访问区域的内容 可以进行补偿操作
+                log.d("执行失败，回调触发", sysUsers);
+            }
+        });
+        return gzbJson.success("OK");
+    }
 
     @PostMapping("post")
     public Object testApi(
@@ -290,7 +302,7 @@ public class TestApi {
         sysUsersDao.saveAsync(sysUsers, new Runnable() {
             @Override
             public void run() {
-                log.d("保存回调完成");
+                log.d("执行失败，回调", sysUsers);//这里有完整上下文信息 因为这是开发者可以自由引用当前可访问区域的内容 可以进行补偿操作
                 semaphore.release();
             }
         });

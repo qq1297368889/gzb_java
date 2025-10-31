@@ -19,6 +19,12 @@
 package gzb.tools.log;
 
 public interface Log {
+    public static Log create(){
+        return new LogImpl();
+    }
+    public static Log create(Class<?>clazz){
+        return new LogImpl(clazz);
+    }
     public static Log log = new LogImpl();
 
     public void print(int index, Object... log);

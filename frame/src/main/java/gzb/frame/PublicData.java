@@ -20,8 +20,8 @@ import java.util.Map;
 
 public class PublicData {
     //这个不用担心泄露 泄露也没关系 省的下次 == null  用于数据库事件
-    public static final FastThreadLocal<Object[]> context = new FastThreadLocal<>();
-    public static final FastThreadLocal<Integer> depth = new FastThreadLocal<>();
+    public static final ThreadLocal<Object[]> context = new ThreadLocal<>();
+    public static final ThreadLocal<Integer> depth = new ThreadLocal<>();
 
     public static final ThreadLocal<String> open_transaction_key = new ThreadLocal<>();
 

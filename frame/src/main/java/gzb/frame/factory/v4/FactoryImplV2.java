@@ -28,7 +28,10 @@ import gzb.entity.ClassEntity;
 import gzb.entity.DecoratorEntity;
 import gzb.entity.HttpMapping;
 import gzb.entity.ThreadEntity;
+import gzb.frame.netty.HTTPRequestHandlerV4;
+import gzb.frame.netty.NettyServer;
 import gzb.frame.netty.entity.Request;
+import gzb.frame.netty.entity.RequestDefaultImpl;
 import gzb.frame.netty.entity.Response;
 import gzb.entity.RunRes;
 import gzb.tools.*;
@@ -38,6 +41,10 @@ import gzb.tools.json.GzbJson;
 import gzb.tools.json.GzbJsonImpl;
 import gzb.tools.json.ResultImpl;
 import gzb.tools.log.Log;
+import gzb.tools.thread.ThreadPool;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.*;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -72,7 +79,7 @@ public class FactoryImplV2 implements Factory {
             return gzbNodeMap.get((String)key);
         }
     };*/
-    public  Map<String, HttpMapping[]> mapHttpMapping0 = new ConcurrentHashMap<String, HttpMapping[]>();
+    public Map<String, HttpMapping[]> mapHttpMapping0 = new ConcurrentHashMap<String, HttpMapping[]>();
     public Map<String, Object> mapObject0 = new ConcurrentHashMap<>();
     List<DecoratorEntity> listDecoratorEntity = new ArrayList<>();
     public Map<String, Map<String, String>> mapHttpMappingOld0 = new ConcurrentHashMap<>();
@@ -325,7 +332,174 @@ public class FactoryImplV2 implements Factory {
         return mapObject0;
     }
 
-    public RunRes request0(Request request, Response response) {
+    public static final byte[] _fail_json = ("{\"" + Config.stateName + "\":\"2\",\"" + Config.messageName + "\":\"server busy / 服务器 繁忙\"}").getBytes(Config.encoding);
+    public static final byte[] _err_json = ("{\"" + Config.stateName + "\":\"2\",\"" + Config.messageName + "\":\"server error / 服务器 异常\"}").getBytes(Config.encoding);
+    public static final byte[] _err_404 = ("{\"" + Config.stateName + "\":\"2\",\"" + Config.messageName + "\":\"server the resource does not exist / 服务器 资源不存在\"}").getBytes(Config.encoding);
+
+    public long send(ChannelHandlerContext ctx, byte[] msg) {
+        FullHttpResponse response = new DefaultFullHttpResponse(
+                HttpVersion.HTTP_1_1,
+                HttpResponseStatus.OK,
+                Unpooled.wrappedBuffer(msg));
+        response.headers().set("content-length", msg.length);
+        ctx.writeAndFlush(response);
+        return System.nanoTime();
+    }
+
+    public static final ThreadPool THREAD_POOL = new ThreadPool(Config.bizThreadNum, Config.bizAwaitNum);
+
+    //返回 404 需要寻找静态资源
+    public void start(ChannelHandlerContext ctx, FullHttpRequest req) {
+
+        long[] times = new long[]{0, 0, 0, 0};
+        times[0] = System.nanoTime();
+        Request request = new RequestDefaultImpl(ctx, req);
+        Response response = request.getResponse();
+        String metName = request.getMethod();
+        String key = request.getUri();
+        times[1] = System.nanoTime();
+        HttpMapping[] httpMappings = mapHttpMapping0.get(key);
+        if (httpMappings == null) {
+            NettyServer.HTTPStaticFileHandler.channelRead0(ctx, req);
+            return;
+        }
+        int index = -1;
+        for (int i = 0; i < met.length; i++) {
+            if (metName.equals(met[i])) {
+                if (httpMappings[i] == null) {
+                    NettyServer.HTTPStaticFileHandler.channelRead0(ctx, req);
+                    return;
+                }
+                index = i;
+                break;
+            }
+        }
+        if (index == -1) {
+            send(ctx, _err_404);
+            return;
+        }
+        HttpMapping httpMapping = httpMappings[index];
+        //同步会在事件循环线程执行
+        if (httpMapping.async) {
+            if (!THREAD_POOL.execute(() -> {
+                times[2] = exec(httpMapping, ctx, req, request, response);
+                debug(times, "异步");
+            })) {
+                times[2] = send(ctx, _fail_json);
+                debug(times, "繁忙");
+            }
+        } else {
+            times[2] = exec(httpMapping, ctx, req, request, response);
+            debug(times, "同步");
+        }
+    }
+    public void debug(long[] times, String title) {
+
+    }
+    public void debug0(long[] times, String title) {
+        long t01 = (times[2] - times[1]);
+        long t02 = (times[1] - times[0]);
+        long t03 = (times[2] - times[0]);
+        AtomicInteger atomicInteger = HTTPRequestHandlerV4.reqInfo.computeIfAbsent(t03 / 1000, k -> new AtomicInteger());
+        atomicInteger.addAndGet(1);
+        log.t(title, "总耗时", t03, "netty数据获取", t02, "框架执行", t01);
+    }
+
+    public long exec(HttpMapping httpMapping, ChannelHandlerContext ctx, FullHttpRequest req, Request request, Response response) {
+        try {
+            long time;
+            if (httpMapping.header.size() > 0) {
+                response.setHeaders(new HashMap<>(httpMapping.header));
+            }
+            if (httpMapping.isCrossDomainOrigin) {
+                String host = request.getOrigin();
+                if (host == null) {
+                    host = request.getDomain();
+                }
+                response.setHeader("access-control-allow-origin", host);
+            }
+            if (httpMapping.semaphore != null && !httpMapping.semaphore.tryAcquire()) {
+                send(ctx, _fail_json);
+                return System.nanoTime();
+            }
+            Map<String, List<Object>> parar = request.getParameter();
+            Object[] objects;
+            objects = PublicData.context.get();
+            RunRes runRes = null;
+            if (objects == null) {
+                runRes = new RunRes();
+                objects = new Object[]{
+                        runRes,
+                        gzbJson,
+                        log,
+                        request,
+                        response,
+                        parar  // 请求参数
+                };
+                PublicData.context.set(objects);
+            } else {
+                objects[3] = request;
+                objects[4] = response;
+                objects[5] = parar;
+                runRes = (RunRes) objects[0];
+                runRes.setData(null);
+                runRes.setState(200);
+            }
+
+            for (DecoratorEntity decoratorEntity : httpMapping.start) {
+                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, objects);
+                if (runRes1 != null) {
+                    if (runRes1.getState() != 200) {
+                        time = System.nanoTime();
+                        response.setContentType("application/json;charset=UTF-8");
+                        response.sendAndFlush(runRes1.getData());
+                        return time;
+                    } else {
+                        objects[0] = runRes1;
+                        if (runRes1.getData() != null) {
+                            Object[] newArray = Arrays.copyOf(objects, objects.length + 1);
+                            newArray[newArray.length - 1] = runRes1.getData();
+                            objects = newArray;
+                        }
+                    }
+                }
+            }
+            Object obj02 = httpMapping.httpMappingFun._gzb_call_x01(httpMapping.id, mapObject0, request, response, parar, gzbJson, log, objects);
+
+            for (DecoratorEntity decoratorEntity : httpMapping.end) {
+                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, objects);
+                if (runRes1 != null) {
+                    if (runRes1.getState() != 200) {
+                        time = System.nanoTime();
+                        response.setContentType("application/json;charset=UTF-8");
+                        response.sendAndFlush(runRes1.getData());
+                        return time;
+                    } else {
+                        objects[0] = runRes1;
+                    }
+                }
+            }
+            time = System.nanoTime();
+            response.sendAndFlush(obj02);
+            return time;
+        } catch (Exception e) {
+            long time = System.nanoTime();
+            send(ctx, _err_json);
+            log.e("框架层错误日志",
+                    request.getUri(),
+                    request.getMethod(),
+                    request.getParameter(),
+                    e);
+            return time;
+        } finally {
+            //限流如果开启 解除占用
+            if (httpMapping.semaphore != null) {
+                httpMapping.semaphore.release();
+            }
+        }
+    }
+
+    public RunRes request(Request request, Response response) {
         RunRes runRes = null;
         Object[] objects;
         objects = PublicData.context.get();
@@ -432,8 +606,8 @@ public class FactoryImplV2 implements Factory {
         return runRes;
     }
 
-    public RunRes request(Request request, Response response) {
-        GzbTiming gzbTiming = new GzbTiming();
+    public RunRes request0(Request request, Response response) {
+        Timing gzbTiming = new Timing();
         gzbTiming.record();
         RunRes runRes = null;
         Object[] objects;
@@ -458,12 +632,10 @@ public class FactoryImplV2 implements Factory {
         gzbTiming.record("线程变量");
         String key = ClassTools.webPathFormat(request.getUri());
         gzbTiming.record("格式化请求地址");
-        long start = System.nanoTime();
         HttpMapping[] httpMappings = mapHttpMapping0.get(key);
         if (httpMappings == null) {
             return runRes.setState(404);
         }
-        long end = System.nanoTime();
         gzbTiming.record("端点获取");
         int index = -1;
         String metName = request.getMethod();
@@ -546,136 +718,10 @@ public class FactoryImplV2 implements Factory {
             }
         }
 
-        log.t((end - start), gzbTiming.read());
+        log.t(gzbTiming.read());
         /// 后台统计 汇总
-        AtomicInteger atomicInteger = reqInfo.computeIfAbsent(gzbTiming.all / 1000, k -> new AtomicInteger());
-        atomicInteger.addAndGet(1);
         return runRes;
     }
-
-    public RunRes request2(Request request, Response response) {
-        GzbTiming gzbTiming = new GzbTiming();
-        gzbTiming.record();
-        RunRes runRes = new RunRes();
-        Object[] objects;
-        runRes.setState(200);
-        String key = ClassTools.webPathFormat(request.getUri());
-        String metName = request.getMethod();
-        HttpMapping[] httpMappings = mapHttpMapping0.get(key);
-        if (httpMappings == null) {
-            return runRes.setState(404);
-        }
-        gzbTiming.record("获取端点");
-        int index = -1;
-        try {
-            for (int i = 0; i < met.length; i++) {
-                if (metName.equals(met[i])) {
-                    if (httpMappings[i] == null) {
-                        return runRes.setState(404);
-                    }
-                    index = i;
-                    break;
-                }
-            }
-            if (index == -1) {
-                return runRes.setState(404);
-            }
-            gzbTiming.record("确定方法");
-
-            if (httpMappings[index].semaphore != null && !httpMappings[index].semaphore.tryAcquire()) {
-                return runRes.setState(200).setData(gzbJson.fail("请求量超过限流阈值，请稍后重试"));
-            }
-
-            gzbTiming.record("限流");
-            if (httpMappings[index].header.size() > 0) {
-                response.setHeaders(new HashMap<>(httpMappings[index].header));
-            }
-            if (httpMappings[index].isCrossDomainOrigin) {
-                String host = request.getOrigin();
-                if (host == null) {
-                    host = request.getDomain();
-                }
-                response.setHeader("access-control-allow-origin", host);
-            }
-            gzbTiming.record("预设协议");
-            Map<String, List<Object>> parar = request.getParameter();
-
-            objects = PublicData.context.get();
-            if (objects == null) {
-                objects = new Object[]{
-                        runRes,
-                        gzbJson,
-                        log,
-                        request,
-                        response,
-                        parar  // 请求参数
-                };
-                PublicData.context.set(objects);
-            } else {
-                objects[3] = request;
-                objects[4] = response;
-                objects[5] = parar;
-            }
-            gzbTiming.record("线程变量");
-            for (DecoratorEntity decoratorEntity : httpMappings[index].start) {
-                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, objects);
-                if (runRes1 != null) {
-                    if (runRes1.getState() != 200) {
-                        //log.d("request", key, request.getMethod(), parar, 200, "请求被调用前拦截");
-                        return runRes1;
-                    } else {
-                        objects[0] = runRes1;
-                        runRes = runRes1;
-                        if (runRes1.getData() != null) {
-                            Object[] newArray = Arrays.copyOf(objects, objects.length + 1);
-                            newArray[newArray.length - 1] = runRes1.getData();
-                            objects = newArray;
-                        }
-                    }
-                }
-            }
-            gzbTiming.record("装饰器-前");
-            runRes.setData(httpMappings[index].httpMappingFun._gzb_call_x01(httpMappings[index].id, mapObject0, request, response, parar, gzbJson, log, objects)).setState(200);
-
-            gzbTiming.record("端点调用");
-            for (DecoratorEntity decoratorEntity : httpMappings[index].end) {
-                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, objects);
-                if (runRes1 != null) {
-                    if (runRes1.getState() != 200) {
-                        //log.d("request", key, request.getMethod(), parar, 200, "请求被调用后拦截");
-                        return runRes1;
-                    } else {
-                        objects[0] = runRes1;
-                        runRes = runRes1;
-                    }
-                }
-            }
-            gzbTiming.record("装饰器-后");
-        } catch (Exception e) {
-            log.e("框架层错误日志",
-                    key,
-                    request.getMethod(),
-                    request.getParameter(),
-                    e);
-            return runRes.setState(500).setData(gzbJson.error("访问出现错误"));
-        } finally {
-            //限流如果开启 解除占用
-            if (index > -1 && httpMappings[index] != null && httpMappings[index].semaphore != null) {
-                httpMappings[index].semaphore.release();
-            }
-            /// 函数执行 结束
-
-            /// 输出调试信息
-            log.t(gzbTiming.read());
-            /// 后台统计 汇总
-            AtomicInteger atomicInteger = reqInfo.computeIfAbsent(gzbTiming.all / 1000, k -> new AtomicInteger());
-            atomicInteger.addAndGet(1);
-        }
-
-        return runRes;
-    }
-
-    public static Map<Long, AtomicInteger> reqInfo = new ConcurrentHashMap<>();
 
 
     public Class<?> loadController(Class<?> clazz, Object object, Map<String, HttpMapping[]> mapHttpMapping, Map<String, Map<String, String>> mapHttpMappingOld,
@@ -722,23 +768,24 @@ public class FactoryImplV2 implements Factory {
                 CrossDomain metCrossDomain = method.getAnnotation(CrossDomain.class);
                 Header headerMethod = method.getAnnotation(Header.class);
                 Limitation limitation = method.getAnnotation(Limitation.class);
+                EventLoop eventLoop = method.getAnnotation(EventLoop.class);
                 if (getMapping != null && getMapping.value().length > 0) {
-                    putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 0, getMapping.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
+                    putMapping(id, eventLoop, crossDomain, metCrossDomain, header, headerMethod, clazz, 0, getMapping.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
 
                 } else if (postMapping != null && postMapping.value().length > 0) {
-                    putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 1, postMapping.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
+                    putMapping(id, eventLoop, crossDomain, metCrossDomain, header, headerMethod, clazz, 1, postMapping.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
 
                 } else if (putMapping != null && putMapping.value().length > 0) {
-                    putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 2, putMapping.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
+                    putMapping(id, eventLoop, crossDomain, metCrossDomain, header, headerMethod, clazz, 2, putMapping.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
 
                 } else if (deleteMapping != null && deleteMapping.value().length > 0) {
-                    putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 3, deleteMapping.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
+                    putMapping(id, eventLoop, crossDomain, metCrossDomain, header, headerMethod, clazz, 3, deleteMapping.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
 
                 } else if (requestMappingMethod != null && requestMappingMethod.value().length > 0) {
-                    putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 0, requestMappingMethod.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
-                    putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 1, requestMappingMethod.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
-                    putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 2, requestMappingMethod.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
-                    putMapping(id, crossDomain, metCrossDomain, header, headerMethod, clazz, 3, requestMappingMethod.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
+                    putMapping(id, eventLoop, crossDomain, metCrossDomain, header, headerMethod, clazz, 0, requestMappingMethod.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
+                    putMapping(id, eventLoop, crossDomain, metCrossDomain, header, headerMethod, clazz, 1, requestMappingMethod.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
+                    putMapping(id, eventLoop, crossDomain, metCrossDomain, header, headerMethod, clazz, 2, requestMappingMethod.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
+                    putMapping(id, eventLoop, crossDomain, metCrossDomain, header, headerMethod, clazz, 3, requestMappingMethod.value(), method, object, transaction, decoratorOpen, limitation, listClassPath, mapHttpMapping, listDecoratorEntity, map1, map2);
 
                 }
             }
@@ -841,7 +888,7 @@ public class FactoryImplV2 implements Factory {
         //log.t("listDecoratorEntity", url, met, listDecoratorEntity.size());
     }
 
-    public void putMapping(int id, CrossDomain classCrossDomain, CrossDomain metCrossDomain, Header headerClass, Header headerMethod,
+    public void putMapping(int id, EventLoop eventLoop, CrossDomain classCrossDomain, CrossDomain metCrossDomain, Header headerClass, Header headerMethod,
                            Class<?> aClass, int index, String[] metPath, Method method, Object object,
                            Transaction transaction, DecoratorOpen decoratorOpen, Limitation limitation,
                            List<String> listClassPath, Map<String, HttpMapping[]> mapHttpMapping
@@ -879,7 +926,7 @@ public class FactoryImplV2 implements Factory {
                 HttpMapping[] httpMappings = mapHttpMapping.get(path);
                 httpMapping2.path = path;
                 if (httpMappings != null && httpMappings[index] != null) {
-                    if (httpMappings[index]!=null && httpMappings[index].httpMappingFun!=null && !httpMappings[index].httpMappingFun.getClass().getName().equals(httpMapping2.httpMappingFun.getClass().getName())) {
+                    if (httpMappings[index] != null && httpMappings[index].httpMappingFun != null && !httpMappings[index].httpMappingFun.getClass().getName().equals(httpMapping2.httpMappingFun.getClass().getName())) {
                         log.w("HTTP端点", "异常替换", id,
                                 "由",
                                 httpMappings[index].sign, httpMappings[index].path, met[httpMappings[index].met],
@@ -913,7 +960,9 @@ public class FactoryImplV2 implements Factory {
                 if (metCrossDomain != null) {
                     ClassTools.generateCORSHeaders(metCrossDomain, httpMapping2.header);
                 }
-
+                if (eventLoop != null) {
+                    httpMapping2.async = eventLoop.async();
+                }
                 if (httpMapping2.header.get("access-control-allow-origin") != null) {
                     if (httpMapping2.header.get("access-control-allow-origin").equals("origin")) {
                         httpMapping2.isCrossDomainOrigin = true;

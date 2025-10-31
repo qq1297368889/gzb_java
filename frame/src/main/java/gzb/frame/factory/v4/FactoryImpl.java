@@ -41,6 +41,8 @@ import gzb.tools.json.GzbJson;
 import gzb.tools.json.GzbJsonImpl;
 import gzb.tools.json.ResultImpl;
 import gzb.tools.log.Log;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.FullHttpRequest;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -276,6 +278,15 @@ public class FactoryImpl implements Factory {
     }
     @Override
     public void loadServerHttp() {
+
+    }
+
+    /**
+     * @param ctx
+     * @param req
+     */
+    @Override
+    public void start(ChannelHandlerContext ctx, FullHttpRequest req) {
 
     }
 

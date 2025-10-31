@@ -63,7 +63,7 @@ public class ClassLoad {
     }
 
     public static Map<String, Class<?>> compileJavaCode(Map<String, String> sourcesMap) throws Exception {
-        if (sourcesMap.size() > Integer.MAX_VALUE) {
+        if (sourcesMap.size() > 0) {
             //批量编译 虽然快 但无法卸载 会泄露 目前先停用
             long start = System.currentTimeMillis();
             Map<String, Class<?>> map = new ClassLoadV1().compile(sourcesMap);

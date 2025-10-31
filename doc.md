@@ -1,28 +1,28 @@
-# 注解篇
-#### Controller 类级注解 表示这是一个控制器 会被扫描
-#### Service 类级注解 表示这是一个实现类火其他类 可以被扫描 
+# 核心注解篇
+#### @Controller 类级注解 表示这是一个控制器 会被扫描
+#### @Service 类级注解 表示这是一个实现类火其他类 可以被扫描 
 
-#### GetMapping("xxx") 类级或方法级注解 表示这是一个 http get 端点  value = ['xx','xxx'] 映射路径 可支持多个
-#### PostMapping("xxx") 类级或方法级注解 表示这是一个 http post 端点  value = ['xx','xxx'] 映射路径 可支持多个
-#### PutMapping("xxx") 类级或方法级注解 表示这是一个 http put 端点  value = ['xx','xxx'] 映射路径 可支持多个
-#### DeleteMapping("xxx") 类级或方法级注解 表示这是一个 http delete 端点  value = ['xx','xxx'] 映射路径 可支持多个
-#### RequestMapping(value = "/test/") 类级或方法级注解 表示这是一个 http 任意类型的 端点 
+#### @GetMapping("xxx") 类级或方法级注解 表示这是一个 http get 端点  value = ['xx','xxx'] 映射路径 可支持多个
+#### @PostMapping("xxx") 类级或方法级注解 表示这是一个 http post 端点  value = ['xx','xxx'] 映射路径 可支持多个
+#### @PutMapping("xxx") 类级或方法级注解 表示这是一个 http put 端点  value = ['xx','xxx'] 映射路径 可支持多个
+#### @DeleteMapping("xxx") 类级或方法级注解 表示这是一个 http delete 端点  value = ['xx','xxx'] 映射路径 可支持多个
+#### @RequestMapping(value = "/test/") 类级或方法级注解 表示这是一个 http 任意类型的 端点 
 #### @Header(item = {@HeaderItem(key = "content-type", val = "application/json;charset=UTF-8")}) 类变量和方法级别 注解 设置协议头
-#### @CrossDomain(allowCredentials = false)//开跨域 允许所有默认 可配置详细
-#### Resource(value = "com.frame.dao.impl.SysGroupColumnDaoImpl") 类变量专用注解 表示这是一个被注入的 接口或对象 value 可以指定实现类  也可以留空 默认第一个
+#### @CrossDomain(allowCredentials = false)//开跨域 允许所有默认 可配置详细规则
+#### @Resource(value = "com.frame.dao.impl.SysGroupColumnDaoImpl") 类变量专用注解 表示这是一个被注入的 接口或对象 value 可以指定实现类  也可以留空 默认第一个
+#### @EventLoop 端点专用注解 表示这个端点将直接在事件循环线程执行 避免了业务线程池的上下文切换开销，但请注意不能阻塞
 
+#### @Decorator 类级注解 表示这是一个装饰器 可以被扫描
+#### @DecoratorStart("/system/",sort=1) 方法级注解 表示这是一个装饰器方法在/system/xxx控制器方法被调用  前  调用 可以拦截或修改请求数据  sort用于多个装饰器的触发顺序 可省略 （前提控制器方法注解了#### DecoratorOpen 才会参与）
+#### @DecoratorEnd("/system/",sort=1) 方法级注解 表示这是一个装饰器方法 在/system/xxx控制器方法被调用   后 调用 可以拦截或修改响应 sort用于多个装饰器的触发顺序 可省略（前提控制器方法注解了#### DecoratorOpen 才会参与）
+#### @DecoratorOpen 方法级注解 表示这是一个需要被装饰器方法挂钩的方法 只有注解了的HTTP端点 方法才会被 装饰器 DecoratorStart 和 DecoratorEnd 处理
 
-#### Decorator 类级注解 表示这是一个装饰器 可以被扫描
-#### DecoratorStart("/system/") 方法级注解 表示这是一个装饰器方法在/system/xxx控制器方法被调用  前  调用 可以拦截或修改请求数据  （前提控制器方法注解了#### DecoratorOpen 才会参与）
-#### DecoratorEnd("/system/") 方法级注解 表示这是一个装饰器方法 在/system/xxx控制器方法被调用   后 调用 可以拦截或修改响应 （前提控制器方法注解了#### DecoratorOpen 才会参与）
-#### DecoratorOpen 方法级注解 表示这是一个需要被装饰器方法挂钩的方法 只有注解了的HTTP端点 方法才会被 装饰器 DecoratorStart DecoratorEnd 处理
+#### @ThreadFactory 类级别注解 表示这个类是受框架调度的线程模型，所需参数皆为框架传入
+#### @ThreadInterval(num = 0, value = 2000, async = false) 方法级注解 表示这是一个线程函数 会被框架循环调度 num =10表示启动10个线程 value=2000表示每次调度间隔2000毫秒  async=true or false 表示同步或异步调用
 
-#### ThreadFactory 类级别注解 表示这个类是受框架调度的线程模型，所需参数皆为框架传入
-#### ThreadInterval(num = 0, value = 2000, async = false) 方法级注解 表示这是一个线程函数 会被框架循环调度 num =10表示启动10个线程 value=2000表示每次调度间隔2000毫秒  async=true or false 表示同步或异步调用
+#### @Limitation(10) 方法级注解 表示这是一个被限流的端点 当同时运行该端点超过10个时 将会返回 服务器繁忙 （注意只有http端点注解才有效）
 
-#### Limitation(10) 方法级注解 表示这是一个被限流的端点 当同时运行该端点超过10个时 将会返回 服务器繁忙 （注意只有http端点注解才有效）
-
-#### Transaction 方法级注解 表示这是一个开启事务的端点 关闭了自动提交 你可以随意回滚 或者出错自动回滚 未出错 结束后自动提交    注意 事务开启时不支持异步执行SQL
+#### @Transaction 方法级注解 表示这是一个开启事务的端点 关闭了自动提交 你可以随意回滚 或者出错自动回滚 未出错 结束后自动提交    注意 事务开启时不支持异步执行SQL
 
 #### @DataBaseEventFactory    标注为 数据库事件注册 类      注意参数只要定义 且 有可注入的对象 就会注入
 #### @DataBaseEventSave(entity = SysUsers.class, executionBefore = false, depth = 5)     //entity 注册到 某个实体类 数据库 新增事件 //executionBefore 事件执行时机，true 主操作执行前 false 主操作执行后 默认false //depth 事件传播深度 防止循环传播
@@ -32,7 +32,7 @@
 
 
 
-#### EntityAttribute(key=true,size = 19,name="sys_file_id",desc="sysFileId") 类级或方法级注解 表示这是一个实体类 和 数据库的映射信息  这个对开发者无感知 知道就行 没有实用机会
+#### @EntityAttribute(key=true,size = 19,name="sys_file_id",desc="sysFileId") 类级或方法级注解 表示这是一个实体类 和 数据库的映射信息  这个对开发者无感知 知道就行 没有实用机会
 
 # 注意一个点  Controller Decorator ThreadFactory Service 这些类 不要有内部类 防止框架插入代码的时候出现问题
 
@@ -43,14 +43,120 @@
 #### 在装饰器 DecoratorStart 中 runRes.setData(xx)的对象 也会在后续流程被注入 
 #### 有一个例外 线程模型 不会注入http相关的变量 因为他与http请求无关
 #### 什么时候会被注入: Controller Decorator ThreadFactory DataBaseEventFactory 这些标注类 内部的 变量 和 注册的方法参数 都会被注入  
+#### 数据库使用例子
+```java
 
+import gzb.frame.generate.GenerateJavaCode;
+import gzb.tools.Config;
+//直接生成代码 基本不需要写
+public class AutoCode {
+    //根据数据库表信息 逆向 声称 dao entity controller
+    public static void main(String[] args) throws Exception {
+        //要生成代码到这个目录
+        String path = Config.thisPath() + "/src/main/java";
+        //要生成代码的包名
+        String pkg = "com";
+        //数据库名 要和配置文件中 db.数据库名 这里匹配
+        String dbKey = "db002";
+        //生成代码的函数 感兴趣可以去看看里边 直接调用里边的也可以   参数含义 生成代码的主目录 包名前缀 框架数据库 业务数据库（相同则重复传递即可） 
+        GenerateJavaCode.generateCode(path,pkg,dbKey,dbKey);
+        //运行后会生成所需代码 entity dao controller 以及每个表对应的 crud网页UI
+    }
+}
 
+```
+#### 日志类怎么使用
+#### 怎么控制日志是否输出 去配置文集中寻找这几行 修改（修改实时生效）
+```properties
+# 0 显示但不保存 1 保存但不显示 2 不显示也不保存 3 显示且保存
+gzb.log.trace=2
+gzb.log.debug=0
+gzb.log.info=0
+gzb.log.warn=0
+gzb.log.error=0
+gzb.log.path=this:logs/
+```
+#### 使用示例
+```java
+public class Test{
+    public static void main(String[] args) {
+        String msg="日志内容";
+        SysFile sysFile=new SysFile();
+        //可以自动检测所在类 所在方法 所在行 并序列化输出对象
+        //对象可以单例使用 不需要创建多个，不需要担心堆栈获取开销 只要不输出 且 不保存 那么逻辑会被忽略 耗时几乎 = 0
+        //如果你需要传入当前class的话 可以使用多例 但是没必要  gzb.tools.log.Log.create(Test.class);
+        gzb.tools.log.Log log = gzb.tools.log.Log.log; 
+        log.t("这是一个日志","msg",msg,"sysFile",sysFile);
+        log.d("这是一个日志","msg",msg,"sysFile",sysFile);
+        log.i("这是一个日志","msg",msg,"sysFile",sysFile);
+        log.w("这是一个日志","msg",msg,"sysFile",sysFile);
+        log.e("这是一个日志","msg",msg,"sysFile",sysFile,new Exception());
+    }
+}
+```
+# 缓存怎么用
+```java
+import gzb.tools.GzbMap;
+import gzb.tools.cache.Cache;
+import gzb.tools.cache.GzbCache;
+import gzb.tools.cache.GzbCacheMap;
+import gzb.tools.cache.GzbCacheRedis;
 
+public class Test0 {
+    public static void main(String[] args) {
+        //参数分别为 刷盘路径 刷盘周期（jvm结束时会触发回调刷盘，所以这个也不用太频繁）
+        GzbCache gzbCache1 = new GzbCacheMap("C:/cache1.cache",120);
+        //redis 配置 请查看配置文件，配置文件有注释
+        //# 数据库地址
+        //db.redis.cache1.ip=127.0.0.1
+        //# 数据库端口
+        //db.redis.cache1.port=6379
+        //# 数据库密码 可为空
+        //db.redis.cache1.pwd=xxxxxxxxxxx
+        //# 数据库 最大空闲连接数
+        //db.redis.cache1.max.thread.idle=10
+        //# 数据库 最大连接数
+        //db.redis.cache1.thread=24
+        //# 超时时间
+        //db.redis.cache1.overtime=3000
+        //# 数据库选择
+        //db.redis.cache1.index=0
+        GzbCache gzbCache2 = new GzbCacheRedis();
+
+        //GzbCache 有两个实现 redis or map（带持久化）
+        GzbCache main = Cache.gzbCache;//主缓存  配置文件可切换redis or map
+        GzbCache map = Cache.gzbMap;//内部缓存 重启消失
+        GzbCache session = Cache.session;//会话缓存 配置文件可切换redis or map
+        GzbCache db = Cache.dataBaseCache;//数据库缓存 配置文件可切换redis or map
+        /// 过期时间设置为小于0为永不过期
+        //存入一个 键值对  过期时间为 永不过期
+        main.set("key", "val", -1);
+        //存入一个 键值对  过期时间为 60秒
+        main.set("key2", "val2", 60);
+        //存入一个 键值对 值为对象 会被序列化储存  过期时间为 60秒
+        main.setObject("key3", new String("val3"), 60);
+        //将值 存入map.key.sub_key  过期时间为 60秒
+        main.setMap("key4", "key4", "val4", 60);
+        //将值 存入map.key.sub_key  值为对象 会被序列化储存 过期时间为 60秒
+        main.setMapObject("key5", "key5", new String("val5"), 60);
+        //获取一个自增数字 从1开始 60秒过期 过期后从1重新开始
+        main.getIncr("key6", 60);
+        //读取值 同上储存逻辑
+        main.get("key");
+        //读取值 同上储存逻辑
+        main.getObject("key3");
+        //读取值 同上储存逻辑
+        main.getMap("key4","key4");
+        //读取值 同上储存逻辑
+        main.getMapObject("key5","key5");
+    }
+}
+
+```
 # 控制器  action Controller 篇
 #### 参数映射 可以把表单提交的参数(a=1&b=2)和 json参数({xxx:xxx,xx:xx}) 映射到方法的参数 复杂JSON请定义Map<String,Object>
 #### 数据响应 可以直接 return 字符串 byte 或者直接从 HttpServletResponse 手动响应数据 如果手动响应请 return null;
 ```java
-package com.authorizationSystem.api;
 import com.authorizationSystem.dao.ApplicationDao;
 import com.authorizationSystem.entity.Application;
 import gzb.frame.annotation.*;
@@ -71,6 +177,7 @@ public class DemoAction {
     //@Limitation(1)//开启限流
     //@Transaction //开启事务
     //@DecoratorOpen//开启装饰器钩子
+    //@EventLoop//表示该端点在事件循环中直接执行
     @GetMapping(value = "get", crossDomain = "*")
     public Object get(GzbJson result, //框架提供的json对象 你定义了就会注入 不定义就不会
                       String msg,//请求参数 msg
@@ -83,7 +190,7 @@ public class DemoAction {
     //参数非必须 所有参数都是可选的 任何被扫描的类都可以在这里被注入
     {
         log.d("get", result, msg, applicationDao, applicationDao2, application, response, request);
-        // 开启事务的话 save delete update 都会被框架提交 也可以 applicationDao2.commit(); 手动提交 或回滚
+        // 开启事务的话 save delete update 都会被框架提交 也可以 applicationDao2.getDataBase().commit(); 手动提交 或回滚
         /*
         log.d("save", applicationDao2.save(application));
         log.d("query", applicationDao2.query(application));
@@ -95,6 +202,12 @@ public class DemoAction {
         List list= new ArrayList<>();
         list.add(application);
         applicationDao2.saveBatch(list);//就是传统的批量提交，内置了大批量转多个小批量功能 防止长时间锁表 效率很高 效率对比单条 提升5-30 倍
+        applicationDao2.saveAsync(application, new Runnable() {
+            @Override
+            public void run() {
+                log.d("保存失败回调");//可以处理补偿措施
+            }
+        });
            */
         //return applicationDao2.queryPage(application,null,null,1,10,100,100); //这是自带分页方法
         return result.success(msg);
@@ -111,10 +224,8 @@ public class DemoAction {
 public class RequestDecorator {
 //获取数据库对象
     public DataBase dataBase= DataBaseFactory.getDataBase("db001");
-
-    public RequestDecorator() throws Exception {
-    }
-
+    @Resource
+    SysUsersDao sysUsersDao0;
     //所有 标注了参与装饰器 且路径为 /system/xxx 的端点 方法被调用后 实际响应前 都会调用这个方法 可以修改一些参数 获取一些参数 或拦截
     @DecoratorEnd("/system/")
     public RunRes testEnd(RunRes runRes, Log log,GzbJson gzbJson,SysUsersDao sysUsersDao) {
@@ -140,36 +251,36 @@ public class RequestDecorator {
 ## 线程模型
 ### 线程模型主要为了解决热更新 线程持有老对象问题
 ```java
-
+package com.frame.thread;
+import com.frame.dao.SysUsersDao;
+import gzb.frame.annotation.ThreadFactory;
+import gzb.frame.annotation.ThreadInterval;
+import gzb.tools.json.Result;
+import gzb.tools.log.Log;
+import java.util.concurrent.locks.Lock;
 //标注 这是一个需要被框架调度的类
 @ThreadFactory
 public class ThreadClass {
-    //需要注意 如果更改了类 或 方法签名 或 删除类 前 一定要修改num为0 这时候框架会终止线程 否则的话可能会出现失控线程
+    //注意 这个类 在运行中 不能直接被删除 否则线程失控。（重新创建并有一致签名 即可接着影响线程的行为）
     //之所以提供线程模型是因为 热更新 需要的对象 通过 参数通过  可以防止使用旧版本对象
-    
-    //定义 这是一个需要被调度的方法 num是启动线程数量 ; value 是 调度周期 单位毫秒 限制最小值为100毫秒
-    @ThreadInterval(num=0,value=1000)
-    public Object test001(SysUsersDao sysUsersDao, Result result, Log log, Lock lock) {
+
+    /// 修改方法内容 不修改签名的话 可以在不丢失 状态的情况下 热更新
+    /// 修改签名的话会丢失状态 重新开始调度
+    //定义 这是一个需要被调度的方法 num是启动线程数量  value 是 调度周期 单位毫秒
+    @ThreadInterval(num=0 ,value=1000)
+    public Object test001(SysUsersDao sysUsersDao, Result result, Log log,Lock lock) {
+        //sysUsersDao @service 实现类
+        //私有变量 不会有并发问题 但是多次被调用时 会记录状态  专属 result
+        //方法专属锁 lock  仅该方法内部使用 启用多个线程的时候 防止并发  和其他被调度的方法 不是同一个锁
         int intx=result.getInteger("intx",0);
-        if (intx>20){
-            //return false;//非null代表停止
-        }
         intx++;
         result.set("intx",intx);
-        log.d("3.00",Thread.currentThread().getName(),intx,result.hashCode(),sysUsersDao);
-        return null;//继续循环 如果不需要主动停止 可以直接设置为 void方法 
+        log.d(intx,lock,result.hashCode(),sysUsersDao);
+        return null;//继续循环 如果不需要主动停止 可以直接设置为 void方法  返回非null 即可停止被框架调度 本次启动无法再次被调度 除非方法签名出现变法
     }
-    //定义 这是一个需要被调度的方法 num是启动线程数量 ; value 是 调度周期 单位毫秒 限制最小值为100毫秒
-    @ThreadInterval(num=0,value=1000)
-    public Object test002(SysUsersDao sysUsersDao, Result result, Log log, Lock lock) {
-        return test001(sysUsersDao,result,log,lock);
-    }
-    //定义 这是一个需要被调度的方法 num是启动线程数量 ; value 是 调度周期 单位毫秒 限制最小值为100毫秒
-    @ThreadInterval(num=0,value=1000)
-    public Object test003(SysUsersDao sysUsersDao, Result result, Log log, Lock lock) {
-        return test001(sysUsersDao,result,log,lock);
-    }
+
 }
+
 
 ```
 ## 数据库 事件例子
@@ -189,13 +300,9 @@ import gzb.tools.log.Log;
 public class DataBaseEvent {
     @Resource
     Log log;
-    
-    
     /// 注意 异步操作 和 直接执行SQL不会触发事件
-     
     /// 如果主操作开启事务 本方法一定开启  如果主操作没开启 但是本方法注解事务了 也会开启
-   
-    /// 依赖注入规则 和 action 一致 所有框架调度方法 都是一样的（线程模型例外，因为他没有 req resp）
+    /// 依赖注入规则 和 action 一致 所有框架调度方法注入规则 都是一样的（线程模型例外，因为他没有 req resp）
 
     //entity 注册到 某个实体类 数据库 新增事件
     //executionBefore 事件执行时机，true 主操作执行前 false 主操作执行后 默认false
@@ -236,8 +343,34 @@ public class DataBaseEvent {
     public void select(SysUsers sysUsers, SysUsersLoginLogDao sysUsersLoginLogDao) throws Exception {
         log.d("事件触发 DataBaseEventSelect", sysUsersLoginLogDao, sysUsers);
     }
+}
 
+```
 
+# 关于异步 数据库操作问题  注意这是同步框架
+## 为什么采用了 dao.saveAsync()这种异步方式？
+### 异步 SQL 的真实目的（例如 saveAsync）突破系统硬性 I/O 上限：
+#### 异步提交并不是为了释放 HTTP 线程，而是将多个离散的 SQL 汇聚到后台的一个或少数几个高吞吐量数据队列中。
+### 智能合并与批量写入（SQL Aggregation）： 
+#### 框架在后台线程中，可以智能地对同类的 SQL 操作进行聚合和合并。
+#### 这意味着 100 次 saveAsync 调用，可能只触发 1 次批量写入，从而大幅减少 JDBC 调用开销
+#### 相比于传统的单条同步 SQL 写入，此机制能将数据层的写入吞吐量提升 5 到 30 倍，有效解决在高并发插入的性能问题。
+#### 数据库的真正瓶颈不在于网络 I/O，而在于数据库服务器 CPU 的事务处理效率和锁竞争开销。异步无法解决此根本问题。
+### 代码示例
+```java
+
+@PostMapping("test")
+public Object test(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
+    SysUsers sysUsers = new SysUsers().setSysUsersAcc("123456");
+    //严格原子性要求的数据 要慎重
+    sysUsersDao.saveAsync(sysUsers, new Runnable() {
+        @Override
+        public void run() {
+            //这里有完整上下文信息 因为开发者可以自由引用当前可访问区域的内容 可以进行补偿操作  
+            log.d("执行失败，回调触发", sysUsers);
+        }
+    });
+    return gzbJson.success("OK",sysUsers);
 }
 
 ```

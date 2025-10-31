@@ -124,7 +124,7 @@ public class ResponseDefaultImpl implements Response {
         }
         FullHttpResponse response = new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
-                HttpResponseStatus.valueOf(200),
+                HttpResponseStatus.OK,
                 Unpooled.wrappedBuffer(bytes));
         //response.headers().set("server", Config.frameName);
         if (headers != null) {

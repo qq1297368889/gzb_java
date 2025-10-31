@@ -19,6 +19,7 @@
 package gzb.frame.netty;
 
 import gzb.entity.FileUploadEntity;
+import gzb.frame.factory.ClassTools;
 import gzb.tools.Config;
 import gzb.tools.Tools;
 import gzb.tools.log.Log;
@@ -113,20 +114,41 @@ public class HTTPRequestParameters {
      *
      * @return A map of parameter names to a list of their values.
      */
-    public Map<String, List<Object>> getParameters() {
+    public Map<String, List<Object>> getParameters0() {
         if (parameters == null) {
             parameters = new HashMap<>();
             QueryStringDecoder urlDecoder = new QueryStringDecoder(request.uri());
             urlDecoder.parameters().forEach((key, valueList) ->
                     parameters.put(key, new ArrayList<>(valueList))
             );
-            this.path = urlDecoder.path();
+            this.path = ClassTools.webPathFormat(urlDecoder.path());
             String contentType = request.headers().get("Content-Type");
             if (contentType != null) {
                 if (contentType.startsWith("application/json")) {
                     parseJson(parameters);
                 } else if (contentType.startsWith("application/x-www-form-urlencoded")) {
                     parseUrlEncoded(parameters);
+                } else if (contentType.startsWith("multipart/form-data")) {
+                    parseFormData(parameters);
+                } else {
+                    // Default to plain text body
+                    parameters.computeIfAbsent("body", k -> new ArrayList<>()).add(readString());
+                }
+            }
+        }
+        return parameters;
+    }
+
+    public Map<String, List<Object>> getParameters() {
+        if (parameters == null) {
+            parameters = new HashMap<>();
+            this.path = ClassTools.webPathFormat(OptimizedParameterParser.parseUrlEncoded(request.uri(),parameters,false));
+            String contentType = request.headers().get("Content-Type");
+            if (contentType != null) {
+                if (contentType.startsWith("application/json")) {
+                    parseJson(parameters);
+                } else if (contentType.startsWith("application/x-www-form-urlencoded")) {
+                    ClassTools.webPathFormat(OptimizedParameterParser.parseUrlEncoded(readString(),parameters,true));
                 } else if (contentType.startsWith("multipart/form-data")) {
                     parseFormData(parameters);
                 } else {

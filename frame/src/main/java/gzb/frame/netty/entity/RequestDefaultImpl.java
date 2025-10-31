@@ -37,10 +37,6 @@ import java.util.*;
 public class RequestDefaultImpl implements Request {
     private ChannelHandlerContext ctx;
     private String method;
-    private String remoteIp;
-    private int remotePort;
-    private String localIp;
-    private int localPort;
     private Map<String, String> headers;
     private Set<Cookie> cookies;
     private HTTPRequestParameters httpRequestParameters;
@@ -48,19 +44,51 @@ public class RequestDefaultImpl implements Request {
     private Response response;
     private Session session;
 
+    public String getUri() {
+        return httpRequestParameters.path;
+    }
 
-    public RequestDefaultImpl(ChannelHandlerContext ctx, FullHttpRequest request) {
-        InetSocketAddress remoteAddress = (InetSocketAddress) ctx.channel().remoteAddress();
+    public String getMethod() {
+        return method;
+    }
+
+    public String getRemoteIp() {
+        InetSocketAddress remoteAddress = (InetSocketAddress) ctx.channel().localAddress();
+        return remoteAddress.getAddress().getHostAddress();
+    }
+
+    public int getRemotePort() {
+        InetSocketAddress remoteAddress = (InetSocketAddress) ctx.channel().localAddress();
+        return remoteAddress.getPort();
+    }
+
+    public String getLocalIp() {
         InetSocketAddress localAddress = (InetSocketAddress) ctx.channel().localAddress();
+        return localAddress.getAddress().getHostAddress();
+    }
+
+    public int getLocalPort() {
+        InetSocketAddress localAddress = (InetSocketAddress) ctx.channel().localAddress();
+        return localAddress.getPort();
+    }
+
+    public String getBodyString() {
+        return httpRequestParameters.readString();
+    }
+
+    public byte[] getBody() {
+        return httpRequestParameters.readByte();
+    }
+
+    public FullHttpRequest getRequest() {
+        return request;
+    }
+    public RequestDefaultImpl(ChannelHandlerContext ctx, FullHttpRequest request) {
         this.ctx = ctx;
         this.request = request;
-        this.response = new ResponseDefaultImpl(ctx);
-        this.method = request.method().name().toUpperCase();
-        this.remoteIp = remoteAddress.getAddress().getHostAddress();
-        this.remotePort = remoteAddress.getPort();
-        this.localIp = localAddress.getAddress().getHostAddress();
-        this.localPort = localAddress.getPort();
+        this.method = request.method().name();
         getParameter();
+        this.response = new ResponseDefaultImpl(ctx);
     }
 
     public Map<String, String> getHeaders() {
@@ -275,40 +303,4 @@ public class RequestDefaultImpl implements Request {
         return session;
     }
 
-
-    public String getUri() {
-        return httpRequestParameters.path;
-    }
-
-    public String getMethod() {
-        return method;
-    }
-
-    public String getRemoteIp() {
-        return remoteIp;
-    }
-
-    public int getRemotePort() {
-        return remotePort;
-    }
-
-    public String getLocalIp() {
-        return localIp;
-    }
-
-    public int getLocalPort() {
-        return localPort;
-    }
-
-    public String getBodyString() {
-        return httpRequestParameters.readString();
-    }
-
-    public byte[] getBody() {
-        return httpRequestParameters.readByte();
-    }
-
-    public FullHttpRequest getRequest() {
-        return request;
-    }
 }

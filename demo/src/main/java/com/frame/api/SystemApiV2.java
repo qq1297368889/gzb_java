@@ -9,6 +9,7 @@ import gzb.frame.annotation.*;
 import gzb.frame.db.DataBase;
 import gzb.frame.factory.v4.FactoryImplV2;
 import gzb.frame.generate.GenerateJavaCode;
+import gzb.frame.netty.HTTPRequestHandlerV4;
 import gzb.frame.netty.entity.Request;
 import gzb.frame.netty.entity.Response;
 import gzb.tools.*;
@@ -65,8 +66,8 @@ public class SystemApiV2 {
 
     @GetMapping(value = "read/data")
     public Object readData() {
-        Object obj=FactoryImplV2.reqInfo;
-        FactoryImplV2.reqInfo=new ConcurrentHashMap<>();
+        Object obj= HTTPRequestHandlerV4.reqInfo;
+        HTTPRequestHandlerV4.reqInfo=new ConcurrentHashMap<>();
         return obj;
     }
 

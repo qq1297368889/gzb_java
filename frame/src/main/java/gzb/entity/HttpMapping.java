@@ -36,10 +36,13 @@ public class HttpMapping {
     public Integer transaction;
     //是否开启跨域 域名替换
     public boolean isCrossDomainOrigin;
+    //是否异步 同步的话就在时间循环上执行 默认异步
+    public boolean async = true;
+
     public Semaphore semaphore;
     public List<DecoratorEntity> start;
     public List<DecoratorEntity> end;
-    public Map<String,String> header;
+    public Map<String, String> header;
 
 
 

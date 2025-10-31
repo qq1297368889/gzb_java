@@ -27,11 +27,14 @@ import gzb.tools.Tools;
 import gzb.tools.log.Log;
 import gzb.tools.thread.ThreadPool;
 import gzb.tools.thread.ThreadPoolV3;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 
+import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,22 +43,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class HTTPRequestHandlerV4 extends SimpleChannelInboundHandler<FullHttpRequest> {
 
     public static final byte[] def = "{\"code\":\"2\",\"message\":\"Server Busy / 服务器 繁忙\"}".getBytes();
-    public static final byte[] hello = "Hello, World!".getBytes();
-    public static final ThreadPool THREAD_POOL = new ThreadPool(Config.bizThreadNum, Config.bizAwaitNum);
+    public static Map<Long, AtomicInteger> reqInfo = new ConcurrentHashMap<>();
 
-//ThreadPoolV3    ThreadPool
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
-        Request request = new RequestDefaultImpl(ctx, req);
-        Response response = request.getResponse();
-        if (!THREAD_POOL.execute(new Runnable() {
-            @Override
-            public void run() {
-                handler(request, response, ctx, req);
-            }
-        })) {
-            response.setContentType("application/json;charset=UTF-8");
-            response.sendAndFlush(def);
-        }
+
+        NettyServer.factory.start(ctx,req);
     }
 
 

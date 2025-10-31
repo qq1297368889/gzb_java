@@ -31,7 +31,7 @@ import java.net.URLDecoder;
 import java.nio.charset.Charset;
 
 public class HTTPStaticFileHandler {
-    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) {
+    public void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) {
         try {
             // 1. 验证请求
             if (!req.decoderResult().isSuccess()) {
