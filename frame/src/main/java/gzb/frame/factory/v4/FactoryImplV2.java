@@ -42,6 +42,7 @@ import gzb.tools.json.GzbJsonImpl;
 import gzb.tools.json.ResultImpl;
 import gzb.tools.log.Log;
 import gzb.tools.thread.ThreadPool;
+import gzb.tools.thread.ThreadPoolV3;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
@@ -65,6 +66,7 @@ public class FactoryImplV2 implements Factory {
     public Map<String, Map<String, Method>> mapClassMethod = new ConcurrentHashMap<>();
     public static Log log = Log.log;
     public Map<String, ClassEntity> mapClassEntity = new ConcurrentHashMap<>();
+
     // public Map<String, HttpMapping[]> mapHttpMapping0 = new ConcurrentHashMap<>();
 /*   public GzbNodeMap<HttpMapping[]> gzbNodeMap = new GzbNodeMap<>();
     public Map<String, HttpMapping[]> mapHttpMapping0 = new ConcurrentHashMap<String, HttpMapping[]>(){
@@ -89,7 +91,7 @@ public class FactoryImplV2 implements Factory {
 
     public GzbJson gzbJson = PublicData.gzbJson;
 
-    public void loadJavaDir(String classDir, String pwd, String iv) throws Exception {
+    public void loadPublicClass() throws Exception {
         //缓存对象
         ClassTools.putObject(Cache.gzbCache.getClass(), null, mapObject0, Cache.gzbCache);
         ClassTools.putObject(Cache.gzbQueue.getClass(), null, mapObject0, Cache.gzbQueue);
@@ -99,6 +101,31 @@ public class FactoryImplV2 implements Factory {
         ClassTools.putObject(PublicData.eventFactory.getClass(), null, mapObject0, PublicData.eventFactory);
         //日志对象
         ClassTools.putObject(Log.log.getClass(), null, mapObject0, Log.log);
+        //生成打包命令
+      /*  try {
+            ClassByteTools.gen_cmd();
+
+            FileTools.mkdir(new File(ClassByteTools.outConfigPath+"agent-extracted-predefined-classes"));
+            ClassByteTools.outJni();
+            ClassByteTools.outPredefined();
+            ClassByteTools.outProxy();
+            ClassByteTools.outSerialization();
+        } catch (Exception e) {
+            System.out.println("打包后这里属于正常错误 " + e.getMessage());
+            ClassByteTools.outPath=null;
+            ClassByteTools.outConfigPath=null;
+        }
+        */
+        ClassTools.saveSingAll(ClassByteTools.cachePath + "mapping0.config");
+    }
+
+    public void loadJavaDir(String classDir, String pwd, String iv) throws Exception {
+        File file = new File(Config.thisPath + "/className.config");
+        if (file.exists()) {
+            loadClassName(FileTools.readArray(file));
+            return;
+        }
+        loadPublicClass();
         Thread thread = new Thread(() -> {
             while (true) {
                 try {
@@ -115,20 +142,11 @@ public class FactoryImplV2 implements Factory {
         while (serverState == -1) {
             Tools.sleep(1);
         }
-        System.gc();
+        //System.gc();
     }
 
     public void loadServerHttp() throws Exception {
-
-        //缓存对象
-        ClassTools.putObject(Cache.gzbCache.getClass(), null, mapObject0, Cache.gzbCache);
-        ClassTools.putObject(Cache.gzbQueue.getClass(), null, mapObject0, Cache.gzbQueue);
-        //JSON对象
-        ClassTools.putObject(gzbJson.getClass(), null, mapObject0, gzbJson);
-        //数据库事件对象
-        ClassTools.putObject(PublicData.eventFactory.getClass(), null, mapObject0, PublicData.eventFactory);
-        //日志对象
-        ClassTools.putObject(Log.log.getClass(), null, mapObject0, Log.log);
+        loadPublicClass();
         UpdateServer updateServer = new UpdateServer();
         Thread thread = new Thread(() -> {
             int miao = 0;
@@ -190,7 +208,26 @@ public class FactoryImplV2 implements Factory {
         while (serverState == -1) {
             Tools.sleep(1);
         }
-        System.gc();
+        //System.gc();
+    }
+
+    public void loadClassName(String[] classNames) throws Exception {
+        loadPublicClass();
+        List<ClassEntity> listClassEntity = new ArrayList<>();
+        for (int i = 0; i < classNames.length; i++) {
+            if (classNames[i]==null || classNames[i].length()<1||classNames[i].endsWith("_inner_v1")) {
+                continue;
+            }
+            Class<?> clazz = Class.forName(classNames[i]);
+            if (clazz.isInterface()) {
+                continue;
+            }
+            ClassEntity classEntity = new ClassEntity();
+            classEntity.clazz = clazz;
+            classEntity.sign = "-1";
+            listClassEntity.add(classEntity);
+        }
+        load(listClassEntity);
     }
 
     public void load(List<ClassEntity> listClassEntity) throws Exception {
@@ -211,7 +248,8 @@ public class FactoryImplV2 implements Factory {
                 if (classEntity.clazz == null) {
                     continue;
                 }
-                loadController(classEntity.clazz, mapObject0.get(classEntity.clazz.getName()), mapHttpMapping0, mapHttpMappingOld0, listDecoratorEntity);
+                loadController(classEntity.clazz, mapObject0.get(classEntity.clazz.getName()),
+                        mapHttpMapping0, mapHttpMappingOld0, listDecoratorEntity);
             }
             if (Config.permissionsOpen) {
                 DataBase dataBase = null;
@@ -221,6 +259,16 @@ public class FactoryImplV2 implements Factory {
                     log.e("默认数据连接失败 请确保 配置项 db.frame.key 填写正确", e);
                 }
                 UpdatePermission.exec(mapHttpMapping0, met, dataBase);
+            }
+            /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            //暂未开发完成 目前 打包成exe 可运行 监听但是丢失了 映射信息 第一选择 保留注解等信息 第二选择 生成新的类保存映射
+            for (Map.Entry<String, HttpMapping[]> stringEntry : mapHttpMapping0.entrySet()) {
+                for (HttpMapping httpMapping : stringEntry.getValue()) {
+                    if (httpMapping==null) {
+                        continue;
+                    }
+                    //log.i(stringEntry.getKey() + ":" + httpMapping.toString());
+                }
             }
         }
     }
@@ -267,6 +315,9 @@ public class FactoryImplV2 implements Factory {
             Long time = file.lastModified();
             ClassEntity classEntity = mapClassEntity.get(path);
             if (classEntity != null && classEntity.sign.equals(time + "")) {
+                continue;
+            }
+            if (classEntity != null && classEntity.sign.equals("-1")) {
                 continue;
             }
             String code;
@@ -344,9 +395,16 @@ public class FactoryImplV2 implements Factory {
         response.headers().set("content-length", msg.length);
         ctx.writeAndFlush(response);
         return System.nanoTime();
+        //Unpooled.wrappedBuffer(msg)
     }
 
-    public static final ThreadPool THREAD_POOL = new ThreadPool(Config.bizThreadNum, Config.bizAwaitNum);
+    //public static final ThreadPool THREAD_POOL = new ThreadPool(Config.bizThreadNum, Config.bizAwaitNum);
+    public static final ThreadPoolV3 THREAD_POOL = new ThreadPoolV3(
+            Config.cpu * 1000,
+            Config.bizThreadNum < 1 ? Config.cpu * 2 : Config.bizThreadNum,
+            Config.bizAwaitNum < 1 ? Config.cpu * 500 : Config.bizAwaitNum,
+            85.0,
+            Config.bizThreadNum < 1);
 
     //返回 404 需要寻找静态资源
     public void start(ChannelHandlerContext ctx, FullHttpRequest req) {
@@ -393,16 +451,14 @@ public class FactoryImplV2 implements Factory {
             debug(times, "同步");
         }
     }
-    public void debug(long[] times, String title) {
 
-    }
-    public void debug0(long[] times, String title) {
+    public void debug(long[] times, String title) {
         long t01 = (times[2] - times[1]);
         long t02 = (times[1] - times[0]);
         long t03 = (times[2] - times[0]);
         AtomicInteger atomicInteger = HTTPRequestHandlerV4.reqInfo.computeIfAbsent(t03 / 1000, k -> new AtomicInteger());
         atomicInteger.addAndGet(1);
-        log.t(title, "总耗时", t03, "netty数据获取", t02, "框架执行", t01);
+        log.d(title, "总耗时", t03, "netty数据获取", t02, "框架执行", t01);
     }
 
     public long exec(HttpMapping httpMapping, ChannelHandlerContext ctx, FullHttpRequest req, Request request, Response response) {
@@ -423,8 +479,7 @@ public class FactoryImplV2 implements Factory {
                 return System.nanoTime();
             }
             Map<String, List<Object>> parar = request.getParameter();
-            Object[] objects;
-            objects = PublicData.context.get();
+            Object[] objects = PublicData.context.get();
             RunRes runRes = null;
             if (objects == null) {
                 runRes = new RunRes();
@@ -460,6 +515,7 @@ public class FactoryImplV2 implements Factory {
                             Object[] newArray = Arrays.copyOf(objects, objects.length + 1);
                             newArray[newArray.length - 1] = runRes1.getData();
                             objects = newArray;
+                            runRes1.setData(null);
                         }
                     }
                 }
@@ -577,6 +633,158 @@ public class FactoryImplV2 implements Factory {
             Object obj02 = httpMappings[index].httpMappingFun._gzb_call_x01(httpMappings[index].id, mapObject0, request, response, parar, gzbJson, log, objects);
             runRes.setData(obj02).setState(200);
 
+            for (DecoratorEntity decoratorEntity : httpMappings[index].end) {
+                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, objects);
+                if (runRes1 != null) {
+                    if (runRes1.getState() != 200) {
+                        //log.d("request", key, request.getMethod(), parar, 200, "请求被调用后拦截");
+                        return runRes1;
+                    } else {
+                        objects[0] = runRes1;
+                        runRes = runRes1;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.e("框架层错误日志",
+                    key,
+                    request.getMethod(),
+                    request.getParameter(),
+                    e);
+            return runRes.setState(200).setData(gzbJson.error("访问出现错误"));
+        } finally {
+            //限流如果开启 解除占用
+            if (index > -1 && httpMappings[index] != null && httpMappings[index].semaphore != null) {
+                httpMappings[index].semaphore.release();
+            }
+        }
+
+        return runRes;
+    }
+
+    public RunRes request1(Request request, Response response) {
+        RunRes runRes = null;
+        Object[] objects;
+        objects = PublicData.context.get();
+        if (objects == null) {
+            runRes = new RunRes();
+            objects = new Object[]{
+                    runRes,
+                    gzbJson,
+                    log,
+                    request,
+                    response,
+                    null  // 请求参数
+            };
+            PublicData.context.set(objects);
+        } else {
+            objects[3] = request;
+            objects[4] = response;
+            runRes = (RunRes) objects[0];
+            runRes.setData(null);
+        }
+        runRes.setState(200);
+        String key = ClassTools.webPathFormat(request.getUri());
+        String metName = request.getMethod();
+        HttpMapping[] httpMappings = mapHttpMapping0.get(key);
+        if (httpMappings == null) {
+            return runRes.setState(404);
+        }
+        int index = -1;
+        try {
+            for (int i = 0; i < met.length; i++) {
+                if (metName.equals(met[i])) {
+                    if (httpMappings[i] == null) {
+                        return runRes.setState(404);//目的是检查静态资源
+                    }
+                    index = i;
+                    break;
+                }
+            }
+            if (index == -1) {
+                return runRes.setState(404);
+            }
+            if (httpMappings[index].header.size() > 0) {
+                response.setHeaders(new HashMap<>(httpMappings[index].header));
+            }
+            if (httpMappings[index].isCrossDomainOrigin) {
+                String host = request.getOrigin();
+                if (host == null) {
+                    host = request.getDomain();
+                }
+                response.setHeader("access-control-allow-origin", host);
+            }
+
+            if (httpMappings[index].semaphore != null && !httpMappings[index].semaphore.tryAcquire()) {
+                return runRes.setState(200).setData(gzbJson.fail("请求量超过限流阈值，请稍后重试"));
+            }
+            Map<String, List<Object>> parar = request.getParameter();
+            objects[5] = parar;
+            for (DecoratorEntity decoratorEntity : httpMappings[index].start) {
+                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, objects);
+                if (runRes1 != null) {
+                    if (runRes1.getState() != 200) {
+                        //log.d("request", key, request.getMethod(), parar, 200, "请求被调用前拦截");
+                        return runRes1;
+                    } else {
+                        objects[0] = runRes1;
+                        runRes = runRes1;
+                        if (runRes1.getData() != null) {
+                            Object[] newArray = Arrays.copyOf(objects, objects.length + 1);
+                            newArray[newArray.length - 1] = runRes1.getData();
+                            objects = newArray;
+                        }
+                    }
+                }
+            }
+            Object obj02;
+            if (httpMappings[index].async) {
+                int finalIndex = index;
+                Object[] finalObjects = objects;
+                if (!THREAD_POOL.execute(() -> {
+                    try {
+                        RunRes runRes1 = (RunRes) finalObjects[0];
+                        Object obj = httpMappings[finalIndex].httpMappingFun
+                                ._gzb_call_x01(
+                                        httpMappings[finalIndex].id, mapObject0,
+                                        request, response,
+                                        parar, gzbJson,
+                                        log, finalObjects);
+                        runRes1.setData(obj);
+                        for (DecoratorEntity decoratorEntity : httpMappings[finalIndex].end) {
+                            runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(
+                                    decoratorEntity.id,
+                                    mapObject0, request,
+                                    response, parar,
+                                    gzbJson, log, finalObjects);
+                            if (runRes1 != null) {
+                                if (runRes1.getState() != 200) {
+                                    //log.d("request", key, request.getMethod(), parar, 200, "请求被调用后拦截");
+                                    return;
+                                } else {
+                                    finalObjects[0] = runRes1;
+                                }
+                            }
+                        }
+                        if (runRes1 != null) {
+                            response.sendAndFlush(runRes1.getData());
+                        }
+                    } catch (Exception e) {
+                        log.e("框架层错误日志",
+                                key,
+                                request.getMethod(),
+                                request.getParameter(),
+                                e);
+                        response.sendAndFlush(_err_json);
+                    }
+                })) {
+                    response.sendAndFlush(_fail_json);
+                }
+                runRes.setState(-200);//异步处理 托管 禁止上层处理
+            } else {
+                obj02 = httpMappings[index].httpMappingFun._gzb_call_x01(httpMappings[index].id, mapObject0, request, response, parar, gzbJson, log, objects);
+                runRes.setData(obj02).setState(200);
+            }
             for (DecoratorEntity decoratorEntity : httpMappings[index].end) {
                 RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, objects);
                 if (runRes1 != null) {
@@ -926,7 +1134,9 @@ public class FactoryImplV2 implements Factory {
                 HttpMapping[] httpMappings = mapHttpMapping.get(path);
                 httpMapping2.path = path;
                 if (httpMappings != null && httpMappings[index] != null) {
-                    if (httpMappings[index] != null && httpMappings[index].httpMappingFun != null && !httpMappings[index].httpMappingFun.getClass().getName().equals(httpMapping2.httpMappingFun.getClass().getName())) {
+                    if (httpMappings[index] != null
+                            && httpMappings[index].httpMappingFun != null
+                            && !httpMappings[index].httpMappingFun.getClass().getName().equals(httpMapping2.httpMappingFun.getClass().getName())) {
                         log.w("HTTP端点", "异常替换", id,
                                 "由",
                                 httpMappings[index].sign, httpMappings[index].path, met[httpMappings[index].met],
@@ -935,6 +1145,7 @@ public class FactoryImplV2 implements Factory {
                     }
                 } else {
                     log.t("HTTP端点", "添加", id, path, met[index], httpMapping2.sign);
+                    httpMappings = new HttpMapping[4];
                 }
                 httpMapping2.header = new HashMap<>();
                 if (headerClass != null) {
@@ -968,7 +1179,7 @@ public class FactoryImplV2 implements Factory {
                         httpMapping2.isCrossDomainOrigin = true;
                     }
                 }
-                httpMappings = new HttpMapping[4];
+
                 httpMappings[index] = httpMapping2;
                 mapHttpMapping.put(path, httpMappings);
                 map1.put(path, "1");
@@ -1061,73 +1272,108 @@ public class FactoryImplV2 implements Factory {
         for (int i = 0; i < listClassEntity.size(); i++) {
             ClassEntity classEntity = listClassEntity.get(i);
             if (classEntity.clazz.getAnnotation(aClass) != null) {
-                String code = ClassTools.gen_call_code_v4_all_code(classEntity.clazz, classEntity.code);
-                String name = ClassLoad.extractPublicClassName(code);
-                fileMap.put(name, new File(classEntity.filePath));
-                sourcesMap.put(name, code);
+                String name = null;
+                if (classEntity.code != null) {
+                    String code = ClassTools.gen_call_code_v4_all_code(classEntity.clazz, classEntity.code);
+                    name = ClassLoad.extractPublicClassName(code);
+                    sourcesMap.put(name, code);
+                }
+                if (classEntity.filePath != null && name != null) {
+                    fileMap.put(name, new File(classEntity.filePath));
+                }
                 pwd = classEntity.pwd;
                 iv = classEntity.iv;
             }
         }
+        List<ClassEntity> list = null;
         if (sourcesMap.size() > 0) {
-            List<ClassEntity> list = loadFiles(sourcesMap, fileMap, pwd, iv, mapClassEntity);
-            for (ClassEntity classEntity : list) {
-                Object obj = ClassTools.putObject(classEntity.clazz, null, mapObject);
-
-                if (aClass == DataBaseEventFactory.class) {
-                    EventFactory eventFactory = (EventFactory) mapObject.get(EventFactory.class.getName());
-                    eventFactory.register(classEntity.clazz, classEntity.code);
+            list = loadFiles(sourcesMap, fileMap, pwd, iv, mapClassEntity);
+            for (ClassEntity classEntity : listClassEntity) {
+                if (classEntity.code == null) {
+                    list.add(classEntity);
                 }
-                if (aClass == ThreadFactory.class) {
-                    Method[] methods = classEntity.clazz.getMethods();
-                    Map<String, Method> mapMethodThreadFactory0 = new ConcurrentHashMap<>(mapMethodThreadFactory);
-                    for (int i = 0; i < methods.length; i++) {
-                        ThreadInterval threadInterval = methods[i].getDeclaredAnnotation(ThreadInterval.class);
-                        if (threadInterval == null) {
+            }
+        } else {
+            list = listClassEntity;
+        }
+
+        for (ClassEntity classEntity : list) {
+            if (classEntity.clazz.isInterface()) {
+                continue;
+            }
+            Object obj = ClassTools.putObject(classEntity.clazz, null, mapObject);
+
+            if (aClass == Controller.class) {
+                //提前生成适配的实体类 目的是触发增强类并编译落盘为编译成二进制做准备  loadObject内置缓存 不会有明显性能问题 且非核心链路
+
+                Map<String, List<Object>> map001 = new HashMap<>();
+                for (Method method : classEntity.clazz.getMethods()) {
+                    for (Class<?> parameterType : method.getParameterTypes()) {
+                        if (parameterType.isPrimitive() || parameterType.getAnnotation(EntityAttribute.class) == null) {
                             continue;
                         }
-                        startThreadFactory(classEntity.clazz, methods[i], mapObject, threadInterval);
-                        String key = ClassTools.getSing(methods[i], classEntity.clazz);
-                        mapMethodThreadFactory0.remove(key);
-                        mapMethodThreadFactory.put(key, methods[i]);
-                    }
-                    for (Map.Entry<String, Method> stringMethodEntry : mapMethodThreadFactory0.entrySet()) {
-                        mapMethodThreadFactory.remove(ClassTools.getSing(stringMethodEntry.getValue(), classEntity.clazz));
+                        ClassTools.loadObject(parameterType, map001);//触发增强类生成
                     }
                 }
-                if (aClass == Decorator.class) {
-                    Map<String, Method> map = mapClassMethod.get(classEntity.clazz.getName());
-                    List<DecoratorEntity> listDecoratorEntity2 = new ArrayList<>();
-                    loadDecorator(classEntity, listDecoratorEntity2, obj);
-                    if (map != null) {
-                        for (Map.Entry<String, Method> stringMethodEntry : map.entrySet()) {
-                            Iterator<DecoratorEntity> iterator = listDecoratorEntity.iterator();
-                            while (iterator.hasNext()) {
-                                DecoratorEntity decorator = iterator.next();
-                                if (Objects.equals(decorator.sign, stringMethodEntry.getKey())) {
-                                    iterator.remove();
-                                }
+                for (Field combinedField : ClassTools.getCombinedFields(classEntity.clazz)) {
+                    if (combinedField.getType().isPrimitive() || combinedField.getType().getAnnotation(EntityAttribute.class) == null) {
+                        continue;
+                    }
+                    ClassTools.loadObject(combinedField.getType(), map001);//触发增强类生成
+                }
+            }
+            if (aClass == DataBaseEventFactory.class) {
+                EventFactory eventFactory = (EventFactory) mapObject.get(EventFactory.class.getName());
+                eventFactory.register(classEntity.clazz, classEntity.code);
+            }
+            if (aClass == ThreadFactory.class) {
+                Method[] methods = classEntity.clazz.getMethods();
+                Map<String, Method> mapMethodThreadFactory0 = new ConcurrentHashMap<>(mapMethodThreadFactory);
+                for (int i = 0; i < methods.length; i++) {
+                    ThreadInterval threadInterval = methods[i].getDeclaredAnnotation(ThreadInterval.class);
+                    if (threadInterval == null) {
+                        continue;
+                    }
+                    startThreadFactory(classEntity.clazz, methods[i], mapObject, threadInterval);
+                    String key = ClassTools.getSing(methods[i], classEntity.clazz);
+                    mapMethodThreadFactory0.remove(key);
+                    mapMethodThreadFactory.put(key, methods[i]);
+                }
+                for (Map.Entry<String, Method> stringMethodEntry : mapMethodThreadFactory0.entrySet()) {
+                    mapMethodThreadFactory.remove(ClassTools.getSing(stringMethodEntry.getValue(), classEntity.clazz));
+                }
+            }
+            if (aClass == Decorator.class) {
+                Map<String, Method> map = mapClassMethod.get(classEntity.clazz.getName());
+                List<DecoratorEntity> listDecoratorEntity2 = new ArrayList<>();
+                loadDecorator(classEntity, listDecoratorEntity2, obj);
+                if (map != null) {
+                    for (Map.Entry<String, Method> stringMethodEntry : map.entrySet()) {
+                        Iterator<DecoratorEntity> iterator = listDecoratorEntity.iterator();
+                        while (iterator.hasNext()) {
+                            DecoratorEntity decorator = iterator.next();
+                            if (Objects.equals(decorator.sign, stringMethodEntry.getKey())) {
+                                iterator.remove();
                             }
                         }
                     }
-                    map = new ConcurrentHashMap<>();
-                    for (DecoratorEntity decoratorEntity : listDecoratorEntity2) {
-                        listDecoratorEntity.add(decoratorEntity);
-                        map.put(decoratorEntity.sign, decoratorEntity.method);
-                    }
-                    mapClassMethod.put(classEntity.clazz.getName(), map);
                 }
-
+                map = new ConcurrentHashMap<>();
+                for (DecoratorEntity decoratorEntity : listDecoratorEntity2) {
+                    listDecoratorEntity.add(decoratorEntity);
+                    map.put(decoratorEntity.sign, decoratorEntity.method);
+                }
+                mapClassMethod.put(classEntity.clazz.getName(), map);
             }
-        }
 
+        }
         return listClassEntity;
     }
 
     Map<String, Method> mapMethodThreadFactory = new ConcurrentHashMap<>();
 
     /// 注意要点
-    /// 1 改变方法签名的时候必须修改 num=0 停止正在运行的线程 否则线程无法停止 补救措施就是恢复签名 改为0停止
+    /// 1 改变方法签名的时候必须修改 num=0 停止正在运行的线程 否则线程无法停止 补救措施就是恢复签名 改为0停止 (已克服 无需再修改为0)
     /// 2 num=0后会清楚运行线程的状态保存  num=1改为2 新新增一个线程 线程1保存原有状态 线程2是全新线程
     /// 3 方法内部返回非null 会终止进程 并清理状态数据
     /// 4 线程数量不变 方法签名不变 修改代码可以无缝热更新 这是非常稳定的模式

@@ -40,7 +40,7 @@ public class DataBaseConfig {
         dataBaseConfig.setAsyncSleepMilli(Config.getInteger("db." + key + ".async.sleep", 500));
         dataBaseConfig.setAsyncBatchSize(Config.getInteger("db." + key + ".async.batch", 500));
         dataBaseConfig.setAsyncThreadNum(Config.getInteger("db." + key + ".async.thread.num", Math.max(Config.cpu / 4, 2)));
-        dataBaseConfig.setSign(dataBaseConfig.getIp() + "-" + dataBaseConfig.port + "-" + dataBaseConfig.name);
+        dataBaseConfig.setSign(dataBaseConfig.getIp() + "_" + dataBaseConfig.port + "_" + dataBaseConfig.name);
 
         return dataBaseConfig;
     }
@@ -207,5 +207,26 @@ public class DataBaseConfig {
 
     public void setSign(String sign) {
         this.sign = sign;
+    }
+
+    @Override
+    public String toString() {
+        return "{" +
+                "\"type\":\""+type+"\"," +
+                "\"key\":\""+key+"\"," +
+                "\"clz\":\""+clz+"\"," +
+                "\"ip\":\""+ip+"\"," +
+                "\"port\":\""+port+"\"," +
+                "\"name\":\""+name+"\"," +
+                "\"acc\":\""+acc+"\"," +
+                "\"pwd\":\""+pwd+"\"," +
+                "\"threadMax\":\""+threadMax+"\"," +
+                "\"overtime\":\""+overtime+"\"," +
+                "\"asyncSleepMilli\":\""+asyncSleepMilli+"\"," +
+                "\"asyncBatchSize\":\""+asyncBatchSize+"\"," +
+                "\"asyncThreadNum\":\""+asyncThreadNum+"\"," +
+                "\"sign\":\""+sign+"\"," +
+                "\"className\":\""+this.getClass().getName()+"\"" +
+                "}";
     }
 }

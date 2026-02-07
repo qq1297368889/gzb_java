@@ -45,10 +45,6 @@ public class HTTPRequestHandlerV4 extends SimpleChannelInboundHandler<FullHttpRe
     public static final byte[] def = "{\"code\":\"2\",\"message\":\"Server Busy / 服务器 繁忙\"}".getBytes();
     public static Map<Long, AtomicInteger> reqInfo = new ConcurrentHashMap<>();
 
-    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
-
-        NettyServer.factory.start(ctx,req);
-    }
 
 
     @Override
@@ -57,11 +53,20 @@ public class HTTPRequestHandlerV4 extends SimpleChannelInboundHandler<FullHttpRe
         ctx.close();
     }
 
-    private void handler(Request request, Response response, ChannelHandlerContext ctx, FullHttpRequest req) {
-        RunRes runRes = NettyServer.factory.request(request, response);//内部有错误捕捉 不可能出错
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
+        // handler(ctx,req);
+        NettyServer.factory.start(ctx,req);
+    }
+    private void handler(ChannelHandlerContext ctx, FullHttpRequest req) {
+        Request request = new RequestDefaultImpl(ctx, req);
+        Response response = request.getResponse();
+        RunRes runRes = NettyServer.factory.request1(request, response);//内部有错误捕捉 不可能出错
         if (runRes == null) {
             response.setContentType("application/json;charset=UTF-8");
             response.sendAndFlush("{\"code\":\"2\",\"message\":\"服务器出现意料外的情况\"}");
+        } else if (runRes.getState() == -200) {
+            //下层在其他线程处理 上层不处理
+            return;
         } else if (runRes.getState() == 200) {
             response.sendAndFlush(runRes.getData());
         } else if (runRes.getState() == 404) {

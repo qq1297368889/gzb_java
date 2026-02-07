@@ -56,6 +56,7 @@ public class RequestDecorator {
     //登陆验证
     @DecoratorStart(value = "/system/", sort = 0)
     public RunRes authorization(Request request, RunRes runRes, GzbJson gzbJson) throws Exception {
+
         Session session = request.getSession();
         log.d("登陆验证 开始");
         String data = session.getString(Config.get("key.system.login.info"));

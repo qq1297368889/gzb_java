@@ -25,9 +25,12 @@ import gzb.tools.Tools;
 import gzb.tools.log.Log;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.DefaultChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.ReferenceCountUtil;
+import io.netty.util.ResourceLeakDetector;
 
 import java.net.InetSocketAddress;
 import java.util.HashSet;
@@ -38,7 +41,12 @@ public class NettyServer {
     public static Factory factory;
     public static HTTPStaticFileHandler HTTPStaticFileHandler = new HTTPStaticFileHandler();
     public static Set<String> allowedDomains;
-
+    @SuppressWarnings("unused")
+    private static final Class<?>[] NETTY_CORE_CLASSES = {
+            ReferenceCountUtil.class,
+            ResourceLeakDetector.class,
+            DefaultChannelPipeline.class
+    };
 
     public static void main(String[] args) throws Exception {
         int port = 3080;
@@ -72,6 +80,7 @@ public class NettyServer {
             }
             long end = System.currentTimeMillis();
             log.i("初始化耗时", end - start);
+            log.t("引入类，防止被剔除",NETTY_CORE_CLASSES);
         } catch (Exception e) {
             log.e("服务器初始化失败", e);
             System.exit(1314520);

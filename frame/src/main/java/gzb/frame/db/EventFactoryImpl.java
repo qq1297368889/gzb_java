@@ -127,7 +127,8 @@ public class EventFactoryImpl implements EventFactory {
             Class<?> declaringClass = method.getDeclaringClass();
             String sign = ClassTools.getSing(method, declaringClass);
             int id = ClassTools.getSingInt(method, declaringClass);
-            if (dataBaseEventSelect == null && dataBaseEventSave == null && dataBaseEventDelete == null && dataBaseEventUpdate == null) {
+            if (dataBaseEventSelect == null && dataBaseEventSave == null && dataBaseEventDelete == null
+                    && dataBaseEventUpdate == null) {
                 continue;
             }
             if (obj == null) {

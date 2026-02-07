@@ -28,7 +28,7 @@
             <artifactId>asm-util</artifactId>
             <version>9.7</version>
         </dependency>
-        <!-- JSON处理 -->
+        <!-- JSON处理   -抛弃-->
 <!--        <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
@@ -52,6 +52,7 @@
             <artifactId>netty-codec-http</artifactId>
             <version>4.1.126.Final</version>
         </dependency>
+<!--
 
         <dependency>
             <groupId>io.netty</groupId>
@@ -68,6 +69,8 @@
             <classifier>osx-x86_64</classifier>
             <scope>runtime</scope>
         </dependency>
+-->
+
         <!-- MYSQL驱动 -->
         <dependency>
             <groupId>com.mysql</groupId>

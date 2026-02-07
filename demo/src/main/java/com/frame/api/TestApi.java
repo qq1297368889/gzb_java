@@ -95,9 +95,15 @@ public class TestApi {
     @Resource
     SysPermissionDao sysPermissionDao;
 
+    //直接在事件循环线程执行 避免切换
+     @EventLoop
     @GetMapping("get1")
-    public Object get1(String msg, GzbJson gzbJson) throws Exception {
-        return gzbJson.success(msg);
+    public String get1(String message){
+        return "{\"code\":\"1\",\"time\":\"1769527173990\",\"message\":\""+message+"\"}";
+    }
+    @GetMapping("find1")
+    public Object find1(String msg, GzbJson gzbJson, SysUsersDao sysUsersDao) throws Exception {
+        return gzbJson.success(msg, sysUsersDao.find(new SysUsers().setSysUsersId(1L)));
     }
 
     public Object testApi(SysFileDao sysFileDao, SysFile[] files, SysUsers sysUsers, GzbJson gzbJson) throws Exception {
@@ -302,7 +308,7 @@ public class TestApi {
         sysUsersDao.saveAsync(sysUsers, new Runnable() {
             @Override
             public void run() {
-                log.d("执行失败，回调", sysUsers);//这里有完整上下文信息 因为这是开发者可以自由引用当前可访问区域的内容 可以进行补偿操作
+                log.d("执行失败了，触发回调", sysUsers);//这里有完整上下文信息 因为这是开发者可以自由引用当前可访问区域的内容 可以进行补偿操作  这不是异步思维 而是补偿操作
                 semaphore.release();
             }
         });
@@ -367,7 +373,7 @@ public class TestApi {
 
     public TestApi() {
 
-        System.out.println("------TestApi 创建对象-----------");
+        System.out.println("------TestApi v1002 创建对象-----------");
     }
 
 

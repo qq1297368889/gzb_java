@@ -27,6 +27,8 @@ import java.util.concurrent.Semaphore;
 public class HttpMapping {
     //http端点映射方法
     public GzbOneInterface httpMappingFun;
+    //直接映射运行方法
+    //public Runnable runnable;
 
     public String sign;
     public int id;
@@ -66,4 +68,21 @@ public class HttpMapping {
 
 */
 
+    @Override
+    public String toString() {
+        return "{" +
+                "httpMappingFun=" + httpMappingFun +
+                ", sign='" + sign + '\'' +
+                ", id=" + id +
+                ", path='" + path + '\'' +
+                ", met=" + met +
+                ", transaction=" + transaction +
+                ", isCrossDomainOrigin=" + isCrossDomainOrigin +
+                ", async=" + async +
+                ", semaphore=" + semaphore +
+                ", start=" + start +
+                ", end=" + end +
+                ", header=" + header +
+                '}';
+    }
 }

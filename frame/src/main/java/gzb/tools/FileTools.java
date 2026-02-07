@@ -18,10 +18,7 @@
 
 package gzb.tools;
 
-import gzb.frame.netty.entity.Request;
 import gzb.tools.cache.Cache;
-import gzb.tools.json.GzbJson;
-
 import java.io.File;
 
 import java.io.IOException;
@@ -125,34 +122,39 @@ public class FileTools {
 
         System.out.println("--- FileTools 功能测试结束 ---");
     }
+
     // 统一使用 UTF-8 编码，防止乱码
     private static final Charset ENCODING = StandardCharsets.UTF_8;
-    public static List<File> subFileAll(File file, int retType){
+
+    public static List<File> subFileAll(File file, int retType) {
         return subFileAll(file, retType, null);
     }
-    public static List<File> subFileAll(File file, int retType, String suffix){
+
+    public static List<File> subFileAll(File file, int retType, String suffix) {
         return subFileAll(file, retType, suffix, 0, 0);
     }
+
     /**
      * 获取目录下文件和目录名  包括 子目录下的文件和目录 无限循环
+     *
      * @param file:目录 例如 "d:/a.txt" file
      * @param retType 为1 返回全部 目录和文件名.为2返回文件名 为3返回目录名
-     * @param suffix 后缀 例如 ".txt/.jpg" 多个用 / 分割
-     * @param page 分页页码
-     * @param size 分页长度
+     * @param suffix  后缀 例如 ".txt/.jpg" 多个用 / 分割
+     * @param page    分页页码
+     * @param size    分页长度
      */
     public static List<File> subFileAll(File file, int retType, String suffix, int page, int size) {
-        String key = file.getPath()+"-"+retType+"-"+suffix+"-"+page+"-"+size;
-        List<File> listRes =Cache.gzbMap.getObject(key);
-        if (listRes!=null) {
+        String key = file.getPath() + "-" + retType + "-" + suffix + "-" + page + "-" + size;
+        List<File> listRes = Cache.gzbMap.getObject(key);
+        if (listRes != null) {
             return listRes;
         }
         listRes = new ArrayList<>();
-        String[]arrSuffix=null;
-        if (suffix!=null && !suffix.isEmpty()) {
-            arrSuffix=suffix.split("/");
-        }else{
-            arrSuffix=new String[0];
+        String[] arrSuffix = null;
+        if (suffix != null && !suffix.isEmpty()) {
+            arrSuffix = suffix.split("/");
+        } else {
+            arrSuffix = new String[0];
         }
         if (page < 0) {
             page = 0;
@@ -175,7 +177,7 @@ public class FileTools {
         List<File> listFile = new ArrayList<>();
         list0.add(file);
         while (list0.size() > 0) {
-            File[]files=list0.remove(0).listFiles();
+            File[] files = list0.remove(0).listFiles();
             if (files != null) {
                 for (int i = 0; i < files.length; i++) {
                     if (files[i].isDirectory()) {
@@ -184,10 +186,10 @@ public class FileTools {
                     }
                     if (files[i].isFile() && (retType == 2 || retType == 1)) {
                         String name = files[i].getName();
-                        boolean suc=false;
+                        boolean suc = false;
                         for (String str : arrSuffix) {
                             if (name.endsWith(str)) {
-                                suc=true;
+                                suc = true;
                                 break;
                             }
                         }
@@ -204,7 +206,7 @@ public class FileTools {
                     continue;
                 }
                 listRes.add(listFile.get(i));
-                if (listRes.size()==size) {
+                if (listRes.size() == size) {
                     break;
                 }
             }
@@ -215,7 +217,7 @@ public class FileTools {
                     continue;
                 }
                 listRes.add(listDir.get(listDir.size() - 1 - i));
-                if (listRes.size()==size) {
+                if (listRes.size() == size) {
                     break;
                 }
             }
@@ -229,21 +231,23 @@ public class FileTools {
                     continue;
                 }
                 listRes.add(listFile.get(i));
-                if (listRes.size()==size) {
+                if (listRes.size() == size) {
                     break;
                 }
             }
         }
-        Cache.gzbMap.setObject(key,listRes,22);
+        Cache.gzbMap.setObject(key, listRes, 22);
         return listRes;
     }
 
-    public static List<File> subFile(File file, int retType){
+    public static List<File> subFile(File file, int retType) {
         return subFile(file, retType, null);
     }
-    public static List<File> subFile(File file, int retType, String suffix){
+
+    public static List<File> subFile(File file, int retType, String suffix) {
         return subFile(file, retType, suffix, 0, 0);
     }
+
     //不会获取子目录下的文件和目录 只会获取当前目录下的文件和目录
     public static List<File> subFile(File file, int retType, String suffix, int page, int size) {
         List<File> list = new ArrayList<>();
@@ -292,7 +296,7 @@ public class FileTools {
                 list.add(file0);
             } else if (file0.isFile() && retType == 2) {
                 list.add(file0);
-            }else if (file0.exists() && retType == 1) {
+            } else if (file0.exists() && retType == 1) {
                 list.add(file0);
             }
             if (list.size() == size) {
@@ -301,9 +305,11 @@ public class FileTools {
         }
         return list;
     }
+
     /**
      * 循环创建目录（包括所有不存在的父目录）。
      * 性能优化：使用 Files.createDirectories (JDK 7+)。
+     *
      * @param file 要创建的目录
      */
     public static boolean mkdir(File file) {
@@ -324,11 +330,46 @@ public class FileTools {
             return false;
         }
     }
+
+    /**
+     * 循环创建目录（包括所有不存在的父目录）。
+     * 性能优化：使用 Files.createDirectories (JDK 7+)。
+     *
+     * @param file0 要创建的文件 上层目录不存在自动创建
+     */
+    public static boolean createFile(File file0) {
+        if (file0 == null) {
+            return false;
+        }
+        if (file0.exists()) {
+            if (!file0.isFile()) {
+                //异常情况 静默处理
+                System.err.println("创建文件时发现 目标为目录，出现异常 要创建文件为目录：" + file0.getAbsolutePath());
+                return false;
+            }
+        }
+        File file = file0.getParentFile();
+        if (file == null) {
+            return false;
+        }
+        try {
+            if (!file.exists()) {
+                Files.createDirectories(file.toPath());
+                return file0.createNewFile();
+            }
+            return false;
+        } catch (IOException e) {
+            System.err.println("创建目录失败：" + file.toPath().toAbsolutePath());
+            e.printStackTrace();//无法依赖日志类 日志类引用本类 互相引用容易出文件 直接抛出原生异常
+            return false;
+        }
+    }
     // --- 读取操作 (Read Operations) ---
 
     /**
      * 读取文件所有字节。
      * 性能优化：使用 Files.readAllBytes，这是 NIO 优化的，兼容 JDK 7+。
+     *
      * @param file 要读取的文件
      * @return 文件的所有字节数组，失败返回 null。
      */
@@ -349,6 +390,7 @@ public class FileTools {
      * 读取文件所有内容为字符串。
      * 编码统一：使用 UTF-8。
      * 性能优化：使用 NIO readAllBytes + String 构造函数。
+     *
      * @param file 要读取的文件
      * @return 文件的所有内容字符串，失败返回 null。
      */
@@ -365,6 +407,7 @@ public class FileTools {
      * 读取文本内容，并根据换行符分割成数组返回。
      * 编码统一：使用 UTF-8。
      * 性能优化：使用 Files.readAllLines (JDK 7+)，高效且内存友好。
+     *
      * @param file 要读取的文件
      * @return 按行分割的字符串数组，失败返回 null。
      */
@@ -387,7 +430,8 @@ public class FileTools {
     /**
      * 读取文本内容，并根据指定分隔符分割成数组返回。
      * 性能优化：先读取整个文件为字符串，然后进行分割。
-     * @param file 要读取的文件
+     *
+     * @param file  要读取的文件
      * @param split 指定的分隔符
      * @return 分割后的字符串数组，失败或内容为空返回 null。
      */
@@ -405,6 +449,7 @@ public class FileTools {
     /**
      * 将字节数组数据写入文件，如果文件存在则覆盖。
      * 性能优化：使用 NIO Files.write (JDK 7+)，效率高。
+     *
      * @param file 目标文件
      * @param data 要写入的字节数组
      * @return 成功返回 true，失败返回 false。
@@ -425,6 +470,7 @@ public class FileTools {
     /**
      * 将字符串数据写入文件，如果文件存在则覆盖。
      * 编码统一：先转为 UTF-8 字节，然后写入。
+     *
      * @param file 目标文件
      * @param data 要写入的字符串
      * @return 成功返回 true，失败返回 false。
@@ -439,6 +485,7 @@ public class FileTools {
     /**
      * 将字节数组数据追加到文件末尾。
      * 性能优化：使用 FileOutputStream + true (append) + 缓冲流。
+     *
      * @param file 目标文件
      * @param data 要追加的字节数组
      * @return 成功返回 true，失败返回 false。
@@ -454,9 +501,11 @@ public class FileTools {
             return false;
         }
     }
+
     /**
      * 将字符串数据追加到文件末尾。
      * 编码统一：使用 UTF-8，性能优化：使用 BufferedWriter。
+     *
      * @param file 目标文件
      * @param data 要追加的字符串
      * @return 成功返回 true，失败返回 false。
@@ -479,6 +528,7 @@ public class FileTools {
 
     /**
      * 删除文件。
+     *
      * @param file 要删除的文件
      * @return 成功返回 true，失败返回 false。
      */
@@ -498,7 +548,8 @@ public class FileTools {
     /**
      * 复制文件 (保留源文件)。
      * 性能优化：使用 Files.copy，NIO 零拷贝优化。
-     * @param file 源文件
+     *
+     * @param file    源文件
      * @param newFile 目标文件
      * @return 成功返回 true，失败返回 false。
      */
@@ -518,7 +569,8 @@ public class FileTools {
     /**
      * 移动/重命名文件 (删除源文件)。
      * 性能优化：使用 Files.move，NIO 零拷贝优化。
-     * @param file 源文件
+     *
+     * @param file    源文件
      * @param newFile 目标文件
      * @return 成功返回 true，失败返回 false。
      */

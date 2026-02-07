@@ -31,8 +31,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * 类加载器，用于动态编译和加载 Groovy 或 Java 代码。
@@ -41,11 +39,7 @@ import java.util.regex.Pattern;
 public class ClassLoadV1 {
     public Log log = Log.log;
 
-
-    // --- 现有方法：用于单个源代码编译和加载 ---
-
-
-    public  Map<String, Class<?>> compileAndLoad(Map<String, String> sourcesMap) throws Exception {
+    public Map<String, Class<?>> compileAndLoad(Map<String, String> sourcesMap) throws Exception {
         return compile(sourcesMap);
     }
 
@@ -53,7 +47,7 @@ public class ClassLoadV1 {
      * 核心编译和加载方法 (单文件)。
      * (保持原样，未修改)
      */
-    public  Class<?> compileAndLoad(String javaCode, String className) throws Exception {
+    public Class<?> compileAndLoad0(String javaCode, String className) throws Exception {
 
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler == null) {
@@ -107,6 +101,13 @@ public class ClassLoadV1 {
         return classLoader.loadFromBytes(className, bytes);
     }
 
+    //修改单个编译方法 为调用批量 复用 但是保留原代码
+    public Class<?> compileAndLoad(String javaCode, String className) throws Exception {
+        Map<String, String> sourcesMap = new HashMap<>();
+        sourcesMap.put(className, javaCode);
+        Map<String, Class<?>> compiledClasses = compile(sourcesMap);
+        return compiledClasses.get(className);
+    }
 
     /**
      * 核心编译和加载方法 (批量版)。
@@ -115,7 +116,8 @@ public class ClassLoadV1 {
      * @return 编译后的 Class 对象 Map (键为类名，值为 Class 对象)
      * @throws Exception 编译或加载失败
      */
-    public  Map<String, Class<?>> compile(Map<String, String> sourcesMap) throws Exception {
+    public Map<String, Class<?>> compile(Map<String, String> sourcesMap) throws Exception {
+        Map<String, Class<?>> compiledClasses = new HashMap<>();
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler == null) {
             throw new IllegalStateException("无法获取 Java 编译器，请确保 JDK 已正确安装。");
@@ -124,9 +126,20 @@ public class ClassLoadV1 {
         // 1. 准备所有的源代码文件对象
         List<JavaFileObject> compilationUnits = new ArrayList<>();
         for (Map.Entry<String, String> entry : sourcesMap.entrySet()) {
-            compilationUnits.add(new JavaSourceFromString(entry.getKey(), entry.getValue()));
-        }
+            Map<String, byte[]> map = ClassByteTools.readBytes(entry.getKey(), sourcesMap);
+            if (map.size() > 0) {
+                Map<String, Class<?>> maps = loadClassFromBytesBatch(map);
+                maps.forEach((k, v) -> {
+                    compiledClasses.put(k, v);
+                });
+            } else {
+                compilationUnits.add(new JavaSourceFromString(entry.getKey(), entry.getValue()));
+            }
 
+        }
+        if (compilationUnits.size()==0) {
+            return compiledClasses;
+        }
         // 2. 声明并初始化全局字节码收集器
         // 键: 编译输出的类名 (可能包含 $ 符号)
         // 值: 存储字节码的内存对象
@@ -169,7 +182,6 @@ public class ClassLoadV1 {
 
         options.add("-classpath");
         options.add(completeClasspath);
-
         // 5. 一次性调用编译任务
         JavaCompiler.CompilationTask task =
                 compiler.getTask(null, fileManager, diagnostics, options, null, compilationUnits);
@@ -179,18 +191,18 @@ public class ClassLoadV1 {
             StringBuilder errorMessage = new StringBuilder();
             diagnostics.getDiagnostics().forEach(
                     d -> errorMessage.append(d.getMessage(null)).append("\n"));
-            throw new Exception("批量编译失败：" + "\r\n" + errorMessage+sourcesMap);
+            throw new Exception("批量编译失败：" + "\r\n" + errorMessage + sourcesMap);
         }
 
         // 6. 加载所有编译成功的类
         HotSwapClassLoader classLoader = new HotSwapClassLoader(Thread.currentThread().getContextClassLoader());
-        Map<String, Class<?>> compiledClasses = new HashMap<>();
+
         Map<String, String> sourcesMap_new = new HashMap<>();
         // 遍历 outputClasses，加载所有捕获到的字节码
         for (Map.Entry<String, JavaClassInMemory> entry : outputClasses.entrySet()) {
             String className = entry.getKey();
             byte[] bytes = entry.getValue().getBytes();
-
+            ClassByteTools.saveBytes(className, sourcesMap, bytes);
             if (bytes.length > 0) {
                 //有些同批次依赖问题导致出错 这些类虽然出错一般不影响运行 但是 还是过滤一下 尽量全部成功 如果无法成功调用单词编译再试 还是不行的话 抛出错误
                 try {
@@ -228,8 +240,60 @@ public class ClassLoadV1 {
         return compiledClasses;
     }
 
+    /**
+     * 【新增核心方法1】直接加载字节码byte[] 为Class对象（单类）
+     * 复用现有HotSwapClassLoader，完美支持热更新，无需编译，性能最优
+     *
+     * @param className  类的全限定名
+     * @param classBytes 类的字节码数组
+     * @return 加载后的Class<?>对象
+     * @throws Exception 加载失败抛出异常
+     */
+    public Class<?> loadClassFromBytes(String className, byte[] classBytes) throws Exception {
+        if (classBytes == null || classBytes.length == 0) {
+            throw new IllegalArgumentException("类字节码数组不能为空或空数组");
+        }
+        if (className == null || className.trim().isEmpty()) {
+            throw new IllegalArgumentException("类全限定名不能为空");
+        }
+        HotSwapClassLoader classLoader = new HotSwapClassLoader(Thread.currentThread().getContextClassLoader());
+        return classLoader.loadFromBytes(className, classBytes);
+    }
 
-     static class JavaSourceFromString extends SimpleJavaFileObject {
+    /**
+     * 【新增核心方法2】批量加载字节码byte[] 为Class对象（批量）
+     * 复用现有HotSwapClassLoader，一个类加载器加载所有类，保证类之间的依赖引用正常
+     *
+     * @param byteMap 键：类的全限定名，值：类的字节码数组
+     * @return 加载后的Class对象Map
+     * @throws Exception 加载失败抛出异常
+     */
+    public Map<String, Class<?>> loadClassFromBytesBatch(Map<String, byte[]> byteMap) throws Exception {
+        Map<String, Class<?>> classMap = new HashMap<>(byteMap.size());
+        if (byteMap.isEmpty()) {
+            return classMap;
+        }
+        // 单个独立类加载器加载所有字节码，保证类间依赖
+        HotSwapClassLoader classLoader = new HotSwapClassLoader(Thread.currentThread().getContextClassLoader());
+        for (Map.Entry<String, byte[]> entry : byteMap.entrySet()) {
+            String className = entry.getKey();
+            byte[] classBytes = entry.getValue();
+            if (classBytes != null && classBytes.length > 0) {
+                try {
+                    Class<?> clazz = classLoader.loadFromBytes(className, classBytes);
+                    classMap.put(className, clazz);
+                } catch (Throwable t) {
+                    log.e("批量加载字节码失败", className, t.getMessage());
+                    throw new Exception("加载类[" + className + "]字节码失败", t);
+                }
+            } else {
+                log.w("批量加载字节码", "类字节码为空", className);
+            }
+        }
+        return classMap;
+    }
+
+    static class JavaSourceFromString extends SimpleJavaFileObject {
         final String code;
 
         JavaSourceFromString(String name, String code) {
@@ -243,7 +307,7 @@ public class ClassLoadV1 {
         }
     }
 
-     static class JavaClassInMemory extends SimpleJavaFileObject {
+    static class JavaClassInMemory extends SimpleJavaFileObject {
         private final ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
         JavaClassInMemory(String name, Kind kind) {

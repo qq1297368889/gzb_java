@@ -4,5 +4,12 @@ colorimage/
 hot_update_system/
 spring-webflux/
 tfb_test/
+META-INF/
+.run/
+gzbClassCache/
+tmp/
+target/
+logs/
 *.class
 *.log
+*.cache

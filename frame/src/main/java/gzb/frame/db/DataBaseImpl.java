@@ -110,6 +110,9 @@ public class DataBaseImpl implements DataBase {
         initDataBase();
     }
 
+    public DataBaseConfig getDataBaseConfig(){
+        return dataBaseConfig;
+    }
     public String getSign() {
         return dataBaseConfig.getSign();
     }
@@ -1121,7 +1124,7 @@ public class DataBaseImpl implements DataBase {
         if (readTransactionState() != null) {
             throw new GzbException0("事务开启时不支持异步执行，会打破事务原子性，如需异步请关闭事务");
         }
-        return runSqlAsync(sql, para);
+        return asyncFactory.add(sql, para);
     }
 
     @Override

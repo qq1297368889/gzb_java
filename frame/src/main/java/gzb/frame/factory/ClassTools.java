@@ -601,20 +601,29 @@ public class ClassTools {
                 obj = mapLoadObjectObject.get(aClass);
                 if (obj == null) {
                     String code;
+                    Class<?> aClass1 = null;
                     if (aClass.isArray()) {
-                        code = ClassTools.gen_entity_load_code_v1(aClass.getComponentType());
+                        aClass1 = aClass.getComponentType();
                     } else {
-                        code = ClassTools.gen_entity_load_code_v1(aClass);
+                        aClass1 = aClass;
                     }
-                    //System.out.println(code);
-                    if (code != null) {
-                        Class<?> aClass0 = ClassLoad.compileJavaCode(code);
-                        if (aClass0 != null) {
-                            obj = aClass0.getDeclaredConstructor().newInstance();
-                            mapLoadObjectObject.put(aClass, obj);
+                    //"package "+className+"_v1;\npublic class " + (className.replaceAll("\\.", "_")) + "_inner_v1
+                    Class<?> aClass0 = null;
+                    //兼容打包后的版本 打包后 是exe文件 类无需生成 生成会出错 所以要这么做
+                    String classNameAll = aClass1.getName() + "_v1" + "." + (aClass1.getName().replaceAll("\\.", "_")) + "_inner_v1";
+                    try {
+                        aClass0 = Class.forName(classNameAll); //直接加载已有类 打包后必定有
+                    } catch (Exception e) {//预期内的可能错误 吞掉 真实编译的错误才有意义
+                        code = ClassTools.gen_entity_load_code_v1(aClass1); //通过反射 生成新类
+                        if (code != null) {
+                            aClass0 = ClassLoad.compileJavaCode(code);//编译新类
+                        } else {
+                            mapLoadObjectObject.put(aClass, "1");
                         }
-                    } else {
-                        mapLoadObjectObject.put(aClass, "1");
+                    }
+                    if (aClass0 != null) {
+                        obj = aClass0.getDeclaredConstructor().newInstance();
+                        mapLoadObjectObject.put(aClass, obj);
                     }
                 }
             } catch (Exception e) {
@@ -812,10 +821,15 @@ public class ClassTools {
         if (aClass.getName().contains("gzb.frame") || aClass.getName().contains("gzb.tools")) {
             return null;
         }
+        EntityAttribute classAttribute = aClass.getAnnotation(EntityAttribute.class);
+
         int num = 0;
         Field[] fields = aClass.getDeclaredFields();
         String className = aClass.getName();
-        String code = "public class " + (className.replaceAll("\\.", "_")) + "_inner implements gzb.frame.factory.GzbEntityInterface{\n";
+        String code = "package " + className + "_v1;\npublic class " + (className.replaceAll("\\.", "_")) + "_inner_v1 implements gzb.frame.factory.GzbEntityInterface{\n" +
+                "   public "+ (className.replaceAll("\\.", "_")) +"_inner_v1(){\n" +
+                "        \n" +
+                "    }\n";
         for (Field field : fields) {
             if (field.getType() == byte.class || field.getType() == Byte.class
                     || field.getType() == byte[].class || field.getType() == Byte[].class) {
@@ -1187,7 +1201,7 @@ public class ClassTools {
                 if (Modifier.isFinal(field.getModifiers())) {
                     continue;
                 }
-                String tName = ClassTools.toName(field.getType(),true);
+                String tName = ClassTools.toName(field.getType(), true);
                 if (Modifier.isPublic(field.getModifiers())) {
                     code += "            list = map.get(\"" + field.getName() + "\");\n" +
                             "            if (list!=null) {\n" +
@@ -1264,7 +1278,6 @@ public class ClassTools {
             code += "        return null;\n";
         }
         code += "    }\n";
-        EntityAttribute classAttribute = aClass.getAnnotation(EntityAttribute.class);
         code += "    public Object loadResultSet(java.sql.ResultSet resultSet, java.util.Set<String> names) throws Exception{\n";
         if (classAttribute != null) {
             try {
@@ -1714,6 +1727,7 @@ public class ClassTools {
             }
             Class<?>[] types = method.getParameterTypes();
             String[] names = ClassTools.getParameterNamesByAsm(method, types).toArray(new String[0]);
+
             if (names.length != types.length) {
                 names = ClassTools.getParameterNames(javaCode, method.getName(), types).toArray(new String[0]);
             }
@@ -1884,7 +1898,7 @@ public class ClassTools {
                                 code += "new gzb.tools.DateTime(t_map_list.get(0).toString()).toDate();\n";
                             } else if (types[i1] == Timestamp.class) {
                                 code += "new gzb.tools.DateTime(t_map_list.get(0).toString()).toTimestamp();\n";
-                            }  else if (types[i1] == DateTime.class) {
+                            } else if (types[i1] == DateTime.class) {
                                 code += "new gzb.tools.DateTime(t_map_list.get(0).toString());\n";
                             } else {
                                 code += ClassTools.toName(types[i1]) + "." + funName +
@@ -2719,8 +2733,43 @@ public class ClassTools {
         return key.toString();
     }
 
-    static Map<String, Map<String, Integer>> map_getSingInt = new HashMap<>();
+    public static Map<String, Map<String, Integer>> map_getSingInt = new HashMap<>();
 
+    public static void saveSingAll(String filePath) {
+        String all="";
+        for (Map.Entry<String, Map<String, Integer>> stringMapEntry : map_getSingInt.entrySet()) {
+            for (Map.Entry<String, Integer> stringIntegerEntry : stringMapEntry.getValue().entrySet()) {
+                all+=stringMapEntry.getKey()+"###"+stringIntegerEntry.getKey()+"="+stringIntegerEntry.getValue()+"\n";
+            }
+
+        }
+        FileTools.save(new File(filePath),all);
+    }
+    public static void readSingAll(String filePath) {
+        String[]arr1=FileTools.readArray(new File(filePath));
+        if (arr1==null) {
+            return;
+        }
+        for (String string : arr1) {
+            if (string==null||string.length()<1) {
+                continue;
+            }
+            String[] arr2=string.split("=");
+            if (arr2.length!=2) {
+                continue;
+            }
+            String[] arr3=arr2[0].split("###");
+            if (arr3.length!=2) {
+                continue;
+            }
+            Map<String, Integer> map0=map_getSingInt.get(arr3[0]);
+            if (map0==null) {
+                map0=new HashMap<>();
+                map_getSingInt.put(arr3[0],map0);
+            }
+            map0.put(arr3[1],Integer.parseInt(arr2[1]));
+        }
+    }
     public static int getSingInt(Method method, Class<?> aClass) {
         lock.lock();
         try {
@@ -2821,7 +2870,7 @@ public class ClassTools {
     }
 
     public static Object putObject(Class<?> clazz, String name, Map<String, Object> map, Object object) throws Exception {
-
+//问题排查 空的构造函数 - 猜测是 跳过就行了
         if (object == null) {
             object = clazz.getDeclaredConstructor().newInstance();
         }

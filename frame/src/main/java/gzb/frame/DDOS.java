@@ -190,8 +190,10 @@ public class DDOS {
             }
 
             str += "最大耗时(最近)" + (max / 1000) + "微秒,";
+            if (all_num_this>0) {
+                str += "平均耗时(全局)" + (all_time_this / all_num_this / 1000) + "微秒,";
+            }
 
-            str += "平均耗时(全局)" + (all_time_this / all_num_this / 1000) + "微秒,";
             str += "汇总耗时(全局)" + (all_time_this / 1000) + "微秒,";
             str += "最大耗时(全局)" + (max_max / 1000) + "微秒";
             System.out.println(str);

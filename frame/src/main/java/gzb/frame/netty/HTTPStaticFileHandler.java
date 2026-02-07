@@ -18,6 +18,7 @@
 
 package gzb.frame.netty;
 
+import gzb.frame.factory.ClassTools;
 import gzb.tools.Config;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
@@ -44,7 +45,8 @@ public class HTTPStaticFileHandler {
             }
 
             // 2. 解析请求路径
-            String uri = req.uri();
+            String uri =req.uri();
+
             String path = sanitizeUri(uri);
             if (path == null) {
                 sendError(ctx, HttpResponseStatus.FORBIDDEN);

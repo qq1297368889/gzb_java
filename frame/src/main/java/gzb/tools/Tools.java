@@ -1649,19 +1649,26 @@ public class Tools {
         StackTraceElement[] stackTrace = new Throwable().getStackTrace();
         if (stackTrace.length > 0) {
             try {
-                return getProjectRoot(Class.forName(stackTrace[stackTrace.length - 1].getClassName()));
+                return getProjectRoot(Class.forName(getStartClassName()));
             } catch (ClassNotFoundException e) {
                 System.err.println(e.getMessage());
             }
         }
-        return null;
+        return getProjectRoot0(Tools.class);
+    }
+
+    public static StackTraceElement[] getStackTrace() {
+        return new Throwable().getStackTrace();
+    }
+    public static String getStartClassName() {
+        StackTraceElement[] stackTrace = getStackTrace();
+        return stackTrace[stackTrace.length - 1].getClassName();
     }
 
     public static String getProjectRoot(Class<?> aClass) {
         String classPath = getProjectRoot0(aClass);
         return classPath.split("target")[0];
     }
-
     public static String getProjectRoot0(Class<?> aClass) {
         try {
             CodeSource codeSource = aClass.getProtectionDomain().getCodeSource();
@@ -1705,7 +1712,7 @@ public class Tools {
                 return jarFile.getParentFile().getAbsolutePath();
             } else {
                 // 调试环境（IDE中）：返回classes目录的上层（通常是target/classes -> target -> 项目根）
-                return jarFile.getParentFile().getParentFile().getAbsolutePath();
+                return jarFile.getParentFile().getPath().split("target")[0];
             }
 
         } catch (URISyntaxException e) {

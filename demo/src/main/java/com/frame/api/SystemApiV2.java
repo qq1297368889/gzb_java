@@ -13,6 +13,8 @@ import gzb.frame.netty.HTTPRequestHandlerV4;
 import gzb.frame.netty.entity.Request;
 import gzb.frame.netty.entity.Response;
 import gzb.tools.*;
+import gzb.tools.cache.GzbCache;
+import gzb.tools.cache.GzbQueue;
 import gzb.tools.cache.session.Session;
 import gzb.tools.img.GifCaptcha;
 import gzb.tools.img.PicUtils;
@@ -97,6 +99,7 @@ public class SystemApiV2 {
         }
         String key = Config.get("key.system.login.image.code");
         Object code_s = session.getString(key);
+
         session.delete(key);
         if (code_s == null) {
             return result.fail("login 请先获取验证码");
@@ -641,6 +644,20 @@ public class SystemApiV2 {
         }
         return gzbJson.success("权限更新成功");
     }
-
-
+    @DecoratorOpen
+    @GetMapping(value = "testCache")
+    public Object testCache(Log log, SysUsers sysUsers, GzbJson gzbJson, GzbCache gzbCache, GzbQueue gzbQueue) throws Exception {
+        log.d(sysUsers.getSysUsersAcc());
+        log.d(gzbCache);
+        log.d(gzbQueue);
+        return gzbJson.success("测试完成");
+    }
+    @DecoratorOpen
+    @GetMapping(value = "testCache")
+    public Object testCache2(Log log, Long sysUsersAcc, GzbJson gzbJson, GzbCache gzbCache, GzbQueue gzbQueue) throws Exception {
+        log.d(sysUsersAcc);
+        log.d(gzbCache);
+        log.d(gzbQueue);
+        return gzbJson.success("测试完成");
+    }
 }

@@ -22,9 +22,8 @@ import java.util.List;
 
 @Controller
 @RequestMapping(value = "/test2")
-public class Test2 {
+public class Test2{
     private static final ClassLoadingMXBean classLoadingMXBean = ManagementFactory.getClassLoadingMXBean();
-
     public static void main(String[] args) throws Exception {
         String code = FileTools.readString(new File("E:\\codes_20220814\\java\\250913_code\\demo\\src\\main\\java\\com\\frame\\api\\Test2.java"));
         ClassLoad.compileJavaCode(code);
@@ -51,15 +50,15 @@ public class Test2 {
     }
 
     //test2/get1?msg=hello
-    @Header(item = {@HeaderItem(key = "content-type", val = "text/html;charset=UTF-8")})
+    //@Header(item = {@HeaderItem(key = "content-type", val = "text/html;charset=UTF-8")})
     @GetMapping("get1")
     @EventLoop(async = false) //在事件循环上 阻塞运行
-    public Object get1(String msg) throws Exception {
+    public Object get1(String msg){
         return "{\"code\":\"1\",\"message\":\""+msg+"\"}";
     }
-    @GetMapping("/get2")
+    @GetMapping("/get3")
     @EventLoop(async = false) //在事件循环上 阻塞运行
-    public Object get2(String msg) {
+    public Object get3(String msg) {
         SysFile sysFile = new SysFile();
         sysFile.setSysFileId(100L);
         sysFile.setSysFileMd5("md5_" + msg);
@@ -90,6 +89,5 @@ public class Test2 {
 
         return sysFile;
     }
-
 
 }

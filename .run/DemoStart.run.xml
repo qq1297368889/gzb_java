@@ -3,7 +3,8 @@
     <option name="MAIN_CLASS_NAME" value="gzb.start.DemoStart" />
     <module name="demo" />
     <projectPathOnTarget name="projectPathOnTarget" value="{exitCode=0, timeout=false, cancelled=false, stdout=/tmp/tmp.s5mFb6uYZt , stderr=}/250913_code" />
-    <target name="WSL - Ubuntu" />
+    <target name="@@@LOCAL@@@" />
+    <option name="VM_PARAMETERS" value="-agentlib:native-image-agent=config-output-dir=./META-INF/native-image" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="gzb.start.*" />

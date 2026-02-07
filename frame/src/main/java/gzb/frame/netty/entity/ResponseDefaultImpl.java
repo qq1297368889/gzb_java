@@ -60,7 +60,7 @@ public class ResponseDefaultImpl implements Response {
         if (!isSendHeaders) {
             isSendHeaders = true;
             HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, status);
-            //response.headers().set("server", Config.frameName);
+            response.headers().set("server", Config.frameName);
             response.headers().set(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
             if (headers != null) {
                 for (Map.Entry<String, String> entry : headers.entrySet()) {

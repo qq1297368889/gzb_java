@@ -18,8 +18,11 @@
 package gzb.frame.factory;
 
 import gzb.exception.GzbException0;
+import gzb.frame.netty.entity.Request;
+import gzb.frame.netty.entity.Response;
 import gzb.tools.Config;
 import gzb.tools.Tools;
+import gzb.tools.json.GzbJson;
 import gzb.tools.log.Log;
 
 import javax.tools.*;
@@ -45,25 +48,36 @@ public class ClassLoad {
     //public static final ClassLoadV2 load = new ClassLoadV2();
     //public static final ClassLoadV1 load = new ClassLoadV1();
 
-    // --- 现有方法：用于单个源代码编译和加载 ---
-
+    //外部调用入口 唯一类  v1 vxxx都是内部使用 只需要在这里处理
     public static Class<?> compileJavaCode(String code) throws Exception {
         String className = extractPublicClassName(code);
         return compileJavaCode(code, className);
     }
 
+    //外部调用入口 唯一类  v1 vxxx都是内部使用 只需要在这里处理
     public static Class<?> compileJavaCode(String code, String className) throws Exception {
-        long start = System.currentTimeMillis();
-        Map<String, String> sourcesMap = new HashMap<>();
-        sourcesMap.put(className, code);
-        Map<String, Class<?>> map = new ClassLoadV1().compile(sourcesMap);
-        long end = System.currentTimeMillis();
-        log.d("编译耗时", end - start, map);
-        return map.get(className);
+        try {
+            Class<?> aClass0 = Class.forName(className);
+            //出错说明不是目标类 需要编译
+            aClass0.getMethod("_gzb_call_x01"
+                    ,int.class, Map.class, Request.class, Response.class, Map.class,
+                    GzbJson.class, Log.class,Object[].class);
+            log.d("无需编译", aClass0.getName());
+            return aClass0;
+        } catch (Exception e) {
+            long start = System.currentTimeMillis();
+            Map<String, String> sourcesMap = new HashMap<>();
+            sourcesMap.put(className, code);
+            Map<String, Class<?>> map = new ClassLoadV1().compile(sourcesMap);
+            long end = System.currentTimeMillis();
+            log.d("编译耗时", end - start, map);
+            return map.get(className);
+
+        }
     }
 
     public static Map<String, Class<?>> compileJavaCode(Map<String, String> sourcesMap) throws Exception {
-        if (sourcesMap.size() > 0) {
+        if (sourcesMap.size() > 9999999) {
             //批量编译 虽然快 但无法卸载 会泄露 目前先停用
             long start = System.currentTimeMillis();
             Map<String, Class<?>> map = new ClassLoadV1().compile(sourcesMap);

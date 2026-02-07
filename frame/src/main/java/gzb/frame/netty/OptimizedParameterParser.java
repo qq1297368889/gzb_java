@@ -13,17 +13,16 @@ public class OptimizedParameterParser {
     public static void main(String[] args) throws InterruptedException {
         for (int n = 0; n < 10; n++) {
             long t01 = System.currentTimeMillis();
-            for (int i = 0; i < 2; i++) {
+            for (int i = 0; i < 200000; i++) {
                 Map<String,List<Object>> map = new HashMap<>();
                 String url = parseUrlEncoded("http://127.0.0.1:2080/test2/get1?",map,true);
-                System.out.println(url);
+
                  url = parseUrlEncoded("http://127.0.0.1:2080/test2/get1?x",map,true);
-                System.out.println(url);
+
                  url = parseUrlEncoded("http://127.0.0.1:2080/test2/get1?x=",map,true);
-                System.out.println(url);
+
                  url = parseUrlEncoded("http://127.0.0.1:2080/test2/get1?x=x",map,true);
-                System.out.println(url);
-                System.out.println(map);
+
             }
             long t02 = System.currentTimeMillis();
             System.out.println(t02-t01);

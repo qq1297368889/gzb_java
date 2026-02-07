@@ -405,6 +405,11 @@ public class FactoryImpl implements Factory {
         return runRes;
     }
 
+    @Override
+    public RunRes request1(Request request, Response response) {
+        return null;
+    }
+
     public RunRes request0(Request request, Response response) {
         long[] times = new long[15];
         /// 函数执行 开始

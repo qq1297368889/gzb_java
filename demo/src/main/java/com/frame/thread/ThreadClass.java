@@ -1,5 +1,6 @@
 package com.frame.thread;
 import com.frame.dao.SysUsersDao;
+import com.frame.entity.SysFile;
 import gzb.frame.annotation.ThreadFactory;
 import gzb.frame.annotation.ThreadInterval;
 import gzb.tools.json.Result;
@@ -15,7 +16,7 @@ public class ThreadClass {
     /// 修改签名的话会丢失状态 重新开始调度
     //定义 这是一个需要被调度的方法 num是启动线程数量  value 是 调度周期 单位毫秒
     @ThreadInterval(num=0 ,value=1000)
-    public Object test001(SysUsersDao sysUsersDao, Result result, Log log,Lock lock) {
+    public Object test001(SysUsersDao sysUsersDao, Result result, Log log, Lock lock) throws Exception {
         //sysUsersDao @service 实现类
         //私有变量 不会有并发问题 但是多次被调用时 会记录状态  专属 result
         //方法专属锁 lock  仅该方法内部使用 启用多个线程的时候 防止并发  和其他被调度的方法 不是同一个锁

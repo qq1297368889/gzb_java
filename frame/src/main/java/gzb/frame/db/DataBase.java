@@ -120,7 +120,8 @@ public interface DataBase {
 
     void rollback() throws SQLException;
 
-
+    //获取配置信息
+    DataBaseConfig getDataBaseConfig();
     public void transaction(Runnable runnable) throws SQLException;
     public void transaction(Runnable runnable,boolean simulation) throws SQLException;
 }

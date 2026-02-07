@@ -11,23 +11,31 @@ public class TestDDOS {
 
     public static void main(String[] args) throws Exception {
         //172.24.25.195:2080/test2/get2?msg=m01
-        Map<String,String> headers=new HashMap<>();
-        Map<String, List<File>> files=new HashMap<>();
-        String url="http://127.0.0.1:2081/test2/get2?msg=m01";
-        String met="GET";
-        String data="";
-        int num=10000 * 1000;
-        byte[]success="m01".getBytes("UTF-8");
+        Map<String, String> headers = new HashMap<>();
+        Map<String, List<File>> files = new HashMap<>();
+
+        // 请求地址
+        String url = "http://127.0.0.1:2080/test/api0/get1?message=message001";
+        //请求方式
+        String met = "GET";
+        //请求数据
+        String data = "";
+        //请求数量
+        int num = 10000 * 1000;
+        //包含这个内容即为响应成功
+        byte[] success = "message001".getBytes("UTF-8");
+        //启动压力测试
         DDOS.start(
-                "正常请求",
-                12,
-                url
-                ,met,
-                data,
-                headers,
-                files,
-                num,
-                success);
+                "正常请求",//测试名称
+                1,//线程数
+                url,// 请求地址
+                met,//请求方式
+                data,//请求数据
+                headers,//请求头
+                files,//请求文件 文件上传
+                num,//请求数量
+                success//成功标志
+        );
 
     }
 }
