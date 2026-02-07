@@ -1,11 +1,11 @@
 .idea/
+.run/
 nodeimage/
 colorimage/
 hot_update_system/
 spring-webflux/
 tfb_test/
 META-INF/
-.run/
 gzbClassCache/
 tmp/
 target/
