@@ -19,7 +19,7 @@ public class ClassByteTools {
 
     static {
         String[] arr1 = FileTools.readArray(new File(outPath + "className.config"));
-        if (arr1!=null) {
+        if (arr1 != null) {
             for (String string : arr1) {
                 if (string == null || string.length() < 1) {
                     continue;
@@ -31,6 +31,7 @@ public class ClassByteTools {
         ClassTools.readSingAll(cachePath + "mapping0.config");
     }
 
+    //编译二进制 部分暂时搁置
     public static void gen_cmd() {
         String delimiter = null;
         if (System.getProperty("os.name").toLowerCase().contains("win")) {
@@ -84,7 +85,7 @@ public class ClassByteTools {
         FileTools.createFile(file);
         FileTools.save(file, data);
         //保存源码
-        String path1 = file.getParentFile().getPath() + "/code.java";
+        String path1 = file.getParentFile().getPath() + "/"+name0+".java";
         FileTools.save(new File(path1), code);
   /*
         //生成输出类

@@ -1,5 +1,6 @@
 package com.frame.controller;
 
+import com.frame.dao.SysUsersDao;
 import com.frame.entity.SysFile;
 import com.frame.dao.SysFileDao;
 import gzb.frame.db.BaseDao;
@@ -24,10 +25,11 @@ public class SysFileController{
      * */
     @DecoratorOpen
     @GetMapping(value = "find")
-    public Object find(GzbJson result, SysFile sysFile) throws Exception {
+    public Object find(GzbJson result, SysFile sysFile, SysUsersDao sysUsersDao,SysFileDao sysFileDao) throws Exception {
         if (sysFile == null || sysFile.toString().equals("{}")) {
             return result.fail("find 输入参数错误");
         }
+        sysFileDao.getDataBase().selectGzbMap("select sys_users.*,sys_users_info.* from xxxxx",new Object[]{sysFile.toString()});
 
         SysFile sysFile1 = sysFileDao.find(sysFile);
         if (sysFile1 == null) {

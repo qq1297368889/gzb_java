@@ -139,6 +139,7 @@ public class ResponseDefaultImpl implements Response {
             }
         }
         response.headers().set("content-length", bytes.length);
+        response.headers().set("server", Config.frameName);
         ctx.writeAndFlush(response);
         return this;
     }
@@ -170,7 +171,6 @@ public class ResponseDefaultImpl implements Response {
         }
 
         // Netty 的 DefaultCookie 还有一个 wrap 参数，
-        // 如果你需要支持它，可以在这里添加逻辑
         // if (cookie.isWrapped()) { ... }
 
         return sb.toString();

@@ -139,16 +139,26 @@ public class HTTPRequestParameters {
         return parameters;
     }
 
+    ThreadLocal<Map<String, List<Object>>> mapThreadLocal = new ThreadLocal<>();
+
     public Map<String, List<Object>> getParameters() {
         if (parameters == null) {
-            parameters = new HashMap<>();
-            this.path = ClassTools.webPathFormat(OptimizedParameterParser.parseUrlEncoded(request.uri(),parameters,false));
+            parameters = mapThreadLocal.get();
+            if (parameters == null) {
+                parameters = new HashMap<>();
+                mapThreadLocal.set(parameters);
+            }else{
+                parameters.clear();
+            }
+            String url = request.uri();
+            String path0 = OptimizedParameterParser.parseUrlEncoded(url, parameters, false);
+            this.path = ClassTools.webPathFormat(path0);
             String contentType = request.headers().get("Content-Type");
             if (contentType != null) {
                 if (contentType.startsWith("application/json")) {
                     parseJson(parameters);
                 } else if (contentType.startsWith("application/x-www-form-urlencoded")) {
-                    ClassTools.webPathFormat(OptimizedParameterParser.parseUrlEncoded(readString(),parameters,true));
+                    OptimizedParameterParser.parseUrlEncoded(readString(), parameters, true);
                 } else if (contentType.startsWith("multipart/form-data")) {
                     parseFormData(parameters);
                 } else {

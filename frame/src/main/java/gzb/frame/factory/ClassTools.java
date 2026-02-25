@@ -48,6 +48,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ClassTools {
     public static void main(String[] args) {
@@ -470,8 +472,6 @@ public class ClassTools {
         return code;
     }
 
-    static ClassLoader appClassLoader = ClassTools.class.getClassLoader();
-
     public static List<Object> getMethodParameterList(
             Map<String, List<Object>> requestDataMap,
             Map<String, Object> mapObject,
@@ -827,7 +827,7 @@ public class ClassTools {
         Field[] fields = aClass.getDeclaredFields();
         String className = aClass.getName();
         String code = "package " + className + "_v1;\npublic class " + (className.replaceAll("\\.", "_")) + "_inner_v1 implements gzb.frame.factory.GzbEntityInterface{\n" +
-                "   public "+ (className.replaceAll("\\.", "_")) +"_inner_v1(){\n" +
+                "   public " + (className.replaceAll("\\.", "_")) + "_inner_v1(){\n" +
                 "        \n" +
                 "    }\n";
         for (Field field : fields) {
@@ -1794,6 +1794,11 @@ public class ClassTools {
 
                     //System.out.println(aClass.getName() + " " + res01 + " " + types[i1].getName());
                     if (res01) {
+                        /// #################################################
+                        code+="if(_gzb_one_c_mapObject.get(\"" + types[i1].getName() + "\")!=null){" +
+                                "gzb.tools.log.Log.log.i(\"" + types[i1].getName() + "\"" +
+                                ",_gzb_one_c_mapObject.get(\"" + types[i1].getName() + "\").getClass()" +
+                                ",_gzb_one_c_mapObject.get(\"" + types[i1].getName() + "\").getClass().getClassLoader());}";
                         //尝试注入 service 等注解对象
                         code += "                //复杂对象\n" +
                                 "                   _c_u_" + names[i1] + " = (" + types[i1].getCanonicalName() + ")_gzb_one_c_mapObject.get(\"" + types[i1].getName() + "\");\n";
@@ -2736,40 +2741,44 @@ public class ClassTools {
     public static Map<String, Map<String, Integer>> map_getSingInt = new HashMap<>();
 
     public static void saveSingAll(String filePath) {
-        String all="";
+        String all = "";
         for (Map.Entry<String, Map<String, Integer>> stringMapEntry : map_getSingInt.entrySet()) {
             for (Map.Entry<String, Integer> stringIntegerEntry : stringMapEntry.getValue().entrySet()) {
-                all+=stringMapEntry.getKey()+"###"+stringIntegerEntry.getKey()+"="+stringIntegerEntry.getValue()+"\n";
+                all += stringMapEntry.getKey() + "###" + stringIntegerEntry.getKey() + "=" + stringIntegerEntry.getValue() + "\n";
             }
 
         }
-        FileTools.save(new File(filePath),all);
+        File file = new File(filePath);
+        FileTools.createFile(file);
+        FileTools.save(file, all);
     }
+
     public static void readSingAll(String filePath) {
-        String[]arr1=FileTools.readArray(new File(filePath));
-        if (arr1==null) {
+        String[] arr1 = FileTools.readArray(new File(filePath));
+        if (arr1 == null) {
             return;
         }
         for (String string : arr1) {
-            if (string==null||string.length()<1) {
+            if (string == null || string.length() < 1) {
                 continue;
             }
-            String[] arr2=string.split("=");
-            if (arr2.length!=2) {
+            String[] arr2 = string.split("=");
+            if (arr2.length != 2) {
                 continue;
             }
-            String[] arr3=arr2[0].split("###");
-            if (arr3.length!=2) {
+            String[] arr3 = arr2[0].split("###");
+            if (arr3.length != 2) {
                 continue;
             }
-            Map<String, Integer> map0=map_getSingInt.get(arr3[0]);
-            if (map0==null) {
-                map0=new HashMap<>();
-                map_getSingInt.put(arr3[0],map0);
+            Map<String, Integer> map0 = map_getSingInt.get(arr3[0]);
+            if (map0 == null) {
+                map0 = new HashMap<>();
+                map_getSingInt.put(arr3[0], map0);
             }
-            map0.put(arr3[1],Integer.parseInt(arr2[1]));
+            map0.put(arr3[1], Integer.parseInt(arr2[1]));
         }
     }
+
     public static int getSingInt(Method method, Class<?> aClass) {
         lock.lock();
         try {
@@ -2866,7 +2875,12 @@ public class ClassTools {
     }
 
     public static Object putObject(Class<?> clazz, String name, Map<String, Object> map) throws Exception {
-        return putObject(clazz, name, map, null);
+        //BUG修复 防止多次创建对象 看一下类加载器是不是同一个 是的话直接复用
+        Object object = map.get(clazz.getName());
+        if (object != null && clazz.getClassLoader() != object.getClass().getClassLoader()) {
+            object = null;
+        }
+        return putObject(clazz, name, map, object);
     }
 
     public static Object putObject(Class<?> clazz, String name, Map<String, Object> map, Object object) throws Exception {
@@ -2890,6 +2904,7 @@ public class ClassTools {
         }
         map.put(clazz.getName(), object);
         log.t("储存对象", clazz.getName(), object.toString());
+        log.d("储存对象", clazz.getName());
         if (name != null && !name.isEmpty()) {
             map.put(name, object);
             log.t("储存对象", name, object.toString());
@@ -2898,4 +2913,28 @@ public class ClassTools {
     }
 
 
+    /**
+     * 快速提取公共类名，用于命名虚拟文件。
+     * (保持原样，未修改)
+     */
+    public static String extractPublicClassName(String javaCode) {
+        String packageName = "";
+        String publicClassName = "InMemory"; // 默认名称
+
+        Pattern packagePattern = Pattern.compile("package\\s+([a-zA-Z0-9_.]+)\\s*;", Pattern.MULTILINE);
+        Matcher packageMatcher = packagePattern.matcher(javaCode);
+        if (packageMatcher.find()) {
+            packageName = packageMatcher.group(1).trim();
+        }
+
+        Pattern classPattern = Pattern.compile(
+                "public\\s+(?:(?:abstract|final)\\s+)?(?:class|interface|enum)\\s+([a-zA-Z0-9_$]+)",
+                Pattern.MULTILINE);
+        Matcher classMatcher = classPattern.matcher(javaCode);
+        if (classMatcher.find()) {
+            publicClassName = classMatcher.group(1).trim();
+        }
+        String name = packageName.isEmpty() ? publicClassName : packageName + "." + publicClassName;
+        return name;
+    }
 }

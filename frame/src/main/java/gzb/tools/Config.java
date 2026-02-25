@@ -47,13 +47,11 @@ public class Config {
     public static int maxPostSize;
     public static int compressionMinSize;
     public static boolean compression;
-    public static boolean permissionsOpen;
     public static String codeDir;
     public static String codePwd;
     public static String codeIv;
     public static String staticDir;
     public static String tempDir;
-    public static String frameDbKey;
     public static String uploadDir;
     public static String dataBaseCache;
     public static String cacheType;
@@ -115,9 +113,7 @@ public class Config {
         codeDir = Config.get("gzb.system.code.file.dir", null);
         codePwd = Config.get("gzb.system.code.file.pwd", null);
         codeIv = Config.get("gzb.system.code.file.iv", null);
-        permissionsOpen = Config.getBoolean("gzb.system.permissions.open", false);
         staticDir = Config.get("gzb.system.server.http.static.dir", thisPath);
-        frameDbKey = Config.get("db.frame.key", "frame");
         uploadDir = Config.get("key.system.upload.dir", tempDir);
         cacheType = Config.get("gzb.system.cache.type", "map");
         dataBaseCache = Config.get("gzb.system.db.cache.type", "map");
@@ -153,6 +149,7 @@ public class Config {
                         "        System.setProperty(\"this.dir\", Tools.getProjectRoot(你项目中的任意类.class));");
                 System.exit(-1314);
             }
+            System.out.println(thisPath);
             thisPath = Tools.pathFormat(thisPath);
             tempDir = Tools.pathFormat(tempDir);
             if (configFile == null) {

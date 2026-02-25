@@ -28,8 +28,6 @@ import java.util.Map;
 
 public interface Factory {
     void start(ChannelHandlerContext ctx, FullHttpRequest req);
-    RunRes request(Request request, Response response);
-    RunRes request1(Request request, Response response);
 
     void loadJavaDir(String classDir, String pwd, String iv) throws Exception;
 

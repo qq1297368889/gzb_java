@@ -1,9 +1,17 @@
 package gzb.frame.netty;
+
+import gzb.tools.Config;
+import gzb.tools.log.Log;
+
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 高性能、顺序解析 URL 编码参数的方法。
@@ -11,25 +19,25 @@ import java.util.Map;
  */
 public class OptimizedParameterParser {
     public static void main(String[] args) throws InterruptedException {
-        for (int n = 0; n < 10; n++) {
-            long t01 = System.currentTimeMillis();
-            for (int i = 0; i < 200000; i++) {
-                Map<String,List<Object>> map = new HashMap<>();
-                String url = parseUrlEncoded("http://127.0.0.1:2080/test2/get1?",map,true);
-
-                 url = parseUrlEncoded("http://127.0.0.1:2080/test2/get1?x",map,true);
-
-                 url = parseUrlEncoded("http://127.0.0.1:2080/test2/get1?x=",map,true);
-
-                 url = parseUrlEncoded("http://127.0.0.1:2080/test2/get1?x=x",map,true);
-
-            }
-            long t02 = System.currentTimeMillis();
-            System.out.println(t02-t01);
-            Thread.sleep(1000);
+        for (int n = 0; n < 100000; n++) {
+            Map<String, List<Object>> map = new HashMap<>();
+            long t01 = System.nanoTime();
+            parseUrlEncoded("/test/api0/get1?message=message001", map, false);
+            long t02 = System.nanoTime();
+            System.out.println(((t02 - t01) ) +"  "+map);
+        }
+        Thread.sleep(1000);
+        for (int n = 0; n < 100000; n++) {
+            Map<String, List<Object>> map = new HashMap<>();
+            long t01 = System.nanoTime();
+            parseUrlEncoded("/test/api0/get1?message=message001", map, false);
+            long t02 = System.nanoTime();
+            System.out.println(((t02 - t01) ) +"  "+map);
         }
 
+
     }
+
     private static final byte[] HEX_TABLE = new byte[128];
 
     static {
@@ -42,34 +50,33 @@ public class OptimizedParameterParser {
             HEX_TABLE['a' + i] = (byte) (10 + i);
         }
     }
-
     /**
      * 顺序解析 URL 或 POST Body 中的键值对。
      * 例如：?k1=v1&k2=v2 或 k1=v1&k2=v2
      * 目标：尽可能减少对 String.substring() 的依赖，并优化 URL 解码。
      *
-     * @param data 要解析的参数字符串。
+     * @param data  要解析的参数字符串。
      * @param parar 存储解析结果的 Map<String, List<Object>>。
      */
-    public static String parseUrlEncoded(String data,Map<String, List<Object>> parar,boolean post) {
+    public static String parseUrlEncoded(String data, Map<String, List<Object>> parar, boolean post) {
+
         if (data == null || data.isEmpty()) {
             return data;
         }
-
         int len = data.length();
-        int keyStart=0; // 跳过开头的 '?'
+        int keyStart = 0; // 跳过开头的 '?'
         int keyEnd = -1;
         int valueStart = -1;
         int urlEnd = 0;
         if (post) {
-            valueStart=0;
-        }else{
-            valueStart=data.indexOf('?');
-            if (valueStart>-1) {
-                urlEnd=valueStart;
-                keyStart=valueStart+1;
-            }else{
-                urlEnd=data.length();
+            valueStart = 0;
+        } else {
+            valueStart = data.indexOf('?');
+            if (valueStart > -1) {
+                urlEnd = valueStart;
+                keyStart = valueStart + 1;
+            } else {
+                urlEnd = data.length();
             }
 
         }
@@ -122,9 +129,9 @@ public class OptimizedParameterParser {
             String key = decoder.decode(data, keyStart, len);
             addParameter(parar, key, "");
         }
-        if (urlEnd>0) {
-            return data.substring(0,urlEnd);
-        }else{
+        if (urlEnd > 0) {
+            return data.substring(0, urlEnd);
+        } else {
             return null;
         }
     }
@@ -187,17 +194,13 @@ public class OptimizedParameterParser {
                 } else {
                     // 非编码字符，直接存储为 char，并假设它是单字节字符，同时存储到 bytes 数组
                     chars[charIndex++] = c;
-                    bytes[byteIndex++] = (byte)c;
+                    bytes[byteIndex++] = (byte) c;
                 }
             }
 
             if (needsDecoding) {
-                // 如果发生了 %xx 或 + 替换，我们使用 bytes 数组来构造最终的字符串
-                // 这一步是性能消耗，但比多次 substring 更高效
                 return new String(bytes, 0, byteIndex, StandardCharsets.UTF_8);
             } else {
-                // 纯粹的 ASCII 字符串，直接从原始 data 中截取
-                // 注意：这里仍然会创建新的 String 对象，但避免了 byte[] 到 String 的转换开销
                 return data.substring(start, end);
             }
         }

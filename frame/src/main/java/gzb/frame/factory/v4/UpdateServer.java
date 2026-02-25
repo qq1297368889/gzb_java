@@ -2,6 +2,7 @@ package gzb.frame.factory.v4;
 
 import gzb.exception.GzbException0;
 import gzb.frame.factory.ClassLoad;
+import gzb.frame.factory.ClassTools;
 import gzb.tools.Config;
 import gzb.tools.FileTools;
 import gzb.tools.Tools;
@@ -107,7 +108,7 @@ public class UpdateServer {
             System.out.println("code null " + code);
             return false;
         }
-        String name = ClassLoad.extractPublicClassName(code);
+        String name = ClassTools.extractPublicClassName(code);
         if (map.get(name) != null) {
             System.out.println("code 重复 " + code);
         }

@@ -47,21 +47,42 @@ public class RunRes {
         return this;
     }
     public RunRes success() {
-        success(null);
-        return this;
-    }
-    public RunRes success(Object data) {
-        setState(200);
-        setData(data);
-        return this;
+        return success(null);
     }
     public RunRes fail() {
-        setState(404);
-        return this;
+       return fail(null);
     }
     public RunRes err() {
-        setState(500);
+        return err(null);
+    }
+    public RunRes intercept() {
+        return intercept(null);
+    }
+    public RunRes success(Object responseData) {
+        setState(200);
+        setData(responseData);
         return this;
+    }
+    public RunRes fail(Object responseData) {
+        setState(404);
+        setData(responseData);
+        return this;
+    }
+    public RunRes err(Object responseData) {
+        setState(500);
+        setData(responseData);
+        return this;
+    }
+    public RunRes intercept(Object responseData) {
+        setState(400);
+        setData(responseData);
+        return this;
+    }
+    public RunRes release() {
+        return release(null);
+    }
+    public RunRes release(Object responseData) {
+        return success(responseData);
     }
 
     @Override

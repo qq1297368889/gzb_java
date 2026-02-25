@@ -18,7 +18,9 @@
 
 package gzb.frame.db;
 
+import gzb.exception.GzbException0;
 import gzb.tools.Config;
+import gzb.tools.json.GzbJson;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,16 +48,22 @@ public class DataBaseFactory {
             lock.unlock();
         }
     }
-
-    public static DataBase remove(String dbName) throws Exception {
-        return remove(Config.get("db.mysql." + dbName + ".ip"), Config.get("db.mysql." + dbName + ".port"), Config.get("db.mysql." + dbName + ".name"));
+    @Deprecated
+    public static void remove(String dbName) throws Exception {
+        remove(Config.get("db.mysql." + dbName + ".ip")
+                , Config.get("db.mysql." + dbName + ".port")
+                , Config.get("db.mysql." + dbName + ".name"));
     }
-
-    public static DataBase remove(String dbName, String ip, String port) throws Exception {
+    @Deprecated
+    public static void remove(String dbName, String ip, String port) throws Exception {
         lock.lock();
         try {
             String key = ip + "_" + port + "_" + dbName;
-            return mapDataBase.remove(key);
+            DataBase db = mapDataBase.remove(key);
+            if (db==null) {
+                throw new GzbException0("尝试关闭不存在的数据库连接池:" + key);
+            }
+            db.close();//关闭连接池
         } finally {
             lock.unlock();
         }

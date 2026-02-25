@@ -66,7 +66,7 @@ public class FileUploadEntity {
         try {
             this.file = new File(Config.tempDir + File.separator + OnlyId.getDistributed() + ".data");
             if (!nettyFileUpload.getFile().renameTo(file)) {
-                throw new RuntimeException("Can't rename file 文件移动失败，请注意"+file.getPath());
+                throw new RuntimeException("Can't rename file 文件移动失败，请注意:"+file.getPath());
             }
         } catch (Exception e) {
             // 处理可能的IO异常

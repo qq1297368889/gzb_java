@@ -33,6 +33,8 @@ import gzb.tools.http.HTTP;
 import gzb.tools.img.GifCaptcha;
 import gzb.tools.json.JsonSerializable;
 import gzb.tools.json.Result;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -729,6 +731,18 @@ public class Tools {
         stringBuilder.append(toJson(obj));
     }
 
+    //记不住这个api 封装一下
+    public static byte[] readByteBuf(io.netty.buffer.ByteBuf buf) {
+        // readableBytes() 获取实际有数据的长度
+        byte[] bytes = new byte[buf.readableBytes()];
+        // getBytes 不会移动读索引(readerIndex)，适合调试打印
+        buf.getBytes(buf.readerIndex(), bytes);
+        return bytes;
+    }
+    //记不住这个api 封装一下
+    public static ByteBuf loadByteBuf(byte[] data) {
+        return Unpooled.wrappedBuffer(data);
+    }
 
     public static String toJson(Object obj) {
         if (obj == null) {

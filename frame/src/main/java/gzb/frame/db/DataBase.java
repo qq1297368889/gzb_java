@@ -33,6 +33,9 @@ import java.util.List;
 
 public interface DataBase {
 
+    //关闭数据库连接池 这个操作后果自负
+    void close();
+
     AsyncFactory getAsyncFactory();
 
     int count(String sql, Object[] params) throws Exception;
@@ -122,6 +125,8 @@ public interface DataBase {
 
     //获取配置信息
     DataBaseConfig getDataBaseConfig();
+
     public void transaction(Runnable runnable) throws SQLException;
-    public void transaction(Runnable runnable,boolean simulation) throws SQLException;
+
+    public void transaction(Runnable runnable, boolean simulation) throws SQLException;
 }

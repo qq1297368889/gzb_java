@@ -45,12 +45,9 @@ import java.util.regex.Pattern;
  */
 public class ClassLoad {
     public static Log log = Log.log;
-    //public static final ClassLoadV2 load = new ClassLoadV2();
-    //public static final ClassLoadV1 load = new ClassLoadV1();
-
     //外部调用入口 唯一类  v1 vxxx都是内部使用 只需要在这里处理
     public static Class<?> compileJavaCode(String code) throws Exception {
-        String className = extractPublicClassName(code);
+        String className = ClassTools.extractPublicClassName(code);
         return compileJavaCode(code, className);
     }
 
@@ -68,7 +65,7 @@ public class ClassLoad {
             long start = System.currentTimeMillis();
             Map<String, String> sourcesMap = new HashMap<>();
             sourcesMap.put(className, code);
-            Map<String, Class<?>> map = new ClassLoadV1().compile(sourcesMap);
+            Map<String, Class<?>> map = ClassLoadV4.load(sourcesMap);
             long end = System.currentTimeMillis();
             log.d("编译耗时", end - start, map);
             return map.get(className);
@@ -77,51 +74,14 @@ public class ClassLoad {
     }
 
     public static Map<String, Class<?>> compileJavaCode(Map<String, String> sourcesMap) throws Exception {
-        if (sourcesMap.size() > 9999999) {
-            //批量编译 虽然快 但无法卸载 会泄露 目前先停用
-            long start = System.currentTimeMillis();
-            Map<String, Class<?>> map = new ClassLoadV1().compile(sourcesMap);
-            long end = System.currentTimeMillis();
-            List<String> list = new ArrayList<>();
-            for (Map.Entry<String, Class<?>> stringClassEntry : map.entrySet()) {
-                list.add(stringClassEntry.getKey());
-            }
-            log.d("编译", "耗时", end - start, "数量", list.size(), list);
-            return map;
-        } else {
-            Map<String, Class<?>> map = new ConcurrentHashMap<>();
-            for (Map.Entry<String, String> stringStringEntry : sourcesMap.entrySet()) {
-                Class<?> aClass = compileJavaCode(stringStringEntry.getValue(), stringStringEntry.getKey());
-                map.put(stringStringEntry.getKey(), aClass);
-            }
-            return map;
+        Map<String, Class<?>> map = new ConcurrentHashMap<>();
+        for (Map.Entry<String, String> stringStringEntry : sourcesMap.entrySet()) {
+            Class<?> aClass = compileJavaCode(stringStringEntry.getValue(), stringStringEntry.getKey());
+            map.put(stringStringEntry.getKey(), aClass);
         }
-
+        return map;
     }
 
-    /**
-     * 快速提取公共类名，用于命名虚拟文件。
-     * (保持原样，未修改)
-     */
-    public static String extractPublicClassName(String javaCode) {
-        String packageName = "";
-        String publicClassName = "InMemory"; // 默认名称
 
-        Pattern packagePattern = Pattern.compile("package\\s+([a-zA-Z0-9_.]+)\\s*;", Pattern.MULTILINE);
-        Matcher packageMatcher = packagePattern.matcher(javaCode);
-        if (packageMatcher.find()) {
-            packageName = packageMatcher.group(1).trim();
-        }
-
-        Pattern classPattern = Pattern.compile(
-                "public\\s+(?:(?:abstract|final)\\s+)?(?:class|interface|enum)\\s+([a-zA-Z0-9_$]+)",
-                Pattern.MULTILINE);
-        Matcher classMatcher = classPattern.matcher(javaCode);
-        if (classMatcher.find()) {
-            publicClassName = classMatcher.group(1).trim();
-        }
-        String name = packageName.isEmpty() ? publicClassName : packageName + "." + publicClassName;
-        return name;
-    }
 
 }

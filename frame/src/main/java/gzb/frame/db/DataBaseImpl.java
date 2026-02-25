@@ -24,11 +24,10 @@ import gzb.entity.EntityClassInfo;
 import gzb.entity.SqlTemplate;
 import gzb.entity.TableInfo;
 import gzb.exception.GzbException0;
-import gzb.frame.PublicData;
+import gzb.frame.PublicEntrance;
 import gzb.frame.annotation.EntityAttribute;
 import gzb.frame.db.entity.TransactionEntity;
 import gzb.tools.*;
-import gzb.tools.cache.Cache;
 import gzb.tools.log.Log;
 
 import java.lang.reflect.Field;
@@ -38,7 +37,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
 
 
 public class DataBaseImpl implements DataBase {
@@ -66,13 +64,13 @@ public class DataBaseImpl implements DataBase {
             if (clazz == Boolean.class) return Boolean.valueOf(object.toString());
             if (clazz == byte[].class) return object.toString().getBytes(Config.encoding);
 
-            if (clazz == Timestamp.class){
+            if (clazz == Timestamp.class) {
                 return new DateTime((String) object).toTimestamp();
             }
-            if (clazz == LocalDateTime.class){
+            if (clazz == LocalDateTime.class) {
                 return new DateTime((String) object).toLocalDateTime();
             }
-            throw new GzbException0("转换为数据库类型失败 DataBaseImpl.Column.toValue(Object object) 转换的值为:"+object+" 类型为："+clazz.getName());
+            throw new GzbException0("转换为数据库类型失败 DataBaseImpl.Column.toValue(Object object) 转换的值为:" + object + " 类型为：" + clazz.getName());
         }
     }
 
@@ -94,6 +92,10 @@ public class DataBaseImpl implements DataBase {
 
     Map<Object, EntityClassInfo> mapEntityClassInfo = new ConcurrentHashMap<>();
 
+    //关闭数据库连接池 这个操作后果自负
+    public void close() {
+        hds.close();
+    }
 
     public DataBaseImpl(DataBaseConfig dataBaseConfig) throws Exception {
         this.dataBaseConfig = dataBaseConfig;
@@ -110,9 +112,10 @@ public class DataBaseImpl implements DataBase {
         initDataBase();
     }
 
-    public DataBaseConfig getDataBaseConfig(){
+    public DataBaseConfig getDataBaseConfig() {
         return dataBaseConfig;
     }
+
     public String getSign() {
         return dataBaseConfig.getSign();
     }
@@ -683,8 +686,8 @@ public class DataBaseImpl implements DataBase {
 
     @Override
     public Integer readTransactionState() {
-        TransactionEntity transaction =open_transaction.get();
-        if (transaction==null) {
+        TransactionEntity transaction = open_transaction.get();
+        if (transaction == null) {
             return null;
         }
         return transaction.simulate;
@@ -716,8 +719,8 @@ public class DataBaseImpl implements DataBase {
     @Override
     public void commit() throws Exception {
 
-        TransactionEntity transaction =open_transaction.get();
-        if (transaction==null) {
+        TransactionEntity transaction = open_transaction.get();
+        if (transaction == null) {
             log.w("commit 无事物");
         } else if (transaction.simulate == 1) {
             Connection connection1 = connectionThreadLocal.get();
@@ -728,7 +731,7 @@ public class DataBaseImpl implements DataBase {
         } else if (transaction.simulate == 2) {
             Map<String, List<Object[]>> map1 = transaction.data;
             log.t("commit 模拟事物 转化真实事务", map1);
-            transaction.simulate=1;
+            transaction.simulate = 1;
             try {
                 if (map1 != null) {
                     for (Map.Entry<String, List<Object[]>> stringListEntry : map1.entrySet()) {
@@ -738,7 +741,7 @@ public class DataBaseImpl implements DataBase {
                     }
                 }
                 commit();
-            }catch (Exception e){
+            } catch (Exception e) {
                 rollback();
                 throw e;
             }
@@ -749,12 +752,12 @@ public class DataBaseImpl implements DataBase {
     //回滚并且关闭事务  同时也会归还连接 主要是框架内部调用 当然 也可以手动
     @Override
     public void rollback() throws SQLException {
-        TransactionEntity transaction =open_transaction.get();
-        if (transaction==null) {
+        TransactionEntity transaction = open_transaction.get();
+        if (transaction == null) {
             log.w("rollback 无事物");
         } else if (transaction.simulate == 1) {
             Connection connection1 = connectionThreadLocal.get();
-            log.t("rollback 真实事务",connection1);
+            log.t("rollback 真实事务", connection1);
             if (connection1 != null) {
                 connection1.rollback();
             }
@@ -770,7 +773,7 @@ public class DataBaseImpl implements DataBase {
      */
     @Override
     public void transaction(Runnable runnable) throws SQLException {
-        transaction(runnable,false);
+        transaction(runnable, false);
     }
 
     /**
@@ -784,9 +787,9 @@ public class DataBaseImpl implements DataBase {
         try {
             runnable.run();
             commit();
-        }catch (Exception e){
+        } catch (Exception e) {
             rollback();
-        }finally {
+        } finally {
             endTransaction();
         }
     }
@@ -814,8 +817,8 @@ public class DataBaseImpl implements DataBase {
         Connection connection0 = connectionThreadLocal.get();
         if (connection0 != null) {
             try {
-                TransactionEntity transaction =open_transaction.get();
-                if (transaction==null) {
+                TransactionEntity transaction = open_transaction.get();
+                if (transaction == null) {
                     log.t("close 无事物", connection0);
                     connection0.close();
                     connectionThreadLocal.remove();
@@ -999,13 +1002,13 @@ public class DataBaseImpl implements DataBase {
         if (sql == null) {
             return -1;
         }
-        String key = PublicData.open_transaction_key.get();
-        if (key!=null && !key.equals(dataBaseConfig.getSign())) {
-            throw new GzbException0("数据库["+key+"]的事务中出现了数据库["+dataBaseConfig.getSign()+"]的调用");
+        String key = PublicEntrance.open_transaction_key.get();
+        if (key != null && !key.equals(dataBaseConfig.getSign())) {
+            throw new GzbException0("数据库[" + key + "]的事务中出现了数据库[" + dataBaseConfig.getSign() + "]的调用");
         }
-        TransactionEntity transaction =open_transaction.get();
-        if (transaction!=null && transaction.simulate == 2) {
-            log.t("收集SQL",sql,params);
+        TransactionEntity transaction = open_transaction.get();
+        if (transaction != null && transaction.simulate == 2) {
+            log.t("收集SQL", sql, params);
             List<Object[]> list = transaction.data.get(sql);
             if (list == null) {
                 list = new ArrayList<>();
@@ -1038,18 +1041,18 @@ public class DataBaseImpl implements DataBase {
         ResultSet rs = null;
         PreparedStatement ps = null;
         StringBuilder sb = null;
-        String key = PublicData.open_transaction_key.get();
-        if (key!=null && !key.equals(dataBaseConfig.getSign())) {
-            throw new GzbException0("数据库["+key+"]的事务中出现了数据库["+dataBaseConfig.getSign()+"]的调用");
+        String key = PublicEntrance.open_transaction_key.get();
+        if (key != null && !key.equals(dataBaseConfig.getSign())) {
+            throw new GzbException0("数据库[" + key + "]的事务中出现了数据库[" + dataBaseConfig.getSign() + "]的调用");
         }
-        TransactionEntity transaction =open_transaction.get();
-        if (transaction!=null && transaction.simulate == 2) {
+        TransactionEntity transaction = open_transaction.get();
+        if (transaction != null && transaction.simulate == 2) {
             List<Object[]> list = transaction.data.get(sql);
             if (list == null) {
                 list = new ArrayList<>();
                 transaction.data.put(sql, list);
             }
-            log.t("收集SQL",sql,list_parameter);
+            log.t("收集SQL", sql, list_parameter);
             for (Object[] objects : list_parameter) {
                 list.add(objects);
             }
@@ -1111,7 +1114,7 @@ public class DataBaseImpl implements DataBase {
             }
         } catch (Exception e) {
             connection.rollback();
-            throw new RuntimeException("异常：" + sb,e);
+            throw new RuntimeException("异常：" + sb, e);
         } finally {
             close(rs, ps);
         }

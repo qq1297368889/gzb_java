@@ -53,9 +53,9 @@ public class JavaScriptCode extends Base {
                 "}\n" +
                 "/////////////////////////////// 添加自定义按钮\n" +
                 "//注册 表格上方按钮\n" +
-                "//gzb.registerTableButton(\"测试按钮1\", 1, 2, function (data, obj) {});\n" +
+                "//gzb.registerButton(\"测试按钮1\", 1, 2, function (data, obj) {});\n" +
                 "//注册表格行级 工具类按钮\n" +
-                "//gzb.registerButton(\"测试按钮2\", 1, 2, null, function () {});\n" +
+                "//gzb.registerTableButton(\"测试按钮2\", 1, 2, null, function () {});\n" +
                 "\n" +
                 "/////////////////////////////// hook 请求数据 请注意 只接受 string参数\n" +
                 "gzb.registerGetDataHook(function (data) {\n" +

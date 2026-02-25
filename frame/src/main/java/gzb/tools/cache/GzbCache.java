@@ -25,10 +25,14 @@ public interface GzbCache {
     /// 获取 key对应的 val
     public String get(String key);
 
+
     /// put 主key下 的 子key对应的val 替换或新建
     public void setMap(String key, String subKey, String val, int second);
     /// 获取 主key下 的 子key对应的val
     public String getMap(String key, String subKey);
+
+
+
 
     /// 删除 主key对应的key和val
     public void remove(String key);
@@ -50,4 +54,11 @@ public interface GzbCache {
 
 
     public <T>T getMapObject(String key, String subKey);
+
+    ///  byte 支持
+
+    public void setByte(String key, byte[] val, int second);
+    public void setMapByte(String key, String subKey, byte[] val, int second);
+    public byte[] getByte(String key);
+    public byte[] getMapByte(String key, String subKey);
 }

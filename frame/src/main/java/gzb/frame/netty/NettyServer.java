@@ -18,7 +18,7 @@
 
 package gzb.frame.netty;
 
-import gzb.frame.PublicData;
+import gzb.frame.PublicEntrance;
 import gzb.frame.factory.Factory;
 import gzb.tools.Config;
 import gzb.tools.Tools;
@@ -27,6 +27,9 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.DefaultChannelPipeline;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.WriteBufferWaterMark;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.ReferenceCountUtil;
@@ -37,16 +40,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class NettyServer {
-    public static Log log=Log.log;
+    public static Log log = Log.log;
     public static Factory factory;
     public static HTTPStaticFileHandler HTTPStaticFileHandler = new HTTPStaticFileHandler();
     public static Set<String> allowedDomains;
-    @SuppressWarnings("unused")
-    private static final Class<?>[] NETTY_CORE_CLASSES = {
-            ReferenceCountUtil.class,
-            ResourceLeakDetector.class,
-            DefaultChannelPipeline.class
-    };
 
     public static void main(String[] args) throws Exception {
         int port = 3080;
@@ -70,17 +67,14 @@ public class NettyServer {
                 }
             }};
 
-            factory = PublicData.factory;
+            factory = PublicEntrance.factory;
             long start = System.currentTimeMillis();
             if (Config.code_type.startsWith("file")) {
                 factory.loadJavaDir(Config.codeDir, Config.codePwd, Config.codeIv);
             }
-            if (Config.code_type.startsWith("http")) {
-                factory.loadServerHttp();
-            }
+
             long end = System.currentTimeMillis();
             log.i("初始化耗时", end - start);
-            log.t("引入类，防止被剔除",NETTY_CORE_CLASSES);
         } catch (Exception e) {
             log.e("服务器初始化失败", e);
             System.exit(1314520);
@@ -101,27 +95,53 @@ public class NettyServer {
             log.e("同一个服务器无法多次启动");
             return;
         }
-        bossGroup = new NioEventLoopGroup(main_thread_num);
-        workerGroup = new NioEventLoopGroup(io_thread_num);//,new TestExecutor()
-        ServerBootstrap bootstrap = new ServerBootstrap();
+        ServerBootstrap bootstrap = null;
+        int backlog = Config.bizAwaitNum; // 监听队列大小（建议10240+）
+        int bufferSize = 1024 * Math.max(Config.cpu * 8, 64); // 缓冲区大小：CPU核心数*8K 或 64K（取大值）
+        int lowWaterMark = 8 * 1024; // 写缓冲区低水位（固定8K，避免过小）
+        int highWaterMark = 32 * 1024; // 写缓冲区高水位（固定32K）
+
+
         try {
-            bootstrap.group(bossGroup, workerGroup)
-                    .channel(NioServerSocketChannel.class)
-                    //.option(ChannelOption.SO_BACKLOG, Config.maxAwaitNum)         // 待处理连接队列大小
-                    .option(ChannelOption.SO_REUSEADDR, true)        // 允许地址重用
-                    .childHandler(new HTTPServerInitializer())       // 自定义处理器
-                    .childOption(ChannelOption.TCP_NODELAY, true)    // 禁用Nagle算法
-                    .childOption(ChannelOption.SO_KEEPALIVE, true)   // 启用TCP心跳保活
-                    .childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000);
-            log.i("start server", port, "netty main 线程数量", main_thread_num, "netty io 线程数量", io_thread_num,"biz 线程数量",Config.bizThreadNum,"biz 队列最大数量",Config.bizAwaitNum);
+            if (Tools.isLinux()) {
+                bossGroup = new EpollEventLoopGroup(main_thread_num);
+                workerGroup = new EpollEventLoopGroup(io_thread_num);
+                bootstrap = new ServerBootstrap();
+                bootstrap.group(bossGroup, workerGroup)
+                        .channel(EpollServerSocketChannel.class);
+            } else {
+                bossGroup = new NioEventLoopGroup(main_thread_num);
+                workerGroup = new NioEventLoopGroup(io_thread_num);
+                bootstrap = new ServerBootstrap();
+                bootstrap.group(bossGroup, workerGroup)
+                        .channel(NioServerSocketChannel.class);
+            }
+            bootstrap.option(ChannelOption.SO_REUSEADDR, true)        // 允许地址重用
+                    .option(ChannelOption.SO_BACKLOG, backlog)  // 监听队列大小
+                    // === 客户端Socket参数（Worker线程） ===
+                    .childHandler(new HTTPServerInitializer())
+                    .childOption(ChannelOption.TCP_NODELAY, true)     // Nagle算法
+                    .childOption(ChannelOption.SO_KEEPALIVE, true)    // TCP保活，清理空闲连接
+                    .childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000) // 已配置
+                    ; // 写缓冲区水位，避免OOM
+            log.i(
+                    "start server", port,
+                    "netty main 线程数量", main_thread_num,
+                    "netty io 线程数量", io_thread_num,
+                    "biz 线程数量", Config.bizThreadNum,
+                    "biz 队列最大数量", Config.bizAwaitNum);
             // 绑定端口并启动服务器
             bootstrap.bind(new InetSocketAddress(port)).sync().channel().closeFuture().sync();
-        }catch (Exception e){
-            log.e("启动服务器过程出现错误",e);
+        } catch (Exception e) {
+            log.e("启动服务器过程出现错误", e);
             System.exit(1314520);
-        }finally {
-            bossGroup.shutdownGracefully();
-            workerGroup.shutdownGracefully();
+        } finally {
+            if (bossGroup != null) {
+                bossGroup.shutdownGracefully();
+            }
+            if (workerGroup != null) {
+                workerGroup.shutdownGracefully();
+            }
         }
 
     }

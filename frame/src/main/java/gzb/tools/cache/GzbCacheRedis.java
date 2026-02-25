@@ -359,4 +359,69 @@ public class GzbCacheRedis implements GzbCache {
         }
     }
 
+    ///  byte 支持
+
+    @Override
+    public void setByte(String key, byte[] val, int second) {
+        if (key == null || val == null || key.isEmpty()) {
+            return;
+        }
+        byte[] keyBytes = key.getBytes(UTF_8);
+        try (Jedis jedis = jedisPool.getResource()) {
+            if (second > 0) {
+                jedis.setex(keyBytes, second, val);
+            } else {
+                jedis.set(keyBytes, val);
+            }
+        } catch (Exception e) {
+            log.e(e, "setByte error for key: " + key);
+        }
+    }
+
+    @Override
+    public byte[] getByte(String key) {
+        if (key == null || key.isEmpty()) return null;
+        byte[] keyBytes = key.getBytes(UTF_8);
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.get(keyBytes);
+        } catch (Exception e) {
+            log.e(e, "getByte error for key: " + key);
+            return null;
+        }
+    }
+
+    @Override
+    public void setMapByte(String key, String subKey, byte[] val, int second) {
+        if (key == null || subKey == null || val == null || key.isEmpty() || subKey.isEmpty()) {
+            return;
+        }
+        byte[] keyBytes = key.getBytes(UTF_8);
+        byte[] subKeyBytes = subKey.getBytes(UTF_8);
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.hset(keyBytes, subKeyBytes, val);
+            if (second > 0) {
+                jedis.expire(keyBytes, second);
+            }
+        } catch (Exception e) {
+            log.e(e, "setMapByte error for key: " + key + ", subKey: " + subKey);
+        }
+    }
+
+    @Override
+    public byte[] getMapByte(String key, String subKey) {
+        if (key == null || subKey == null || key.isEmpty() || subKey.isEmpty()) return null;
+        byte[] keyBytes = key.getBytes(UTF_8);
+        byte[] subKeyBytes = subKey.getBytes(UTF_8);
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.hget(keyBytes, subKeyBytes);
+        } catch (Exception e) {
+            log.e(e, "getMapByte error for key: " + key + ", subKey: " + subKey);
+            return null;
+        }
+    }
+
 }
+
+
+
+

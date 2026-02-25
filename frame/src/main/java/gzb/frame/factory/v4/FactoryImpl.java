@@ -18,7 +18,7 @@
 
 package gzb.frame.factory.v4;
 
-import gzb.frame.PublicData;
+import gzb.frame.PublicEntrance;
 import gzb.frame.annotation.*;
 import gzb.frame.db.EventFactory;
 import gzb.frame.factory.*;
@@ -64,7 +64,7 @@ public class FactoryImpl implements Factory {
     public String[] met = Constant.requestMethod;
     public Map<String, ThreadEntity> mapListThreadEntity0 = new ConcurrentHashMap<>();
 
-    public GzbJson gzbJson=PublicData.gzbJson;
+    public GzbJson gzbJson= PublicEntrance.gzbJson;
 
 
     public void loadJavaDir(String classDir, String pwd, String iv) throws Exception {
@@ -74,7 +74,7 @@ public class FactoryImpl implements Factory {
         //JSON对象
         ClassTools.putObject(GzbJsonImpl.class, null, mapObject0, new GzbJsonImpl());
         //数据库事件对象
-        ClassTools.putObject(PublicData.eventFactory.getClass(), null, mapObject0, PublicData.eventFactory);
+        ClassTools.putObject(PublicEntrance.eventFactory.getClass(), null, mapObject0, PublicEntrance.eventFactory);
         //日志对象
         ClassTools.putObject(Log.log.getClass(), null, mapObject0, Log.log);
         startFileScanning(classDir, pwd, iv);
@@ -342,7 +342,7 @@ public class FactoryImpl implements Factory {
             /// 请求参数获取 结束
             /// 内置对象创建 开始
             Object[] objects = new Object[]{runRes,gzbJson,log,request,response,parar};//, request.getSession()
-            PublicData.context.set(objects);
+            PublicEntrance.context.set(objects);
             //log.d("parar",parar);
             /// 内置对象创建 结束
             /// 装饰器(调用前) 开始
@@ -396,7 +396,7 @@ public class FactoryImpl implements Factory {
             if (index > -1 && httpMappings[index] != null && httpMappings[index].semaphore != null) {
                 httpMappings[index].semaphore.release();
             }
-            PublicData.context.remove();
+            PublicEntrance.context.remove();
 
             /// 函数执行 结束
             /// 输出调试信息
@@ -405,7 +405,6 @@ public class FactoryImpl implements Factory {
         return runRes;
     }
 
-    @Override
     public RunRes request1(Request request, Response response) {
         return null;
     }
@@ -472,7 +471,7 @@ public class FactoryImpl implements Factory {
 
             /// 内置对象创建 开始
             Object[] objects = new Object[]{runRes,gzbJson,log,request,response,parar};//, request.getSession()
-            PublicData.context.set(objects);
+            PublicEntrance.context.set(objects);
             /// 内置对象创建 结束
             times[5] = System.nanoTime();
             /// 装饰器(调用前) 开始
@@ -529,7 +528,7 @@ public class FactoryImpl implements Factory {
             if (index > -1 && httpMappings[index] != null && httpMappings[index].semaphore != null) {
                 httpMappings[index].semaphore.release();
             }
-            PublicData.context.remove();
+            PublicEntrance.context.remove();
             /// 函数执行 结束
             times[9] = System.nanoTime();
             Long res = (times[9] - times[0]) / 1000;

@@ -18,11 +18,6 @@
 
 package gzb.frame.netty;
 
-import gzb.frame.netty.entity.Request;
-import gzb.frame.netty.entity.RequestWebSocket;
-import gzb.frame.netty.entity.Response;
-import gzb.frame.netty.entity.ResponseDefaultImpl;
-import gzb.tools.Tools;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;

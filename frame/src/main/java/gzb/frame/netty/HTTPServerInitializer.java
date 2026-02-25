@@ -48,7 +48,7 @@ public class HTTPServerInitializer extends ChannelInitializer<SocketChannel> {
         p.addLast(new HTTPRequestHandlerV4());
 
         if (Config.compression) {
-            p.addLast(new HttpContentCompressor(9, 15, 8, Config.compressionMinSize));
+            p.addLast(new HttpContentCompressor(6, 15, 8, Config.compressionMinSize));
         }
 
 

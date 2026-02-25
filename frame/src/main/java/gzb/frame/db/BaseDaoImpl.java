@@ -19,14 +19,13 @@
 package gzb.frame.db;
 
 import gzb.entity.SqlTemplate;
-import gzb.frame.PublicData;
+import gzb.frame.PublicEntrance;
 import gzb.frame.annotation.Service;
 import gzb.frame.factory.ClassTools;
 import gzb.tools.*;
 import gzb.tools.cache.Cache;
 import gzb.tools.cache.GzbCache;
 import gzb.tools.log.Log;
-import io.netty.util.concurrent.FastThreadLocal;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.ParameterizedType;
@@ -39,7 +38,7 @@ import java.util.concurrent.locks.Lock;
 public abstract class BaseDaoImpl<T> implements BaseDao<T> {
     public Log log = Log.log;
 
-    public EventFactory eventFactory = PublicData.eventFactory;
+    public EventFactory eventFactory = PublicEntrance.eventFactory;
 
 
     private final GzbCache gzbCache = Cache.dataBaseCache;

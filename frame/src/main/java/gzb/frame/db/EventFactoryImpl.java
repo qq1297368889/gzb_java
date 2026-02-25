@@ -1,7 +1,7 @@
 package gzb.frame.db;
 
 import gzb.exception.GzbException0;
-import gzb.frame.PublicData;
+import gzb.frame.PublicEntrance;
 import gzb.frame.annotation.*;
 import gzb.entity.DataBaseEventEntity;
 import gzb.frame.factory.ClassTools;
@@ -68,8 +68,8 @@ public class EventFactoryImpl implements EventFactory {
             if (dataBaseEventEntity.type == type) {
                 //检查 主操作 执行之前 或 执行之后 是否匹配
                 if (dataBaseEventEntity.before == before) {
-                    Integer dep = PublicData.depth.get();
-                    PublicData.depth.set((dep == null ? 1 : dep) + 1);//深度+1
+                    Integer dep = PublicEntrance.depth.get();
+                    PublicEntrance.depth.set((dep == null ? 1 : dep) + 1);//深度+1
                     if (dep != null && dep > dataBaseEventEntity.depth) {
                         throw new GzbException0(
                                 "数据库事件传播层数异常",
@@ -78,7 +78,7 @@ public class EventFactoryImpl implements EventFactory {
                                 "当前深度",
                                 dep);
                     }
-                    Object[] objects = PublicData.context.get();
+                    Object[] objects = PublicEntrance.context.get();
                     Object[] newArray = Arrays.copyOf(objects, objects.length + 1);
                     newArray[newArray.length - 1] = entity_obj;
                     //无返回值 错误将会中断后续流程,因为不中断的话 可能掩盖问题 或者出现不可预知问题
@@ -98,9 +98,9 @@ public class EventFactoryImpl implements EventFactory {
                     }
 
                     if (dep == null) {
-                        PublicData.depth.remove();
+                        PublicEntrance.depth.remove();
                     } else {
-                        PublicData.depth.set(dep);//深度-1
+                        PublicEntrance.depth.set(dep);//深度-1
                     }
 
                 }

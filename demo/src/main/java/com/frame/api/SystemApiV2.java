@@ -4,10 +4,8 @@ import com.frame.dao.*;
 import com.frame.entity.*;
 import gzb.entity.FileUploadEntity;
 import gzb.entity.TableInfo;
-import gzb.frame.PublicData;
 import gzb.frame.annotation.*;
 import gzb.frame.db.DataBase;
-import gzb.frame.factory.v4.FactoryImplV2;
 import gzb.frame.generate.GenerateJavaCode;
 import gzb.frame.netty.HTTPRequestHandlerV4;
 import gzb.frame.netty.entity.Request;
@@ -24,8 +22,6 @@ import gzb.tools.log.Log;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -68,8 +64,8 @@ public class SystemApiV2 {
 
     @GetMapping(value = "read/data")
     public Object readData() {
-        Object obj= HTTPRequestHandlerV4.reqInfo;
-        HTTPRequestHandlerV4.reqInfo=new ConcurrentHashMap<>();
+        Object obj = HTTPRequestHandlerV4.reqInfo;
+        HTTPRequestHandlerV4.reqInfo = new ConcurrentHashMap<>();
         return obj;
     }
 
@@ -317,7 +313,11 @@ public class SystemApiV2 {
             }
             //请求方式 允许可变参数 需要从客户端请求
             if (sysMappingColumn.getSysMappingColumnRequest() != null && sysMappingColumn.getSysMappingColumnRequest().length() > 0) {
-                SysOptionRequest sysOptionRequest = sysOptionRequestDao.find(new SysOptionRequest().setSysOptionRequestKey(sysMappingColumn.getSysMappingColumnRequest()));
+                SysOptionRequest sysOptionRequest =
+                        sysOptionRequestDao.
+                                find(new SysOptionRequest().setSysOptionRequestKey(sysMappingColumn.getSysMappingColumnRequest())
+                                        , 1
+                                );
                 if (sysOptionRequest == null) {
                     log.w("无效的引用KEY ", sysMappingColumn.getSysMappingColumnName(), " -> ", sysMappingColumn.getSysMappingColumnRequest());
                 }
@@ -629,13 +629,13 @@ public class SystemApiV2 {
                 return gzbJson.fail("权限不存在");
             }
             if (type == 1) {
-                SysRoleGroup sysRoleGroup=new SysRoleGroup().setSysRoleGroupRid(rid).setSysRoleGroupGid(id);
+                SysRoleGroup sysRoleGroup = new SysRoleGroup().setSysRoleGroupRid(rid).setSysRoleGroupGid(id);
                 if (sysRoleGroupDao.find(sysRoleGroup) == null) {
                     sysRoleGroupDao.save(sysRoleGroup);
                 }
             }
             if (type == 2) {
-                SysRoleGroup sysRoleGroup=new SysRoleGroup().setSysRoleGroupRid(rid).setSysRoleGroupGid(id);
+                SysRoleGroup sysRoleGroup = new SysRoleGroup().setSysRoleGroupRid(rid).setSysRoleGroupGid(id);
                 if (sysRoleGroupDao.find(sysRoleGroup) != null) {
                     sysRoleGroupDao.delete(sysRoleGroup);
                 }
@@ -644,6 +644,7 @@ public class SystemApiV2 {
         }
         return gzbJson.success("权限更新成功");
     }
+
     @DecoratorOpen
     @GetMapping(value = "testCache")
     public Object testCache(Log log, SysUsers sysUsers, GzbJson gzbJson, GzbCache gzbCache, GzbQueue gzbQueue) throws Exception {
@@ -652,6 +653,7 @@ public class SystemApiV2 {
         log.d(gzbQueue);
         return gzbJson.success("测试完成");
     }
+
     @DecoratorOpen
     @GetMapping(value = "testCache")
     public Object testCache2(Log log, Long sysUsersAcc, GzbJson gzbJson, GzbCache gzbCache, GzbQueue gzbQueue) throws Exception {

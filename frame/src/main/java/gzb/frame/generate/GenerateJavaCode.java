@@ -120,7 +120,9 @@ public class GenerateJavaCode {
         daoImplCode.start(list, true);
         daoCode.start(list, true);
         actionCode.start(list, true);
-        javaScriptCode.start(list);
+        if (updateMapping) {
+            javaScriptCode.start(list);
+        }
     }
 
     public static void update_permission(DataBase dataBase, List<TableInfo> listTableInfo) throws Exception {

@@ -25,8 +25,8 @@ public class GzbCacheMap implements GzbCache {
         // UID 用于序列化版本控制
         private static final long serialVersionUID = 1L;
 
-         Object value;
-         long expireTime;
+        Object value;
+        long expireTime;
 
         public CacheEntry(Object value, int second) {
             this.value = value;
@@ -413,4 +413,59 @@ public class GzbCacheMap implements GzbCache {
         }
         return null;
     }
+
+    ///  byte 支持
+
+    @Override
+    public void setByte(String key, byte[] val, int second) {
+        if (key == null || val == null || key.isEmpty()) {
+            return;
+        }
+        cache.put(key, new CacheEntry(val, second));
+    }
+
+    @Override
+    public void setMapByte(String key, String subKey, byte[] val, int second) {
+        if (key == null || subKey == null || val == null || key.isEmpty() || subKey.isEmpty()) {
+            return;
+        }
+        ConcurrentHashMap<String, CacheEntry> subMap = mapCache.computeIfAbsent(key, k -> new ConcurrentHashMap<>());
+        subMap.put(subKey, new CacheEntry(val, second));
+    }
+
+    @Override
+    public byte[] getByte(String key) {
+        if (key == null || key.isEmpty()) return null;
+        CacheEntry entry = cache.get(key);
+        if (entry != null) {
+            if (entry.isExpired()) {
+                cache.remove(key, entry);
+                return null;
+            }
+            return entry.value instanceof byte[] ? (byte[]) entry.value : null;
+        }
+        return null;
+    }
+
+    @Override
+    public byte[] getMapByte(String key, String subKey) {
+        if (key == null || subKey == null || key.isEmpty() || subKey.isEmpty()) return null;
+        ConcurrentHashMap<String, CacheEntry> subMap = mapCache.get(key);
+        if (subMap != null) {
+            CacheEntry entry = subMap.get(subKey);
+            if (entry != null) {
+                if (entry.isExpired()) {
+                    subMap.remove(subKey, entry);
+                    if (subMap.isEmpty()) {
+                        mapCache.remove(key, subMap);
+                    }
+                    return null;
+                }
+                return entry.value instanceof byte[] ? (byte[]) entry.value : null;
+            }
+        }
+        return null;
+    }
+
+
 }
