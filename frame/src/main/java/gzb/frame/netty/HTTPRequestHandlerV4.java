@@ -52,10 +52,20 @@ public class HTTPRequestHandlerV4 extends SimpleChannelInboundHandler<FullHttpRe
         Log.log.e("netty 抛出错误", ctx, cause);
         ctx.close();
     }
-
+public static final byte[]BYTES="Hello, World!".getBytes(Config.encoding);
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
         // handler(ctx,req);
-        NettyServer.factory.start(ctx,req);
+        if (req.uri().equals("/text")) {
+            FullHttpResponse response = new DefaultFullHttpResponse(
+                    HttpVersion.HTTP_1_1,
+                    HttpResponseStatus.OK,
+                    Unpooled.wrappedBuffer(BYTES));
+            response.headers().set("content-length", BYTES.length);
+            response.headers().set("server", Config.frameName);
+            ctx.writeAndFlush(response);
+        }else{
+            NettyServer.factory.start(ctx,req);
+        }
     }
 
 }

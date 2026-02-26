@@ -22,6 +22,7 @@ import com.alibaba.fastjson2.JSON;
 import gzb.entity.RunRes;
 import gzb.entity.SqlTemplate;
 import gzb.exception.GzbException0;
+import gzb.frame.PublicEntrance;
 import gzb.frame.annotation.*;
 import gzb.frame.db.BaseDao;
 import gzb.entity.FileUploadEntity;
@@ -823,6 +824,7 @@ public class ClassTools {
         }
         EntityAttribute classAttribute = aClass.getAnnotation(EntityAttribute.class);
 
+
         int num = 0;
         Field[] fields = aClass.getDeclaredFields();
         String className = aClass.getName();
@@ -975,10 +977,11 @@ public class ClassTools {
                 "     }\n" +
                 "   }\n";
 
-
         code += "   public String toJson(Object object) throws Exception{\n" +
                 "try{\n" +
-                "        StringBuilder sb=new StringBuilder(\"{\");\n" +
+                "        StringBuilder sb=gzb.frame.PublicEntrance.SB_CACHE.get();\n" +
+                "        sb.setLength(0);" +
+                "        sb.append(\"{\");" +
                 "        if (object instanceof " + className + ") {\n" +
                 "           " + className + " obj0=(" + className + ")object;\n";
 
@@ -1326,7 +1329,8 @@ public class ClassTools {
         if (classAttribute != null) {
             code += "       " + aClass.getName() + " obj=(" + aClass.getName() + ")obj0;\n" +
                     "        String sql = \"delete from " + classAttribute.name() + "\";\n" +
-                    "        StringBuilder stringBuilder = new StringBuilder();\n" +
+                    "        StringBuilder stringBuilder=gzb.frame.PublicEntrance.SB_CACHE.get();\n" +
+                    "        stringBuilder.setLength(0);" +
                     "        java.util.List<Object> params = new java.util.ArrayList<>();\n";
             for (Field field : fields) {
                 if (field.getType() == byte.class || field.getType() == Byte.class
@@ -1428,7 +1432,8 @@ public class ClassTools {
                 ids1 = ids1.substring(0, ids1.length() - 5);
             }
             code += "        String sql = \"update " + classAttribute.name() + " set \";\n" +
-                    "        StringBuilder stringBuilder = new StringBuilder();\n" +
+                    "        StringBuilder stringBuilder=gzb.frame.PublicEntrance.SB_CACHE.get();\n" +
+                    "        stringBuilder.setLength(0);" +
                     "        java.util.List<Object> params = new java.util.ArrayList<>();\n";
             for (Field field : fields) {
                 if (field.getType() == byte.class || field.getType() == Byte.class
@@ -1556,7 +1561,8 @@ public class ClassTools {
         if (classAttribute != null) {
             code += "       " + aClass.getName() + " obj=(" + aClass.getName() + ")obj0;\n";
             code += "        String sql = \"select * from " + classAttribute.name() + "\";\n" +
-                    "        StringBuilder stringBuilder = new StringBuilder();\n" +
+                    "        StringBuilder stringBuilder=gzb.frame.PublicEntrance.SB_CACHE.get();\n" +
+                    "        stringBuilder.setLength(0);" +
                     "        java.util.List<Object> params = new java.util.ArrayList<>();\n";
             for (Field field : fields) {
                 if (field.getType() == byte.class || field.getType() == Byte.class
@@ -2643,8 +2649,8 @@ public class ClassTools {
         if (path == null || path.isEmpty()) {
             return PATH_SEPARATOR_STRING;
         }
-        StringBuilder sb = new StringBuilder();
-
+        StringBuilder sb = gzb.frame.PublicEntrance.SB_CACHE.get();
+        sb.setLength(0);
         // 1. 确保以 '/' 开头
         if (path.charAt(0) != PATH_SEPARATOR_CHAR) {
             sb.append(PATH_SEPARATOR_CHAR);

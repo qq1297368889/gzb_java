@@ -15,7 +15,8 @@ public class TestDDOS {
         Map<String, List<File>> files = new HashMap<>();
 
         // 请求地址
-        String url = "http://127.0.0.1:2080/test/api0/get3?message=message001";
+        String url = "http://127.0.0.1:2080/test/api0/get1?message=message001";
+        //url="http://127.0.0.1:2080/text";
         //请求方式
         String met = "GET";
         //请求数据
@@ -23,7 +24,8 @@ public class TestDDOS {
         //请求数量
         int num = 10000 * 1000;
         //包含这个内容即为响应成功  message001  sysLogId
-        byte[] success = "sysLogId".getBytes("UTF-8");
+        byte[] success = "message001".getBytes("UTF-8");
+       // success = "Hello".getBytes("UTF-8");
         //启动压力测试
         DDOS.start(
                 "正常请求",//测试名称

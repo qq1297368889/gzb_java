@@ -7,7 +7,7 @@
     <groupId>gzb</groupId>
     <artifactId>gzb.one</artifactId>
     <name>gzb.one</name>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
     <description>项目基础框架</description>
 
     <properties>

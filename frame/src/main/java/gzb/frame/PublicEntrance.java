@@ -17,13 +17,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class PublicEntrance {
-    //这个不用担心泄露 泄露也没关系 省的下次 == null
+    //字符串拼接通用缓存
+    public static final ThreadLocal<StringBuilder> SB_CACHE = ThreadLocal.withInitial(() -> new StringBuilder(1024));
+
+    //上下文缓存 主要用于传递环境信息
     public static final ThreadLocal<Object[]> context = new ThreadLocal<>();
+    //数据库事件 深度配置
     public static final ThreadLocal<Integer> depth = new ThreadLocal<>();
-
+    //数据库事务签名
     public static final ThreadLocal<String> open_transaction_key = new ThreadLocal<>();
-
+    //json模板实现类
     public static final GzbJson gzbJson = new GzbJsonImpl();
+    //框架核心实现类
     public static final FactoryImplV2 factory;
 
     static {
@@ -34,8 +39,9 @@ public class PublicEntrance {
         }
     }
 
+    //数据库事件工厂
     public static EventFactory eventFactory = new EventFactoryImpl(PublicEntrance.factory.getMapObject(), Log.log);
-
+    //类加载事件回调
     public static ClassLoadEvent classLoadEvent = null;
 
 

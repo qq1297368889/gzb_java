@@ -19,6 +19,7 @@
 package gzb.tools.json;
 
 import com.alibaba.fastjson2.JSON;
+import gzb.frame.PublicEntrance;
 import gzb.tools.Config;
 import gzb.tools.Tools;
 
@@ -31,7 +32,8 @@ public class GzbJsonImpl implements GzbJson {
 
     @Override
     public String initJson(Integer code, String msg, String url, Object data, Integer page, Integer size, Integer total) {
-        StringBuilder sb=new StringBuilder(50);
+        StringBuilder sb=PublicEntrance.SB_CACHE.get();
+        sb.setLength(0);
         sb.append("{\"").append(Config.stateName).append("\":\"").append(code).append("\"");
 
         sb.append(",\"").append(Config.timeName).append("\":\"").append(System.currentTimeMillis()).append("\"");
@@ -108,7 +110,8 @@ public class GzbJsonImpl implements GzbJson {
      */
     @Override
     public String response(int code, String msg, String url, Object data) {
-        StringBuilder sb=new StringBuilder(50);
+        StringBuilder sb=PublicEntrance.SB_CACHE.get();
+        sb.setLength(0);
         sb.append("{\"").append(Config.stateName).append("\":\"").append(code).append("\"")
                 .append(",\"")
                 .append(Config.timeName).append("\":\"").append(System.currentTimeMillis()).append("\"");

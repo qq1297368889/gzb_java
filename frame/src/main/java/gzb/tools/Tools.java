@@ -24,6 +24,7 @@ import com.alibaba.fastjson2.TypeReference;
 import gzb.entity.PagingEntity;
 import gzb.entity.TableInfo;
 import gzb.exception.GzbException0;
+import gzb.frame.PublicEntrance;
 import gzb.frame.db.DataBase;
 import gzb.frame.factory.ClassTools;
 import gzb.frame.factory.Constant;
@@ -805,7 +806,8 @@ public class Tools {
         if (map == null) {
             return "null";
         }
-        StringBuilder sb = new StringBuilder(128);
+        StringBuilder sb = PublicEntrance.SB_CACHE.get();
+        sb.setLength(0); // 重置StringBuilder长度，复用缓存
         sb.append("{");
         boolean first = true;
         for (Map.Entry<?, ?> entry : map.entrySet()) {
@@ -829,7 +831,8 @@ public class Tools {
         if (iterable == null) {
             return "null";
         }
-        StringBuilder sb = new StringBuilder(256);
+        StringBuilder sb = PublicEntrance.SB_CACHE.get();
+        sb.setLength(0); // 重置StringBuilder长度，复用缓存
         sb.append("[");
         if (iterable != null) {
             boolean first = true;
@@ -850,7 +853,8 @@ public class Tools {
         if (array == null) {
             return "null";
         }
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = PublicEntrance.SB_CACHE.get();
+        sb.setLength(0); // 重置StringBuilder长度，复用缓存
         int length = Array.getLength(array);
         sb.append("[");
         for (int i = 0; i < length; i++) {
@@ -863,12 +867,13 @@ public class Tools {
         return sb.toString();
     }
 
-
     public static String escapeJsonString(String str) {
         if (str == null) {
             return "null";
         }
-        StringBuilder sb = new StringBuilder(str.length() + 10);
+        //StringBuilder sb = new StringBuilder(str.length() + 10);
+        StringBuilder sb = PublicEntrance.SB_CACHE.get();
+        sb.setLength(0); // 重置StringBuilder长度，复用缓存
         final int len = str.length();
         int last = 0; // 上一次追加的起点索引
 
