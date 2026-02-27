@@ -2,7 +2,9 @@ package com.frame.api;
 
 import com.frame.dao.SysLogDao;
 import com.frame.entity.SysLog;
+import com.frame.entity.SysUsers;
 import gzb.frame.annotation.*;
+import gzb.tools.Config;
 import gzb.tools.json.GzbJson;
 
 import java.util.ArrayList;
@@ -14,7 +16,14 @@ import java.util.Random;
 @RequestMapping("test/api0")
 public class TestApi0 {
     //test/api0/get1?message=message001
+    public static final byte[]BYTES="Hello, World!".getBytes(Config.encoding);
 
+    @EventLoop
+    @GetMapping("get0")
+    public byte[] get0(){
+        return BYTES;
+    }
+    /// 前端请求的 body 直接是 {"sysUsersAcc:"xxx"}  sysUsers的参数 sysUsersAcc 能接受到  而定义的 string sysUsersAcc 也能接受到
     @EventLoop
     @GetMapping("get1")
     public String get1(String message){
@@ -22,7 +31,8 @@ public class TestApi0 {
     }
     @Resource
     SysLogDao sysLogDao;
-
+    /// value={xx,xx} xx对应请求参数  最终会生成 key 两次请求 同key 将会命中缓存(前提未过期) second 缓存时间 单位秒
+    @CacheRequest(value={"p1","p2","xxx"},second=10)
     @GetMapping("get2")
     public Object get2(String message) throws Exception {
         return sysLogDao.find(new SysLog().setSysLogId(getRandomLong(20, 1)));

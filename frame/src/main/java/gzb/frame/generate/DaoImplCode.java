@@ -45,3 +45,4 @@ public class DaoImplCode extends Base {
         }
     }
 }
+//HotBackgroundThread

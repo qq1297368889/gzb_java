@@ -1,3 +1,4 @@
+# 个别笔误 错别字 请理解 咳咳
 # 核心注解篇
 #### @Controller 类级注解 表示这是一个控制器 会被扫描
 #### @Service 类级注解 表示这是一个实现类火其他类 可以被扫描 
@@ -29,20 +30,38 @@
 #### @DataBaseEventDelete(entity = SysUsers.class, executionBefore = false, depth = 5)     //entity 注册到 某个实体类 数据库 删除事件 //executionBefore 事件执行时机，true 主操作执行前 false 主操作执行后 默认false //depth 事件传播深度 防止循环传播
 #### @DataBaseEventUpdate(entity = SysUsers.class, executionBefore = false, depth = 5)     //entity 注册到 某个实体类 数据库 修改事件 //executionBefore 事件执行时机，true 主操作执行前 false 主操作执行后 默认false //depth 事件传播深度 防止循环传播
 #### @DataBaseEventSelect(entity = SysUsers.class, executionBefore = false, depth = 5)     //entity 注册到 某个实体类 数据库 查询事件 //executionBefore 事件执行时机，true 主操作执行前 false 主操作执行后 默认false //depth 事件传播深度 防止循环传播
-
+#### @CacheRequest(value={"p1","p2","xxx"},second=10) //缓存接口响应 value={xx,xx} xx对应请求参数  最终会生成 key 两次请求 同key 将会命中缓存(前提未过期) second 缓存时间 单位秒
 
 
 #### @EntityAttribute(key=true,size = 19,name="sys_file_id",desc="sysFileId") 类级或方法级注解 表示这是一个实体类 和 数据库的映射信息  这个对开发者无感知 知道就行 没有实用机会
-
-# 注意一个点  Controller Decorator ThreadFactory Service 这些类 不要有内部类 防止框架插入代码的时候出现问题
-
+ 
+# Controller Decorator ThreadFactory Service 这些类所在文件中，不要定义多个顶级平级类（如 public class a{} class b{}）；
+# public类内部的子类可正常定义，主要是防止框架插入代码时出现问题。
 
 # 参数注入介绍
 #### 所有被框架管理的 类 都可以被注入  可以注入到 类变量 和 方法参数  
-#### http 请求流程的对象 Request(请求对象 .getSession()可以获取session )  Response(响应对象) Map<List<Object>>(请求参数) Log(框架日志对象) GzbJson(JSO对象) 会被注入
-#### 在装饰器 DecoratorStart 中 runRes.setData(xx)的对象 也会在后续流程被注入 
+#### http 请求流程的对象 Request(请求对象 .getSession()可以获取session )  Response(响应对象) Map<List<Object>>(请求参数) Log(框架日志对象) GzbJson(JSON对象) 会被注入
+#### 在装饰器 DecoratorStart 中 runRes 注入的对象 也会在后续流程被注入 
 #### 有一个例外 线程模型 不会注入http相关的变量 因为他与http请求无关
 #### 什么时候会被注入: Controller Decorator ThreadFactory DataBaseEventFactory 这些标注类 内部的 变量 和 注册的方法参数 都会被注入  
+#### 需要注意的点 复杂对象是根据类型匹配的 如果两个同类型对象可能会导致意外问题 但是 我认为 为什么要重复呢 避免重复即可 如果为了边缘问题设置一大堆配置方案 那么是否得不偿失?
+# http 请求参数解析规则
+#### 这是主要差异点 任何请求参数 都会被扁平化封装为 map<string,list<object>> 
+#### 因为我不想增加前端工作负担 传参时 还要 obj.xxx=xx  或者 obj{xx:xx}  他们可以 直接 xxx=xx 或者 {xx:xx}
+#### 这也就导致了 会有妥协 不支持嵌套对象解析 但是可以定义一个 map<string,list<object>> 接受原始对象
+#### 当定义一个 复杂对象的时候 框架会扫描这个对象的各个参数变量 如果参数名 和 请求参数名匹配 那么就会把这个参数封装到这个对象里边  
+#### 这种方式 既支持了表单提交 又支持了 json提交 并且统一抽象了兼容层 map 控制器 无需关心 参数来自于表单 还是 json 又或者查询参数  
+#### 但是不支持嵌套对象解析到复杂对象 或者说会解析成意外的情况 这就是代价 但我认为这个代价是值得的 只要按照规则 那么你的认知负担将会极低
+#### 这是一个权衡问题 和 设计思想问题 我认为 参数不应该嵌套 增加了太多认知负担 而扁平化天生匹配我们人类的大脑思维模式
+#### 比如说 {xx:xx,data:[{dataxx:xx},{}....]} 应该怎么扁平化的传递? xx=xx&dataxx=xx&dataxx=xxx..... 这真的复杂吗?  后台接收 fun(string xx,string[]dataxx)
+#### 对象怎么匹配 比如传递 {xx:xx} 后端定义 fun(xxobj obj) 只要obj 拥有变量 xx 那么也就能接收到 
+#### 有人会说了 重名怎么办?说实在的 这是你的习惯不好 我创建数据库固定是 表名_列名 生成的实体类是 驼峰形式的 表名列名 天生不重名 
+#### 接收对象直接用entity 不比定义一堆 DTO要好?? 对不对 而且它拥有强一致规范 返回的数据 和接收的数据 天然匹配 规则即文档 降低对接成本
+
+
+
+
+
 #### 数据库使用例子
 ```java
 

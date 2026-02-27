@@ -615,11 +615,15 @@ public class ClassTools {
                     try {
                         aClass0 = Class.forName(classNameAll); //直接加载已有类 打包后必定有
                     } catch (Exception e) {//预期内的可能错误 吞掉 真实编译的错误才有意义
-                        code = ClassTools.gen_entity_load_code_v1(aClass1); //通过反射 生成新类
-                        if (code != null) {
-                            aClass0 = ClassLoad.compileJavaCode(code);//编译新类
-                        } else {
+                        if (aClass1.getName().startsWith("java.")) {
                             mapLoadObjectObject.put(aClass, "1");
+                        }else{
+                            code = ClassTools.gen_entity_load_code_v1(aClass1); //通过反射 生成新类
+                            if (code != null) {
+                                aClass0 = ClassLoad.compileJavaCode(code);//编译新类
+                            } else {
+                                mapLoadObjectObject.put(aClass, "1");
+                            }
                         }
                     }
                     if (aClass0 != null) {
@@ -828,7 +832,7 @@ public class ClassTools {
         int num = 0;
         Field[] fields = aClass.getDeclaredFields();
         String className = aClass.getName();
-        String code = "package " + className + "_v1;\npublic class " + (className.replaceAll("\\.", "_")) + "_inner_v1 implements gzb.frame.factory.GzbEntityInterface{\n" +
+        String code = "package gzb." + className + "_v1;\npublic class " + (className.replaceAll("\\.", "_")) + "_inner_v1 implements gzb.frame.factory.GzbEntityInterface{\n" +
                 "   public " + (className.replaceAll("\\.", "_")) + "_inner_v1(){\n" +
                 "        \n" +
                 "    }\n";
@@ -978,9 +982,10 @@ public class ClassTools {
                 "   }\n";
 
         code += "   public String toJson(Object object) throws Exception{\n" +
+                "        gzb.frame.PublicEntrance.Entity entity0=gzb.frame.PublicEntrance.SB_CACHE0.get();\n" +
+                "        int index0=entity0.open();\n" +
                 "try{\n" +
-                "        StringBuilder sb=gzb.frame.PublicEntrance.SB_CACHE.get();\n" +
-                "        sb.setLength(0);" +
+                "        StringBuilder sb = entity0.get(index0);\n" +
                 "        sb.append(\"{\");" +
                 "        if (object instanceof " + className + ") {\n" +
                 "           " + className + " obj0=(" + className + ")object;\n";
@@ -1066,7 +1071,9 @@ public class ClassTools {
                 "        return sb.toString();\n" +
                 "     }catch (Exception e){\n" +
                 "        throw new RuntimeException(\"实体类->" + className + "转换JSON异常\",e);\n" +
-                "   }\n" +
+                "   }finally {\n" +
+                "        entity0.close(index0);" +
+                "   }\n"+
                 "   }\n";
         code += "   public void toJson(Object object,StringBuilder sb) throws Exception{\n" +
                 "try{\n" +
@@ -1329,8 +1336,10 @@ public class ClassTools {
         if (classAttribute != null) {
             code += "       " + aClass.getName() + " obj=(" + aClass.getName() + ")obj0;\n" +
                     "        String sql = \"delete from " + classAttribute.name() + "\";\n" +
-                    "        StringBuilder stringBuilder=gzb.frame.PublicEntrance.SB_CACHE.get();\n" +
-                    "        stringBuilder.setLength(0);" +
+                    "        gzb.frame.PublicEntrance.Entity entity0=gzb.frame.PublicEntrance.SB_CACHE0.get();\n" +
+                    "        int index0=entity0.open();\n" +
+                    "try {\n" +
+                    "        StringBuilder stringBuilder = entity0.get(index0);\n" +
                     "        java.util.List<Object> params = new java.util.ArrayList<>();\n";
             for (Field field : fields) {
                 if (field.getType() == byte.class || field.getType() == Byte.class
@@ -1388,7 +1397,11 @@ public class ClassTools {
                     "            stringBuilder.delete(stringBuilder.length() - 5, stringBuilder.length());\n" +
                     "            sql += \" where \";\n" +
                     "        }\n" +
-                    "        return new gzb.entity.SqlTemplate(sql + stringBuilder,params.toArray());\n";
+                    "        return new gzb.entity.SqlTemplate(sql + stringBuilder,params.toArray());\n"+
+
+                    "}finally {\n" +
+                    "        entity0.close(index0);" +
+                    "            }\n";
         } else {
             code += "        return null;\n";
         }
@@ -1432,8 +1445,10 @@ public class ClassTools {
                 ids1 = ids1.substring(0, ids1.length() - 5);
             }
             code += "        String sql = \"update " + classAttribute.name() + " set \";\n" +
-                    "        StringBuilder stringBuilder=gzb.frame.PublicEntrance.SB_CACHE.get();\n" +
-                    "        stringBuilder.setLength(0);" +
+                    "        gzb.frame.PublicEntrance.Entity entity0=gzb.frame.PublicEntrance.SB_CACHE0.get();\n" +
+                    "        int index0=entity0.open();\n" +
+                    "try {\n" +
+                    "        StringBuilder stringBuilder = entity0.get(index0);\n" +
                     "        java.util.List<Object> params = new java.util.ArrayList<>();\n";
             for (Field field : fields) {
                 if (field.getType() == byte.class || field.getType() == Byte.class
@@ -1466,7 +1481,10 @@ public class ClassTools {
                     "            throw new RuntimeException(\"生成SQL（update）时 发现没有可修改的内容 \"+obj);\n" +
                     "        }\n" +
                     ids2 +
-                    "        return new gzb.entity.SqlTemplate(sql +stringBuilder +\" where " + ids1 + "\",params.toArray());\n";
+                    "        return new gzb.entity.SqlTemplate(sql +stringBuilder +\" where " + ids1 + "\",params.toArray());\n" +
+            "}finally {\n" +
+                    "        entity0.close(index0);" +
+                    "            }\n";;
         } else {
             code += "        return null;\n";
         }
@@ -1561,8 +1579,10 @@ public class ClassTools {
         if (classAttribute != null) {
             code += "       " + aClass.getName() + " obj=(" + aClass.getName() + ")obj0;\n";
             code += "        String sql = \"select * from " + classAttribute.name() + "\";\n" +
-                    "        StringBuilder stringBuilder=gzb.frame.PublicEntrance.SB_CACHE.get();\n" +
-                    "        stringBuilder.setLength(0);" +
+                    "        gzb.frame.PublicEntrance.Entity entity0=gzb.frame.PublicEntrance.SB_CACHE0.get();\n" +
+                    "        int index0=entity0.open();\n" +
+                    "try {\n" +
+                    "        StringBuilder stringBuilder = entity0.get(index0);\n" +
                     "        java.util.List<Object> params = new java.util.ArrayList<>();\n";
             for (Field field : fields) {
                 if (field.getType() == byte.class || field.getType() == Byte.class
@@ -1620,7 +1640,11 @@ public class ClassTools {
                     "            stringBuilder.delete(stringBuilder.length() - 5, stringBuilder.length());\n" +
                     "            sql += \" where \";\n" +
                     "        }\n" +
-                    "        return new gzb.entity.SqlTemplate(sql + stringBuilder,params.toArray());\n";
+                    "        return new gzb.entity.SqlTemplate(sql + stringBuilder,params.toArray());\n" +
+                    "}finally {\n" +
+                    "        entity0.close(index0);" +
+                    "            }\n";
+
         } else {
             code += "        return null;\n";
         }
@@ -1801,10 +1825,10 @@ public class ClassTools {
                     //System.out.println(aClass.getName() + " " + res01 + " " + types[i1].getName());
                     if (res01) {
                         /// #################################################
-                        code+="if(_gzb_one_c_mapObject.get(\"" + types[i1].getName() + "\")!=null){" +
-                                "gzb.tools.log.Log.log.i(\"" + types[i1].getName() + "\"" +
+                      /*   code+="if(_gzb_one_c_mapObject.get(\"" + types[i1].getName() + "\")!=null){" +
+                               "gzb.tools.log.Log.log.i(\"" + types[i1].getName() + "\"" +
                                 ",_gzb_one_c_mapObject.get(\"" + types[i1].getName() + "\").getClass()" +
-                                ",_gzb_one_c_mapObject.get(\"" + types[i1].getName() + "\").getClass().getClassLoader());}";
+                                ",_gzb_one_c_mapObject.get(\"" + types[i1].getName() + "\").getClass().getClassLoader());}";*/
                         //尝试注入 service 等注解对象
                         code += "                //复杂对象\n" +
                                 "                   _c_u_" + names[i1] + " = (" + types[i1].getCanonicalName() + ")_gzb_one_c_mapObject.get(\"" + types[i1].getName() + "\");\n";
@@ -2649,38 +2673,43 @@ public class ClassTools {
         if (path == null || path.isEmpty()) {
             return PATH_SEPARATOR_STRING;
         }
-        StringBuilder sb = gzb.frame.PublicEntrance.SB_CACHE.get();
-        sb.setLength(0);
-        // 1. 确保以 '/' 开头
-        if (path.charAt(0) != PATH_SEPARATOR_CHAR) {
-            sb.append(PATH_SEPARATOR_CHAR);
-        }
-
-        // 2. 遍历并处理
-        char lastChar = LAST_CHAR;
-        for (int i = 0; i < path.length(); i++) {
-            char c = path.charAt(i);
-
-            // 将所有 \ 替换为 /
-            if (c == WINDOWS_SEPARATOR_CHAR) {
-                c = PATH_SEPARATOR_CHAR;
+        gzb.frame.PublicEntrance.Entity entity0=gzb.frame.PublicEntrance.SB_CACHE0.get();
+        int index0=entity0.open();
+        try {
+            StringBuilder sb = entity0.get(index0);
+            // 1. 确保以 '/' 开头
+            if (path.charAt(0) != PATH_SEPARATOR_CHAR) {
+                sb.append(PATH_SEPARATOR_CHAR);
             }
 
-            // 过滤掉连续的 /
-            if (c == PATH_SEPARATOR_CHAR && lastChar == PATH_SEPARATOR_CHAR) {
-                continue;
+            // 2. 遍历并处理
+            char lastChar = LAST_CHAR;
+            for (int i = 0; i < path.length(); i++) {
+                char c = path.charAt(i);
+
+                // 将所有 \ 替换为 /
+                if (c == WINDOWS_SEPARATOR_CHAR) {
+                    c = PATH_SEPARATOR_CHAR;
+                }
+
+                // 过滤掉连续的 /
+                if (c == PATH_SEPARATOR_CHAR && lastChar == PATH_SEPARATOR_CHAR) {
+                    continue;
+                }
+
+                sb.append(c);
+                lastChar = c;
             }
 
-            sb.append(c);
-            lastChar = c;
+            // 3. 确保以 '/' 结尾
+            if (sb.length() > 1 && sb.charAt(sb.length() - 1) != PATH_SEPARATOR_CHAR) {
+                sb.append(PATH_SEPARATOR_CHAR);
+            }
+            return sb.toString();
+        }finally {
+            entity0.close(index0);
         }
 
-        // 3. 确保以 '/' 结尾
-        if (sb.length() > 1 && sb.charAt(sb.length() - 1) != PATH_SEPARATOR_CHAR) {
-            sb.append(PATH_SEPARATOR_CHAR);
-        }
-
-        return sb.toString();
     }
 
     /**

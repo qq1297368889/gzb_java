@@ -32,37 +32,42 @@ public class GzbJsonImpl implements GzbJson {
 
     @Override
     public String initJson(Integer code, String msg, String url, Object data, Integer page, Integer size, Integer total) {
-        StringBuilder sb=PublicEntrance.SB_CACHE.get();
-        sb.setLength(0);
-        sb.append("{\"").append(Config.stateName).append("\":\"").append(code).append("\"");
+        gzb.frame.PublicEntrance.Entity entity0 = gzb.frame.PublicEntrance.SB_CACHE0.get();
+        int index0 = entity0.open();
+        try {
+            StringBuilder sb = entity0.get(index0);
+            sb.append("{\"").append(Config.stateName).append("\":\"").append(code).append("\"");
 
-        sb.append(",\"").append(Config.timeName).append("\":\"").append(System.currentTimeMillis()).append("\"");
+            sb.append(",\"").append(Config.timeName).append("\":\"").append(System.currentTimeMillis()).append("\"");
 
-        if (msg != null) {
-            sb.append(",\"").append(Config.messageName).append("\":\"").append(Tools.escapeJsonString(msg)).append("\"");
-        }
-        if (url != null) {
-            sb.append(",\"").append(Config.urlName).append("\":\"").append(Tools.escapeJsonString(url)).append("\"");
-        }
-        if (page != null) {
-            sb.append(",\"").append(Config.pageName).append("\":\"").append(page).append("\"");
-        }
-        if (size != null) {
-            sb.append(",\"").append(Config.sizeName).append("\":\"").append(size).append("\"");
-        }
-        if (total != null) {
-            sb.append(",\"").append(Config.totalName).append("\":\"").append(total).append("\"");
-        }
-
-        if (data != null) {
-            try {
-                sb.append(",\"").append(Config.dataName).append("\":").append(Tools.toJson(data));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+            if (msg != null) {
+                sb.append(",\"").append(Config.messageName).append("\":\"").append(Tools.escapeJsonString(msg)).append("\"");
             }
+            if (url != null) {
+                sb.append(",\"").append(Config.urlName).append("\":\"").append(Tools.escapeJsonString(url)).append("\"");
+            }
+            if (page != null) {
+                sb.append(",\"").append(Config.pageName).append("\":\"").append(page).append("\"");
+            }
+            if (size != null) {
+                sb.append(",\"").append(Config.sizeName).append("\":\"").append(size).append("\"");
+            }
+            if (total != null) {
+                sb.append(",\"").append(Config.totalName).append("\":\"").append(total).append("\"");
+            }
+
+            if (data != null) {
+                try {
+                    sb.append(",\"").append(Config.dataName).append("\":").append(Tools.toJson(data));
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            sb.append("}");
+            return sb.toString();
+        } finally {
+            entity0.close(index0);
         }
-        sb.append("}");
-        return sb.toString();
     }
 
     public String paging(List<?> list, Integer page, Integer size, Integer maxPage, Integer maxSize) {
@@ -110,28 +115,33 @@ public class GzbJsonImpl implements GzbJson {
      */
     @Override
     public String response(int code, String msg, String url, Object data) {
-        StringBuilder sb=PublicEntrance.SB_CACHE.get();
-        sb.setLength(0);
-        sb.append("{\"").append(Config.stateName).append("\":\"").append(code).append("\"")
-                .append(",\"")
-                .append(Config.timeName).append("\":\"").append(System.currentTimeMillis()).append("\"");
+        gzb.frame.PublicEntrance.Entity entity0 = gzb.frame.PublicEntrance.SB_CACHE0.get();
+        int index0 = entity0.open();
+        try {
+            StringBuilder sb = entity0.get(index0);
+            sb.append("{\"").append(Config.stateName).append("\":\"").append(code).append("\"")
+                    .append(",\"")
+                    .append(Config.timeName).append("\":\"").append(System.currentTimeMillis()).append("\"");
 
-        if (msg != null) {
-            sb.append(",\"").append(Config.messageName).append("\":\"").append(Tools.escapeJsonString(msg)).append("\"");
-        }
-        if (url != null) {
-            sb.append(",\"").append(Config.urlName).append("\":\"").append(Tools.escapeJsonString(url)).append("\"");
-        }
-        if (data != null) {
-            try {
-                sb.append(",\"").append(Config.dataName).append("\":").append(Tools.toJson(data));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+            if (msg != null) {
+                sb.append(",\"").append(Config.messageName).append("\":\"").append(Tools.escapeJsonString(msg)).append("\"");
             }
-        }
+            if (url != null) {
+                sb.append(",\"").append(Config.urlName).append("\":\"").append(Tools.escapeJsonString(url)).append("\"");
+            }
+            if (data != null) {
+                try {
+                    sb.append(",\"").append(Config.dataName).append("\":").append(Tools.toJson(data));
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
 
-        sb.append("}");
-        return sb.toString();
+            sb.append("}");
+            return sb.toString();
+        } finally {
+            entity0.close(index0);
+        }
     }
 
     /**

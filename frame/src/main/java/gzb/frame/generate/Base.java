@@ -20,6 +20,7 @@ package gzb.frame.generate;
 
 import gzb.tools.FileTools;
 import gzb.tools.Tools;
+import gzb.tools.log.Log;
 
 import java.io.File;
 import java.io.IOException;
@@ -111,7 +112,14 @@ public class Base {
         FileTools.mkdir(new File(path).getParentFile());
         //System.out.println(path);
         if (save) {
-            FileTools.save(new File(path), code);
+            File file =new File(path);
+            if (file.exists()) {
+                Log.log.w("文件已存在被跳过",file.getPath());
+            }else{
+                Log.log.i("生成文件",file.getPath());
+                FileTools.save(new File(path), code);
+            }
+
         }
     }
 }

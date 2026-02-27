@@ -115,11 +115,19 @@ public class GenerateJavaCode {
         DaoCode daoCode = new DaoCode(codeSrcPath, pkg, null);
         ActionCode actionCode = new ActionCode(codeSrcPath, pkg, null);
         JavaScriptCode javaScriptCode = new JavaScriptCode(codeSrcPath, pkg, null);
+        DataBaseEventCode dataBaseEventCode = new DataBaseEventCode(codeSrcPath, pkg, null);
+        DecoratorCode decoratorCode = new DecoratorCode(codeSrcPath, pkg, null);
+        HotBackgroundThreadCode hotBackgroundThreadCode = new HotBackgroundThreadCode(codeSrcPath, pkg, null);
+
+
         dbCode.start(dbKey, dbName, true);
         entityCode.start(list, true);
         daoImplCode.start(list, true);
         daoCode.start(list, true);
         actionCode.start(list, true);
+        dataBaseEventCode.start(list, true);
+        decoratorCode.start(list, true);
+        hotBackgroundThreadCode.start(list, true);
         if (updateMapping) {
             javaScriptCode.start(list);
         }

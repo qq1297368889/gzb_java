@@ -30,9 +30,56 @@ public String test(String sysUsersAcc,GzbJson gzbJson) throws Exception {
 #### 我不提供可能存在偏差的压测数据。我的关注点在于框架本身的高效设计，而非受外部因素影响的最终性能数字。
 #### 压测效果很惊艳，不过我没有标准的环境进行测试 。
 ### 压测代码
-#### 感兴趣可以通过调用示例项目的TestDDOS.main 来启动压测。你也可以使用其他压测工具。
+#### 感兴趣可以通过调用示例项目的 TestDDOS.main 来启动压测。你也可以使用其他压测工具。
 
 * [查看执行耗时日志](执行耗时.md) 
+### 2026-02-27 补充性能对比数据(求超越 求打脸 求下载 哥求你了)
+* 实测 同一次jvm启动的进程 这排除了任何不公平的情况
+* 为了方便观察 服务端为单线程  压测端为24线程
+* 注 qps不够高是因为我的win10系统网络性能有点问题 不是框架性能问题
+* 这是为了对比框架 和 裸写 netty 的性能差异
+* 裸写 netty 的代码如下  其性能为2.9w+ qps:
+```java'
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
+        // /text 服务端直接返回文本内容，绕过框架的处理逻辑，以测试框架的基础性能
+        if (req.uri().equals("/text")) {
+            FullHttpResponse response = new DefaultFullHttpResponse(
+                    HttpVersion.HTTP_1_1,
+                    HttpResponseStatus.OK,
+                    Unpooled.wrappedBuffer(BYTES));
+            response.headers().set("content-length", BYTES.length);
+            response.headers().set("server", Config.frameName);
+            ctx.writeAndFlush(response);
+        }else{
+            NettyServer.factory.start(ctx,req);
+        }
+    }
+```
+* 
+* 简单请求无参数 代码如下  其性能为2.9w+ qps:
+```java'
+    @EventLoop
+    @GetMapping("get0")
+    public byte[] get0(){
+        return BYTES;
+    }
+```
+* 简单请求 1 参数 代码如下  其性能为2.9w+ qps:
+```java'
+    @EventLoop
+    @GetMapping("get1")
+    public String get1(String message){
+        return "{\"code\":\"1\",\"time\":\"1769527173990\",\"message\":\""+message+"\"}";
+    }
+```
+* 这意味着什么? 框架开销几乎为 0 (并非无开销 只是开销小到完全被io掩盖了 哪怕是微秒级的环回延迟)
+* cpu亲和性等问题已处理 防止造成干扰
+* 测试过程中的埋点计时数据披露(单位纳秒):
+* "总耗时" | "800" | "netty数据获取" | "600" | "框架执行" | "200"(这是随意挑选的一条比较低的耗时数据 并非最低)
+* 计时来自于 gzb.frame.factory.v4.FactoryImplV2 debug方法
+* 完全可复现 嘿 兄弟
+
+
 ---
 
 ## 核心特性
@@ -70,7 +117,7 @@ public String test(String sysUsersAcc,GzbJson gzbJson) throws Exception {
 3.  **创建与编辑配置文件**：
     * 在 `src/main/resources` 目录下创建 `application.properties` 文件。
     * 参考示例项目中的 `src/main/resources/application.properties`，其中内含详细注释。
-4.  **配置数据库**：目前仅支持 MySQL。请按照注释配置数据库连接信息。
+4.  **配置数据库**：目前仅支持 MySQL 和 pg。请按照注释配置数据库连接信息。
 5.  **配置缓存与 Session**：如果你的项目使用 Redis，请配置 Redis 连接信息；如果不需要，请将 `session.type` 和 `cache.type`和 `db.cache.type` 设置为 `map`。
 6.  **核心路径配置**：在配置文件中设置源代码目录（`gzb.system.code.dir`）、上传目录、静态资源目录、临时目录等。
 

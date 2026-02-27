@@ -52,7 +52,7 @@ public class HTTPRequestHandlerV4 extends SimpleChannelInboundHandler<FullHttpRe
         Log.log.e("netty 抛出错误", ctx, cause);
         ctx.close();
     }
-public static final byte[]BYTES="Hello, World!".getBytes(Config.encoding);
+    public static final byte[]BYTES="Hello, World!".getBytes(Config.encoding);
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
         // handler(ctx,req);
         if (req.uri().equals("/text")) {

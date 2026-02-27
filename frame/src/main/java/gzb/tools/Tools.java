@@ -806,35 +806,44 @@ public class Tools {
         if (map == null) {
             return "null";
         }
-        StringBuilder sb = PublicEntrance.SB_CACHE.get();
-        sb.setLength(0); // 重置StringBuilder长度，复用缓存
-        sb.append("{");
-        boolean first = true;
-        for (Map.Entry<?, ?> entry : map.entrySet()) {
-            if (entry.getKey() != null && entry.getValue() != null) {
-                if (!first) {
-                    sb.append(",");
+        gzb.frame.PublicEntrance.Entity entity0=gzb.frame.PublicEntrance.SB_CACHE0.get();
+        int index0=entity0.open();
+        try {
+            StringBuilder sb = entity0.get(index0);
+            sb.append("{");
+            boolean first = true;
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                if (entry.getKey() != null && entry.getValue() != null) {
+                    if (!first) {
+                        sb.append(",");
+                    }
+                    first = false;
+                    sb.append("\"");
+                    sb.append(entry.getKey());
+                    sb.append("\":");
+                    sb.append(toJson(entry.getValue()));
                 }
-                first = false;
-                sb.append("\"");
-                sb.append(entry.getKey());
-                sb.append("\":");
-                sb.append(toJson(entry.getValue()));
-            }
 
+            }
+            sb.append("}");
+            return sb.toString();
+        }finally {
+            entity0.close(index0);
         }
-        sb.append("}");
-        return sb.toString();
+
     }
     // Helper method to serialize an Iterable (e.g., List, Set)
     public static String iterableToJson(Iterable<?> iterable) {
         if (iterable == null) {
             return "null";
         }
-        StringBuilder sb = PublicEntrance.SB_CACHE.get();
-        sb.setLength(0); // 重置StringBuilder长度，复用缓存
-        sb.append("[");
-        if (iterable != null) {
+
+        gzb.frame.PublicEntrance.Entity entity0=gzb.frame.PublicEntrance.SB_CACHE0.get();
+        int index0=entity0.open();
+        try {
+            StringBuilder sb = entity0.get(index0);
+            sb.setLength(0); // 重置StringBuilder长度，复用缓存
+            sb.append("[");
             boolean first = true;
             for (Object obj : iterable) {
                 if (!first) {
@@ -843,9 +852,11 @@ public class Tools {
                 first = false;
                 sb.append(toJson(obj));
             }
+            sb.append("]");
+            return sb.toString();
+        }finally {
+            entity0.close(index0);
         }
-        sb.append("]");
-        return sb.toString();
     }
 
     // Helper method to serialize an Array
@@ -853,18 +864,23 @@ public class Tools {
         if (array == null) {
             return "null";
         }
-        StringBuilder sb = PublicEntrance.SB_CACHE.get();
-        sb.setLength(0); // 重置StringBuilder长度，复用缓存
-        int length = Array.getLength(array);
-        sb.append("[");
-        for (int i = 0; i < length; i++) {
-            if (i > 0) {
-                sb.append(",");
+        gzb.frame.PublicEntrance.Entity entity0=gzb.frame.PublicEntrance.SB_CACHE0.get();
+        int index0=entity0.open();
+        try {
+            StringBuilder sb = entity0.get(index0);
+            int length = Array.getLength(array);
+            sb.append("[");
+            for (int i = 0; i < length; i++) {
+                if (i > 0) {
+                    sb.append(",");
+                }
+                sb.append(toJson(Array.get(array, i)));
             }
-            sb.append(toJson(Array.get(array, i)));
+            sb.append("]");
+            return sb.toString();
+        }finally {
+            entity0.close(index0);
         }
-        sb.append("]");
-        return sb.toString();
     }
 
     public static String escapeJsonString(String str) {
@@ -872,87 +888,93 @@ public class Tools {
             return "null";
         }
         //StringBuilder sb = new StringBuilder(str.length() + 10);
-        StringBuilder sb = PublicEntrance.SB_CACHE.get();
-        sb.setLength(0); // 重置StringBuilder长度，复用缓存
-        final int len = str.length();
-        int last = 0; // 上一次追加的起点索引
+        gzb.frame.PublicEntrance.Entity entity0=gzb.frame.PublicEntrance.SB_CACHE0.get();
+        int index0=entity0.open();
+        try {
+            StringBuilder sb = entity0.get(index0);
+            final int len = str.length();
+            int last = 0; // 上一次追加的起点索引
 
-        for (int i = 0; i < len; i++) {
-            char c = str.charAt(i);
+            for (int i = 0; i < len; i++) {
+                char c = str.charAt(i);
 
-            // 检查字符是否需要转义
-            switch (c) {
-                case '"':
-                    // 追加上一段普通字符串
-                    if (last < i) {
-                        sb.append(str, last, i);
-                    }
-                    sb.append("\\\"");
-                    last = i + 1;
-                    break;
-                case '\\':
-                    if (last < i) {
-                        sb.append(str, last, i);
-                    }
-                    sb.append("\\\\");
-                    last = i + 1;
-                    break;
-                case '\b':
-                    if (last < i) {
-                        sb.append(str, last, i);
-                    }
-                    sb.append("\\b");
-                    last = i + 1;
-                    break;
-                case '\f':
-                    if (last < i) {
-                        sb.append(str, last, i);
-                    }
-                    sb.append("\\f");
-                    last = i + 1;
-                    break;
-                case '\n':
-                    if (last < i) {
-                        sb.append(str, last, i);
-                    }
-                    sb.append("\\n");
-                    last = i + 1;
-                    break;
-                case '\r':
-                    if (last < i) {
-                        sb.append(str, last, i);
-                    }
-                    sb.append("\\r");
-                    last = i + 1;
-                    break;
-                case '\t':
-                    if (last < i) {
-                        sb.append(str, last, i);
-                    }
-                    sb.append("\\t");
-                    last = i + 1;
-                    break;
-                default:
-                    // 检查控制字符 (< ASCII 32)
-                    if (c < ' ') {
+                // 检查字符是否需要转义
+                switch (c) {
+                    case '"':
+                        // 追加上一段普通字符串
                         if (last < i) {
                             sb.append(str, last, i);
                         }
-                        sb.append("\\u00");
-                        // 快速转换 4-bit 为 16 进制字符（需实现高效的 toHexChar 辅助方法）
-                        sb.append(HEX_CHARS[(c >> 4) & 0xF]); // 高 4 位
-                        sb.append(HEX_CHARS[c & 0xF]);        // 低 4 位
+                        sb.append("\\\"");
                         last = i + 1;
-                    }
-                    break;
+                        break;
+                    case '\\':
+                        if (last < i) {
+                            sb.append(str, last, i);
+                        }
+                        sb.append("\\\\");
+                        last = i + 1;
+                        break;
+                    case '\b':
+                        if (last < i) {
+                            sb.append(str, last, i);
+                        }
+                        sb.append("\\b");
+                        last = i + 1;
+                        break;
+                    case '\f':
+                        if (last < i) {
+                            sb.append(str, last, i);
+                        }
+                        sb.append("\\f");
+                        last = i + 1;
+                        break;
+                    case '\n':
+                        if (last < i) {
+                            sb.append(str, last, i);
+                        }
+                        sb.append("\\n");
+                        last = i + 1;
+                        break;
+                    case '\r':
+                        if (last < i) {
+                            sb.append(str, last, i);
+                        }
+                        sb.append("\\r");
+                        last = i + 1;
+                        break;
+                    case '\t':
+                        if (last < i) {
+                            sb.append(str, last, i);
+                        }
+                        sb.append("\\t");
+                        last = i + 1;
+                        break;
+                    default:
+                        // 检查控制字符 (< ASCII 32)
+                        if (c < ' ') {
+                            if (last < i) {
+                                sb.append(str, last, i);
+                            }
+                            sb.append("\\u00");
+                            // 快速转换 4-bit 为 16 进制字符（需实现高效的 toHexChar 辅助方法）
+                            sb.append(HEX_CHARS[(c >> 4) & 0xF]); // 高 4 位
+                            sb.append(HEX_CHARS[c & 0xF]);        // 低 4 位
+                            last = i + 1;
+                        }
+                        break;
+                }
             }
+
+            // 循环结束后，追加最后一段普通字符串
+            if (last < len) {
+                sb.append(str, last, len);
+            }
+            return sb.toString();
+        }finally {
+            entity0.close(index0);
         }
 
-        // 循环结束后，追加最后一段普通字符串
-        if (last < len) {
-            sb.append(str, last, len);
-        }
-        return sb.toString();
     }
 
     // 辅助常量：用于将 int 0-15 快速转换为 16 进制字符

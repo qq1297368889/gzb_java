@@ -69,7 +69,7 @@ public class RequestDecorator {
     //method 要匹配的方法 GET POST PUT DELETE
     //sort排序 越小越先执行
     //登陆验证
-    @DecoratorStart(value = "/system/", sort = 0)
+    @DecoratorStart(value = "/system/", sort = 0,type=false,method = {"GET","POST","PUT","DELETE"})
     public RunRes authorization(Request request, RunRes runRes, GzbJson gzbJson) throws Exception {
         System.out.println(request.getUri());
         Session session = request.getSession();
