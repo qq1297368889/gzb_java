@@ -1,17 +1,10 @@
-package gzb.frame.netty;
+package gzb.frame.netty.tools;
 
-import gzb.tools.Config;
-import gzb.tools.log.Log;
-
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 高性能、顺序解析 URL 编码参数的方法。

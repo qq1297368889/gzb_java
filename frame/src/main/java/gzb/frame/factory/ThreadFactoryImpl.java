@@ -5,8 +5,6 @@ import gzb.frame.annotation.ThreadInterval;
 import gzb.tools.json.Result;
 import gzb.tools.json.ResultImpl;
 import gzb.tools.log.Log;
-import gzb.tools.thread.ThreadPoolV3;
-
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
@@ -32,12 +30,6 @@ public class ThreadFactoryImpl {
     public static Map<String, List<Object>> _parar = new HashMap<>();
     public static Object[] objArray = new Object[0];
     Map<String, Map<String, Entity>> threadMap = new ConcurrentHashMap<>();
-    ThreadPoolV3 threadPool = new ThreadPoolV3(100.0);
-
-    public ThreadFactoryImpl() {
-
-    }
-
 
     public void register(Map<String, Object> objectMap, Class<?> aClass) throws Exception {
         ThreadFactory threadFactory=aClass.getAnnotation(ThreadFactory.class);

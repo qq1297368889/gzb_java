@@ -15,7 +15,7 @@ public class TestDDOS {
         Map<String, List<File>> files = new HashMap<>();
 
         // 请求地址
-        String url = "http://127.0.0.1:2090/test/api/get1?message=111";
+        String url = "http://127.0.0.1:2080/test/api0/get1?message=message001";
         //url="http://127.0.0.1:2080/test/api0/get1?message=message001";
         //请求方式
         String met = "GET";

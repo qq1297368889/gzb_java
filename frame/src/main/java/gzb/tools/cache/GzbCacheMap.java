@@ -3,6 +3,7 @@ package gzb.tools.cache;
 import gzb.tools.Config;
 import gzb.tools.Tools;
 import gzb.tools.log.Log;
+import gzb.tools.thread.ServiceThread;
 import gzb.tools.thread.ThreadPool;
 
 import java.io.*;
@@ -77,7 +78,7 @@ public class GzbCacheMap implements GzbCache {
 
         // 2. 启动清理任务
         int finalIntervalSeconds = intervalSeconds;
-        ThreadPool.startService(new Runnable() {
+        ServiceThread.start("GzbCacheMap-服务线程",new Runnable() {
             @Override
             public void run() {
                 while (true) {
@@ -88,7 +89,7 @@ public class GzbCacheMap implements GzbCache {
                     Tools.sleep(finalIntervalSeconds * 1000L);
                 }
             }
-        }, "GzbCacheMap-服务线程");
+        });
 
         // 4. 添加关闭钩子，确保安全关闭和最终保存
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

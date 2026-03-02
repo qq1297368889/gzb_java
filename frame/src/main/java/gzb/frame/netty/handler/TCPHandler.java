@@ -1,0 +1,69 @@
+package gzb.frame.netty.handler;
+import gzb.frame.PublicEntrance;
+import gzb.frame.netty.Server;
+import io.netty.channel.ChannelHandler.Sharable;
+import gzb.frame.netty.entity.PacketPromise;
+import gzb.frame.netty.tools.TCPTools;
+import gzb.tools.log.Log;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+
+import java.util.List;
+@Sharable
+public class TCPHandler extends ChannelInboundHandlerAdapter {
+    /**
+     * 1. 捕获连接打开事件（客户端成功连接到服务端时触发）
+     */
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        String sessionId = ctx.channel().id().asLongText();
+        PublicEntrance.putTcpSession(sessionId,ctx);
+        Log.log.d("TCP连接已建立","sessionId", sessionId);
+        super.channelActive(ctx);
+    }
+
+    /**
+     * 2. 捕获连接关闭事件（TCP连接断开时触发，主动/被动关闭都会触发）
+     */
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        String sessionId = ctx.channel().id().asLongText();
+        PublicEntrance.removeTcpSession(sessionId);
+        Log.log.d("TCP连接已关闭","sessionId", sessionId);
+        super.channelInactive(ctx);
+    }
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
+        String sessionId = ctx.channel().id().asLongText();
+        ByteBuf buf = (ByteBuf) msg;
+        try {
+            List<byte[]> list = TCPTools.readDataPacketByteArray(sessionId, buf);
+            if (list != null) {
+                for (byte[] bytes : list) {
+                    PacketPromise packetPromise = TCPTools.readPacketPromise(bytes);
+                    if (packetPromise!=null) {
+                        Server.factory.start(ctx,packetPromise);//内部不会抛出异常  自动处理
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.log.e("TCP协议错误","sessionId",sessionId,e);
+            ctx.close();
+        } finally {
+            if (buf != null) {
+                buf.release();
+            }
+        }
+    }
+    /**
+     * 超时/异常处理
+     */
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        String sessionId = ctx.channel().id().asLongText();
+        Log.log.e("TCP连接错误","sessionId", sessionId,cause);
+        ctx.close();
+    }
+}

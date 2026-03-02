@@ -18,7 +18,11 @@
 
 package gzb.frame.netty;
 
+import gzb.frame.netty.handler.ExceptionHandler;
+import gzb.frame.netty.handler.HTTPDomainFilterHandler;
+import gzb.frame.netty.handler.HTTPHandler;
 import gzb.tools.Config;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -26,16 +30,20 @@ import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 
+@ChannelHandler.Sharable
 public class HTTPServerInitializer extends ChannelInitializer<SocketChannel> {
 
-
+    public static HTTPDomainFilterHandler domainFilterHandler = new HTTPDomainFilterHandler(HTTPServer.allowedDomains);
+ 
+    public static HTTPHandler httpHandler = new HTTPHandler();
+    public static ExceptionHandler exceptionHandler=new ExceptionHandler();
     @Override
     protected void initChannel(SocketChannel ch) {
         ChannelPipeline p = ch.pipeline();
-        p.addLast(new ExceptionHandler());
+        p.addLast(exceptionHandler);
         // 异常处理器
-        if (!NettyServer.allowedDomains.contains("0.0.0.0")) {
-            p.addLast(new HTTPDomainFilterHandler(NettyServer.allowedDomains));
+        if (!HTTPServer.allowedDomains.contains("0.0.0.0")) {
+            p.addLast(domainFilterHandler);
         }
 
         // 编解码器：将字节流转换为 HTTP 消息对象
@@ -45,10 +53,9 @@ public class HTTPServerInitializer extends ChannelInitializer<SocketChannel> {
         p.addLast(new HttpObjectAggregator(Config.maxPostSize < 1 ? Integer.MAX_VALUE : Config.maxPostSize));
 
         // 请求处理器
-        p.addLast(new HTTPRequestHandlerV4());
-
+        p.addLast(httpHandler);
         if (Config.compression) {
-            p.addLast(new HttpContentCompressor(6, 15, 8, Config.compressionMinSize));
+            p.addLast(new  HttpContentCompressor(6, 15, 8, Config.compressionMinSize));
         }
 
 

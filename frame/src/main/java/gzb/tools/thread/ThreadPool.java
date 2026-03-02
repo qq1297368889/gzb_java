@@ -15,37 +15,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ThreadPool {
-
-    public static Map<String, List<Thread>> serviceThread = new ConcurrentHashMap<>();
-
-    public static void startService(int threadNum, String name, Runnable runnable) {
-        for (int i = 0; i < threadNum; i++) {
-            startService(runnable, name + "-" + i);
-        }
-    }
-
-    public static void startService(Runnable runnable) {
-        startService(runnable,null);
-    }
-    public static void startService(Runnable runnable, String name) {
-        if (name == null) {
-            name = Tools.getUUID()+"-" + OnlyId.getDistributed();
-        }
-        Thread thread = new Thread(runnable, name);
-        List<Thread> list = serviceThread.get(name);
-        if (list == null) {
-            list = new ArrayList<>();
-            serviceThread.put(name, list);
-        }
-        list.add(thread);
-        thread.start();
-    }
-
     public Log log = Log.log;
 
-    public static List<Thread> readService(String name) {
-        return serviceThread.get(name);
-    }
 
     private final int await_sec = 15;
     public  LinkedBlockingQueue<Runnable> runnableQueue = null;

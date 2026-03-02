@@ -18,7 +18,7 @@
 
 package gzb.frame.netty.entity;
 
-import gzb.frame.netty.HTTPRequestParameters;
+import gzb.frame.netty.tools.HTTPRequestParameters;
 import gzb.tools.cache.session.Session;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;

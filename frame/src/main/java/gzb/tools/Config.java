@@ -18,6 +18,7 @@
 
 package gzb.tools;
 
+import gzb.tools.thread.ServiceThread;
 import gzb.tools.thread.ThreadPool;
 
 import java.io.File;
@@ -166,7 +167,7 @@ public class Config {
                 configFile = file;
             }
             load(configFile);
-            ThreadPool.startService(new Runnable() {
+            ServiceThread.start("config-auto-update-服务线程",new Runnable() {
                 @Override
                 public void run() {
                     thread = Thread.currentThread();
@@ -185,7 +186,7 @@ public class Config {
 
                     }
                 }
-            }, "config-auto-update-服务线程");
+            });
         } catch (Exception e) {
             System.err.println("程序配置 缓存初始化错误" + Tools.getExceptionInfo(e));
         }

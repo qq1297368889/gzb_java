@@ -16,31 +16,24 @@
  *
  */
 
-package gzb.frame.netty;
+package gzb.frame.netty.handler;
 
-import gzb.frame.netty.entity.Request;
-import gzb.frame.netty.entity.RequestDefaultImpl;
-import gzb.frame.netty.entity.Response;
-import gzb.entity.RunRes;
+import gzb.frame.netty.Server;
 import gzb.tools.Config;
-import gzb.tools.Tools;
 import gzb.tools.log.Log;
-import gzb.tools.thread.ThreadPool;
-import gzb.tools.thread.ThreadPoolV3;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-public class HTTPRequestHandlerV4 extends SimpleChannelInboundHandler<FullHttpRequest> {
+@ChannelHandler.Sharable
+public class HTTPHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
     public static final byte[] def = "{\"code\":\"2\",\"message\":\"Server Busy / 服务器 繁忙\"}".getBytes();
     public static Map<Long, AtomicInteger> reqInfo = new ConcurrentHashMap<>();
@@ -64,7 +57,7 @@ public class HTTPRequestHandlerV4 extends SimpleChannelInboundHandler<FullHttpRe
             response.headers().set("server", Config.frameName);
             ctx.writeAndFlush(response);
         }else{
-            NettyServer.factory.start(ctx,req);
+            Server.factory.start(ctx,req);
         }
     }
 

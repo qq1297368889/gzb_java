@@ -17,11 +17,10 @@
  */
 
 package gzb.start;
-import gzb.frame.netty.NettyServer;
+import gzb.frame.netty.Server;
 import gzb.tools.Config;
 import gzb.tools.Tools;
 public class Application {
-    public static NettyServer server = null;
     public static void main(String[] args) throws Exception {
         run(Application.class);
     }
@@ -34,19 +33,19 @@ public class Application {
             System.setProperty("this.dir", path);
         }
         System.setProperty("file.encoding","UTF-8");
-        server = new NettyServer();
         if (Config.WS_PORT>0) {
 
         }
         if (Config.TCP_PORT>0) {
-
+            Server.startTCPServer(Config.TCP_PORT);
         }
         if (Config.UDP_PORT>0) {
 
         }
         if (Config.HTTP_PORT>0) {
-            server.startHTTPServer(Config.HTTP_PORT);
+            Server.startHTTPServer(Config.HTTP_PORT);
         }
     }
+
 
 }

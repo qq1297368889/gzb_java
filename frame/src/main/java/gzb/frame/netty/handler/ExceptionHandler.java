@@ -16,13 +16,15 @@
  *
  */
 
-package gzb.frame.netty;
+package gzb.frame.netty.handler;
 
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import java.io.IOException;
 import java.net.SocketException;
 
+@ChannelHandler.Sharable
 public class ExceptionHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {

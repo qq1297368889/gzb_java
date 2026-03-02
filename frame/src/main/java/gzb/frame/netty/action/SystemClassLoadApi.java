@@ -1,4 +1,4 @@
-package gzb.frame.server.http.action;
+package gzb.frame.netty.action;
 
 import gzb.entity.FileUploadEntity;
 import gzb.frame.annotation.*;

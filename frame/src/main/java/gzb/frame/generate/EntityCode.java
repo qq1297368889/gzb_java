@@ -37,6 +37,10 @@ public class EntityCode extends Base {
 
     public void start(List<TableInfo> list, boolean save) throws IOException {
         for (final TableInfo tableInfo : list) {
+
+
+
+
             String code;
             code = "package " + this.pkg + "." + tableInfo.getDbNameLowerCase() + ".entity;\n" +
     /*                "import " + this.pkg + "." + tableInfo.getDbNameLowerCase() + ".SqlTools;\n" +
@@ -140,7 +144,10 @@ public class EntityCode extends Base {
                     "\n" +*/
                     "    @Override\n" +
                     "    public String toString() {\n" +
-                    "        StringBuilder sb = new StringBuilder("+len+");\n" +
+                    "        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();\n" +
+                    "            int index0=entity0.open();\n" +
+                    "            try {\n" +
+                    "                StringBuilder sb = entity0.get(index0);\n" +
                     "       boolean app01=false;\n" +
                     "        sb.append(\"{\");\n";
 
@@ -183,6 +190,9 @@ public class EntityCode extends Base {
                     "        }\n";
 
             code += "       return sb.append(\"}\").toString();\n" +
+                    "            }finally {\n" +
+                    "                entity0.close(index0);\n" +
+                    "            }" +
                     "    }\n" +
                     "\n" +
                     "    public Result toJson() {\n" +

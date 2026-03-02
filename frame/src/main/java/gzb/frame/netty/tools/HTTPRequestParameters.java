@@ -16,7 +16,7 @@
  *
  */
 
-package gzb.frame.netty;
+package gzb.frame.netty.tools;
 
 import gzb.entity.FileUploadEntity;
 import gzb.frame.factory.ClassTools;

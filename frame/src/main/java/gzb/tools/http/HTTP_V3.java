@@ -349,22 +349,16 @@ public class HTTP_V3 {
         return new HashMap<>(responseHeaders);
     }
 
-    public String asString() {
+    public String asString() throws UnsupportedEncodingException {
         if (responseBytes == null) {
             return null;
         }
-        try {
-            return new String(responseBytes, charset);
-        } catch (UnsupportedEncodingException e) {
-            return new String(responseBytes, Charset.forName(charset));
-        }
+        return new String(responseBytes, charset);
     }
 
     public byte[] asByte() {
         return responseBytes != null ? responseBytes.clone() : null;
     }
-
-    // 【移除自定义池的 cleanAllConnections 方法（原生池无需手动清理）】
 
     // 便捷请求方法（完全保留原签名和逻辑）
     public HTTP_V3 get(String url) throws Exception {

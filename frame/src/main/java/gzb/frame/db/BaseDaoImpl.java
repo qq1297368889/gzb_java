@@ -38,9 +38,6 @@ import java.util.concurrent.locks.Lock;
 public abstract class BaseDaoImpl<T> implements BaseDao<T> {
     public Log log = Log.log;
 
-    public EventFactory eventFactory = PublicEntrance.eventFactory;
-
-
     private final GzbCache gzbCache = Cache.dataBaseCache;
     public T t;
     private DataBase dataBase = null;
@@ -299,7 +296,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (t == null) {
             return null;
         }
-        if (!eventFactory.eventSelect(t, true)) {
+        if (!PublicEntrance.eventFactory.eventSelect(t, true)) {
             return new JSONResult().fail("查询被拦截");
         }
         SqlTemplate sqlTemplate = ClassTools.toSelectSql(t);
@@ -307,7 +304,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             return null;
         }
         JSONResult result = queryPage(sqlTemplate.getSql(), sqlTemplate.getObjects(), sortField, sortType, page, size, maxPage, maxSize, second);
-        if (!eventFactory.eventSelect(t, false)) {
+        if (!PublicEntrance.eventFactory.eventSelect(t, false)) {
             return new JSONResult().fail("查询被拦截");
         }
         return result;
@@ -323,7 +320,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (t == null) {
             t = this.t;
         }
-        if (!eventFactory.eventSelect(t, true)) {
+        if (!PublicEntrance.eventFactory.eventSelect(t, true)) {
             return null;
         }
         SqlTemplate sqlTemplate = ClassTools.toSelectSql(t);
@@ -339,7 +336,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (t == null) {
             return -1;
         }
-        if (!eventFactory.eventSelect(t, true)) {
+        if (!PublicEntrance.eventFactory.eventSelect(t, true)) {
             return -4;
         }
         SqlTemplate sqlTemplate = ClassTools.toSelectSql(t);
@@ -347,7 +344,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             return -1;
         }
         int size = dataBase.count(sqlTemplate.getSql(), sqlTemplate.getObjects());
-        if (!eventFactory.eventSelect(t, false)) {
+        if (!PublicEntrance.eventFactory.eventSelect(t, false)) {
             return -4;
         }
         return size;
@@ -407,7 +404,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (t == null) {
             t = this.t;
         }
-        if (!eventFactory.eventSelect(t, true)) {
+        if (!PublicEntrance.eventFactory.eventSelect(t, true)) {
             return null;
         }
         SqlTemplate sqlTemplate = ClassTools.toSelectSql(t);
@@ -415,7 +412,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             return new ArrayList<>();
         }
         List<T> res = query(sqlTemplate.getSql(), sqlTemplate.getObjects(), sortField, sortType, page, size, second);
-        if (!eventFactory.eventSelect(t, false)) {
+        if (!PublicEntrance.eventFactory.eventSelect(t, false)) {
             return new ArrayList<>();
         }
         return res;
@@ -426,7 +423,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (t == null) {
             return -1;
         }
-        if (!eventFactory.eventSave(t, true)) {
+        if (!PublicEntrance.eventFactory.eventSave(t, true)) {
             return -4;
         }
         SqlTemplate sqlTemplate = ClassTools.toSaveSql(t, dataBase, false);
@@ -448,7 +445,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
                 throw e;
             }
         }
-        if (!eventFactory.eventSave(t, false)) {
+        if (!PublicEntrance.eventFactory.eventSave(t, false)) {
             return -4;
         }
         return size;
@@ -459,7 +456,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (t == null) {
             return -1;
         }
-        if (!eventFactory.eventUpdate(t, true)) {
+        if (!PublicEntrance.eventFactory.eventUpdate(t, true)) {
             return -4;
         }
         SqlTemplate sqlTemplate = ClassTools.toUpdateSql(t);
@@ -467,7 +464,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             return -2;
         }
         int size = dataBase.runSql(sqlTemplate.getSql(), sqlTemplate.getObjects());
-        if (!eventFactory.eventUpdate(t, false)) {
+        if (!PublicEntrance.eventFactory.eventUpdate(t, false)) {
             return -4;
         }
         return size;
@@ -478,7 +475,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (t == null) {
             return -1;
         }
-        if (!eventFactory.eventDelete(t, true)) {
+        if (!PublicEntrance.eventFactory.eventDelete(t, true)) {
             return -4;
         }
         SqlTemplate sqlTemplate = ClassTools.toDeleteSql(t);
@@ -486,7 +483,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             return -2;
         }
         int size = dataBase.runSql(sqlTemplate.getSql(), sqlTemplate.getObjects());
-        if (!eventFactory.eventDelete(t, false)) {
+        if (!PublicEntrance.eventFactory.eventDelete(t, false)) {
             return -4;
         }
         return size;

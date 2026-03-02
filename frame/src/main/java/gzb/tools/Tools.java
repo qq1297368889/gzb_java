@@ -806,7 +806,7 @@ public class Tools {
         if (map == null) {
             return "null";
         }
-        gzb.frame.PublicEntrance.Entity entity0=gzb.frame.PublicEntrance.SB_CACHE0.get();
+        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
         int index0=entity0.open();
         try {
             StringBuilder sb = entity0.get(index0);
@@ -838,7 +838,7 @@ public class Tools {
             return "null";
         }
 
-        gzb.frame.PublicEntrance.Entity entity0=gzb.frame.PublicEntrance.SB_CACHE0.get();
+        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
         int index0=entity0.open();
         try {
             StringBuilder sb = entity0.get(index0);
@@ -864,7 +864,7 @@ public class Tools {
         if (array == null) {
             return "null";
         }
-        gzb.frame.PublicEntrance.Entity entity0=gzb.frame.PublicEntrance.SB_CACHE0.get();
+        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
         int index0=entity0.open();
         try {
             StringBuilder sb = entity0.get(index0);
@@ -887,8 +887,7 @@ public class Tools {
         if (str == null) {
             return "null";
         }
-        //StringBuilder sb = new StringBuilder(str.length() + 10);
-        gzb.frame.PublicEntrance.Entity entity0=gzb.frame.PublicEntrance.SB_CACHE0.get();
+        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
         int index0=entity0.open();
         try {
             StringBuilder sb = entity0.get(index0);

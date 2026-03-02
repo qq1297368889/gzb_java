@@ -14,34 +14,7 @@ import java.util.concurrent.locks.Lock;
 
 public class ThreadPoolV3 {
 
-    public static Map<String, List<Thread>> serviceThread = new ConcurrentHashMap<>();
-
-    public static void startService(int threadNum, String name, Runnable runnable) {
-        for (int i = 0; i < threadNum; i++) {
-            startService(runnable, name + "-" + i);
-        }
-    }
-
-    public static void startService(Runnable runnable, String name) {
-        if (name == null) {
-            name = "默认线程名-" + OnlyId.getDistributed();
-        }
-        Thread thread = new Thread(runnable, name);
-        List<Thread> list = serviceThread.get(name);
-        if (list == null) {
-            list = new ArrayList<>();
-            serviceThread.put(name, list);
-        }
-        list.add(thread);
-        thread.start();
-    }
-
     public Log log = Log.log;
-
-    public static List<Thread> readService(String name) {
-        return serviceThread.get(name);
-    }
-
     private boolean AUTO_MATIC = true;
     private double CPU_LOAD = 0.0;
     private final int await_sec = 3;
@@ -94,6 +67,10 @@ public class ThreadPoolV3 {
     }
 
     private void autoStartThread() {
+        StackTraceElement[] stackTrace = new Throwable().getStackTrace();
+        for (StackTraceElement stackTraceElement : stackTrace) {
+            log.d(stackTraceElement.getClassName(),stackTraceElement.getMethodName(),stackTraceElement.getLineNumber());
+        }
         for (int i = 0; i < THREAD_MIN_NUM; i++) {
             startWork();
         }
@@ -101,6 +78,7 @@ public class ThreadPoolV3 {
             log.t("线程池不自动扩容");
             return;
         }
+
         Thread thread = new Thread() {
             @Override
             public void run() {
@@ -173,7 +151,6 @@ public class ThreadPoolV3 {
     }
 
     Lock lock = LockFactory.getLock("thread-pool-startWork-exit");
-
     private void startWork() {
         if (thrNum.get() > THREAD_MAX_NUM) {
             log.t("扩容上限", "积压数量", thrNum.get() > THREAD_MAX_NUM);

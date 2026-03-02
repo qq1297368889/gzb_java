@@ -26,12 +26,15 @@ import gzb.entity.ClassEntity;
 import gzb.entity.DecoratorEntity;
 import gzb.entity.HttpMapping;
 import gzb.entity.ThreadEntity;
-import gzb.frame.netty.HTTPRequestHandlerV4;
-import gzb.frame.netty.NettyServer;
+import gzb.frame.netty.handler.HTTPHandler;
+import gzb.frame.netty.HTTPServer;
 import gzb.frame.netty.entity.Request;
 import gzb.frame.netty.entity.RequestDefaultImpl;
+import gzb.frame.netty.entity.RequestTcpImpl;
 import gzb.frame.netty.entity.Response;
 import gzb.entity.RunRes;
+import gzb.frame.netty.entity.PacketPromise;
+import gzb.frame.netty.tools.TCPTools;
 import gzb.tools.*;
 import gzb.tools.cache.Cache;
 import gzb.tools.json.GzbJson;
@@ -407,6 +410,29 @@ public class FactoryImplV2 implements Factory {
         return System.nanoTime();
         //Unpooled.wrappedBuffer(msg)
     }
+    public long sendTCP(ChannelHandlerContext ctx, Object chunk ,boolean close) {
+        byte[] bytes;
+        if (chunk instanceof byte[]) {
+            bytes = (byte[]) chunk;
+        } else if (chunk instanceof String) {
+            bytes = ((String) chunk).getBytes(Config.encoding);
+        } else if (chunk == null) {
+            bytes = new byte[0];
+        } else {
+            String str1 = Tools.toJson(chunk);
+            if (str1 == null) {
+                bytes = new byte[0];
+            } else {
+                bytes = str1.getBytes(Config.encoding);
+            }
+        }
+        ctx.writeAndFlush(TCPTools.createDataPacket(bytes));
+        if (close) {
+            ctx.close();
+        }
+        return System.nanoTime();
+    }
+
 
     //public static final ThreadPool THREAD_POOL = new ThreadPool(Config.bizThreadNum, Config.bizAwaitNum);
     public static final ThreadPoolV3 THREAD_POOL = new ThreadPoolV3(
@@ -415,16 +441,6 @@ public class FactoryImplV2 implements Factory {
             Config.bizAwaitNum < 1 ? Config.cpu * 500 : Config.bizAwaitNum,
             85.0,
             Config.bizThreadNum < 1);
-
-
-    public void debug(long[] times, String title) {
-        long t01 = (times[2] - times[1]);
-        long t02 = (times[1] - times[0]);
-        long t03 = (times[2] - times[0]);
-        AtomicInteger atomicInteger = HTTPRequestHandlerV4.reqInfo.computeIfAbsent(t03 / 1000, k -> new AtomicInteger());
-        atomicInteger.addAndGet(1);
-        log.d(title, "总耗时", t03, "netty数据获取", t02, "框架执行", t01);
-    }
 
     //返回 404 需要寻找静态资源
     public void start(ChannelHandlerContext ctx, FullHttpRequest req) {
@@ -437,14 +453,14 @@ public class FactoryImplV2 implements Factory {
         times[1] = System.nanoTime();
         HttpMapping[] httpMappings = mapHttpMapping0.get(key);
         if (httpMappings == null) {
-            NettyServer.HTTPStaticFileHandler.channelRead0(ctx, req);
+            HTTPServer.HTTPStaticFileHandler.channelRead0(ctx, req);
             return;
         }
         int index = -1;
         for (int i = 0; i < met.length; i++) {
             if (metName.equals(met[i])) {
                 if (httpMappings[i] == null) {
-                    NettyServer.HTTPStaticFileHandler.channelRead0(ctx, req);
+                    HTTPServer.HTTPStaticFileHandler.channelRead0(ctx, req);
                     return;
                 }
                 index = i;
@@ -459,36 +475,97 @@ public class FactoryImplV2 implements Factory {
         //同步会在事件循环线程执行
         if (httpMapping.async) {
             if (!THREAD_POOL.execute(() -> {
-                times[2] = exec(httpMapping, ctx, req, request, response);
+                times[2] = exec(httpMapping, ctx,  request, response);
                 debug(times, "异步");
             })) {
                 times[2] = send(ctx, _fail_json);
                 debug(times, "繁忙");
             }
         } else {
-            times[2] = exec(httpMapping, ctx, req, request, response);
+            times[2] = exec(httpMapping, ctx, request, response);
             debug(times, "同步");
         }
     }
 
-    //后续可以考虑 加入线程空间
-    public String toKey(String[] keys, Map<String, List<Object>> parar) {
-        StringBuilder token = new StringBuilder();
-        List<Object> list = null;
-        for (String s : keys) {
-            list = parar.get(s);
-            if (list == null || list.size() == 0) {
-                token.append(s).append("_");
-            } else {
-                for (Object object : list) {
-                    token.append(s).append("_").append(object).append("_");
+    //返回 404 需要寻找静态资源
+    public void start(ChannelHandlerContext ctx,PacketPromise packetPromise) {
+        long[] times = new long[]{0, 0, 0, 0};
+        times[0] = System.nanoTime();
+        Request request = new RequestTcpImpl(ctx, packetPromise);
+        Response response = request.getResponse();
+        String metName = request.getMethod();
+        String key = request.getUri();
+        times[1] = System.nanoTime();
+        HttpMapping[] httpMappings = mapHttpMapping0.get(key);
+        if (httpMappings == null) {
+            sendTCP(ctx,gzbJson.fail("没找到对应处理器"),true);
+            return;
+        }
+        int index = -1;
+        for (int i = 0; i < httpMappings.length; i++) {
+            if (metName.equals(met[i])) {
+                if (httpMappings[i] == null) {
+                    sendTCP(ctx,gzbJson.fail("对应处理器不存在"),true);
+                    return;
                 }
+                index = i;
+                break;
             }
         }
-        return token.toString();
+        if (index == -1) {
+            sendTCP(ctx,gzbJson.fail("没找到对应处理器-2"),true);
+            return;
+        }
+        HttpMapping httpMapping = httpMappings[index];
+        //同步会在事件循环线程执行
+        if (httpMapping.async) {
+            if (!THREAD_POOL.execute(() -> {
+                times[2] = execTcp(httpMapping, ctx,  request, response);
+                debug(times, "异步");
+            })) {
+                sendTCP(ctx,gzbJson.fail("服务器繁忙"),false);
+                times[2] = System.nanoTime();
+                debug(times, "繁忙");
+            }
+        } else {
+            times[2] = execTcp(httpMapping, ctx, request, response);
+            debug(times, "同步");
+        }
+    }
+    public void debug(long[] times, String title) {
+        long t01 = (times[2] - times[1]);
+        long t02 = (times[1] - times[0]);
+        long t03 = (times[2] - times[0]);
+        AtomicInteger atomicInteger = HTTPHandler.reqInfo.computeIfAbsent(t03 / 1000, k -> new AtomicInteger());
+        atomicInteger.addAndGet(1);
+        log.d(title, "总耗时", t03, "netty数据获取", t02, "框架执行", t01);
     }
 
-    public long exec(HttpMapping httpMapping, ChannelHandlerContext ctx, FullHttpRequest req, Request request, Response response) {
+
+    //后续可以考虑 加入线程空间
+    public String toKey(String[] keys, Map<String, List<Object>> parar) {
+        gzb.tools.cache.object.ObjectCache.Entity entity = gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
+        int index = entity.open();
+        try {
+            StringBuilder token = entity.get(index);
+            List<Object> list = null;
+            for (String s : keys) {
+                list = parar.get(s);
+                if (list == null || list.size() == 0) {
+                    token.append(s).append("_");
+                } else {
+                    for (Object object : list) {
+                        token.append(s).append("_").append(object).append("_");
+                    }
+                }
+            }
+            return token.toString();
+        } finally {
+            entity.close(index);
+        }
+    }
+
+    public long exec(HttpMapping httpMapping, ChannelHandlerContext ctx, Request request, Response response) {
         try {
             long time;
             if (httpMapping.header.size() > 0) {
@@ -600,6 +677,103 @@ public class FactoryImplV2 implements Factory {
             //限流如果开启 解除占用
             if (httpMapping.semaphore != null) {
                 httpMapping.semaphore.release();
+            }
+        }
+    }
+
+    public long execTcp(HttpMapping mapping, ChannelHandlerContext ctx, Request request, Response response) {
+        try {
+            long time;
+            if (mapping.semaphore != null && !mapping.semaphore.tryAcquire()) {
+                return sendTCP(ctx,_fail_json,false);
+            }
+            Map<String, List<Object>> parar = request.getParameter();
+            boolean openCache = mapping.cacheSecond != null && mapping.cacheKey != null;
+            String key = null;
+            if (openCache) {
+                key = toKey(mapping.cacheKey, parar);
+                byte[] bytes = Cache.gzbCache.getByte(key);
+                if (bytes != null) {
+                    return sendTCP(ctx,bytes,false);
+                }
+            }
+            Object[] objects = PublicEntrance.context.get();
+            RunRes runRes = null;
+            if (objects == null) {
+                runRes = new RunRes();
+                objects = new Object[]{
+                        runRes,
+                        gzbJson,
+                        log,
+                        request,
+                        response,
+                        parar,
+                        ctx
+                };
+                PublicEntrance.context.set(objects);
+            } else {
+                objects[3] = request;
+                objects[4] = response;
+                objects[5] = parar;
+                objects[6] = ctx;
+                runRes = (RunRes) objects[0];
+                runRes.setData(null);
+                runRes.setState(200);
+            }
+            for (DecoratorEntity decoratorEntity : mapping.start) {
+                log.t("调用 前置装饰器", decoratorEntity.sign);
+                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, objects);
+                if (runRes1 != null) {
+                    if (runRes1.getState() != 200) {
+                        return sendTCP(ctx,runRes1.getData(),false);
+                    } else {
+                        objects[0] = runRes1;
+                        if (runRes1.getData() != null) {
+                            Object[] newArray = Arrays.copyOf(objects, objects.length + 1);
+                            newArray[newArray.length - 1] = runRes1.getData();
+                            objects = newArray;
+                            runRes1.setData(null);
+                        }
+                    }
+                }
+            }
+            Object obj02 = mapping.httpMappingFun._gzb_call_x01(mapping.id, mapObject0, request, response, parar, gzbJson, log, objects);
+            runRes.setData(obj02);
+            for (DecoratorEntity decoratorEntity : mapping.end) {
+                log.t("调用 后置装饰器", decoratorEntity.sign);
+                RunRes runRes1 = (RunRes) decoratorEntity.call
+                        ._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, objects);
+                if (runRes1 != null) {
+                    if (runRes1.getState() != 200) {
+                        return sendTCP(ctx,runRes1.getData(),false);
+                    } else {
+                        objects[0] = runRes1;
+                    }
+                }
+            }
+            time = System.nanoTime();
+            sendTCP(ctx,runRes.getData(),false);
+            if (openCache) {
+                if (runRes.getData() instanceof String) {
+                    Cache.gzbCache.setByte(key, ((String) runRes.getData()).getBytes(Config.encoding), mapping.cacheSecond);
+                } else if (runRes.getData() instanceof byte[]) {
+                    Cache.gzbCache.setByte(key, (byte[]) runRes.getData(), mapping.cacheSecond);
+                } else {
+                    Cache.gzbCache.setByte(key, (Tools.toJson(runRes.getData())).getBytes(Config.encoding), mapping.cacheSecond);
+                }
+            }
+            return time;
+        } catch (Exception e) {
+            log.e("框架层错误日志",
+                    request.getUri(),
+                    request.getMethod(),
+                    request.getParameter(),
+                    e);
+            return sendTCP(ctx,_err_json,false);
+        } finally {
+            //限流如果开启 解除占用
+            if (mapping.semaphore != null) {
+                mapping.semaphore.release();
             }
         }
     }
@@ -1012,7 +1186,7 @@ public class FactoryImplV2 implements Factory {
             if (classEntity.clazz.isInterface()) {
                 continue;
             }
-            if (classEntity.clazz.getAnnotation(aClass)==null) {
+            if (classEntity.clazz.getAnnotation(aClass) == null) {
                 continue;
             }
             if (aClass == Service.class) {

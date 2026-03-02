@@ -4,6 +4,7 @@ import gzb.tools.Config;
 import gzb.tools.Tools;
 import gzb.tools.cache.entity.Entity;
 import gzb.tools.log.Log;
+import gzb.tools.thread.ServiceThread;
 import gzb.tools.thread.ThreadPool;
 
 import java.io.*;
@@ -114,7 +115,7 @@ public class GzbQueueImpl implements GzbQueue {
     }
 
     private void startDog(int consume_max, int retries_max, int timeSleep) {
-        ThreadPool.startService(new Runnable() {
+        ServiceThread.start("GzbQueueImpl-服务线程",new Runnable() {
             @Override
             public void run() {
                 while (true) {
@@ -149,7 +150,7 @@ public class GzbQueueImpl implements GzbQueue {
                     saveToFile(queueCache, consumeMap);//日常保存 覆盖保存
                 }
             }
-        },"GzbQueueImpl-服务线程");
+        });
     }
 
     // ----------------------------------------------------

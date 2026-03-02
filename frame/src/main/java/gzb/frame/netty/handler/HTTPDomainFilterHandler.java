@@ -16,7 +16,9 @@
  *
  */
 
-package gzb.frame.netty;
+package gzb.frame.netty.handler;
+
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -27,10 +29,11 @@ import io.netty.handler.codec.http.HttpVersion;
 
 import java.util.Set;
 
+@ChannelHandler.Sharable
 public class HTTPDomainFilterHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
     // 允许的域名列表
-    private final Set<String> allowedDomains;
+    public Set<String> allowedDomains;
 
     public HTTPDomainFilterHandler(Set<String> allowedDomains) {
         this.allowedDomains = allowedDomains;

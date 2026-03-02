@@ -23,6 +23,7 @@ import gzb.tools.Config;
 import gzb.tools.Queue;
 import gzb.tools.Tools;
 import gzb.tools.log.Log;
+import gzb.tools.thread.ServiceThread;
 import gzb.tools.thread.ThreadPool;
 
 import java.net.DatagramSocket;
@@ -58,8 +59,8 @@ public static Log log= Log.log;
         try {
             serverSocket = new DatagramSocket(port);
             log.i("start UDP[" + port + "]....");
-            threadPool.startService(num, "ServerRead", new ServerRead(this));
-            threadPool.startService(num, "ServerSend", new ServerSend(this));
+            ServiceThread.start(num, "ServerRead", new ServerRead(this));
+            ServiceThread.start(num, "ServerSend", new ServerSend(this));
             threadPool.execute(  new ServerHandle(this));
         } catch (Exception e) {
             e.printStackTrace();

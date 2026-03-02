@@ -29,6 +29,7 @@ import gzb.entity.ThreadEntity;
 import gzb.frame.netty.entity.Request;
 import gzb.frame.netty.entity.Response;
 import gzb.entity.RunRes;
+import gzb.frame.netty.entity.PacketPromise;
 import gzb.tools.*;
 
 import java.io.File;
@@ -287,6 +288,11 @@ public class FactoryImpl implements Factory {
      */
     @Override
     public void start(ChannelHandlerContext ctx, FullHttpRequest req) {
+
+    }
+
+    @Override
+    public void start(ChannelHandlerContext ctx, PacketPromise packetPromise) {
 
     }
 

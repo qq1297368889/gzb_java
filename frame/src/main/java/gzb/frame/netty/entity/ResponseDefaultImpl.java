@@ -21,6 +21,7 @@ package gzb.frame.netty.entity;
 import gzb.tools.AES_CBC_128;
 import gzb.tools.Config;
 import gzb.tools.Tools;
+import gzb.tools.log.Log;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
@@ -138,12 +139,21 @@ public class ResponseDefaultImpl implements Response {
                 response.headers().set("Set-Cookie", encodeSingleCookie(cookie));
             }
         }
+        Log.log.i("bytes",bytesToHex(bytes));
         response.headers().set("content-length", bytes.length);
         response.headers().set("server", Config.frameName);
         ctx.writeAndFlush(response);
         return this;
     }
-
+    // 辅助方法：字节转十六进制（复制到代码中）
+    private String bytesToHex(byte[] bytes) {
+        if (bytes == null || bytes.length == 0) return "";
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02X ", b));
+        }
+        return sb.toString().trim();
+    }
     /**
      * 将单个 Cookie 编码为 "key=value; Path=/; ..." 格式的字符串。
      *

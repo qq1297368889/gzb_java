@@ -20,13 +20,9 @@ package gzb.tools.log;
 
 import gzb.tools.*;
 import gzb.tools.cache.Cache;
-import gzb.tools.thread.ThreadPool;
-
+import gzb.tools.thread.ServiceThread;
 import java.io.*;
-import java.nio.ByteBuffer;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -53,7 +49,7 @@ public class LogThread {
         //启动保存线程
         startSave();
         //自动更新线程
-        ThreadPool.startService(new Runnable() {
+        ServiceThread.start("LogThread.update.config-服务线程",new Runnable() {
             @Override
             public void run() {
                 while (true) {
@@ -62,7 +58,7 @@ public class LogThread {
                 }
 
             }
-        }, "LogThread.update.config-服务线程");
+        });
     }
 
 
@@ -101,7 +97,7 @@ public class LogThread {
     }
 
     public static void startSave() {
-        ThreadPool.startService(new Runnable() {
+        ServiceThread.start("LogThread.save.file-服务线程",new Runnable() {
             @Override
             public void run() {
                 int sleep_sec = 5000;
@@ -164,7 +160,7 @@ public class LogThread {
                     Tools.sleep(sleep_sec);
                 }
             }
-        }, "LogThread.save.file-服务线程");
+        });
     }
 
     public static void save(int i, String time0, byte[] data, int size) {

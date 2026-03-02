@@ -982,7 +982,7 @@ public class ClassTools {
                 "   }\n";
 
         code += "   public String toJson(Object object) throws Exception{\n" +
-                "        gzb.frame.PublicEntrance.Entity entity0=gzb.frame.PublicEntrance.SB_CACHE0.get();\n" +
+                "        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();\n" +
                 "        int index0=entity0.open();\n" +
                 "try{\n" +
                 "        StringBuilder sb = entity0.get(index0);\n" +
@@ -1336,7 +1336,7 @@ public class ClassTools {
         if (classAttribute != null) {
             code += "       " + aClass.getName() + " obj=(" + aClass.getName() + ")obj0;\n" +
                     "        String sql = \"delete from " + classAttribute.name() + "\";\n" +
-                    "        gzb.frame.PublicEntrance.Entity entity0=gzb.frame.PublicEntrance.SB_CACHE0.get();\n" +
+                    "        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();\n" +
                     "        int index0=entity0.open();\n" +
                     "try {\n" +
                     "        StringBuilder stringBuilder = entity0.get(index0);\n" +
@@ -1445,7 +1445,7 @@ public class ClassTools {
                 ids1 = ids1.substring(0, ids1.length() - 5);
             }
             code += "        String sql = \"update " + classAttribute.name() + " set \";\n" +
-                    "        gzb.frame.PublicEntrance.Entity entity0=gzb.frame.PublicEntrance.SB_CACHE0.get();\n" +
+                    "        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();\n" +
                     "        int index0=entity0.open();\n" +
                     "try {\n" +
                     "        StringBuilder stringBuilder = entity0.get(index0);\n" +
@@ -1579,7 +1579,7 @@ public class ClassTools {
         if (classAttribute != null) {
             code += "       " + aClass.getName() + " obj=(" + aClass.getName() + ")obj0;\n";
             code += "        String sql = \"select * from " + classAttribute.name() + "\";\n" +
-                    "        gzb.frame.PublicEntrance.Entity entity0=gzb.frame.PublicEntrance.SB_CACHE0.get();\n" +
+                    "        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();\n" +
                     "        int index0=entity0.open();\n" +
                     "try {\n" +
                     "        StringBuilder stringBuilder = entity0.get(index0);\n" +
@@ -2673,7 +2673,7 @@ public class ClassTools {
         if (path == null || path.isEmpty()) {
             return PATH_SEPARATOR_STRING;
         }
-        gzb.frame.PublicEntrance.Entity entity0=gzb.frame.PublicEntrance.SB_CACHE0.get();
+        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
         int index0=entity0.open();
         try {
             StringBuilder sb = entity0.get(index0);

@@ -24,24 +24,21 @@ import gzb.tools.Config;
 import gzb.tools.Tools;
 import gzb.tools.log.Log;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.DefaultChannelPipeline;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.WriteBufferWaterMark;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.util.ReferenceCountUtil;
-import io.netty.util.ResourceLeakDetector;
 
 import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Set;
 
-public class NettyServer {
+public class HTTPServer{
     public static Log log = Log.log;
-    public static Factory factory;
     public static HTTPStaticFileHandler HTTPStaticFileHandler = new HTTPStaticFileHandler();
     public static Set<String> allowedDomains;
 
@@ -50,7 +47,7 @@ public class NettyServer {
         if (args.length > 0) {
             port = Integer.parseInt(args[0]);
         }
-        new NettyServer().startHTTPServer(port);
+        new HTTPServer().start(port);
     }
 
     // 负责接收连接
@@ -67,25 +64,17 @@ public class NettyServer {
                 }
             }};
 
-            factory = PublicEntrance.factory;
-            long start = System.currentTimeMillis();
-            if (Config.code_type.startsWith("file")) {
-                factory.loadJavaDir(Config.codeDir, Config.codePwd, Config.codeIv);
-            }
-
-            long end = System.currentTimeMillis();
-            log.i("初始化耗时", end - start);
         } catch (Exception e) {
             log.e("服务器初始化失败", e);
             System.exit(1314520);
         }
     }
 
-    public void startHTTPServer(int port) throws Exception {
-        startHTTPServer(port, Config.mainThreadNum, Config.ioThreadNum);
+    public void start(int port) throws Exception {
+        start(port, Config.mainThreadNum, Config.ioThreadNum);
     }
-
-    public void startHTTPServer(int port, int main_thread_num, int io_thread_num) throws Exception {
+    HTTPServerInitializer httpServerInitializer=new HTTPServerInitializer();
+    public void start(int port, int main_thread_num, int io_thread_num) throws Exception {
         init();
         if (main_thread_num < 1 || io_thread_num < 1) {
             log.e("线程数错误,请重新设置", "main", main_thread_num, "io", io_thread_num);
@@ -97,11 +86,6 @@ public class NettyServer {
         }
         ServerBootstrap bootstrap = null;
         int backlog = Config.bizAwaitNum; // 监听队列大小（建议10240+）
-        int bufferSize = 1024 * Math.max(Config.cpu * 8, 64); // 缓冲区大小：CPU核心数*8K 或 64K（取大值）
-        int lowWaterMark = 8 * 1024; // 写缓冲区低水位（固定8K，避免过小）
-        int highWaterMark = 32 * 1024; // 写缓冲区高水位（固定32K）
-
-
         try {
             if (Tools.isLinux()) {
                 bossGroup = new EpollEventLoopGroup(main_thread_num);
@@ -119,29 +103,30 @@ public class NettyServer {
             bootstrap.option(ChannelOption.SO_REUSEADDR, true)        // 允许地址重用
                     .option(ChannelOption.SO_BACKLOG, backlog)  // 监听队列大小
                     // === 客户端Socket参数（Worker线程） ===
-                    .childHandler(new HTTPServerInitializer())
+                    .childHandler(httpServerInitializer)
                     .childOption(ChannelOption.TCP_NODELAY, true)     // Nagle算法
                     .childOption(ChannelOption.SO_KEEPALIVE, true)    // TCP保活，清理空闲连接
-                    .childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000) // 已配置
-                    ; // 写缓冲区水位，避免OOM
+                    .childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000);
             log.i(
-                    "start server", port,
+                    "start http server", port,
                     "netty main 线程数量", main_thread_num,
                     "netty io 线程数量", io_thread_num,
                     "biz 线程数量", Config.bizThreadNum,
                     "biz 队列最大数量", Config.bizAwaitNum);
-            // 绑定端口并启动服务器
-            bootstrap.bind(new InetSocketAddress(port)).sync().channel().closeFuture().sync();
+            // 1. 绑定端口（同步阻塞，确保绑定完成）
+            ChannelFuture bindFuture = bootstrap.bind(new InetSocketAddress(port)).sync();
+            // 2. 异步监听closeFuture，而非同步阻塞
+            Channel serverChannel = bindFuture.channel();
+            serverChannel.closeFuture().addListener(future -> {
+                // 当服务端Channel关闭时，执行优雅停机逻辑
+                System.out.println("http server 服务关闭...");
+                // 关闭EventLoopGroup（释放线程池资源）
+                bossGroup.shutdownGracefully();
+                workerGroup.shutdownGracefully();
+            });
         } catch (Exception e) {
             log.e("启动服务器过程出现错误", e);
             System.exit(1314520);
-        } finally {
-            if (bossGroup != null) {
-                bossGroup.shutdownGracefully();
-            }
-            if (workerGroup != null) {
-                workerGroup.shutdownGracefully();
-            }
         }
 
     }

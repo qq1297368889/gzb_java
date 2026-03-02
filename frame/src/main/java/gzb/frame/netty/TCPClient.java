@@ -1,5 +1,9 @@
-package gzb.frame.server.tcp;
+package gzb.frame.netty;
 
+import gzb.frame.netty.tools.TCPTools;
+import gzb.tools.Tools;
+import gzb.tools.http.HTTPV2;
+import gzb.tools.http.HTTP_V3;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -9,6 +13,9 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 
+import java.io.IOException;
+import java.net.Socket;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,14 +31,24 @@ public class TCPClient {
     private static final int SERVER_PORT = 8888;
     private static final int READ_TIMEOUT_SECONDS = 10; // 超时时间，可自定义
 
-    public static void main(String[] args) throws InterruptedException {
-        // 测试发送hello（按size,data格式）
-        for (int i = 0; i < 10; i++) {
-            new TCPClient().sendMessage("hello");
-        }
+    public static void main(String[] args) throws Exception {
+        Socket socket = new Socket(SERVER_HOST, SERVER_PORT);
+
+        System.out.println(socket.isConnected());
+        byte[] bytes = Tools.readByteBuf(TCPTools.createDataPacketPromise("test/api0/get1", 0, 1, "message=哈哈哈"));
+        System.out.println(new String(bytes));
+        socket.getOutputStream().write(bytes);
+        socket.getOutputStream().flush();
+        Tools.sleep(10);
+        byte[] bytes1 = new byte[200];
+
+        System.out.println(new String(bytes1, 0, socket.getInputStream().read(bytes1)));
+        socket.close();
+        new TCPClient().sendMessage(TCPTools.createDataPacketPromise("test/api0/get1", 0, 1, "message=哈哈哈"));
+        System.out.println(new HTTPV2().httpGetString("http://" + SERVER_HOST + ":2080/test/api0/get1?message="+ URLEncoder.encode("哈哈哈哈哈")));
     }
 
-    public void sendMessage(String msg) throws InterruptedException {
+    public void sendMessage(ByteBuf requestBuf) throws InterruptedException {
         EventLoopGroup group = new NioEventLoopGroup();
 
         try {
@@ -52,17 +69,9 @@ public class TCPClient {
 
             // 连接服务端
             ChannelFuture future = bootstrap.connect(SERVER_HOST, SERVER_PORT).sync();
-            System.out.println(String.format("客户端已连接到服务端：%s:%d，读取超时时间：%d秒", SERVER_HOST, SERVER_PORT, READ_TIMEOUT_SECONDS));
+            System.out.printf("客户端已连接到服务端：%s:%d，读取超时时间：%d秒%n", SERVER_HOST, SERVER_PORT, READ_TIMEOUT_SECONDS);
 
-            // 构造size,data格式的请求数据
-            byte[] msgBytes = msg.getBytes(StandardCharsets.UTF_8);
-            String requestMsg = msgBytes.length + "," + msg;
-            ByteBuf requestBuf = Unpooled.copiedBuffer(requestMsg, StandardCharsets.UTF_8);
-
-            // 发送数据
             future.channel().writeAndFlush(requestBuf);
-            System.out.println("客户端发送：" + requestMsg);
-
             // 等待连接关闭
             future.channel().closeFuture().sync();
         } catch (Exception e) {

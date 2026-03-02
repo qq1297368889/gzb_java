@@ -32,7 +32,7 @@ public class GzbJsonImpl implements GzbJson {
 
     @Override
     public String initJson(Integer code, String msg, String url, Object data, Integer page, Integer size, Integer total) {
-        gzb.frame.PublicEntrance.Entity entity0 = gzb.frame.PublicEntrance.SB_CACHE0.get();
+        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
         int index0 = entity0.open();
         try {
             StringBuilder sb = entity0.get(index0);
@@ -115,7 +115,7 @@ public class GzbJsonImpl implements GzbJson {
      */
     @Override
     public String response(int code, String msg, String url, Object data) {
-        gzb.frame.PublicEntrance.Entity entity0 = gzb.frame.PublicEntrance.SB_CACHE0.get();
+        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
         int index0 = entity0.open();
         try {
             StringBuilder sb = entity0.get(index0);
