@@ -763,9 +763,10 @@ public class Tools {
         ) {
             return "\""+escapeJsonString(obj.toString())+"\"";
         }
+        /*
         if (obj instanceof JsonSerializable) {
             return obj.toString();
-        }
+        }*/
         if (obj.getClass().isArray()) {
             return arrayToJson(obj);
         }
@@ -883,6 +884,10 @@ public class Tools {
         }
     }
 
+    // 辅助常量：用于将 int 0-15 快速转换为 16 进制字符
+    private static final char[] HEX_CHARS = {
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+    };
     public static String escapeJsonString(String str) {
         if (str == null) {
             return "null";
@@ -976,52 +981,91 @@ public class Tools {
 
     }
 
-    // 辅助常量：用于将 int 0-15 快速转换为 16 进制字符
-    private static final char[] HEX_CHARS = {
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
-    };
-
-    // Helper method to escape special JSON characters
-    public static void escapeJsonString0(String str, StringBuilder sb) {
+    public static String escapeJsonString0(String str,StringBuilder sb) {
         if (str == null) {
-            return;
+            return "null";
         }
-        char[] chars = str.toCharArray();
-        for (int i = 0; i < chars.length; i++) {
-            char c = chars[i];
+        final int len = str.length();
+        int last = 0; // 上一次追加的起点索引
+
+        for (int i = 0; i < len; i++) {
+            char c = str.charAt(i);
+
+            // 检查字符是否需要转义
             switch (c) {
                 case '"':
+                    // 追加上一段普通字符串
+                    if (last < i) {
+                        sb.append(str, last, i);
+                    }
                     sb.append("\\\"");
+                    last = i + 1;
                     break;
                 case '\\':
+                    if (last < i) {
+                        sb.append(str, last, i);
+                    }
                     sb.append("\\\\");
+                    last = i + 1;
                     break;
                 case '\b':
+                    if (last < i) {
+                        sb.append(str, last, i);
+                    }
                     sb.append("\\b");
+                    last = i + 1;
                     break;
                 case '\f':
+                    if (last < i) {
+                        sb.append(str, last, i);
+                    }
                     sb.append("\\f");
+                    last = i + 1;
                     break;
                 case '\n':
+                    if (last < i) {
+                        sb.append(str, last, i);
+                    }
                     sb.append("\\n");
+                    last = i + 1;
                     break;
                 case '\r':
+                    if (last < i) {
+                        sb.append(str, last, i);
+                    }
                     sb.append("\\r");
+                    last = i + 1;
                     break;
                 case '\t':
+                    if (last < i) {
+                        sb.append(str, last, i);
+                    }
                     sb.append("\\t");
+                    last = i + 1;
                     break;
                 default:
-                    // Control characters below ASCII 32 need to be escaped
+                    // 检查控制字符 (< ASCII 32)
                     if (c < ' ') {
-                        sb.append(String.format("\\u%04x", (int) c));
-                    } else {
-                        sb.append(c);
+                        if (last < i) {
+                            sb.append(str, last, i);
+                        }
+                        sb.append("\\u00");
+                        // 快速转换 4-bit 为 16 进制字符（需实现高效的 toHexChar 辅助方法）
+                        sb.append(HEX_CHARS[(c >> 4) & 0xF]); // 高 4 位
+                        sb.append(HEX_CHARS[c & 0xF]);        // 低 4 位
+                        last = i + 1;
                     }
                     break;
             }
         }
+
+        // 循环结束后，追加最后一段普通字符串
+        if (last < len) {
+            sb.append(str, last, len);
+        }
+        return sb.toString();
     }
+
 
     /**
      * 从一个大byte[]中寻找一个小byte[]

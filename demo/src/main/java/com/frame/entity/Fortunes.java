@@ -70,7 +70,10 @@ public class Fortunes implements Serializable, JsonSerializable{
     }
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(29);
+        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
+            int index0=entity0.open();
+            try {
+                StringBuilder sb = entity0.get(index0);
        boolean app01=false;
         sb.append("{");
         if (this.id != null) {
@@ -89,17 +92,19 @@ public class Fortunes implements Serializable, JsonSerializable{
             }
         }else if(this.data != null){
             if(app01){sb.append(",");}app01=true;
-            sb.append("\"").append(Config.get("json.entity.data","data")).append("\":");
+            sb.append("\"").append(Config.entityDataListName).append("\":");
             sb.append(Tools.toJson(this.data));
         }
        return sb.append("}").toString();
-    }
+            }finally {
+                entity0.close(index0);
+            }    }
 
     public Result toJson() {
         Result result=new ResultImpl();
         result.set("id", id);
         result.set("message", message);
-        result.set(Config.get("json.entity.data","data"), data);
+        result.set(Config.entityDataListName, data);
         return result;
     }
 
@@ -111,7 +116,7 @@ public class Fortunes implements Serializable, JsonSerializable{
     public void loadJson(Result result) {
         this.id=result.getInteger("id", null);
         this.message=result.getString("message", null);
-        Object obj = result.get(Config.get("json.entity.data","data"),null);
+        Object obj = result.get(Config.entityDataListName,null);
         if (obj instanceof Map) {
             this.data = (Map<String, Object>) obj;
         }

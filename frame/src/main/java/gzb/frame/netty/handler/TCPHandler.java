@@ -38,8 +38,9 @@ public class TCPHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         String sessionId = ctx.channel().id().asLongText();
         ByteBuf buf = (ByteBuf) msg;
+        List<byte[]> list=null;
         try {
-            List<byte[]> list = TCPTools.readDataPacketByteArray(sessionId, buf);
+           list = TCPTools.readDataPacketByteArray(sessionId, buf);
             if (list != null) {
                 for (byte[] bytes : list) {
                     PacketPromise packetPromise = TCPTools.readPacketPromise(bytes);
@@ -52,7 +53,8 @@ public class TCPHandler extends ChannelInboundHandlerAdapter {
             Log.log.e("TCP协议错误","sessionId",sessionId,e);
             ctx.close();
         } finally {
-            if (buf != null) {
+            //必须在 list 不为空才能释放内存 否则 如果是半包 也就是list=null 释放了内存的话 下半部分数据到了 合包会出错 bug已修复
+            if (list != null&& buf != null) {
                 buf.release();
             }
         }

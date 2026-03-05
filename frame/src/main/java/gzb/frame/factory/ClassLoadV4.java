@@ -13,6 +13,7 @@
  */
 package gzb.frame.factory;
 
+import gzb.exception.GzbException0;
 import gzb.tools.Config;
 import gzb.tools.log.Log;
 
@@ -24,6 +25,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ClassLoadV4 {
     public static Log log = Log.log;
@@ -59,7 +61,7 @@ public class ClassLoadV4 {
                 iterator.remove();//保留未缓存的类 编译
             }
         }
-        if (nameJavaCodeMap.size()<1) {
+        if (nameJavaCodeMap.size() < 1) {
             return compiledClasses;
         }
         // 1. 获取JDK编译器
@@ -122,7 +124,7 @@ public class ClassLoadV4 {
             byte[] classBytes = entry.getValue().getBytes();
             if (classBytes.length > 0) {
                 byteMap.put(className, classBytes);
-                ClassByteTools.saveBytes(className,nameJavaCodeMap,classBytes);
+                ClassByteTools.saveBytes(className, nameJavaCodeMap, classBytes);
             } else {
                 log.w("ClassLoadV4", "类字节码为空，跳过加载", className);
             }
@@ -141,14 +143,11 @@ public class ClassLoadV4 {
         for (Map.Entry<String, byte[]> entry : byteMap.entrySet()) {
             String className = entry.getKey();
             byte[] classBytes = entry.getValue();
-
             if (classBytes == null || classBytes.length == 0) {
                 log.w("ClassLoadV4", "字节码为空，跳过加载", className);
                 continue;
             }
-
-            // 核心：每个类创建独立的加载器（彻底隔离）
-            HotSwapClassLoader classLoader = new HotSwapClassLoader();
+            HotSwapClassLoader classLoader = new HotSwapClassLoader(byteMap);
             Class<?> clazz = classLoader.loadFromBytes(className, classBytes);
             resultMap.put(className, clazz);
         }
@@ -187,23 +186,20 @@ public class ClassLoadV4 {
     }
 
     public static class HotSwapClassLoader extends ClassLoader {
+        Map<String, byte[]> byteMap=null;
         /**
          * 构造器：父加载器绑定当前上下文类加载器（保证归属应用类加载器层级）
          */
         public HotSwapClassLoader(ClassLoader parent) {
             super(parent);
         }
+
         /**
          * 强制父加载器为AppClassLoader（主加载器），复刻同项目的加载器层级
          */
-        public HotSwapClassLoader() {
-            // 核心：ClassLoader.getSystemClassLoader() = AppClassLoader（主加载器）
+        public HotSwapClassLoader(Map<String, byte[]> byteMap) {
             super(ClassLoader.getSystemClassLoader());
-            // 验证：确保父加载器不是ExtClassLoader
-            if (getParent().getClass().getName().contains("ExtClassLoader") ||
-                    getParent().getClass().getName().contains("PlatformClassLoader")) {
-                throw new IllegalStateException("自定义加载器父加载器错误，应为AppClassLoader");
-            }
+            this.byteMap=byteMap;
         }
 
         /**
@@ -214,34 +210,29 @@ public class ClassLoadV4 {
          * @return 加载后的Class实例
          */
         public Class<?> loadFromBytes(String className, byte[] classBytes) {
+            //System.out.println("loadFromBytes " + className);
             if (className == null || className.trim().isEmpty()) {
                 throw new IllegalArgumentException("类名不能为空");
             }
             if (classBytes == null || classBytes.length == 0) {
                 throw new IllegalArgumentException("类字节码不能为空");
             }
-            // 纯内存定义类，每个类归属当前独立加载器
             return defineClass(className, classBytes, 0, classBytes.length);
         }
-        /**
-         * 重写loadClass：核心优化点
-         * 1. 核心包（如entity）强制走父加载器
-         * 2. 动态类走当前加载器
-         */
         @Override
         protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-            // 加锁避免并发加载问题
-            synchronized (getClassLoadingLock(name)) {
-                Class<?> clazz = findLoadedClass(name);
-                if (clazz != null) {
-                    if (resolve) resolveClass(clazz);
-                    return clazz;
-                }
-
-                clazz = super.loadClass(name, resolve);
-                if (resolve) resolveClass(clazz);
-                return clazz;
+            byte[] c_bs = byteMap.get(name);//有个坑 编译缓存会导致内部类异常 这里补充一下
+            if (c_bs != null) {
+                return loadFromBytes(name, c_bs);
             }
+            Class<?> c = findLoadedClass(name);
+            if (c == null) {
+                c = super.loadClass(name, resolve);
+            }
+            if (c == null) {
+                throw new GzbException0("类加载失败：" + name);
+            }
+            return c;
         }
 
     }

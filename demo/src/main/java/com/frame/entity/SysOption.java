@@ -76,7 +76,10 @@ public class SysOption implements Serializable, JsonSerializable{
     }
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(115);
+        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
+            int index0=entity0.open();
+            try {
+                StringBuilder sb = entity0.get(index0);
        boolean app01=false;
         sb.append("{");
         if (this.sysOptionId != null) {
@@ -107,11 +110,13 @@ public class SysOption implements Serializable, JsonSerializable{
             }
         }else if(this.data != null){
             if(app01){sb.append(",");}app01=true;
-            sb.append("\"").append(Config.get("json.entity.data","data")).append("\":");
+            sb.append("\"").append(Config.entityDataListName).append("\":");
             sb.append(Tools.toJson(this.data));
         }
        return sb.append("}").toString();
-    }
+            }finally {
+                entity0.close(index0);
+            }    }
 
     public Result toJson() {
         Result result=new ResultImpl();
@@ -120,7 +125,7 @@ public class SysOption implements Serializable, JsonSerializable{
         result.set("sysOptionTitle", sysOptionTitle);
         result.set("sysOptionValue", sysOptionValue);
         result.set("sysOptionState", sysOptionState);
-        result.set(Config.get("json.entity.data","data"), data);
+        result.set(Config.entityDataListName, data);
         return result;
     }
 
@@ -135,7 +140,7 @@ public class SysOption implements Serializable, JsonSerializable{
         this.sysOptionTitle=result.getString("sysOptionTitle", null);
         this.sysOptionValue=result.getString("sysOptionValue", null);
         this.sysOptionState=result.getLong("sysOptionState", null);
-        Object obj = result.get(Config.get("json.entity.data","data"),null);
+        Object obj = result.get(Config.entityDataListName,null);
         if (obj instanceof Map) {
             this.data = (Map<String, Object>) obj;
         }

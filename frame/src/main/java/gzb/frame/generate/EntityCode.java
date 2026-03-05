@@ -185,10 +185,10 @@ public class EntityCode extends Base {
                     "            }\n" +
                     "        }else if(this.data != null){\n" +
                     "            if(app01){sb.append(\",\");}app01=true;\n" +
-                    "            sb.append(\"\\\"\").append(Config.get(\"json.entity.data\",\"data\")).append(\"\\\":\");\n" +
+                    "            sb.append(\"\\\"\").append(Config.entityDataListName).append(\"\\\":\");\n" +
                     "            sb.append(Tools.toJson(this.data));\n" +
                     "        }\n";
-
+//json.entity.data
             code += "       return sb.append(\"}\").toString();\n" +
                     "            }finally {\n" +
                     "                entity0.close(index0);\n" +
@@ -200,7 +200,7 @@ public class EntityCode extends Base {
             for (int i = 0; i < tableInfo.getColumnNames().size(); i++) {
                 code += "        result.set(\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\", " + tableInfo.getColumnNamesHumpLowerCase().get(i) + ");\n";
             }
-            code += "        result.set(Config.get(\"json.entity.data\",\"data\"), data);\n" +
+            code += "        result.set(Config.entityDataListName, data);\n" +
                     "        return result;\n" +
                     "    }\n" +
                     "\n" +
@@ -234,7 +234,7 @@ public class EntityCode extends Base {
                 }
 
             }
-            code += "        Object obj = result.get(Config.get(\"json.entity.data\",\"data\"),null);\n" +
+            code += "        Object obj = result.get(Config.entityDataListName,null);\n" +
                     "        if (obj instanceof Map) {\n" +
                     "            this.data = (Map<String, Object>) obj;\n" +
                     "        }\n" +

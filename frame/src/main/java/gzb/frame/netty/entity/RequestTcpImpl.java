@@ -218,7 +218,7 @@ public class RequestTcpImpl implements Request {
      */
     @Override
     public String getMethod() {
-        return "GET";
+        return packetPromise.method;
     }
 
 

@@ -40,7 +40,7 @@ public class WorldController{
      * 查询,不能接受空数据,请至少提供一个参数,请提供 World的参数 
      * /system/v1.0.0/world/list?参数同下,只是是根据实体类查询
      * */
-    @DecoratorOpen
+    @DecoratorOpen //提供轻量级aop能力
     @GetMapping("list")
     public Object list(GzbJson result,World world, String sortField, String sortType, Integer page, Integer size) throws Exception {
         if(world == null){

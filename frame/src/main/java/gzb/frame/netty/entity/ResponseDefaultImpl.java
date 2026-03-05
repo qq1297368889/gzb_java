@@ -139,7 +139,6 @@ public class ResponseDefaultImpl implements Response {
                 response.headers().set("Set-Cookie", encodeSingleCookie(cookie));
             }
         }
-        Log.log.i("bytes",bytesToHex(bytes));
         response.headers().set("content-length", bytes.length);
         response.headers().set("server", Config.frameName);
         ctx.writeAndFlush(response);

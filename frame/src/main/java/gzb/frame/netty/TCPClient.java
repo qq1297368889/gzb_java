@@ -35,7 +35,7 @@ public class TCPClient {
         Socket socket = new Socket(SERVER_HOST, SERVER_PORT);
 
         System.out.println(socket.isConnected());
-        byte[] bytes = Tools.readByteBuf(TCPTools.createDataPacketPromise("test/api0/get1", 0, 1, "message=哈哈哈"));
+        byte[] bytes = Tools.readByteBuf(TCPTools.createDataPacketPromise("test/api0/get1", 0, 0, "message=哈哈哈"));
         System.out.println(new String(bytes));
         socket.getOutputStream().write(bytes);
         socket.getOutputStream().flush();
@@ -44,7 +44,7 @@ public class TCPClient {
 
         System.out.println(new String(bytes1, 0, socket.getInputStream().read(bytes1)));
         socket.close();
-        new TCPClient().sendMessage(TCPTools.createDataPacketPromise("test/api0/get1", 0, 1, "message=哈哈哈"));
+        new TCPClient().sendMessage(TCPTools.createDataPacketPromise("test/api0/get1", 0, 0, "message=哈哈哈"));
         System.out.println(new HTTPV2().httpGetString("http://" + SERVER_HOST + ":2080/test/api0/get1?message="+ URLEncoder.encode("哈哈哈哈哈")));
     }
 

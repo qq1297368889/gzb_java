@@ -63,7 +63,7 @@ public class Base {
     }
 
     public String outCodeEntity(boolean save, String code, String dbName, String tableName) throws IOException {
-        saveFile(getFilePathEntity(dbName, tableName), code, save);
+        saveFile(getFilePathEntity(dbName, tableName), code, save,true);
         return code;
     }
 
@@ -107,13 +107,15 @@ public class Base {
         new File(this_path).mkdirs();
         return this_path;
     }
-
-    public void saveFile(String path, String code, boolean save) {
+    public void saveFile(String path, String code, boolean save){
+        saveFile(path, code, save,false);
+    }
+    public void saveFile(String path, String code, boolean save,boolean cover) {
         FileTools.mkdir(new File(path).getParentFile());
         //System.out.println(path);
         if (save) {
             File file =new File(path);
-            if (file.exists()) {
+            if (file.exists() && !cover) {
                 Log.log.w("文件已存在被跳过",file.getPath());
             }else{
                 Log.log.i("生成文件",file.getPath());

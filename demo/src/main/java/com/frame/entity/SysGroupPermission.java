@@ -74,7 +74,10 @@ public class SysGroupPermission implements Serializable, JsonSerializable{
     }
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(124);
+        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
+            int index0=entity0.open();
+            try {
+                StringBuilder sb = entity0.get(index0);
        boolean app01=false;
         sb.append("{");
         if (this.sysGroupPermissionId != null) {
@@ -101,11 +104,13 @@ public class SysGroupPermission implements Serializable, JsonSerializable{
             }
         }else if(this.data != null){
             if(app01){sb.append(",");}app01=true;
-            sb.append("\"").append(Config.get("json.entity.data","data")).append("\":");
+            sb.append("\"").append(Config.entityDataListName).append("\":");
             sb.append(Tools.toJson(this.data));
         }
        return sb.append("}").toString();
-    }
+            }finally {
+                entity0.close(index0);
+            }    }
 
     public Result toJson() {
         Result result=new ResultImpl();
@@ -113,7 +118,7 @@ public class SysGroupPermission implements Serializable, JsonSerializable{
         result.set("sysGroupPermissionPid", sysGroupPermissionPid);
         result.set("sysGroupPermissionGid", sysGroupPermissionGid);
         result.set("sysGroupPermissionTime", sysGroupPermissionTime);
-        result.set(Config.get("json.entity.data","data"), data);
+        result.set(Config.entityDataListName, data);
         return result;
     }
 
@@ -127,7 +132,7 @@ public class SysGroupPermission implements Serializable, JsonSerializable{
         this.sysGroupPermissionPid=result.getLong("sysGroupPermissionPid", null);
         this.sysGroupPermissionGid=result.getLong("sysGroupPermissionGid", null);
         this.sysGroupPermissionTime=result.getLocalDateTime("sysGroupPermissionTime", null);
-        Object obj = result.get(Config.get("json.entity.data","data"),null);
+        Object obj = result.get(Config.entityDataListName,null);
         if (obj instanceof Map) {
             this.data = (Map<String, Object>) obj;
         }

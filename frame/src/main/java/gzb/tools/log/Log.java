@@ -39,5 +39,5 @@ public interface Log {
 
     public void t(Object... log);
 
-    public void s(String sql, long start, long end);
+    public void s(Object sql, long start, long end);
 }

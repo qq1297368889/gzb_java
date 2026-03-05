@@ -227,63 +227,70 @@ public class LogThread {
         Thread currentThread = Thread.currentThread();
         //String threadName = currentThread.getName();
         long threadId = currentThread.getId();
-        StringBuilder sb = new StringBuilder();
-        sb.append(new DateTime().formatDateTime("yyyy-MM-dd HH:mm:ss.SSS"))
-                .append(" ")
-                .append(lvNames[index])
-                //.append(" ")
-                //.append(threadName)
-                .append(" ")
-                .append(threadId);
-        if (aClass != null) {
-            sb.append(" ");
-            sb.append(aClass.getName());
-        } else {
-            StackTraceElement[] stackTrace = new Throwable().getStackTrace();
-            if (stackTrace.length > 4) {
-                int index2 = 4;
-                for (int i = index2; i < stackTrace.length; i++) {
-                    if (stackTrace[i].getClassName().startsWith("org.codehaus.groovy.vmplugin.v8")) {
-                        continue;
-                    }
-                    if (stackTrace[i].getClassName().startsWith("gzb.tools.log")) {
-                        continue;
-                    }
-                    index2 = i;
-                    break;
-                }
+        gzb.tools.cache.object.ObjectCache.Entity entity0 = gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
+        int index0 = entity0.open();
+        StringBuilder sb = entity0.get(index0);
+        try {
+            sb.append(new DateTime().formatDateTime("yyyy-MM-dd HH:mm:ss.SSS"))
+                    .append(" ")
+                    .append(lvNames[index])
+                    //.append(" ")
+                    //.append(threadName)
+                    .append(" ")
+                    .append(threadId);
+            if (aClass != null) {
                 sb.append(" ");
-                sb.append(stackTrace[index2].getClassName());
-                sb.append(".");
-                sb.append(stackTrace[index2].getMethodName());
-                sb.append("(");
-                sb.append(stackTrace[index2].getFileName());
-                sb.append(":");
-                sb.append(stackTrace[index2].getLineNumber());
-                sb.append(")");
-                //"gzb.frame.factory.ClassFactory.main(ClassFactory.java:47)"
-            }
-        }
-        sb.append(": ");
-        if (log != null) {
-            for (int i = 0; i < log.length; i++) {
-                if (log[i] == null) {
-                    sb.append("null");
-                } else if (log[i] instanceof Exception) {
-                    sb.append(deduplication(Tools.getExceptionInfo((Exception) log[i]), index));
-                } else if (log[i] instanceof Throwable) {
-                    sb.append(deduplication(Tools.getExceptionInfo((Throwable) log[i]), index));
-                } else {
-                    sb.append(Tools.toJson(log[i]));
+                sb.append(aClass.getName());
+            } else {
+                StackTraceElement[] stackTrace = new Throwable().getStackTrace();
+                if (stackTrace.length > 4) {
+                    int index2 = 4;
+                    for (int i = index2; i < stackTrace.length; i++) {
+                        if (stackTrace[i].getClassName().startsWith("org.codehaus.groovy.vmplugin.v8")) {
+                            continue;
+                        }
+                        if (stackTrace[i].getClassName().startsWith("gzb.tools.log")) {
+                            continue;
+                        }
+                        index2 = i;
+                        break;
+                    }
+                    sb.append(" ");
+                    sb.append(stackTrace[index2].getClassName());
+                    sb.append(".");
+                    sb.append(stackTrace[index2].getMethodName());
+                    sb.append("(");
+                    sb.append(stackTrace[index2].getFileName());
+                    sb.append(":");
+                    sb.append(stackTrace[index2].getLineNumber());
+                    sb.append(")");
+                    //"gzb.frame.factory.ClassFactory.main(ClassFactory.java:47)"
                 }
-                if (i < log.length - 1) {
-                    sb.append(" | ");
-                }
             }
-        } else {
-            sb.append("null");
+            sb.append(": ");
+            if (log != null) {
+                for (int i = 0; i < log.length; i++) {
+                    if (log[i] == null) {
+                        sb.append("null");
+                    } else if (log[i] instanceof Exception) {
+                        sb.append(deduplication(Tools.getExceptionInfo((Exception) log[i]), index));
+                    } else if (log[i] instanceof Throwable) {
+                        sb.append(deduplication(Tools.getExceptionInfo((Throwable) log[i]), index));
+                    } else {
+                        sb.append(Tools.toJson(log[i]));
+                    }
+                    if (i < log.length - 1) {
+                        sb.append(" | ");
+                    }
+                }
+            } else {
+                sb.append("null");
+            }
+            return sb.toString();
+        }finally {
+            entity0.close(index0);
         }
-        return sb.toString();
+
     }
 
     public String deduplication(String msg, int index) {

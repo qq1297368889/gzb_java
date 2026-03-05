@@ -28,6 +28,7 @@ public class TCPTools {
 
     static {
         startCleanupThread();
+
     }
 
     // 核心解析逻辑设为私有，不对外暴露 ByteBuf
@@ -42,23 +43,30 @@ public class TCPTools {
             } else {
                 cumulation = newData;
             }
-
             while (cumulation.isReadable()) {
                 cumulation.markReaderIndex();
                 int dataSize = 0;
                 boolean foundComma = false;
 
+                int digitCount = 0;
                 while (cumulation.isReadable()) {
                     byte b = cumulation.readByte();
+                    digitCount++;
+                    // 新增：超过10位数字（最大支持10亿长度）或非法字符，直接中断
+                    if (digitCount > 10 || (b != ',' && (b < '0' || b > '9'))) {
+                        Log.log.w("非法长度字段，sessionSign=" + sessionSign);
+                        cumulation.resetReaderIndex();
+                        break;
+                    }
                     if (b == ',') {
                         foundComma = true;
                         break;
-                    } else if (b >= '0' && b <= '9') {
+                    } else {
                         dataSize = dataSize * 10 + (b - '0');
                     }
                 }
 
-                if (foundComma && cumulation.readableBytes() >= dataSize) {
+                if (foundComma && (Config.maxPostSize<1 || dataSize <= Config.maxPostSize) && cumulation.readableBytes() >= dataSize) {
                     // readRetainedSlice 会 +1 引用计数，供后续 byteArray 方法使用
                     ByteBuf frame = cumulation.readRetainedSlice(dataSize);
                     if (result == null) result = new ArrayList<>();
@@ -93,6 +101,21 @@ public class TCPTools {
         }
         return result;
     }
+    public static List<byte[]> readDataPacketByteArray(String sessionSign, byte[] newData) {
+        List<ByteBuf> result0 = readDataPacket(sessionSign, Tools.loadByteBuf(newData));
+        if (result0 == null) {
+            return null;
+        }
+        List<byte[]> result = new ArrayList<>(result0.size());
+        for (ByteBuf byteBuf : result0) {
+            try {
+                result.add(Tools.readByteBuf(byteBuf));
+            } finally {
+                byteBuf.release();
+            }
+        }
+        return result;
+    }
 
     public static List<String> readDataPacketString(String sessionSign, ByteBuf newData) {
         List<ByteBuf> result0 = readDataPacket(sessionSign, newData);
@@ -102,7 +125,8 @@ public class TCPTools {
         List<String> result = new ArrayList<>(result0.size());
         for (ByteBuf byteBuf : result0) {
             try {
-                result.add(new String(Tools.readByteBuf(byteBuf)));
+
+                result.add(byteBuf.toString(Config.encoding));
             } finally {
                 byteBuf.release();
             }
@@ -137,7 +161,7 @@ public class TCPTools {
 
     public static ByteBuf createDataPacket(ByteBuf data) {
         String sizeStr = data.readableBytes() + ",";
-        byte[] header = sizeStr.getBytes();
+        byte[] header = sizeStr.getBytes(Config.encoding);
         // 组合头部和数据体，全程无数据物理拷贝
         return Unpooled.wrappedBuffer(Unpooled.wrappedBuffer(header), data.retain());
     }
@@ -221,7 +245,7 @@ public class TCPTools {
                 return null;
             }
             packetPromise.method = Constant.requestMethod[method];
-            packetPromise.type = Integer.parseInt(new String(data, url_index + 1, type_index - met_index - 1, Config.encoding));
+            packetPromise.type = Integer.parseInt(new String(data, met_index + 1, type_index - met_index - 1, Config.encoding));
         } catch (NumberFormatException e) {
             Log.log.w("协议解析失败", new String(data, Config.encoding));
             return null;
@@ -230,7 +254,6 @@ public class TCPTools {
         int dataLen = data.length - type_index - 1;
         packetPromise.data = new byte[dataLen];
         System.arraycopy(data, type_index + 1, packetPromise.data, 0, dataLen);
-
         return packetPromise;
     }
 
@@ -276,12 +299,12 @@ public class TCPTools {
                     Iterator<Map.Entry<String, TCPTools.PacketEntity>> it = sessionMap.entrySet().iterator();
                     while (it.hasNext()) {
                         Map.Entry<String, TCPTools.PacketEntity> entry = it.next();
-                        if (now - entry.getValue().lastActiveTime > 30000) {
+                        if (now - entry.getValue().lastActiveTime > 10*1000) {
                             entry.getValue().buffer.release(); // 释放堆外内存
                             it.remove();
                         }
                     }
-                    for (int i = 0; i < 60; i++) {
+                    for (int i = 0; i < 11; i++) {
                         Tools.sleep(1000);
                     }
                 }

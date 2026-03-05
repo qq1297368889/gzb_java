@@ -138,13 +138,15 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
                 return _t01;
             }
         }
-        StringBuilder sb = new StringBuilder(key.length() + 50);
-        sb.append(key);
         Lock lock = null;
         if (second > 0) {
             lock = LockFactory.getLock(key, second);
             lock.lock();
         }
+        gzb.tools.cache.object.ObjectCache.Entity entity0 = gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
+        int index0 = entity0.open();
+        StringBuilder sb = entity0.get(index0);
+        sb.append(key);
         try {
             if (second > 0) {
                 _t01 = gzbCache.getObject(key);
@@ -197,8 +199,9 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
                 sb.append(",[连接：").append(times[1] - times[0]).append("ms]");
                 sb.append(",[执行：").append(times[2] - times[1]).append("ms]");
                 sb.append(",[组装：").append(times[3] - times[2]).append("ms]");
-                log.s(sb.toString(), times[0], times[4]);
+                log.s(sb, times[0], times[4]);
             }
+            entity0.close(index0);
         }
 
         return _t01;
@@ -229,14 +232,16 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
                 return list;
             }
         }
-        StringBuilder sb = new StringBuilder(key.length() + 50);
-        sb.append(key);
         Lock lock = null;
         if (second > 0) {
             lock = LockFactory.getLock(key, second);
             lock.lock();
         }
+        gzb.tools.cache.object.ObjectCache.Entity entity0 = gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
+        int index0 = entity0.open();
+        StringBuilder sb = entity0.get(index0);
         try {
+            sb.append(key);
             if (second > 0) {
                 list = gzbCache.getObject(key);
             }
@@ -283,8 +288,9 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
                 sb.append(",[连接：").append(times[1] - times[0]).append("ms]");
                 sb.append(",[执行：").append(times[2] - times[1]).append("ms]");
                 sb.append(",[组装：").append(times[3] - times[2]).append("ms]");
-                log.s(sb.toString(), times[0], times[4]);
+                log.s(sb, times[0], times[4]);
             }
+            entity0.close(index0);
         }
 
         return list;

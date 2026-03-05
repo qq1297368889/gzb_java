@@ -42,27 +42,6 @@ public class RequestDecorator {
 
     /// 依赖注入规则 和 控制器 一致 所有框架调度方法 都是一样的（线程模型例外，因为他没有 req resp）
 
-    //登陆验证
-    @DecoratorEnd(value = "/test/", sort = 0)
-    public RunRes get3(Request request, RunRes runRes, GzbJson gzbJson) throws Exception {
-        if (runRes.getData()!=null) {
-            List<SysLog>list= (List<SysLog>) runRes.getData();
-            System.out.println("get3 "+list);
-            list.clear();//响应数据被修改 runRes.data只要被修改即可 这是唯一锚点
-            runRes.intercept();//保留原来的响应数据
-            runRes.intercept(gzbJson.fail("请求被拦截，原因是看你不爽，三天之内杀了你"));//拦截响应
-        }
-
-        return runRes;
-    }
-
-    //登陆验证
-    @DecoratorStart(value = "/system/", sort = 2)
-    public RunRes test01(Request request, RunRes runRes, GzbJson gzbJson) throws Exception {
-        System.out.println("test01 "+runRes);
-        return runRes;
-    }
-
     //value 指定拦截的链接 默认为全部拦截 比如  请求链接 /a/b/c/d/e  value=/a/b/c/ 那么会拦截 只要从头开始 包含就会拦截
     //type 指定为 true  只要链接 包含就会拦截 不再只匹配开头
     //turn 指定为 true  原包含匹配 改为不包含匹配

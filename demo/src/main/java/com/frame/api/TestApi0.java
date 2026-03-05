@@ -33,7 +33,7 @@ public class TestApi0 {
     @Resource
     SysLogDao sysLogDao;
     /// value={xx,xx} xx对应请求参数  最终会生成 key 两次请求 同key 将会命中缓存(前提未过期) second 缓存时间 单位秒
-    @CacheRequest(value={"p1","p2","xxx"},second=10)
+    //@CacheRequest(value={"p1","p2","xxx"},second=10)
     @GetMapping("get2")
     public Object get2(String message) throws Exception {
         return sysLogDao.find(new SysLog().setSysLogId(getRandomLong(20, 1)));

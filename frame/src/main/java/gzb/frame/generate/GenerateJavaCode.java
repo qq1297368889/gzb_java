@@ -19,10 +19,12 @@
 package gzb.frame.generate;
 
 import gzb.entity.TableInfo;
+import gzb.exception.GzbException0;
 import gzb.frame.db.DataBase;
 import gzb.frame.db.DataBaseConfig;
 import gzb.frame.db.DataBaseImpl;
 import gzb.tools.*;
+import gzb.tools.log.Log;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -174,7 +176,8 @@ public class GenerateJavaCode {
         String sql;
         Map<String, String> map0 = new HashMap<>();
         for (TableInfo tableInfo : listTableInfo) {
-            listGzbMap = dataBase.selectGzbMap("select sys_mapping_table_id from sys_mapping_table where sys_mapping_table_name=?", new Object[]{tableInfo.nameHumpLowerCase});
+            listGzbMap = dataBase.selectGzbMap("select sys_mapping_table_id from sys_mapping_table where " +
+                    "sys_mapping_table_name=?", new Object[]{tableInfo.nameHumpLowerCase});
             map0.put(tableInfo.nameHumpLowerCase, "0");
             if (listGzbMap.size() == 0) {
                 id = OnlyId.getDistributed();
@@ -186,7 +189,7 @@ public class GenerateJavaCode {
             //把每个表的请求引用 都加入 选项引用列表  sys_option_request_url
             String key=tableInfo.nameHumpLowerCase;
             listGzbMap = dataBase.selectGzbMap("select * from sys_option_request where sys_option_request_key = ?", new Object[]{key});
-            System.out.println(key+" "+listGzbMap+"  "+listGzbMap.size());
+
             if (listGzbMap.size() == 0) {
                 sql="INSERT INTO sys_option_request(" +
                         "sys_option_request_id, " +
@@ -212,7 +215,8 @@ public class GenerateJavaCode {
             for (int i = 0; i < tableInfo.columnNames.size(); i++) {
                 String name = tableInfo.columnNamesHumpLowerCase.get(i);
                 //生成映射元数据
-                listGzbMap = dataBase.selectGzbMap("select sys_mapping_column_id from sys_mapping_column where sys_mapping_column_table = ? and sys_mapping_column_name=?", new Object[]{id, name});
+                listGzbMap = dataBase.selectGzbMap("select * from sys_mapping_column where " +
+                        "sys_mapping_column_name=?", new Object[]{name});
                 map0.put(tableInfo.nameHumpLowerCase + "." + name, "0");
                 if (listGzbMap.size() == 0) {
                     String option = "";
@@ -246,7 +250,17 @@ public class GenerateJavaCode {
                             "null, null, null, 0, 1, " +
                             id + ", '"+request+"', '" + option + "', '"+sql_op+"');";
                     dataBase.runSqlAsync(sql, null);
+                }else{
+                    Long this_id=listGzbMap.get(0).getLong("sysMappingColumnTable");
+                    if (id!=null&& this_id!=null
+                            && this_id.longValue()!=id.longValue()) {
+                        dataBase.runSqlAsync( "update sys_mapping_column set sys_mapping_column_table=? " +
+                                        "where sys_mapping_column_name = ?",
+                                new Object[]{id,name});
+                        Log.log.w("表ID发生变化",name,id);
+                    }
                 }
+                System.out.println(id +"  "+listGzbMap.get(0));
             }
         }
         //删除失效的列或表

@@ -13,7 +13,6 @@ public class AutoCode {
         //数据库名 要和 db.mysql.数据库名 这里匹配
         String dbKey = "db002";
         //生成代码的函数 感兴趣可以去看看里边 直接调用里边的也可以
-        GenerateJavaCode.generateCode(path,pkg,dbKey,dbKey);
-
+        GenerateJavaCode. generateCode(path, pkg, 0, true, dbKey, dbKey);
     }
 }

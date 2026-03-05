@@ -63,7 +63,7 @@ public class LogImpl implements Log {
     }
 
     @Override
-    public void s(String sql, long start, long end) {
+    public void s(Object sql, long start, long end) {
         if (end - start < 100){
             print(1, sql,"耗时",end-start,"毫秒");
         }else if (end - start < 1000){

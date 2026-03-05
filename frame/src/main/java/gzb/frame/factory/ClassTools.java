@@ -593,7 +593,6 @@ public class ClassTools {
         }
         return listObject;
     }
-
     public static GzbEntityInterface readObject(Class<?> aClass) {
         Object obj = mapLoadObjectObject.get(aClass);
         if (obj == null) {

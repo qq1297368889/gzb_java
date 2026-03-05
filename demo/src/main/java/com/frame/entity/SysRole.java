@@ -74,7 +74,10 @@ public class SysRole implements Serializable, JsonSerializable{
     }
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(83);
+        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
+            int index0=entity0.open();
+            try {
+                StringBuilder sb = entity0.get(index0);
        boolean app01=false;
         sb.append("{");
         if (this.sysRoleId != null) {
@@ -101,11 +104,13 @@ public class SysRole implements Serializable, JsonSerializable{
             }
         }else if(this.data != null){
             if(app01){sb.append(",");}app01=true;
-            sb.append("\"").append(Config.get("json.entity.data","data")).append("\":");
+            sb.append("\"").append(Config.entityDataListName).append("\":");
             sb.append(Tools.toJson(this.data));
         }
        return sb.append("}").toString();
-    }
+            }finally {
+                entity0.close(index0);
+            }    }
 
     public Result toJson() {
         Result result=new ResultImpl();
@@ -113,7 +118,7 @@ public class SysRole implements Serializable, JsonSerializable{
         result.set("sysRoleName", sysRoleName);
         result.set("sysRoleState", sysRoleState);
         result.set("sysRoleTime", sysRoleTime);
-        result.set(Config.get("json.entity.data","data"), data);
+        result.set(Config.entityDataListName, data);
         return result;
     }
 
@@ -127,7 +132,7 @@ public class SysRole implements Serializable, JsonSerializable{
         this.sysRoleName=result.getString("sysRoleName", null);
         this.sysRoleState=result.getLong("sysRoleState", null);
         this.sysRoleTime=result.getLocalDateTime("sysRoleTime", null);
-        Object obj = result.get(Config.get("json.entity.data","data"),null);
+        Object obj = result.get(Config.entityDataListName,null);
         if (obj instanceof Map) {
             this.data = (Map<String, Object>) obj;
         }

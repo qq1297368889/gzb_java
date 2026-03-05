@@ -50,21 +50,51 @@ public class TestApi {
         Map<String, List<File>> files = new HashMap<>();
         files.put("file", list1);
         files.put("files", list2);
-        for (int i = 0; i < 1; i++) {
-            httpV3.request("http://127.0.0.1:2080/test/api/post1", "POST", "", null, null, 10000L);
-            System.out.println("post 1 " + httpV3.asString());
-            httpV3.request("http://127.0.0.1:2080/test/api/post2", "POST", "", null, null, 10000L);
-            System.out.println("post 2 " + httpV3.asString());
-            httpV3.request("http://127.0.0.1:2080/test/api/post3", "POST", "", null, null, 10000L);
-            System.out.println("post 3 " + httpV3.asString());
-            httpV3.request("http://127.0.0.1:2080/test/api/post4", "POST", "", null, null, 10000L);
-            System.out.println("post 4 " + httpV3.asString());
+        //统一删除
+        httpV3.request("http://127.0.0.1:2080/test/api/del1?t=1", "DELETE", "", null, null, 10000L);
+        System.out.println("del 1 " + httpV3.asString());
 
-        }
-        httpV3.request("http://127.0.0.1:2080/test/api/post", "POST", postData, null, files, 10000L);
-        System.out.println(httpV3.asString());
+        //检查数量是不是0
+        httpV3.request("http://127.0.0.1:2080/test/api/find1?num=0", "GET", "", null, null, 10000L);
+        System.out.println("find 1 " + httpV3.asString());
 
+        //事务 失败
+        httpV3.request("http://127.0.0.1:2080/test/api/post1", "POST", "", null, null, 10000L);
+        System.out.println("post 1 " + httpV3.asString());
 
+        //检查数量是不是0
+        httpV3.request("http://127.0.0.1:2080/test/api/find1?num=0", "GET", "", null, null, 10000L);
+        System.out.println("find 1 " + httpV3.asString());
+
+        //事务 成功
+        httpV3.request("http://127.0.0.1:2080/test/api/post2", "POST", "", null, null, 10000L);
+        System.out.println("post 2 " + httpV3.asString());
+
+        //检查数量是不是1
+        httpV3.request("http://127.0.0.1:2080/test/api/find1?num=1", "GET", "", null, null, 10000L);
+        System.out.println("find 1 " + httpV3.asString());
+
+        //模拟事务 失败
+        httpV3.request("http://127.0.0.1:2080/test/api/post3", "POST", "", null, null, 10000L);
+        System.out.println("post 3 " + httpV3.asString());
+
+        //检查数量是不是1
+        httpV3.request("http://127.0.0.1:2080/test/api/find1?num=1", "GET", "", null, null, 10000L);
+        System.out.println("find 1 " + httpV3.asString());
+
+        //模拟事务 成功
+        httpV3.request("http://127.0.0.1:2080/test/api/post4", "POST", "", null, null, 10000L);
+        System.out.println("post 4 " + httpV3.asString());
+
+        //检查数量是不是2
+        httpV3.request("http://127.0.0.1:2080/test/api/find1?num=2", "GET", "", null, null, 10000L);
+        System.out.println("find 1 " + httpV3.asString());
+
+        //综合测试
+        httpV3.request("http://127.0.0.1:2080/test/api/post5", "POST", postData, null, files, 10000L);
+        System.out.println("post 5 " + httpV3.asString());
+
+//传参测试 时间对象+ 时间数组对象
         httpV3.request("http://127.0.0.1:2080/test/api/get3?" +
                         "localDateTime=2020-01-01%2001:01:01" +
                         "&localDateTimes=2020-01-01%2001:01:01" +
@@ -77,106 +107,157 @@ public class TestApi {
                 , "GET", "", null, null, 10000L);
         System.out.println("get 3 " + httpV3.asString());
 
+//传参测试 复杂对象数组 内部元素是时间 key等于复杂对象的类变量名称
         httpV3.request("http://127.0.0.1:2080/test/api/get2?" +
                         "localDateTime=2020-01-01%2001:01:01" +
-                        "&localDateTimes=2020-01-01%2001:01:01" +
                         "&timestamp=2020-01-01%2001:01:01" +
-                        "&timestamps=2020-01-01%2001:01:01" +
                         "&dateTime=2020-01-01%2001:01:01" +
-                        "&dateTimes=2020-01-01%2001:01:01" +
                         "&date=2020-01-01%2001:01:01" +
-                        "&dates=2020-01-01%2001:01:01"
+                        "&localDateTime=2020-01-01%2001:01:01" +
+                        "&timestamp=2020-01-01%2001:01:01" +
+                        "&dateTime=2020-01-01%2001:01:01" +
+                        "&date=2020-01-01%2001:01:01"
                 , "GET", "", null, null, 10000L);
         System.out.println("get 2 " + httpV3.asString());
+//检查类变量 注入 是否正常
+        httpV3.request("http://127.0.0.1:2080/test/api/get1", "GET", "", null, null, 10000L);
+        System.out.println("get 1 " + httpV3.asString());
 
+
+
+
+        //统一删除
+        httpV3.request("http://127.0.0.1:2080/test/api/del1?t=1", "DELETE", "", null, null, 10000L);
+        System.out.println("del 1 " + httpV3.asString());
+
+        //检查数量是不是0
+        httpV3.request("http://127.0.0.1:2080/test/api/find1?num=0", "GET", "", null, null, 10000L);
+        System.out.println("find 1 " + httpV3.asString());
     }
 
 
     @Resource
     SysPermissionDao sysPermissionDao;
 
-    //直接在事件循环线程执行 避免切换
-     @EventLoop
-    @GetMapping("get1")
-    public String get1(String message){
-        return "{\"code\":\"1\",\"time\":\"1769527173990\",\"message\":\""+message+"\"}";
-    }
-    @GetMapping("find1")
-    public Object find1(String msg, GzbJson gzbJson, SysUsersDao sysUsersDao) throws Exception {
-        return gzbJson.success(msg, sysUsersDao.find(new SysUsers().setSysUsersId(1L)));
-    }
-
-    public Object testApi(SysFileDao sysFileDao, SysFile[] files, SysUsers sysUsers, GzbJson gzbJson) throws Exception {
-        if (sysUsers.getSysUsersStatus() < 1) {
-            return gzbJson.fail("登陆失效");
-        }
-        if (files == null) {
-            return gzbJson.fail("对象传递失败");
-        }
-        for (SysFile file : files) {
-            sysFileDao.saveAsync(file);
-        }
-        return gzbJson.success("OK");
-    }
-
     //http://127.0.0.1:2080/test/api/get3?localDateTime=2020-01-01%2001:01:01&localDateTimes=2020-01-01%2001:01:01&timestamp=2020-01-01%2001:01:01&timestamps=2020-01-01%2001:01:01&dateTime=2020-01-01%2001:01:01&dateTimes=2020-01-01%2001:01:01
+    //普通参数和数组
     @GetMapping("get3")
     public Object get3(Log log, GzbJson gzbJson
             , LocalDateTime localDateTime, LocalDateTime[] localDateTimes
             , Timestamp timestamp, Timestamp[] timestamps
             , Date date, Date[] dates
             , DateTime dateTime, DateTime[] dateTimes) throws Exception {
-        return gzbJson.success("OK", new Object[]{localDateTime, localDateTimes, timestamp, timestamps, dateTime, dateTimes, date, dates});
-    }
-
-    @GetMapping("get2")
-    public Object get2(TestEntity testEntity, Log log, GzbJson gzbJson) throws Exception {
-        return gzbJson.success("OK", testEntity);
-    }
-
-    @Transaction(simulate = false)
-    @PostMapping("post1")
-    public Object post1(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
-        sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x-1"));
-        throw new GzbException0("抛出错误");
-    }
-
-    @Transaction(simulate = false)
-    @PostMapping("post2")
-    public Object post2(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
-        sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x-2"));
-        return gzbJson.success("成功");
-    }
-
-    @Transaction(simulate = true)
-    @PostMapping("post3")
-    public Object post3(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
-        sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x-3"));
-        throw new GzbException0("抛出错误");
-    }
-
-    @Transaction(simulate = true)
-    @PostMapping("post4")
-    public Object post4(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
-        sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x-4"));
-        return gzbJson.success("成功");
-    }
-
-    @PostMapping("test")
-    public Object test(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
-        SysUsers sysUsers = new SysUsers().setSysUsersAcc("123456");
-        sysUsersDao.saveAsync(sysUsers, new Runnable() {
-            @Override
-            public void run() {
-                //这里有完整上下文信息 因为开发者可以自由引用当前可访问区域的内容 可以进行补偿操作
-                log.d("执行失败，回调触发", sysUsers);
-            }
-        });
+        if (localDateTime == null) {
+            return gzbJson.fail("localDateTime == null");
+        }
+        if (localDateTimes == null || localDateTimes.length != 1) {
+            return gzbJson.fail("localDateTimes == null");
+        }
+        if (timestamp == null) {
+            return gzbJson.fail("timestamp == null");
+        }
+        if (timestamps == null || timestamps.length != 1) {
+            return gzbJson.fail("timestamps == null");
+        }
+        if (date == null) {
+            return gzbJson.fail("date == null");
+        }
+        if (dates == null || dates.length != 1) {
+            return gzbJson.fail("dates == null");
+        }
+        if (dateTime == null) {
+            return gzbJson.fail("dateTime == null");
+        }
+        if (dateTimes == null || dateTimes.length != 1) {
+            return gzbJson.fail("dateTimes == null");
+        }
         return gzbJson.success("OK");
     }
 
-    @PostMapping("post")
-    public Object testApi(
+    //数组对象
+    @GetMapping("get2")
+    public Object get2(TestEntity[] testEntitys, Log log, GzbJson gzbJson) throws Exception {
+        if (testEntitys == null || testEntitys.length != 2) {
+            return gzbJson.fail("testEntitys == null");
+        }
+        for (TestEntity testEntity : testEntitys) {
+            if (testEntity.getDate() == null) {
+                return gzbJson.fail("testEntity.getDate() == null");
+            }
+            if (testEntity.getDateTime() == null) {
+                return gzbJson.fail("testEntity.getDateTime() == null");
+            }
+            if (testEntity.getTimestamp() == null) {
+                return gzbJson.fail("testEntity.getTimestamp() == null");
+            }
+            if (testEntity.getLocalDateTime() == null) {
+                return gzbJson.fail("testEntity.getLocalDateTime() == null");
+            }
+        }
+
+        return gzbJson.success("OK");
+    }
+
+    //检查类变量
+    @GetMapping("get1")
+    public Object get1(Log log, GzbJson gzbJson) throws Exception {
+        if (sysPermissionDao == null) {
+            return gzbJson.fail("类变量未注入 sysPermissionDao");
+        }
+
+        return gzbJson.success("OK");
+    }
+
+    //事务失败
+    @Transaction(simulate = false)
+    @PostMapping("post1")
+    public Object post1(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
+        sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x"));
+        throw new GzbException0("抛出错误");
+    }
+
+    //事务成功
+    @Transaction(simulate = false)
+    @PostMapping("post2")
+    public Object post2(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
+        sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x"));
+        return gzbJson.success("OK");
+    }
+
+    //事务失败 模拟
+    @Transaction(simulate = true)
+    @PostMapping("post3")
+    public Object post3(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
+        sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x"));
+        throw new GzbException0("抛出错误");
+    }
+
+    //事务成功 模拟
+    @Transaction(simulate = true)
+    @PostMapping("post4")
+    public Object post4(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
+        sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x"));
+        return gzbJson.success("OK");
+    }
+
+    @DeleteMapping("del1")
+    public Object del1(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
+        sysUsersDao.delete(new SysUsers().setSysUsersAcc("acc_001x"));
+        return gzbJson.success("OK");
+    }
+
+    @GetMapping("find1")
+    public Object find1(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson, int num) throws Exception {
+        List<SysUsers>list=sysUsersDao.query(new SysUsers().setSysUsersAcc("acc_001x"));
+        if (list.size() != num) {
+            return gzbJson.success("acc_001x 数量不是预期的 " + num +"而是："+list.size());
+        }
+        return gzbJson.success("OK");
+    }
+
+    //综合测试
+    @PostMapping("post5")
+    public Object post5(
             Integer b, Long c, Short d, Float e, Double f, Boolean g
             , int b1, long c1, short d1, float e1, double f1, boolean g1,
             Integer[] b2, Long[] c2, Short[] d2, Float[] e2, Double[] f2, Boolean[] g2
@@ -305,10 +386,12 @@ public class TestApi {
             log.e("预期中 的错误", e0);
         }
         Semaphore semaphore = new Semaphore(0);
+        log.i(sysUsersDao.getClass().getClassLoader().toString());
         sysUsersDao.saveAsync(sysUsers, new Runnable() {
             @Override
             public void run() {
-                log.d("执行失败了，触发回调", sysUsers);//这里有完整上下文信息 因为这是开发者可以自由引用当前可访问区域的内容 可以进行补偿操作  这不是异步思维 而是补偿操作
+                log.d("执行失败了，触发回调", sysUsers);
+                //这里有完整上下文信息 因为这是开发者可以自由引用当前可访问区域的内容 可以进行补偿操作  这不是异步思维 而是补偿操作
                 semaphore.release();
             }
         });
@@ -369,11 +452,6 @@ public class TestApi {
 
         /// 测试结束
         return gzbJson.success("OK");
-    }
-
-    public TestApi() {
-
-        System.out.println("------TestApi v1002 创建对象-----------");
     }
 
 

@@ -92,7 +92,10 @@ public class SysMappingColumn implements Serializable, JsonSerializable{
     }
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(398);
+        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
+            int index0=entity0.open();
+            try {
+                StringBuilder sb = entity0.get(index0);
        boolean app01=false;
         sb.append("{");
         if (this.sysMappingColumnId != null) {
@@ -155,11 +158,13 @@ public class SysMappingColumn implements Serializable, JsonSerializable{
             }
         }else if(this.data != null){
             if(app01){sb.append(",");}app01=true;
-            sb.append("\"").append(Config.get("json.entity.data","data")).append("\":");
+            sb.append("\"").append(Config.entityDataListName).append("\":");
             sb.append(Tools.toJson(this.data));
         }
        return sb.append("}").toString();
-    }
+            }finally {
+                entity0.close(index0);
+            }    }
 
     public Result toJson() {
         Result result=new ResultImpl();
@@ -176,7 +181,7 @@ public class SysMappingColumn implements Serializable, JsonSerializable{
         result.set("sysMappingColumnRequest", sysMappingColumnRequest);
         result.set("sysMappingColumnOption", sysMappingColumnOption);
         result.set("sysMappingColumnSql", sysMappingColumnSql);
-        result.set(Config.get("json.entity.data","data"), data);
+        result.set(Config.entityDataListName, data);
         return result;
     }
 
@@ -199,7 +204,7 @@ public class SysMappingColumn implements Serializable, JsonSerializable{
         this.sysMappingColumnRequest=result.getString("sysMappingColumnRequest", null);
         this.sysMappingColumnOption=result.getString("sysMappingColumnOption", null);
         this.sysMappingColumnSql=result.getString("sysMappingColumnSql", null);
-        Object obj = result.get(Config.get("json.entity.data","data"),null);
+        Object obj = result.get(Config.entityDataListName,null);
         if (obj instanceof Map) {
             this.data = (Map<String, Object>) obj;
         }

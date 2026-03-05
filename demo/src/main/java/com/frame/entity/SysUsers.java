@@ -96,7 +96,10 @@ public class SysUsers implements Serializable, JsonSerializable{
     }
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(342);
+        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
+            int index0=entity0.open();
+            try {
+                StringBuilder sb = entity0.get(index0);
        boolean app01=false;
         sb.append("{");
         if (this.sysUsersId != null) {
@@ -167,11 +170,13 @@ public class SysUsers implements Serializable, JsonSerializable{
             }
         }else if(this.data != null){
             if(app01){sb.append(",");}app01=true;
-            sb.append("\"").append(Config.get("json.entity.data","data")).append("\":");
+            sb.append("\"").append(Config.entityDataListName).append("\":");
             sb.append(Tools.toJson(this.data));
         }
        return sb.append("}").toString();
-    }
+            }finally {
+                entity0.close(index0);
+            }    }
 
     public Result toJson() {
         Result result=new ResultImpl();
@@ -190,7 +195,7 @@ public class SysUsers implements Serializable, JsonSerializable{
         result.set("sysUsersSup", sysUsersSup);
         result.set("sysUsersMail", sysUsersMail);
         result.set("sysUsersRole", sysUsersRole);
-        result.set(Config.get("json.entity.data","data"), data);
+        result.set(Config.entityDataListName, data);
         return result;
     }
 
@@ -215,7 +220,7 @@ public class SysUsers implements Serializable, JsonSerializable{
         this.sysUsersSup=result.getLong("sysUsersSup", null);
         this.sysUsersMail=result.getString("sysUsersMail", null);
         this.sysUsersRole=result.getLong("sysUsersRole", null);
-        Object obj = result.get(Config.get("json.entity.data","data"),null);
+        Object obj = result.get(Config.entityDataListName,null);
         if (obj instanceof Map) {
             this.data = (Map<String, Object>) obj;
         }

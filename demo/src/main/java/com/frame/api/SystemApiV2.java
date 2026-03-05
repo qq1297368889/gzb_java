@@ -215,7 +215,8 @@ public class SystemApiV2 {
         for (SysRole sysRole : listSysRole) {
             for (TableInfo tableInfo : listTableInfo) {
                 Long id;
-                List<GzbMap> listGzbMap = dataBase.selectGzbMap("select sys_role_table_id from sys_role_table where sys_role_table_role=? and sys_role_table_name=?", new Object[]{sysRole.getSysRoleId(), tableInfo.nameHumpLowerCase});
+                List<GzbMap> listGzbMap = dataBase.selectGzbMap(
+                        "select sys_role_table_id from sys_role_table where sys_role_table_role=? and sys_role_table_name=?", new Object[]{sysRole.getSysRoleId(), tableInfo.nameHumpLowerCase});
                 if (listGzbMap.size() == 0) {
                     id = OnlyId.getDistributed();
                     sql = "INSERT INTO sys_role_table(" +
@@ -252,6 +253,7 @@ public class SystemApiV2 {
     @DecoratorOpen
     @GetMapping(value = "read/mapping")
     public Object readMapping(SysUsers sysUsers, SysRoleTable sysRoleTable, GzbJson res) throws Exception {
+
         //角色专属元数据
         SysRoleTable sysRoleTable0 = sysRoleTableDao.find(sysRoleTable.setSysRoleTableRole(sysUsers.getSysUsersRole()));
         if (sysRoleTable0 == null) {
@@ -275,7 +277,8 @@ public class SystemApiV2 {
             // 配置表寻找
             if (sysMappingColumn.getSysMappingColumnOption() != null && sysMappingColumn.getSysMappingColumnOption().length() > 0) {
                 List<SysOption> list = sysOptionDao.query("select sys_option_value,sys_option_title from sys_option where sys_option_key=?",
-                        new Object[]{sysMappingColumn.getSysMappingColumnOption()}, null, null, 0, 0, 10);
+                        new Object[]{sysMappingColumn.getSysMappingColumnOption()}, null, null,
+                        0, 0, 10);
                 sysMappingColumn.putMap("sysMappingColumnOption", list);
                 sysMappingColumn.setSysMappingColumnOption(null);
                 if (list.size() == 0) {

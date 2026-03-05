@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 
 public class JSONResult implements JsonSerializable {
-
     public static String codeText;
     public static String messageText;
     public static String dataText;

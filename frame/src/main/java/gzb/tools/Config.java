@@ -71,6 +71,7 @@ public class Config {
     public static String pageName;
     public static String sizeName;
     public static String totalName;
+    public static String entityDataListName;
 
     public static Long version;
     public static Long initTime;
@@ -82,6 +83,23 @@ public class Config {
     public static Long code_http_aid;
 
     public static Long server_name;
+
+    public static class JSONConfig {
+        public String code_key;
+        public String code_success;
+        public String code_fail;
+        public String code_err;
+        public String code_jump;
+        public String jump_val;
+        public String data_key;
+        public String time_val;
+        public String page_val;
+        public String size_val;
+        public String total_val;
+        public String entity_data_val;
+        public String message_key;
+
+    }
 
     static {
         init();
@@ -99,14 +117,14 @@ public class Config {
         code_http_aid = Config.getLong("gzb.system.code.http.aid", null);
 
         domain = Config.get("gzb.system.server.http.domain", "0.0.0.0");
-        HTTP_PORT = Config.getInteger("gzb.system.server.http.port", 8080);
+        HTTP_PORT = Config.getInteger("gzb.system.server.http.port", 0);
         TCP_PORT = Config.getInteger("gzb.system.server.tcp.port", 0);
         UDP_PORT = Config.getInteger("gzb.system.server.udp.port", 0);
         WS_PORT = Config.getInteger("gzb.system.server.ws.port", 0);
 
-         mainThreadNum=getInteger("gzb.system.server.main.thread.num", Math.max(cpu / 10, 1));
-        ioThreadNum=getInteger("gzb.system.server.io.thread.num", cpu * 2);
-         bizThreadNum=getInteger("gzb.system.server.biz.thread.num", cpu * 2);
+        mainThreadNum = getInteger("gzb.system.server.main.thread.num", Math.max(cpu / 10, 1));
+        ioThreadNum = getInteger("gzb.system.server.io.thread.num", cpu * 2);
+        bizThreadNum = getInteger("gzb.system.server.biz.thread.num", cpu * 2);
         bizAwaitNum = Config.getInteger("gzb.system.server.biz.await.num", cpu * 100);
         maxPostSize = Config.getInteger("gzb.system.server.http.post.size", 1024 * 1024 * 5);
         compressionMinSize = Config.getInteger("gzb.system.server.http.compression.min.size", 1024 * 5);
@@ -123,6 +141,7 @@ public class Config {
 
         stateName = Config.get("json.code", "code");
         messageName = Config.get("json.message", "message");
+        entityDataListName = Config.get("json.entity.data", "data");
         dataName = Config.get("json.data", "data");
         timeName = Config.get("json.time", "time");
         urlName = Config.get("json.jump", "url");
@@ -133,6 +152,8 @@ public class Config {
         failVal = Config.getInteger("json.fail.code", 2);
         errorVal = Config.getInteger("json.error.code", 3);
         jumpVal = Config.getInteger("json.jump.code", 4);
+
+
     }
 
     private static void init() {
@@ -167,7 +188,7 @@ public class Config {
                 configFile = file;
             }
             load(configFile);
-            ServiceThread.start("config-auto-update-服务线程",new Runnable() {
+            ServiceThread.start("config-auto-update-服务线程", new Runnable() {
                 @Override
                 public void run() {
                     thread = Thread.currentThread();

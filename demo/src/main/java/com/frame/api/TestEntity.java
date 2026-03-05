@@ -20,13 +20,9 @@ public class TestEntity {
 */
 
     private LocalDateTime localDateTime;
-    private LocalDateTime[] localDateTimes;
     private Timestamp timestamp;
-    private Timestamp[] timestamps;
     private Date date;
-    private Date[] dates;
     private DateTime dateTime;
-    private DateTime[] dateTimes;
 
     public LocalDateTime getLocalDateTime() {
         return localDateTime;
@@ -34,14 +30,6 @@ public class TestEntity {
 
     public void setLocalDateTime(LocalDateTime localDateTime) {
         this.localDateTime = localDateTime;
-    }
-
-    public LocalDateTime[] getLocalDateTimes() {
-        return localDateTimes;
-    }
-
-    public void setLocalDateTimes(LocalDateTime[] localDateTimes) {
-        this.localDateTimes = localDateTimes;
     }
 
     public Timestamp getTimestamp() {
@@ -52,28 +40,12 @@ public class TestEntity {
         this.timestamp = timestamp;
     }
 
-    public Timestamp[] getTimestamps() {
-        return timestamps;
-    }
-
-    public void setTimestamps(Timestamp[] timestamps) {
-        this.timestamps = timestamps;
-    }
-
     public Date getDate() {
         return date;
     }
 
     public void setDate(Date date) {
         this.date = date;
-    }
-
-    public Date[] getDates() {
-        return dates;
-    }
-
-    public void setDates(Date[] dates) {
-        this.dates = dates;
     }
 
     public DateTime getDateTime() {
@@ -84,13 +56,6 @@ public class TestEntity {
         this.dateTime = dateTime;
     }
 
-    public DateTime[] getDateTimes() {
-        return dateTimes;
-    }
-
-    public void setDateTimes(DateTime[] dateTimes) {
-        this.dateTimes = dateTimes;
-    }
 }
 
 
