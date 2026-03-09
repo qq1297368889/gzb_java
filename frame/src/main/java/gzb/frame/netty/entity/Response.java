@@ -63,12 +63,7 @@ public interface Response {
     /**
      * 返回 成功
      */
-    public Response success(byte[] body);
-
-    /**
-     * 返回 成功
-     */
-    public Response success(String body);
+    public Response success(Object chunk);
 
     /**
      * 返回 失败

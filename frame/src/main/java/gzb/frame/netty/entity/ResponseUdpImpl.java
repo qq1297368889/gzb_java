@@ -3,15 +3,18 @@ package gzb.frame.netty.entity;
 import gzb.frame.netty.tools.TCPTools;
 import gzb.tools.NettyTools;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.socket.DatagramPacket;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
 
-public class ResponseTcpImpl implements Response {
+public class ResponseUdpImpl implements Response {
     private ChannelHandlerContext ctx;
-    public ResponseTcpImpl(ChannelHandlerContext ctx) {
+    private InetSocketAddress sender;
+    public ResponseUdpImpl(ChannelHandlerContext ctx, InetSocketAddress sender) {
         this.ctx = ctx;
+        this.sender = sender;
     }
 
     /**
@@ -41,7 +44,7 @@ public class ResponseTcpImpl implements Response {
      */
     @Override
     public Response write(byte[] chunk) {
-        ctx.write(TCPTools.createDataPacket(NettyTools.toByteBuf(chunk)));
+        ctx.write(new DatagramPacket(TCPTools.createDataPacket(NettyTools.toByteBuf(chunk)),sender));
         return this;
     }
 
@@ -61,7 +64,7 @@ public class ResponseTcpImpl implements Response {
      */
     @Override
     public Response sendAndFlush(Object chunk) {
-        ctx.writeAndFlush(TCPTools.createDataPacket(NettyTools.toByteBuf(chunk)));
+        ctx.writeAndFlush(new DatagramPacket(TCPTools.createDataPacket(NettyTools.toByteBuf(chunk)),sender));
         return this;
     }
 

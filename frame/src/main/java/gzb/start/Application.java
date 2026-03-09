@@ -20,6 +20,8 @@ package gzb.start;
 import gzb.frame.netty.Server;
 import gzb.tools.Config;
 import gzb.tools.Tools;
+import gzb.tools.log.Log;
+
 public class Application {
     public static void main(String[] args) throws Exception {
         run(Application.class);
@@ -28,6 +30,7 @@ public class Application {
         run(null);
     }
     public static void run(Class<?>aClass) throws Exception {
+        long start=System.currentTimeMillis();
         if (aClass!=null) {
             String path = Tools.getProjectRoot(aClass);
             System.setProperty("this.dir", path);
@@ -40,11 +43,13 @@ public class Application {
             Server.startTCPServer(Config.TCP_PORT);
         }
         if (Config.UDP_PORT>0) {
-
+            Server.startUDPServer(Config.UDP_PORT);
         }
         if (Config.HTTP_PORT>0) {
             Server.startHTTPServer(Config.HTTP_PORT);
         }
+        long end=System.currentTimeMillis();
+        Log.log.i("服务器自动总耗时",end-start);
     }
 
 

@@ -8,6 +8,7 @@ import gzb.tools.log.Log;
 public class Server {
     public static HTTPServer httpServer;
     public static TCPServer tcpServer;
+    public static UDPServer udpServer;
 
 
     public static Factory factory;
@@ -32,7 +33,8 @@ public class Server {
 
     public static void startUDPServer(int port) throws Exception {
         init();
-
+        udpServer=new UDPServer();
+        udpServer.start(port);
     }
 
     public static void startHTTPServer(int port) throws Exception {

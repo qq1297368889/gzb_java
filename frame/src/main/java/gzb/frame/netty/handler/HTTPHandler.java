@@ -19,6 +19,8 @@
 package gzb.frame.netty.handler;
 
 import gzb.frame.netty.Server;
+import gzb.frame.netty.entity.Request;
+import gzb.frame.netty.entity.RequestDefaultImpl;
 import gzb.tools.Config;
 import gzb.tools.log.Log;
 import io.netty.buffer.Unpooled;
@@ -57,7 +59,9 @@ public class HTTPHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
             response.headers().set("server", Config.frameName);
             ctx.writeAndFlush(response);
         }else{
-            Server.factory.start(ctx,req);
+            Request request=new RequestDefaultImpl(ctx,req);
+            Server.factory.start(request,request.getResponse());
+            //Server.factory.start(ctx,req);
         }
     }
 

@@ -6,6 +6,7 @@ import gzb.frame.db.DataBase;
 import gzb.frame.db.DataBaseFactory;
 import gzb.frame.factory.ClassLoadEvent;
 import gzb.frame.factory.Constant;
+import gzb.tools.Config;
 import gzb.tools.OnlyId;
 import gzb.tools.log.Log;
 

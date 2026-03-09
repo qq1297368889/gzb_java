@@ -50,12 +50,12 @@ public class RequestDefaultImpl implements Request {
     }
 
     public String getRemoteIp() {
-        InetSocketAddress remoteAddress = (InetSocketAddress) ctx.channel().localAddress();
+        InetSocketAddress remoteAddress = (InetSocketAddress) ctx.channel().remoteAddress();
         return remoteAddress.getAddress().getHostAddress();
     }
 
     public int getRemotePort() {
-        InetSocketAddress remoteAddress = (InetSocketAddress) ctx.channel().localAddress();
+        InetSocketAddress remoteAddress = (InetSocketAddress) ctx.channel().remoteAddress();
         return remoteAddress.getPort();
     }
 
@@ -80,6 +80,7 @@ public class RequestDefaultImpl implements Request {
     public FullHttpRequest getRequest() {
         return request;
     }
+
     public RequestDefaultImpl(ChannelHandlerContext ctx, FullHttpRequest request) {
         this.ctx = ctx;
         this.request = request;
@@ -300,4 +301,7 @@ public class RequestDefaultImpl implements Request {
         return session;
     }
 
+    public void close() {
+
+    }
 }

@@ -11,11 +11,15 @@ import gzb.tools.log.Log;
 /// 小玩具 但是 可以显示框架调度的优越性
 @Controller
 @RequestMapping("cache")
-public class ServerAction {
-    @Resource
-    GzbJson gzbJson;
-@Resource
-    Log log;
+public class CacheAction {
+
+    /// 状态码
+    /// 1 调用成功
+    /// 2 k为空
+    /// 3 v为空
+    /// 4 s为空
+    /// 5 i对应实例不存在
+    /// 6 get 调用时 key对应val 不存在
     @EventLoop
     @PostMapping("/set")
     public String set(String k, String v, Integer s, Integer i) throws Exception {
@@ -28,63 +32,65 @@ public class ServerAction {
         if (s == null) {
             return "4";
         }
-        GzbCache gzbCache= CacheData.get(i);
-        if (gzbCache==null) {
+        GzbCache gzbCache = CacheData.get(i);
+        if (gzbCache == null) {
             return "5";
         }
         gzbCache.set(k, v, s);
-        log.i(k,v,s,i);
         return "1";
     }
+
     @EventLoop
     @PostMapping("/get")
-    public String get(String k,Integer i) throws Exception {
+    public String get(String k, Integer i) throws Exception {
         if (k == null) {
             return "2";
         }
-        GzbCache gzbCache= CacheData.get(i);
-        if (gzbCache==null) {
+        GzbCache gzbCache = CacheData.get(i);
+        if (gzbCache == null) {
             return "5";
         }
-        String str=gzbCache.get(k);
-        if (str==null) {
+        String str = gzbCache.get(k);
+        if (str == null) {
             return "6";
         }
-        return "1 "+str;
+        return "1 " + str;
     }
+
     @EventLoop
     @PostMapping("/get/all")
-    public String getAll(String[]k,Integer i) throws Exception {
+    public String getAll(String[] k, Integer i) throws Exception {
         if (k == null) {
             return "2";
         }
-        GzbCache gzbCache= CacheData.get(i);
-        if (gzbCache==null) {
+        GzbCache gzbCache = CacheData.get(i);
+        if (gzbCache == null) {
             return "5";
         }
-        ObjectCache.Entity entity=ObjectCache.SB_CACHE0.get();
-        int index0=entity.open();
+        ObjectCache.Entity entity = ObjectCache.SB_CACHE0.get();
+        int index0 = entity.open();
         try {
-            StringBuilder sb= entity.get(index0);
+            StringBuilder sb = entity.get(index0);
             sb.append("1 ");
             for (String string : k) {
-                String data=gzbCache.get(string);
+                String data = gzbCache.get(string);
                 sb.append(data.length()).append(" ").append(data).append(" ");
                 ///state size data size data......
             }
             return sb.toString();
-        }finally {
+        } finally {
             entity.close(index0);
         }
     }
+
     @EventLoop
     @PostMapping("/del")
-    public String del(String[]k,Integer i) throws Exception {
+    public String del(String[] k, Integer i) throws Exception {
         if (k == null) {
             return "2";
         }
-        GzbCache gzbCache= CacheData.get(i);
-        if (gzbCache==null) {
+        GzbCache gzbCache = CacheData.get(i);
+        if (gzbCache == null) {
             return "5";
         }
         for (String string : k) {

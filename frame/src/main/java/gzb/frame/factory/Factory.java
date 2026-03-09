@@ -19,15 +19,16 @@
 package gzb.frame.factory;
 
 import gzb.frame.netty.entity.PacketPromise;
+import gzb.frame.netty.entity.Request;
+import gzb.frame.netty.entity.Response;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
 
+import java.net.InetSocketAddress;
 import java.util.Map;
 
 public interface Factory {
-    void start(ChannelHandlerContext ctx, FullHttpRequest req);
-    void start(ChannelHandlerContext ctx, PacketPromise packetPromise);
-
+    void start(Request request, Response response);
     void loadJavaDir(String classDir, String pwd, String iv) throws Exception;
 
      Map<String, Object> getMapObject();

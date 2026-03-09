@@ -21,10 +21,7 @@ package gzb.tools;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONWriter;
 import com.alibaba.fastjson2.TypeReference;
-import gzb.entity.PagingEntity;
 import gzb.entity.TableInfo;
-import gzb.exception.GzbException0;
-import gzb.frame.PublicEntrance;
 import gzb.frame.db.DataBase;
 import gzb.frame.factory.ClassTools;
 import gzb.frame.factory.Constant;
@@ -34,9 +31,6 @@ import gzb.tools.http.HTTP;
 import gzb.tools.img.GifCaptcha;
 import gzb.tools.json.JsonSerializable;
 import gzb.tools.json.Result;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -49,11 +43,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
@@ -728,22 +720,11 @@ public class Tools {
     public static String toJson0(Object obj) {
         return JSON.toJSONString(obj, JSONWriter.Feature.WriteNonStringValueAsString);
     }
-    public static void toJson(Object obj,StringBuilder stringBuilder) {
+
+    public static void toJson(Object obj, StringBuilder stringBuilder) {
         stringBuilder.append(toJson(obj));
     }
 
-    //记不住这个api 封装一下
-    public static byte[] readByteBuf(io.netty.buffer.ByteBuf buf) {
-        // readableBytes() 获取实际有数据的长度
-        byte[] bytes = new byte[buf.readableBytes()];
-        // getBytes 不会移动读索引(readerIndex)，适合调试打印
-        buf.getBytes(buf.readerIndex(), bytes);
-        return bytes;
-    }
-    //记不住这个api 封装一下
-    public static ByteBuf loadByteBuf(byte[] data) {
-        return Unpooled.wrappedBuffer(data);
-    }
 
     public static String toJson(Object obj) {
         if (obj == null) {
@@ -761,7 +742,7 @@ public class Tools {
                 || ac == Byte.class
                 || ac == Character.class
         ) {
-            return "\""+escapeJsonString(obj.toString())+"\"";
+            return "\"" + escapeJsonString(obj.toString()) + "\"";
         }
         /*
         if (obj instanceof JsonSerializable) {
@@ -771,31 +752,31 @@ public class Tools {
             return arrayToJson(obj);
         }
         if (obj instanceof Map) {
-            return mapToJson((Map<?, ?>)obj);
+            return mapToJson((Map<?, ?>) obj);
         }
         if (obj instanceof Iterable) {
-            return iterableToJson((Iterable<?>)obj);
+            return iterableToJson((Iterable<?>) obj);
         }
         if (obj instanceof GzbMap) {//已知类处理
             return mapToJson(((GzbMap) obj).getMap());
         }
         if (obj instanceof Class<?> || obj instanceof File || obj instanceof CharSequence) {
-            return "\""+escapeJsonString(obj.toString())+"\"";
+            return "\"" + escapeJsonString(obj.toString()) + "\"";
         }
         if (obj instanceof Exception) {
-            return "\""+escapeJsonString(getExceptionInfo((Exception) obj))+"\"";
+            return "\"" + escapeJsonString(getExceptionInfo((Exception) obj)) + "\"";
         }
         if (obj instanceof Timestamp) {
-            return "\""+escapeJsonString(new DateTime((Timestamp) obj).toString())+"\"";
+            return "\"" + escapeJsonString(new DateTime((Timestamp) obj).toString()) + "\"";
         }
         if (obj instanceof LocalDateTime) {
-            return "\""+escapeJsonString(new DateTime((LocalDateTime) obj).toString())+"\"";
+            return "\"" + escapeJsonString(new DateTime((LocalDateTime) obj).toString()) + "\"";
         }
         if (obj instanceof Date) {
-            return "\""+escapeJsonString(new DateTime((Date) obj).toString())+"\"";
+            return "\"" + escapeJsonString(new DateTime((Date) obj).toString()) + "\"";
         }
-        String data=ClassTools.toJsonObject(obj);
-        if (data==null) {
+        String data = ClassTools.toJsonObject(obj);
+        if (data == null) {
             return obj.toString();
         }
         return data;
@@ -807,8 +788,8 @@ public class Tools {
         if (map == null) {
             return "null";
         }
-        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
-        int index0=entity0.open();
+        gzb.tools.cache.object.ObjectCache.Entity entity0 = gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
+        int index0 = entity0.open();
         try {
             StringBuilder sb = entity0.get(index0);
             sb.append("{");
@@ -828,19 +809,20 @@ public class Tools {
             }
             sb.append("}");
             return sb.toString();
-        }finally {
+        } finally {
             entity0.close(index0);
         }
 
     }
+
     // Helper method to serialize an Iterable (e.g., List, Set)
     public static String iterableToJson(Iterable<?> iterable) {
         if (iterable == null) {
             return "null";
         }
 
-        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
-        int index0=entity0.open();
+        gzb.tools.cache.object.ObjectCache.Entity entity0 = gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
+        int index0 = entity0.open();
         try {
             StringBuilder sb = entity0.get(index0);
             sb.setLength(0); // 重置StringBuilder长度，复用缓存
@@ -855,7 +837,7 @@ public class Tools {
             }
             sb.append("]");
             return sb.toString();
-        }finally {
+        } finally {
             entity0.close(index0);
         }
     }
@@ -865,8 +847,8 @@ public class Tools {
         if (array == null) {
             return "null";
         }
-        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
-        int index0=entity0.open();
+        gzb.tools.cache.object.ObjectCache.Entity entity0 = gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
+        int index0 = entity0.open();
         try {
             StringBuilder sb = entity0.get(index0);
             int length = Array.getLength(array);
@@ -879,7 +861,7 @@ public class Tools {
             }
             sb.append("]");
             return sb.toString();
-        }finally {
+        } finally {
             entity0.close(index0);
         }
     }
@@ -888,12 +870,13 @@ public class Tools {
     private static final char[] HEX_CHARS = {
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
     };
+
     public static String escapeJsonString(String str) {
         if (str == null) {
             return "null";
         }
-        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
-        int index0=entity0.open();
+        gzb.tools.cache.object.ObjectCache.Entity entity0 = gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
+        int index0 = entity0.open();
         try {
             StringBuilder sb = entity0.get(index0);
             final int len = str.length();
@@ -975,13 +958,13 @@ public class Tools {
                 sb.append(str, last, len);
             }
             return sb.toString();
-        }finally {
+        } finally {
             entity0.close(index0);
         }
 
     }
 
-    public static String escapeJsonString0(String str,StringBuilder sb) {
+    public static String escapeJsonString0(String str, StringBuilder sb) {
         if (str == null) {
             return "null";
         }
@@ -1744,6 +1727,7 @@ public class Tools {
     public static StackTraceElement[] getStackTrace() {
         return new Throwable().getStackTrace();
     }
+
     public static String getStartClassName() {
         StackTraceElement[] stackTrace = getStackTrace();
         return stackTrace[stackTrace.length - 1].getClassName();
@@ -1753,6 +1737,7 @@ public class Tools {
         String classPath = getProjectRoot0(aClass);
         return classPath.split("target")[0];
     }
+
     public static String getProjectRoot0(Class<?> aClass) {
         try {
             CodeSource codeSource = aClass.getProtectionDomain().getCodeSource();

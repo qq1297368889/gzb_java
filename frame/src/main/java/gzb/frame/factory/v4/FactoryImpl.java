@@ -34,6 +34,7 @@ import gzb.tools.*;
 
 import java.io.File;
 import java.lang.reflect.*;
+import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -281,18 +282,8 @@ public class FactoryImpl implements Factory {
     public void loadServerHttp() {
 
     }
-
-    /**
-     * @param ctx
-     * @param req
-     */
     @Override
-    public void start(ChannelHandlerContext ctx, FullHttpRequest req) {
-
-    }
-
-    @Override
-    public void start(ChannelHandlerContext ctx, PacketPromise packetPromise) {
+    public void start(Request request, Response response) {
 
     }
 

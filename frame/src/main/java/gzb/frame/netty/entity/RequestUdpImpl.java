@@ -11,19 +11,19 @@ import io.netty.handler.codec.http.cookie.Cookie;
 import java.net.InetSocketAddress;
 import java.util.*;
 
-public class RequestTcpImpl implements Request {
+public class RequestUdpImpl implements Request {
     private ChannelHandlerContext ctx;
     private PacketPromise packetPromise;
     private Response response;
 
     private Map<String, List<Object>> parameters;
 
-    public RequestTcpImpl(ChannelHandlerContext ctx, PacketPromise packetPromise) {
+    public RequestUdpImpl(ChannelHandlerContext ctx, PacketPromise packetPromise, InetSocketAddress sender) {
         this.ctx = ctx;
         this.packetPromise = packetPromise;
         parameters = new HashMap<>();
         setParameters(parameters);
-        this.response = new ResponseTcpImpl(ctx);
+        this.response = new ResponseUdpImpl(ctx,sender);
     }
 
     /**
@@ -270,8 +270,7 @@ public class RequestTcpImpl implements Request {
         InetSocketAddress localAddress = (InetSocketAddress) ctx.channel().localAddress();
         return localAddress.getPort();
     }
-
     public void close() {
-        ctx.close();
+
     }
 }

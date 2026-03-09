@@ -1,19 +1,26 @@
 # 框架名称 : gzb one
+
 ## 简介
-这是一个**全栈/全功能框架**、**高性能**的 Java Web 框架。它的核心理念是用最少的概念，解决开发者 90% 的问题，同时保留 10% 的底层控制力，以应对**极致性能**需求。它从头开始构建，旨在消除传统框架的臃肿和性能开销。
+
+这是一个**全栈/全功能框架**、**高性能**的 Java Web 框架。它的核心理念是用最少的概念，解决开发者 90% 的问题，同时保留 10%
+的底层控制力，以应对**极致性能**需求。它从头开始构建，旨在消除传统框架的臃肿和性能开销。
 
 这不仅是一个 Web 框架，它还是一个**一站式解决方案**，一个强大的**低代码平台**。
+
 ### 告别重启！框架允许 您在系统满负载下实现无缝热更新，无需停机。
 
 Please right click->Translate
 ---
 
 ## 关于性能
+
 ### 运行环境
+
 * **CPU**：AMD Ryzen 5 3600
 * **JDK**：GraalVM 21.0.6
 * 以下这份代码 预热后 框架接受请求，全流程 亚微秒级别(小于1微秒) 一秒=10亿纳秒
 * 已经达到jvm物理极限，理论上应该没有其他java框架能超越
+
 ```java
 /**
  * 演示HTTP端点  包含 端点映射 请求参数映射到参数 注入内部对象 组装json字符串 以及判断是否 需要调用一系的组件
@@ -21,24 +28,33 @@ Please right click->Translate
  * @param gzbJson 框架内置JSON对象
  * */
 @GetMapping("/test1")//请求端点
-public String test(String sysUsersAcc,GzbJson gzbJson) throws Exception {
-  return gzbJson.success(sysUsersAcc);
+public String test(String sysUsersAcc, GzbJson gzbJson) throws Exception {
+    return gzbJson.success(sysUsersAcc);
 }
 ```
+
 ### 为什么不展示压测数据：
+
 #### 由于性能数据极易受测试环境、网络I/O、操作系统和JVM开销等外部因素影响，
+
 #### 我不提供可能存在偏差的压测数据。我的关注点在于框架本身的高效设计，而非受外部因素影响的最终性能数字。
+
 #### 压测效果很惊艳，不过我没有标准的环境进行测试 。
+
 ### 压测代码
+
 #### 感兴趣可以通过调用示例项目的 TestDDOS.main 来启动压测。你也可以使用其他压测工具。
 
-* [查看执行耗时日志](执行耗时.md) 
+* [查看执行耗时日志](执行耗时.md)
+
 ### 2026-02-27 补充性能对比数据(求超越 求打脸 求下载 哥求你了)
+
 * 实测 同一次jvm启动的进程 这排除了任何不公平的情况
-* 为了方便观察 服务端为单线程  压测端为24线程
+* 为了方便观察 服务端为单线程 压测端为24线程
 * 注 qps不够高是因为我的win10系统网络性能有点问题 不是框架性能问题
 * 这是为了对比框架 和 裸写 netty 的性能差异
-* 裸写 netty 的代码如下  其性能为2.9w+ qps:
+* 裸写 netty 的代码如下 其性能为2.9w+ qps:
+
 ```java'
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
         // /text 服务端直接返回文本内容，绕过框架的处理逻辑，以测试框架的基础性能
@@ -55,8 +71,10 @@ public String test(String sysUsersAcc,GzbJson gzbJson) throws Exception {
         }
     }
 ```
-* 
-* 简单请求无参数 代码如下  其性能为2.9w+ qps:
+
+*
+* 简单请求无参数 代码如下 其性能为2.9w+ qps:
+
 ```java'
     @EventLoop
     @GetMapping("get0")
@@ -64,7 +82,9 @@ public String test(String sysUsersAcc,GzbJson gzbJson) throws Exception {
         return BYTES;
     }
 ```
-* 简单请求 1 参数 代码如下  其性能为2.9w+ qps:
+
+* 简单请求 1 参数 代码如下 其性能为2.9w+ qps:
+
 ```java'
     @EventLoop
     @GetMapping("get1")
@@ -72,6 +92,7 @@ public String test(String sysUsersAcc,GzbJson gzbJson) throws Exception {
         return "{\"code\":\"1\",\"time\":\"1769527173990\",\"message\":\""+message+"\"}";
     }
 ```
+
 * 这意味着什么? 框架开销几乎为 0 (并非无开销 只是开销小到完全被io掩盖了 哪怕是微秒级的环回延迟)
 * cpu亲和性等问题已处理 防止造成干扰
 * 测试过程中的埋点计时数据披露(单位纳秒):
@@ -79,14 +100,15 @@ public String test(String sysUsersAcc,GzbJson gzbJson) throws Exception {
 * 计时来自于 gzb.frame.factory.v4.FactoryImplV2 debug方法
 * 完全可复现 嘿 兄弟
 
-
 ---
 
 ## 核心特性
+
 * **性能至上**
     * **动态编译**：支持对 `.java` 文件的动态编译，代码修改后**实时生效**，无需重启应用。
     * **极致自实现**：核心仅依赖少量类库，避免了不必要的依赖。
     * **异步 SQL 智能合并**：持久层支持**异步 JDBC**，并能智能合并 SQL 操作，显著提升数据库交互效率。
+    * **查询 SQL 折叠**：在高并发环境下，针对相同的 SQL 指令与参数，可以开启“防击穿”保护。在一定时间内，相同的查询只会产生 1 次 真实的数据库调用。
 * **功能大一统**
     * **持久层（ORM）**：既是一个完全面向对象的 ORM 框架，也支持手写 SQL，让开发者可以自由选择。
     * **控制器（Controller）**：可以无缝地将 Java 函数映射到 HTTP 端点。
@@ -96,40 +118,59 @@ public String test(String sysUsersAcc,GzbJson gzbJson) throws Exception {
     * **全自动代码生成**：根据数据库表信息，一键生成所有实体类、DAO 层代码及对应的 Web 界面。
     * **开箱即用**：提供了一整套工具，让你不仅可以快速开发，更能快速部署和运行。
 
+* **多模态端点支持**
+    * **HTTP 支持**：基于注解扫描，动态暴露 RESTful 接口，适配标准 Web 访问。
+    * **TCP 支持**：自研极简协议栈，支持 size,data 格式，彻底解决跨语言（易语言、C#、Node.js 等）对接中的字节序与粘包痛点。
+    * **UDP 支持**：(Coming Soon) 预留高性能 UDP 映射接口，支持高频、低延迟状态包分发。
+    * **极致解耦**：协议层仅作为“流量入口”，业务层通过框架回调（Interceptor）实现统一的加解密、限流与校验，真正做到协议无感。
+    * **逻辑归一**：开发者只需编写一套 Action 代码，即可通过注解配置，让该逻辑同时在 HTTP、TCP、UDP 端口生效。
+    * **无感切换**：客户端可根据网络状况灵活切换协议（如：瞬时指令走 UDP，复杂数据走 TCP），后端逻辑层完全无感知，共享同一套内存池与缓存状态。
+
+ 
 ---
 
 ## 理念与愿景
+
 传统框架虽然提供了便利，但往往以牺牲性能和控制力为代价。
 本框架则代表了一种不同的理念：通过消除不必要的运行时抽象，
 **优先考虑原始速度和效率**。它不仅仅是一个框架，更是你应用程序的**高性能引擎**。
 ---
 
 ## 快速上手指南
+
 本指南将帮助你从零开始，快速启动并运行本框架。
 
 ### 第1步：获取源代码与数据库准备
-1.  **获取项目**：从 GitHub 或其他代码仓库克隆本项目到本地。
-2.  **数据库准备**：找到数据库脚本文件，导入到你的本地 MySQL 数据库中。
+
+1. **获取项目**：从 GitHub 或其他代码仓库克隆本项目到本地。
+2. **数据库准备**：找到数据库脚本文件，导入到你的本地 MySQL 数据库中。
 
 ### 第2步：配置项目
-1.  **导入项目**：使用 IntelliJ IDEA 打开项目。
-2.  **添加依赖**：参考示例项目中的 `pom.xml` 文件，添加必要的 Maven 依赖，并同步项目。
-3.  **创建与编辑配置文件**：
+
+1. **导入项目**：使用 IntelliJ IDEA 打开项目。
+2. **添加依赖**：参考示例项目中的 `pom.xml` 文件，添加必要的 Maven 依赖，并同步项目。
+3. **创建与编辑配置文件**：
     * 在 `src/main/resources` 目录下创建 `application.properties` 文件。
     * 参考示例项目中的 `src/main/resources/application.properties`，其中内含详细注释。
-4.  **配置数据库**：目前仅支持 MySQL 和 pg。请按照注释配置数据库连接信息。
-5.  **配置缓存与 Session**：如果你的项目使用 Redis，请配置 Redis 连接信息；如果不需要，请将 `session.type` 和 `cache.type`和 `db.cache.type` 设置为 `map`。
-6.  **核心路径配置**：在配置文件中设置源代码目录（`gzb.system.code.dir`）、上传目录、静态资源目录、临时目录等。
+4. **配置数据库**：目前仅支持 MySQL 和 pg。请按照注释配置数据库连接信息。
+5. **配置缓存与 Session**：如果你的项目使用 Redis，请配置 Redis 连接信息；如果不需要，请将 `session.type` 和 `cache.type`和
+   `db.cache.type` 设置为 `map`。
+6. **核心路径配置**：在配置文件中设置源代码目录（`gzb.system.code.dir`）、上传目录、静态资源目录、临时目录等。
 
 ### 第3步：代码生成与启动
-1.  **生成代码**：参考示例项目中的 `/src/main/java/gzb/start/AutoCode.java`，运行其 `main` 方法，这会为你生成必要的实体类和 DAO 层代码以及基础后台管理UI。
-2.  **运行项目**：参考示例项目的 `/src/main/java/gzb/start/Start.java`，运行其 `main` 方法以启动应用。
+
+1. **生成代码**：参考示例项目中的 `/src/main/java/gzb/start/AutoCode.java`，运行其 `main` 方法，这会为你生成必要的实体类和
+   DAO 层代码以及基础后台管理UI。
+2. **运行项目**：参考示例项目的 `/src/main/java/gzb/start/Start.java`，运行其 `main` 方法以启动应用。
 
 ### 第4步：验证与探索
-1.  **验证启动**：如果启动成功，控制台会显示 `server 1.0.0 started on port xxxx` 等日志信息。
-2.  **开始使用**：通过浏览器访问 `http://127.0.0.1:你的端口/page/login.html`。登录账户和密码可以在数据库表 `sys_users` 中获取，默认管理员为 `admin`。
+
+1. **验证启动**：如果启动成功，控制台会显示 `server 1.0.0 started on port xxxx` 等日志信息。
+2. **开始使用**：通过浏览器访问 `http://127.0.0.1:你的端口/page/login.html`。登录账户和密码可以在数据库表 `sys_users`
+   中获取，默认管理员为 `admin`。
 
 ### 温馨提示
+
 * **JDK**：本框架与 JDK 8 以上版本兼容。
 * **数据库**：目前只支持 MySQL。
 * 你无需关注 `entity` 和 `dao` 层，只需专注于 `service` 和 `controller` 的业务逻辑开发即可。
@@ -138,13 +179,17 @@ public String test(String sysUsersAcc,GzbJson gzbJson) throws Exception {
 ---
 
 ## 文档
+
 * 示例项目 可以直接在 IntelliJ IDEA 运行。
 * 持续更新中...
 * 文档不够齐全，但是和spring主流环境 差异很小 参考经验 和 示例项目 即可
 * [文档在这里，持续更新中......](doc.md)
+
 ## JAR包下载
-* 下载后引入  查看示例项目
+
+* 下载后引入 查看示例项目
 * [JAR包下载 1.0.0](frame.one-1.0.0-fat.jar)
+
 ```maven
         <dependency>
             <groupId>gzb</groupId>

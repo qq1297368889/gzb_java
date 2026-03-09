@@ -1,6 +1,9 @@
 package gzb.frame.netty.handler;
 import gzb.frame.PublicEntrance;
 import gzb.frame.netty.Server;
+import gzb.frame.netty.entity.Request;
+import gzb.frame.netty.entity.RequestDefaultImpl;
+import gzb.frame.netty.entity.RequestTcpImpl;
 import io.netty.channel.ChannelHandler.Sharable;
 import gzb.frame.netty.entity.PacketPromise;
 import gzb.frame.netty.tools.TCPTools;
@@ -17,7 +20,7 @@ public class TCPHandler extends ChannelInboundHandlerAdapter {
      */
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        String sessionId = ctx.channel().id().asLongText();
+        int sessionId = ctx.channel().hashCode();
         PublicEntrance.putTcpSession(sessionId,ctx);
         Log.log.d("TCP连接已建立","sessionId", sessionId);
         super.channelActive(ctx);
@@ -28,7 +31,7 @@ public class TCPHandler extends ChannelInboundHandlerAdapter {
      */
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        String sessionId = ctx.channel().id().asLongText();
+        int sessionId = ctx.channel().hashCode();
         PublicEntrance.removeTcpSession(sessionId);
         Log.log.d("TCP连接已关闭","sessionId", sessionId);
         super.channelInactive(ctx);
@@ -36,7 +39,7 @@ public class TCPHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        String sessionId = ctx.channel().id().asLongText();
+        int sessionId = ctx.channel().hashCode();
         ByteBuf buf = (ByteBuf) msg;
         List<byte[]> list=null;
         try {
@@ -45,7 +48,8 @@ public class TCPHandler extends ChannelInboundHandlerAdapter {
                 for (byte[] bytes : list) {
                     PacketPromise packetPromise = TCPTools.readPacketPromise(bytes);
                     if (packetPromise!=null) {
-                        Server.factory.start(ctx,packetPromise);//内部不会抛出异常  自动处理
+                        Request request=new RequestTcpImpl(ctx,packetPromise);
+                        Server.factory.start(request,request.getResponse());
                     }
                 }
             }
@@ -58,6 +62,7 @@ public class TCPHandler extends ChannelInboundHandlerAdapter {
                 buf.release();
             }
         }
+
     }
     /**
      * 超时/异常处理

@@ -3,6 +3,7 @@ package gzb.start;
 import gzb.frame.netty.entity.PacketPromise;
 import gzb.frame.netty.tools.TCPTools;
 import gzb.tools.Config;
+import gzb.tools.NettyTools;
 import gzb.tools.Tools;
 import gzb.tools.cache.object.ByteBuff;
 import io.netty.buffer.ByteBuf;
@@ -15,6 +16,7 @@ import java.util.List;
 // 只是 demo 边缘情况没处理  玩具玩具 哈哈哈
 public class CacheSDK {
     Socket socket;
+    int sid=0;
     int index = 0;
 
     public static void main(String[] args) throws IOException {
@@ -28,6 +30,7 @@ public class CacheSDK {
     public CacheSDK(String host, int port, int index) throws IOException {
         socket = new Socket(host, port);
         this.index = index;
+        sid=socket.hashCode();
     }
 
     static byte[] state = "1234567890".getBytes();
@@ -40,7 +43,7 @@ public class CacheSDK {
 
     //简易版实现 不过滤边缘情况 实际使用需要过滤 正常需要转意 = &
     public boolean put(String key, String val, int sec) throws IOException {
-        byte[] data = Tools.readByteBuf(TCPTools.createDataPacketPromise(
+        byte[] data = NettyTools.readByteBuf(TCPTools.createDataPacketPromise(
                 "/cache/set", 1, 0, "k=" + key + "&v=" + val +
                         "&s=" + sec + "&i=" + index
         ));
@@ -57,7 +60,7 @@ public class CacheSDK {
                 break;
             }
             byteBuff.write(bytes, 0, index0);
-            list = TCPTools.readDataPacketByteArray("x001", byteBuff.get());
+            list = TCPTools.readDataPacketByteArray(sid, byteBuff.get());
             if (list != null && list.size() > 0) {
                 break;
             }
@@ -70,7 +73,7 @@ public class CacheSDK {
 
     //简易版实现 不过滤边缘情况 实际使用需要过滤 正常需要转意 = &
     public boolean del(String key) throws IOException {
-        byte[] data = Tools.readByteBuf(TCPTools.createDataPacketPromise(
+        byte[] data = NettyTools.readByteBuf(TCPTools.createDataPacketPromise(
                 "/cache/del", 1, 0, "k=" + key + "&i=" + index
         ));
         socket.getOutputStream().write(data);
@@ -86,7 +89,7 @@ public class CacheSDK {
                 break;
             }
             byteBuff.write(bytes, 0, index0);
-            list = TCPTools.readDataPacketByteArray("x001", byteBuff.get());
+            list = TCPTools.readDataPacketByteArray(sid, byteBuff.get());
             if (list != null && list.size() > 0) {
                 break;
             }
@@ -96,7 +99,7 @@ public class CacheSDK {
 
     public String get(String key) throws IOException {
         // 1. 构建并发送请求数据包
-        byte[] requestData = Tools.readByteBuf(TCPTools.createDataPacketPromise(
+        byte[] requestData = NettyTools.readByteBuf(TCPTools.createDataPacketPromise(
                 "/cache/get", 1, 0, "k=" + key + "&i=" + index
         ));
         socket.getOutputStream().write(requestData);
@@ -109,7 +112,7 @@ public class CacheSDK {
         while (true) {
             index = socket.getInputStream().read(bytes);
             byteBuff.write(bytes, 0, index);
-            list = TCPTools.readDataPacketByteArray("x001", byteBuff.get());
+            list = TCPTools.readDataPacketByteArray(sid, byteBuff.get());
             if (list != null && list.size() > 0) {
                 break;
             }

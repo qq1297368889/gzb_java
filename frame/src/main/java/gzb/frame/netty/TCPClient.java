@@ -1,6 +1,7 @@
 package gzb.frame.netty;
 
 import gzb.frame.netty.tools.TCPTools;
+import gzb.tools.NettyTools;
 import gzb.tools.Tools;
 import gzb.tools.http.HTTPV2;
 import gzb.tools.http.HTTP_V3;
@@ -28,14 +29,14 @@ import java.util.List;
 public class TCPClient {
     // 可配置参数：服务端地址、端口、读取超时时间（秒）
     private static final String SERVER_HOST = "127.0.0.1";
-    private static final int SERVER_PORT = 8888;
+    private static final int SERVER_PORT = 2081;
     private static final int READ_TIMEOUT_SECONDS = 10; // 超时时间，可自定义
 
     public static void main(String[] args) throws Exception {
         Socket socket = new Socket(SERVER_HOST, SERVER_PORT);
 
         System.out.println(socket.isConnected());
-        byte[] bytes = Tools.readByteBuf(TCPTools.createDataPacketPromise("test/api0/get1", 0, 0, "message=哈哈哈"));
+        byte[] bytes = NettyTools.readByteBuf(TCPTools.createDataPacketPromise("test/api0/get1", 0, 0, "message=哈哈哈"));
         System.out.println(new String(bytes));
         socket.getOutputStream().write(bytes);
         socket.getOutputStream().flush();

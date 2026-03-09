@@ -12,8 +12,11 @@ public class ddos {
     ///  m*l*g*b***** 还是没redis快
     /// 哪怕响应速度更快 因为 差距不在我的算法效率 在c的底层优势 系统调度 io效率上
     /// 目前没办法 除非我绕过jvm 就这样吧。。。。。。
-    public static void main0(String[] args) throws IOException {
-        int thr_num = 10;
+    public static void main(String[] args) throws IOException {
+        main_gzb(10);
+    }
+    public static void main_redis(int thr_num) throws IOException {
+
         AtomicInteger count = new AtomicInteger(0);
         AtomicInteger stop = new AtomicInteger(0);
         GzbCache gzbCache = new GzbCacheRedis("cache1");
@@ -75,8 +78,8 @@ public class ddos {
 
     }
 
-    public static void main(String[] args) throws IOException {
-        int thr_num = 10;
+    public static void main_gzb(int thr_num) throws IOException {
+
         AtomicInteger count = new AtomicInteger(0);
         AtomicInteger stop = new AtomicInteger(0);
         CacheSDK cacheSDK = new CacheSDK("127.0.0.1", 6666, 0);
@@ -102,7 +105,7 @@ public class ddos {
                                     Tools.getRandomInt(40, 1));
                         }
                         end = System.nanoTime();
-                        Log.log.i("put 耗时 微秒", (end - start) / 10000 / 1000);
+                        //Log.log.i("put 耗时 微秒", (end - start) / 10000 / 1000);
 
 
                         long start0 = System.currentTimeMillis();
@@ -118,7 +121,7 @@ public class ddos {
                                 count.incrementAndGet();
                             }
                             end = System.nanoTime();
-                            Log.log.i("get 耗时 微秒", (end - start) / 10000 / 1000, "未命中", no, "命中", ok);
+                            //Log.log.i("get 耗时 微秒", (end - start) / 10000 / 1000, "未命中", no, "命中", ok);
                         }
                         long end0 = System.currentTimeMillis();
                         Log.log.i("本线程总qps", all / ((end0 - start0) / 1000));

@@ -36,35 +36,37 @@ public class PublicEntrance {
 
     ///  tcp相关操作
     //sessionid  [req,resp]
-    private static Map<String, ChannelHandlerContext> tcp_session = new ConcurrentHashMap<>();
-    public static Map<String, ChannelHandlerContext> readTcpSession() {
+    private static Map<Integer, ChannelHandlerContext> tcp_session = new ConcurrentHashMap<>();
+    //获取会话列表 副本
+    public static Map<Integer, ChannelHandlerContext> readTcpSession() {
         return new HashMap<>(tcp_session);
     }
-
-    public static void putTcpSession(String sessionId, ChannelHandlerContext ctx) {
+//写入 新会话 框架内部调用
+    public static void putTcpSession(Integer sessionId, ChannelHandlerContext ctx) {
         if (ctx==null || !ctx.channel().isOpen() || !ctx.channel().isActive()) {
             throw new GzbException0("会话无效 无法存入缓存");
         }
         tcp_session.put(sessionId, ctx);
     }
-
-    public static ChannelHandlerContext readTcpSession(String sessionId) {
+//读取一个会话根据session id
+    public static ChannelHandlerContext readTcpSession(Integer sessionId) {
         ChannelHandlerContext ctx = tcp_session.get(sessionId);
         if (ctx!=null && ctx.channel().isOpen() && ctx.channel().isActive()) {
             return ctx;
         }
         return null;
     }
-
-    public static void removeTcpSession(String sessionId) {
+    //删除一个会话 根据id
+    public static void removeTcpSession(Integer sessionId) {
         ChannelHandlerContext ctx =tcp_session.remove(sessionId);
         if (ctx!=null && ctx.channel().isOpen() && ctx.channel().isActive()) {
             ctx.close();
         }
     }
 
+    //删除一个会话 根据ctx
     public static void removeTcpSession(ChannelHandlerContext ctx) {
-        removeTcpSession(ctx.channel().id().asLongText());
+        removeTcpSession(ctx.channel().hashCode());
     }
 
     /// 注册类加载事件

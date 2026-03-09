@@ -4,6 +4,7 @@ import gzb.frame.factory.ClassTools;
 import gzb.frame.factory.Constant;
 import gzb.frame.netty.entity.PacketPromise;
 import gzb.tools.Config;
+import gzb.tools.NettyTools;
 import gzb.tools.Tools;
 import gzb.tools.log.Log;
 import gzb.tools.thread.ServiceThread;
@@ -24,7 +25,7 @@ public class TCPTools {
         }
     }
 
-    private static final Map<String, TCPTools.PacketEntity> sessionMap = new ConcurrentHashMap<>();
+    private static final Map<Integer, TCPTools.PacketEntity> sessionMap = new ConcurrentHashMap<>();
 
     static {
         startCleanupThread();
@@ -32,7 +33,7 @@ public class TCPTools {
     }
 
     // 核心解析逻辑设为私有，不对外暴露 ByteBuf
-    private static List<ByteBuf> readDataPacket(String sessionSign, ByteBuf newData) {
+    private static List<ByteBuf> readDataPacket(int sessionSign, ByteBuf newData) {
         List<ByteBuf> result = null;
         TCPTools.PacketEntity entity = sessionMap.remove(sessionSign);
         ByteBuf cumulation = null;
@@ -86,7 +87,7 @@ public class TCPTools {
         return result;
     }
 
-    public static List<byte[]> readDataPacketByteArray(String sessionSign, ByteBuf newData) {
+    public static List<byte[]> readDataPacketByteArray(int sessionSign, ByteBuf newData) {
         List<ByteBuf> result0 = readDataPacket(sessionSign, newData);
         if (result0 == null) {
             return null;
@@ -94,22 +95,22 @@ public class TCPTools {
         List<byte[]> result = new ArrayList<>(result0.size());
         for (ByteBuf byteBuf : result0) {
             try {
-                result.add(Tools.readByteBuf(byteBuf));
+                result.add(NettyTools.readByteBuf(byteBuf));
             } finally {
                 byteBuf.release();
             }
         }
         return result;
     }
-    public static List<byte[]> readDataPacketByteArray(String sessionSign, byte[] newData) {
-        List<ByteBuf> result0 = readDataPacket(sessionSign, Tools.loadByteBuf(newData));
+    public static List<byte[]> readDataPacketByteArray(int sessionSign, byte[] newData) {
+        List<ByteBuf> result0 = readDataPacket(sessionSign, NettyTools.loadByteBuf(newData));
         if (result0 == null) {
             return null;
         }
         List<byte[]> result = new ArrayList<>(result0.size());
         for (ByteBuf byteBuf : result0) {
             try {
-                result.add(Tools.readByteBuf(byteBuf));
+                result.add(NettyTools.readByteBuf(byteBuf));
             } finally {
                 byteBuf.release();
             }
@@ -117,7 +118,7 @@ public class TCPTools {
         return result;
     }
 
-    public static List<String> readDataPacketString(String sessionSign, ByteBuf newData) {
+    public static List<String> readDataPacketString(int sessionSign, ByteBuf newData) {
         List<ByteBuf> result0 = readDataPacket(sessionSign, newData);
         if (result0 == null) {
             return null;
@@ -264,30 +265,12 @@ public class TCPTools {
      * @return 解析后的PacketPromise
      * @throws IllegalArgumentException 格式错误/空数据直接抛异常
      */
-    public static PacketPromise readPacketPromise(ByteBuf[] data) {
+    public static PacketPromise readPacketPromise(ByteBuf data) {
         // 1. 空数组/空Buf直接抛异常
-        if (data == null || data.length == 0) {
+        if (data == null) {
             return null;
         }
-
-        // 2. 拼接所有ByteBuf为一个完整的byte[]
-        int totalLen = 0;
-        for (ByteBuf buf : data) {
-            if (buf == null || !buf.isReadable()) {
-                throw new IllegalArgumentException("解析失败：ByteBuf数组包含空/不可读的Buf");
-            }
-            totalLen += buf.readableBytes();
-        }
-
-        byte[] allData = new byte[totalLen];
-        int offset = 0;
-        for (ByteBuf buf : data) {
-            buf.readBytes(allData, offset, buf.readableBytes());
-            offset += buf.readableBytes();
-        }
-
-        // 3. 调用核心的byte[]解析方法
-        return readPacketPromise(allData);
+        return readPacketPromise(NettyTools.readByteBuf(data));
     }
 
     private static void startCleanupThread() {
@@ -296,9 +279,9 @@ public class TCPTools {
             public void run() {
                 while (true) {
                     long now = System.currentTimeMillis();
-                    Iterator<Map.Entry<String, TCPTools.PacketEntity>> it = sessionMap.entrySet().iterator();
+                    Iterator<Map.Entry<Integer, TCPTools.PacketEntity>> it = sessionMap.entrySet().iterator();
                     while (it.hasNext()) {
-                        Map.Entry<String, TCPTools.PacketEntity> entry = it.next();
+                        Map.Entry<Integer, TCPTools.PacketEntity> entry = it.next();
                         if (now - entry.getValue().lastActiveTime > 10*1000) {
                             entry.getValue().buffer.release(); // 释放堆外内存
                             it.remove();

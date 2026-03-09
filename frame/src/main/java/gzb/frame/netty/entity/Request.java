@@ -157,4 +157,6 @@ public interface Request {
      * 获取 请求数据 原数据 body
      */
     public byte[] getBody();
+    /// http udp 会被忽略  tcp 会执行 ctx.close
+    void close();
 }

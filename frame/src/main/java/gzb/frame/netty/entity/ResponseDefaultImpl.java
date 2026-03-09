@@ -20,8 +20,10 @@ package gzb.frame.netty.entity;
 
 import gzb.tools.AES_CBC_128;
 import gzb.tools.Config;
+import gzb.tools.NettyTools;
 import gzb.tools.Tools;
 import gzb.tools.log.Log;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
@@ -70,12 +72,11 @@ public class ResponseDefaultImpl implements Response {
             }
             if (cookies != null) {
                 for (Cookie cookie : cookies) {
-                    response.headers().set("Set-Cookie", encodeSingleCookie(cookie));
+                    response.headers().set("Set-Cookie", NettyTools.encodeSingleCookie(cookie));
                 }
             }
             ctx.writeAndFlush(response);
         }
-
         return this;
     }
 
@@ -108,26 +109,10 @@ public class ResponseDefaultImpl implements Response {
     }
 
     public Response sendAndFlush(Object chunk) {
-        byte[] bytes;
-        if (chunk instanceof byte[]) {
-            bytes = (byte[]) chunk;
-        } else if (chunk instanceof String) {
-            bytes = ((String) chunk).getBytes(Config.encoding);
-        } else if (chunk == null) {
-            bytes = new byte[0];
-        } else {
-            String str1 = Tools.toJson(chunk);
-            if (str1 == null) {
-                bytes = new byte[0];
-            } else {
-                bytes = str1.getBytes(Config.encoding);
-            }
-        }
+        ByteBuf buf=NettyTools.toByteBuf(chunk);
         FullHttpResponse response = new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
-                HttpResponseStatus.OK,
-                Unpooled.wrappedBuffer(bytes));
-        //response.headers().set("server", Config.frameName);
+                HttpResponseStatus.OK,buf);
         if (headers != null) {
             for (Map.Entry<String, String> entry : headers.entrySet()) {
                 response.headers().set(entry.getKey(), entry.getValue());
@@ -136,64 +121,21 @@ public class ResponseDefaultImpl implements Response {
 
         if (cookies != null) {
             for (Cookie cookie : cookies) {
-                response.headers().set("Set-Cookie", encodeSingleCookie(cookie));
+                response.headers().set("Set-Cookie", NettyTools.encodeSingleCookie(cookie));
             }
         }
-        response.headers().set("content-length", bytes.length);
+
+        response.headers().set("content-length", buf.readableBytes());
         response.headers().set("server", Config.frameName);
         ctx.writeAndFlush(response);
         return this;
     }
-    // 辅助方法：字节转十六进制（复制到代码中）
-    private String bytesToHex(byte[] bytes) {
-        if (bytes == null || bytes.length == 0) return "";
-        StringBuilder sb = new StringBuilder();
-        for (byte b : bytes) {
-            sb.append(String.format("%02X ", b));
-        }
-        return sb.toString().trim();
-    }
-    /**
-     * 将单个 Cookie 编码为 "key=value; Path=/; ..." 格式的字符串。
-     *
-     * @param cookie 要编码的单个 Cookie。
-     * @return 编码后的字符串。
-     */
-    private static String encodeSingleCookie(Cookie cookie) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(cookie.name()).append('=').append(cookie.value());
 
-        if (cookie.path() != null) {
-            sb.append("; Path=").append(cookie.path());
-        }
-        if (cookie.domain() != null) {
-            sb.append("; Domain=").append(cookie.domain());
-        }
-        if (cookie.maxAge() >= 0) {
-            sb.append("; Max-Age=").append(cookie.maxAge());
-        }
-        if (cookie.isSecure()) {
-            sb.append("; Secure");
-        }
-        if (cookie.isHttpOnly()) {
-            sb.append("; HttpOnly");
-        }
-
-        // Netty 的 DefaultCookie 还有一个 wrap 参数，
-        // if (cookie.isWrapped()) { ... }
-
-        return sb.toString();
-    }
-    // --- Cookie Management Methods ---
 
     public Response setCookie(String key, String val, int mm) {
         return setCookie(key, val, mm, null, "/", true, false);
     }
 
-    /**
-     * Sets a cookie with all available parameters.
-     * If a cookie with the same key already exists, it will be updated.
-     */
     public Response setCookie(String key, String val, long maxAge, String domain, String path, boolean httpOnly, boolean secure) {
         if (key == null || val == null) {
             return this;
@@ -232,12 +174,8 @@ public class ResponseDefaultImpl implements Response {
         return this;
     }
 
-    public Response success(byte[] body) {
-        return sendAndFlush(body);
-    }
-
-    public Response success(String body) {
-        return sendAndFlush(body.getBytes(Config.encoding));
+    public Response success(Object chunk) {
+        return sendAndFlush(chunk);
     }
 
     public Response fail() {
