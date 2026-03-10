@@ -464,6 +464,7 @@ public class FactoryImplV2 implements Factory {
 
     public long exec(HttpMapping httpMapping, Request request, Response response) {
         try {
+            response.setHeader("content-type","text/html;charset="+Config.encoding.name());
             if (httpMapping.header.size() > 0) {
                 response.setHeaders(new HashMap<>(httpMapping.header));
             }
