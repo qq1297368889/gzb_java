@@ -99,7 +99,12 @@ public String test(String sysUsersAcc, GzbJson gzbJson) throws Exception {
 * "总耗时" | "800" | "netty数据获取" | "600" | "框架执行" | "200"(这是随意挑选的一条比较低的耗时数据 并非最低)
 * 计时来自于 gzb.frame.factory.v4.FactoryImplV2 debug方法
 * 完全可复现 嘿 兄弟
-
+# 缓存服务器性能测试视频 2026-03-10 补充
+### 因为是 vm虚拟机 所以性能受到限制 实际肯定会大于视频数据 作为参考足够
+### 并非是那种手写极度优化 只是基于框架常规开发方式编写 视频含代码 和 完整环境信息
+### 并没有刻意设置什么cpu亲和性等作弊手段 甚至运行都是在idea中 
+### 视频忘了演示无缝热更新 刚想起来 嗯。也是支持的 
+[测试视频在线查看 6核心虚拟机 同机测试（服务端实际占用50-60%） QPS:20w ](https://www.bilibili.com/video/BV1SyPdzeEtB/)
 ---
 
 ## 核心特性
