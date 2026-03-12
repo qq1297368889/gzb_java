@@ -11,10 +11,50 @@ import gzb.tools.thread.ServiceThread;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
+import java.lang.reflect.Array;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class TCPTools {
+    public static void main(String[] args) {
+        byte[]bytes1=NettyTools.readByteBuf(createDataPacket(Tools.getRandomString(20)));
+        byte[]bytes2=NettyTools.readByteBuf(createDataPacket(Tools.getRandomString(10)));
+        byte[]bytes0=new byte[bytes1.length+bytes2.length];
+        byte[]bytes3=new byte[bytes1.length+20];
+        byte[]bytes4=new byte[bytes2.length-5];
+        byte[]bytes5=new byte[5];
+
+        for (int i = 0; i < bytes1.length; i++) {
+            bytes0[i]=bytes1[i];
+        }
+        for (int i = 0; i < bytes2.length; i++) {
+            bytes0[bytes1.length+i]=bytes2[i];
+        }
+        for (int i = 0; i < bytes1.length; i++) {
+            bytes3[i]=bytes1[i];
+        }
+        for (int i = 0; i < bytes2.length; i++) {
+            if (i<bytes2.length-5) {
+                bytes4[i]=bytes2[i];
+            }else{
+                bytes5[i-bytes4.length]=bytes2[i];
+            }
+        }
+        List<ByteBuf> list=null;
+        list=readDataPacket(1,Unpooled.wrappedBuffer(bytes0));
+        Log.log.i("bytes0 ",list.get(0).toString(Config.encoding),list.get(1).toString(Config.encoding),new String(bytes0));
+        list=readDataPacket(1,Unpooled.wrappedBuffer(bytes1));
+        Log.log.i("bytes1 ",list.get(0).toString(Config.encoding),new String(bytes1));
+        list=readDataPacket(1,Unpooled.wrappedBuffer(bytes2));
+        Log.log.i("bytes2 ",list.get(0).toString(Config.encoding),new String(bytes2));
+        list=readDataPacket(1,Unpooled.wrappedBuffer(bytes3));
+        Log.log.i("bytes3 ",list.get(0).toString(Config.encoding),new String(bytes3));
+        list=readDataPacket(1,Unpooled.wrappedBuffer(bytes4));
+        list=readDataPacket(1,Unpooled.wrappedBuffer(bytes5));
+        Log.log.i("bytes5 ",list.get(0).toString(Config.encoding),new String(bytes5));
+
+    }
     public static class PacketEntity {
         long lastActiveTime;
         ByteBuf buffer;
@@ -31,60 +71,67 @@ public class TCPTools {
         startCleanupThread();
 
     }
-
     // 核心解析逻辑设为私有，不对外暴露 ByteBuf
     private static List<ByteBuf> readDataPacket(int sessionSign, ByteBuf newData) {
-        List<ByteBuf> result = null;
-        TCPTools.PacketEntity entity = sessionMap.remove(sessionSign);
+        PacketEntity entity = sessionMap.remove(sessionSign);
         ByteBuf cumulation = null;
-        try {
-            if (entity != null) {
-                cumulation = Unpooled.wrappedBuffer(entity.buffer, newData);
-                entity.buffer.release();
-            } else {
-                cumulation = newData;
+        if (entity != null) {
+            while (newData.refCnt() > 1) {
+                newData.release();
             }
+            entity.buffer.resetReaderIndex();
+            cumulation = Unpooled.wrappedBuffer(entity.buffer, newData);
+            entity.buffer=cumulation;
+        } else {
+            cumulation = newData;
+            entity=new PacketEntity(cumulation);
+        }
+        List<ByteBuf>list=null;
+        while (cumulation.isReadable()) {
+            int dataSize = 0;
+            boolean foundComma = false;
+            int digitCount = 0;
             while (cumulation.isReadable()) {
-                cumulation.markReaderIndex();
-                int dataSize = 0;
-                boolean foundComma = false;
-
-                int digitCount = 0;
-                while (cumulation.isReadable()) {
-                    byte b = cumulation.readByte();
-                    digitCount++;
-                    // 新增：超过10位数字（最大支持10亿长度）或非法字符，直接中断
-                    if (digitCount > 10 || (b != ',' && (b < '0' || b > '9'))) {
-                        Log.log.w("非法长度字段，sessionSign=" + sessionSign);
-                        cumulation.resetReaderIndex();
-                        break;
-                    }
-                    if (b == ',') {
-                        foundComma = true;
-                        break;
-                    } else {
-                        dataSize = dataSize * 10 + (b - '0');
-                    }
-                }
-
-                if (foundComma && (Config.maxPostSize<1 || dataSize <= Config.maxPostSize) && cumulation.readableBytes() >= dataSize) {
-                    // readRetainedSlice 会 +1 引用计数，供后续 byteArray 方法使用
-                    ByteBuf frame = cumulation.readRetainedSlice(dataSize);
-                    if (result == null) result = new ArrayList<>();
-                    result.add(frame);
-                } else {
-                    cumulation.resetReaderIndex();
+                byte b = cumulation.readByte();
+                digitCount++;
+                if (b == ','){
+                    foundComma = true;
                     break;
                 }
+                if (b<48 || b>57||digitCount > 10) {
+                    break;
+                }
+                dataSize = dataSize * 10 + (b - 48);
             }
-            if (cumulation.isReadable()) {
-                sessionMap.put(sessionSign, new TCPTools.PacketEntity(cumulation.retain()));
+            if (!foundComma || digitCount>10) {
+                cumulation.release();
+                return list;
             }
-        } finally {
-            // 如果是 CompositeByteBuf 且不在 Map 里了，这里会正确处理引用计数
-            // 注意：newData 通常由 Netty 框架外层释放，所以这里主要针对包装后的 cumulation
+            if (Config.maxPostSize>0) {
+                if (Config.maxPostSize<dataSize) {
+                    cumulation.release();
+                    return null;
+                }
+            }
+            int size1=cumulation.readableBytes();
+            if (size1 >= dataSize) {
+                if (list==null) {
+                    list=new ArrayList<>();
+                }
+                list.add(cumulation.readRetainedSlice(dataSize));
+                cumulation.markReaderIndex();
+            }else{
+                cumulation.resetReaderIndex();
+                break;
+            }
         }
-        return result;
+        if (cumulation.readerIndex()<cumulation.readableBytes()-1) {
+            sessionMap.put(sessionSign, entity);
+        }else{
+            cumulation.release();
+        }
+
+        return list;
     }
 
     public static List<byte[]> readDataPacketByteArray(int sessionSign, ByteBuf newData) {

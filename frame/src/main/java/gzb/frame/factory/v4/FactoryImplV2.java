@@ -26,6 +26,7 @@ import gzb.entity.ClassEntity;
 import gzb.entity.DecoratorEntity;
 import gzb.entity.HttpMapping;
 import gzb.entity.ThreadEntity;
+import gzb.frame.netty.Server;
 import gzb.frame.netty.entity.*;
 import gzb.frame.netty.handler.HTTPHandler;
 import gzb.frame.netty.HTTPServer;
@@ -424,8 +425,12 @@ public class FactoryImplV2 implements Factory {
         String key = request.getUri();
         HttpMapping[] httpMappings = mapHttpMapping0.get(key);
         if (httpMappings == null) {
-            response.sendAndFlush(gzbJson.fail("没找到对应处理器"));
-            request.close();
+            if (request.getImplType()==0) {
+                HTTPServer.HTTPStaticFileHandler.channelRead0(request.getCtx(),request.getRequest());
+            }else{
+                response.sendAndFlush(gzbJson.fail("没找到对应处理器"));
+                request.close();
+            }
             return;
         }
         int index = -1;
@@ -441,8 +446,12 @@ public class FactoryImplV2 implements Factory {
             }
         }
         if (index == -1) {
-            response.sendAndFlush(gzbJson.fail("没找到对应处理器-2"));
-            request.close();
+            if (request.getImplType()==0) {
+                HTTPServer.HTTPStaticFileHandler.channelRead0(request.getCtx(),request.getRequest());
+            }else{
+                response.sendAndFlush(gzbJson.fail("没找到对应处理器-2"));
+                request.close();
+            }
             return;
         }
         HttpMapping httpMapping = httpMappings[index];
@@ -464,7 +473,6 @@ public class FactoryImplV2 implements Factory {
 
     public long exec(HttpMapping httpMapping, Request request, Response response) {
         try {
-            response.setHeader("content-type","text/html;charset="+Config.encoding.name());
             if (httpMapping.header.size() > 0) {
                 response.setHeaders(new HashMap<>(httpMapping.header));
             }

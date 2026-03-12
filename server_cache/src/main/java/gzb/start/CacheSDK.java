@@ -4,6 +4,7 @@ import gzb.frame.netty.entity.PacketPromise;
 import gzb.frame.netty.tools.TCPTools;
 import gzb.tools.Config;
 import gzb.tools.NettyTools;
+import gzb.tools.OnlyId;
 import gzb.tools.Tools;
 import gzb.tools.cache.object.ByteBuff;
 import io.netty.buffer.ByteBuf;
@@ -13,7 +14,7 @@ import java.io.InputStream;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.List;
-// 只是 demo 边缘情况没处理  玩具玩具 哈哈哈
+// 极简实现 只为验证主体逻辑 边缘情况没处理
 public class CacheSDK {
     Socket socket;
     int sid=0;
@@ -30,7 +31,6 @@ public class CacheSDK {
     public CacheSDK(String host, int port, int index) throws IOException {
         socket = new Socket(host, port);
         this.index = index;
-        sid=socket.hashCode();
     }
 
     static byte[] state = "1234567890".getBytes();
@@ -55,6 +55,7 @@ public class CacheSDK {
         int index0 = 0;
         List<byte[]> list = null;
         while (true) {
+            byteBuff.setIndex(0);
             index0 = socket.getInputStream().read(bytes);
             if (index0==-1) {
                 break;
@@ -71,7 +72,6 @@ public class CacheSDK {
         return list.get(0)[0] == state[0];
     }
 
-    //简易版实现 不过滤边缘情况 实际使用需要过滤 正常需要转意 = &
     public boolean del(String key) throws IOException {
         byte[] data = NettyTools.readByteBuf(TCPTools.createDataPacketPromise(
                 "/cache/del", 1, 0, "k=" + key + "&i=" + index
@@ -84,6 +84,7 @@ public class CacheSDK {
         int index0 = 0;
         List<byte[]> list = null;
         while (true) {
+            byteBuff.setIndex(0);
             index0 = socket.getInputStream().read(bytes);
             if (index0==-1) {
                 break;
@@ -110,6 +111,7 @@ public class CacheSDK {
         int index = 0;
         List<byte[]> list = null;
         while (true) {
+            byteBuff.setIndex(0);
             index = socket.getInputStream().read(bytes);
             byteBuff.write(bytes, 0, index);
             list = TCPTools.readDataPacketByteArray(sid, byteBuff.get());

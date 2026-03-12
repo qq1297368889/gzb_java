@@ -304,4 +304,7 @@ public class RequestDefaultImpl implements Request {
     public void close() {
 
     }
+    public int getImplType(){
+        return 0;
+    }
 }

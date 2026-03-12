@@ -64,6 +64,7 @@ public class ResponseDefaultImpl implements Response {
             isSendHeaders = true;
             HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, status);
             response.headers().set("server", Config.frameName);
+            response.headers().set("content-type","text/html;charset="+Config.encoding.name());
             response.headers().set(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
             if (headers != null) {
                 for (Map.Entry<String, String> entry : headers.entrySet()) {
@@ -113,6 +114,9 @@ public class ResponseDefaultImpl implements Response {
         FullHttpResponse response = new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
                 HttpResponseStatus.OK,buf);
+        response.headers().set("server", Config.frameName);
+        response.headers().set("content-type","text/html;charset="+Config.encoding.name());
+        response.headers().set("content-length", buf.readableBytes());
         if (headers != null) {
             for (Map.Entry<String, String> entry : headers.entrySet()) {
                 response.headers().set(entry.getKey(), entry.getValue());
@@ -125,8 +129,6 @@ public class ResponseDefaultImpl implements Response {
             }
         }
 
-        response.headers().set("content-length", buf.readableBytes());
-        response.headers().set("server", Config.frameName);
         ctx.writeAndFlush(response);
         return this;
     }

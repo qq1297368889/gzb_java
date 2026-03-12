@@ -13,6 +13,11 @@ import gzb.tools.log.Log;
 @RequestMapping("cache")
 public class CacheAction {
 
+    @EventLoop
+    @PostMapping("/ping")
+    public String ping() throws Exception {
+        return "ping";
+    }
     /// 状态码
     /// 1 调用成功
     /// 2 k为空

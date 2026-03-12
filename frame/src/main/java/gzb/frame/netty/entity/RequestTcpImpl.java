@@ -274,4 +274,7 @@ public class RequestTcpImpl implements Request {
     public void close() {
         ctx.close();
     }
+    public int getImplType(){
+        return 1;
+    }
 }

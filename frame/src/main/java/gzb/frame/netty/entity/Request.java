@@ -159,4 +159,6 @@ public interface Request {
     public byte[] getBody();
     /// http udp 会被忽略  tcp 会执行 ctx.close
     void close();
+    /// 0http 1tcp 2udp
+    int getImplType();
 }
