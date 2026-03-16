@@ -181,9 +181,6 @@ public class HTTP_V3 {
         }
     }
 
-    /**
-     * 处理请求体（完全保留原逻辑）
-     */
     private void handleRequestBody(HttpURLConnection connection, String method,
                                    String data, Map<String, List<File>> files,
                                    Map<String, String> headers) throws Exception {
@@ -199,9 +196,6 @@ public class HTTP_V3 {
         }
     }
 
-    /**
-     * 处理响应（完全保留原逻辑）
-     */
     private void processResponse(HttpURLConnection connection) throws IOException {
         // 获取响应状态
         responseCode = connection.getResponseCode();

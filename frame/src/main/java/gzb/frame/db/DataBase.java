@@ -109,7 +109,8 @@ public interface DataBase {
     int runSqlAsync(String sql, Object[] para);
 
     //执行sql 修改删除新增 异步 批量
-    int runSqlAsync(String sql, Object[] para, Runnable fail);
+    int runSqlAsync(AsyncFactory.Result result);
+    int runSqlAsync(String sql, Object[] para,Runnable fail, Runnable success);
 
     Integer readTransactionState();
 

@@ -85,7 +85,7 @@ public class Test2{
             public void run() {
                 log.w("执行失败，触发回调", sysUsers);
             }
-        });
+        },null);
 
         return sysFile;
     }

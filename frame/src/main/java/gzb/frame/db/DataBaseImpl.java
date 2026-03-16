@@ -107,8 +107,8 @@ public class DataBaseImpl implements DataBase {
         initDataBase();
     }
 
-    public DataBaseImpl(String type, String key, String clz, String ip, int port, String name, String acc, String pwd, int threadMax, int overtime, int asyncSleepMilli, int asyncBatchSize, int asyncThreadNum, String sign) throws Exception {
-        dataBaseConfig = DataBaseConfig.readConfig(type, key, clz, ip, port, name, acc, pwd, threadMax, overtime, asyncSleepMilli, asyncBatchSize, asyncThreadNum, sign);
+    public DataBaseImpl(String type, String key, String clz, String ip, int port, String name, String acc, String pwd, int threadMax, int overtime, int asyncSleepMilli, int asyncBatchSize, int asyncThreadNum, int asyncQueueSize, String sign) throws Exception {
+        dataBaseConfig = DataBaseConfig.readConfig(type, key, clz, ip, port, name, acc, pwd, threadMax, overtime, asyncSleepMilli, asyncBatchSize, asyncThreadNum,asyncQueueSize, sign);
         initDataBase();
     }
 
@@ -133,7 +133,9 @@ public class DataBaseImpl implements DataBase {
             readTableInfo();
             log.d("数据库：[" + dataBaseConfig.name + "]，数据表信息抓取成功........");
 
-            asyncFactory = new AsyncFactory(this, dataBaseConfig.asyncThreadNum, dataBaseConfig.asyncBatchSize, dataBaseConfig.asyncSleepMilli);
+            asyncFactory = new AsyncFactory(
+                    this, dataBaseConfig.asyncThreadNum, dataBaseConfig.asyncBatchSize
+                    , dataBaseConfig.asyncSleepMilli, dataBaseConfig.asyncQueueSize);
             log.d("数据库：[" + dataBaseConfig.name + "]，异步服务启动成功........", "后台异步线程数", dataBaseConfig.asyncThreadNum);
 
         } catch (Exception e) {
@@ -1131,12 +1133,18 @@ public class DataBaseImpl implements DataBase {
     }
 
     @Override
-    public int runSqlAsync(String sql, Object[] para, Runnable fail) {
+    public int runSqlAsync(String sql, Object[] para, Runnable fail, Runnable success) {
         if (readTransactionState() != null) {
             throw new GzbException0("事务开启时不支持异步执行，会打破事务原子性，如需异步请关闭事务");
         }
-        return asyncFactory.add(new AsyncFactory.Result(sql, para, fail));
+        return runSqlAsync(new AsyncFactory.Result(sql, para, fail,success));
     }
-
+    @Override
+    public int runSqlAsync(AsyncFactory.Result result) {
+        if (readTransactionState() != null) {
+            throw new GzbException0("事务开启时不支持异步执行，会打破事务原子性，如需异步请关闭事务");
+        }
+        return asyncFactory.add(result);
+    }
 
 }

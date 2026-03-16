@@ -49,9 +49,9 @@ public class GzbCacheRedis implements GzbCache {
             JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
             String ip = Config.get("db.redis." + key + ".ip", "127.0.0.1");
             Integer port = Config.getInteger("db.redis." + key + ".port", 6379);
-            String pwd = Config.get("db.redis." + key + ".pwd", "123456");
-            Integer maxIdle = Config.getInteger("db.redis." + key + ".max.thread.idle", 10);
-            Integer maxTotal = Config.getInteger("db.redis." + key + ".thread", 10);
+            String pwd = Config.get("db.redis." + key + ".pwd", null);
+            Integer maxIdle = Config.getInteger("db.redis." + key + ".max.thread.idle", Config.cpu);
+            Integer maxTotal = Config.getInteger("db.redis." + key + ".thread", Config.cpu);
             Integer overtime = Config.getInteger("db.redis." + key + ".overtime", 5000);
             Integer index = Config.getInteger("db.redis." + key + ".index", 0);
             jedisPoolConfig.setMaxTotal(maxTotal);

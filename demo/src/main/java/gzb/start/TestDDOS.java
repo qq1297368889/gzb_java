@@ -18,19 +18,19 @@ public class TestDDOS {
         String url = "http://127.0.0.1:2080/test/api0/get1?message=Hello";
         //url="http://127.0.0.1:2080/text";
         //url = "http://127.0.0.1:2080/test/api0/get0";
-
+url="http://127.0.0.1:2080/test/api0/get0";
         //请求方式
         String met = "GET";
         //请求数据
         String data = "";
         //请求数量
-        int num = 10000 * 1000;
+        int num = 10000 * 100;
         //包含这个内容即为响应成功  m01  sysLogId Hello
         byte[] success = "Hello".getBytes("UTF-8");
         //启动压力测试
         DDOS.start(
                 "正常请求",//测试名称
-                1,//线程数
+                200,//线程数
                 url,// 请求地址
                 met,//请求方式
                 data,//请求数据

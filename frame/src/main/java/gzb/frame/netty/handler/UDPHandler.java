@@ -37,10 +37,6 @@ public class UDPHandler extends ChannelInboundHandlerAdapter {
         } catch (Exception e) {
             Log.log.e("UDP 协议错误", "sessionId", sessionId, e);
             ctx.close();
-        } finally {
-            if (buf != null) {
-                buf.release();
-            }
         }
     }
 

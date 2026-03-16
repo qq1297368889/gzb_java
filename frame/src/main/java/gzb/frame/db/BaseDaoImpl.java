@@ -497,20 +497,10 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
 
     @Override
     public int saveAsync(T t) throws Exception {
-        if (t == null) {
-            return -1;
-        }
-        SqlTemplate sqlTemplate = ClassTools.toSaveSql(t, dataBase, false);
-        if (sqlTemplate == null) {
-            return -2;
-        }
-        int size = dataBase.runSqlAsync(sqlTemplate.getSql(), sqlTemplate.getObjects(), null);
-        return size;
+        return saveAsync(t,null,null);
     }
-
-
     @Override
-    public int saveAsync(T t, Runnable fail) throws Exception {
+    public int saveAsync(T t, Runnable fail, Runnable success) throws Exception {
         if (t == null) {
             return -1;
         }
@@ -518,26 +508,17 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (sqlTemplate == null) {
             return -2;
         }
-        int size = dataBase.runSqlAsync(sqlTemplate.getSql(), sqlTemplate.getObjects(), fail);
-        return size;
+        return executeAsync(sqlTemplate.getSql(), sqlTemplate.getObjects(),fail,success);
     }
 
     @Override
     public int updateAsync(T t) throws Exception {
-        if (t == null) {
-            return -1;
-        }
-        SqlTemplate sqlTemplate = ClassTools.toUpdateSql(t);
-        if (sqlTemplate == null) {
-            return -2;
-        }
-        int size = dataBase.runSqlAsync(sqlTemplate.getSql(), sqlTemplate.getObjects());
-        return size;
+        return updateAsync(t,null,null);
     }
 
 
     @Override
-    public int updateAsync(T t, Runnable fail) throws Exception {
+    public int updateAsync(T t, Runnable fail, Runnable success) throws Exception {
         if (t == null) {
             return -1;
         }
@@ -545,26 +526,17 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (sqlTemplate == null) {
             return -2;
         }
-        int size = dataBase.runSqlAsync(sqlTemplate.getSql(), sqlTemplate.getObjects(), fail);
-        return size;
+        return executeAsync(sqlTemplate.getSql(), sqlTemplate.getObjects(),fail,success);
     }
 
     @Override
     public int deleteAsync(T t) throws Exception {
-        if (t == null) {
-            return -1;
-        }
-        SqlTemplate sqlTemplate = ClassTools.toDeleteSql(t);
-        if (sqlTemplate == null) {
-            return -2;
-        }
-        int size = dataBase.runSqlAsync(sqlTemplate.getSql(), sqlTemplate.getObjects());
-        return size;
+        return deleteAsync(t,null,null);
     }
 
 
     @Override
-    public int deleteAsync(T t, Runnable fail) throws Exception {
+    public int deleteAsync(T t, Runnable fail, Runnable success) throws Exception {
         if (t == null) {
             return -1;
         }
@@ -572,14 +544,21 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (sqlTemplate == null) {
             return -2;
         }
-        int size = dataBase.runSqlAsync(sqlTemplate.getSql(), sqlTemplate.getObjects(), fail);
-        return size;
+        return executeAsync(sqlTemplate.getSql(), sqlTemplate.getObjects(),fail,success);
     }
 
 
     @Override
     public int execute(String sql, Object[] params) throws Exception {
         return dataBase.runSql(sql, params);
+    }
+    @Override
+    public int executeAsync(String sql, Object[] params, Runnable fail, Runnable success) throws Exception {
+        return executeAsync(new AsyncFactory.Result(sql, params,fail,success));
+    }
+    @Override
+    public int executeAsync(AsyncFactory.Result result) throws Exception {
+        return dataBase.runSqlAsync(result);
     }
 
 

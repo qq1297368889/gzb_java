@@ -56,11 +56,6 @@ public class TCPHandler extends ChannelInboundHandlerAdapter {
         } catch (Exception e) {
             Log.log.e("TCP协议错误","sessionId",sessionId,e);
             ctx.close();
-        } finally {
-            //必须在 list 不为空才能释放内存 否则 如果是半包 也就是list=null 释放了内存的话 下半部分数据到了 合包会出错 bug已修复
-            if (list != null&& buf != null) {
-                buf.release();
-            }
         }
 
     }

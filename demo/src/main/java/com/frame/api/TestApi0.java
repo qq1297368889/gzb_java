@@ -1,11 +1,16 @@
 package com.frame.api;
 
+import com.frame.dao.SysFileDao;
 import com.frame.dao.SysLogDao;
+import com.frame.entity.SysFile;
 import com.frame.entity.SysLog;
 import com.frame.entity.SysUsers;
 import gzb.frame.annotation.*;
+import gzb.frame.netty.entity.Response;
 import gzb.tools.Config;
+import gzb.tools.Tools;
 import gzb.tools.json.GzbJson;
+import gzb.tools.log.Log;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -15,6 +20,28 @@ import java.util.Random;
 @Controller
 @RequestMapping("test/api0")
 public class TestApi0 {
+
+    ///  127.0.0.1:2080/test/api0/test1
+    @EventLoop
+    @ManualRespond
+    @GetMapping("test1")
+    public void test1(SysFileDao sysFileDao, Response response,GzbJson gzbJson) throws Exception {
+        SysFile sysFile = new SysFile();
+        sysFileDao.saveAsync(sysFile.setSysFileMd5(Tools.getRandomString(32)),()->{
+            response.sendAndFlush(gzbJson.fail("on",sysFile));
+        },()->{
+            response.sendAndFlush(gzbJson.success("ok",sysFile));
+
+        });
+    }
+
+    @GetMapping("test2")
+    public String test2(SysFileDao sysFileDao, GzbJson gzbJson) throws Exception {
+        SysFile sysFile = new SysFile();
+        sysFileDao.save(sysFile.setSysFileMd5(Tools.getRandomString(32)));
+        return (gzbJson.success("ok",sysFile));
+    }
+
     //test/api0/get1?message=message001
     public static final byte[]BYTES="Hello, World!".getBytes(Config.encoding);
 

@@ -57,7 +57,7 @@ public class OptimizedParameterParser {
             return data;
         }
         int len = data.length();
-        int keyStart = 0; // 跳过开头的 '?'
+        int keyStart = -1;
         int keyEnd = -1;
         int valueStart = -1;
         int urlEnd = 0;
@@ -76,52 +76,53 @@ public class OptimizedParameterParser {
 
         // 使用一个可重用的解码器，避免在每次循环中创建对象
         Decoder decoder = new Decoder(len);
+        if (keyStart>-1) {
+            for (int i = keyStart; i < len; i++) {
+                char c = data.charAt(i);
 
-        for (int i = keyStart; i < len; i++) {
-            char c = data.charAt(i);
-
-            if (keyEnd == -1) {
-                // 阶段 1: 寻找 Key 的结束 (字符 '=')
-                if (c == '=') {
-                    keyEnd = i;
-                    valueStart = i + 1;
-                } else if (c == '&') {
-                    // 发现分隔符，但 Key 没有 Value (例如: "k1&k2=v2")
-                    // Key: [keyStart, i], Value: ""
-                    String key = decoder.decode(data, keyStart, i);
-                    addParameter(parar, key, "");
-                    keyStart = i + 1;
-                }
-            } else {
-                // 阶段 2: 寻找 Value 的结束 (字符 '&')
-                if (c == '&' || i == len - 1) {
-                    int valueEnd = i;
-                    if (i == len - 1) {
-                        valueEnd = len; // 最后一个字符，包含在 Value 内
+                if (keyEnd == -1) {
+                    // 阶段 1: 寻找 Key 的结束 (字符 '=')
+                    if (c == '=') {
+                        keyEnd = i;
+                        valueStart = i + 1;
+                    } else if (c == '&') {
+                        // 发现分隔符，但 Key 没有 Value (例如: "k1&k2=v2")
+                        // Key: [keyStart, i], Value: ""
+                        String key = decoder.decode(data, keyStart, i);
+                        addParameter(parar, key, "");
+                        keyStart = i + 1;
                     }
+                } else {
+                    // 阶段 2: 寻找 Value 的结束 (字符 '&')
+                    if (c == '&' || i == len - 1) {
+                        int valueEnd = i;
+                        if (i == len - 1) {
+                            valueEnd = len; // 最后一个字符，包含在 Value 内
+                        }
 
-                    // 提取并解码 Key 和 Value
-                    String key = decoder.decode(data, keyStart, keyEnd);
-                    String value = decoder.decode(data, valueStart, valueEnd);
-                    addParameter(parar, key, value);
+                        // 提取并解码 Key 和 Value
+                        String key = decoder.decode(data, keyStart, keyEnd);
+                        String value = decoder.decode(data, valueStart, valueEnd);
+                        addParameter(parar, key, value);
 
-                    // 重置状态，开始寻找下一个 Key
-                    keyEnd = -1;
-                    keyStart = i + 1;
+                        // 重置状态，开始寻找下一个 Key
+                        keyEnd = -1;
+                        keyStart = i + 1;
+                    }
                 }
+            }
+            // 处理最后一个没有 Value 的 Key (例如: "k1=v1&k2")
+            if (keyEnd != -1) {
+                String key = decoder.decode(data, keyStart, keyEnd);
+                addParameter(parar, key, "");
+            }
+            // 如果只有一个 Key 且没有 = 和 & (例如: "k1")
+            else if (keyStart < len) {
+                String key = decoder.decode(data, keyStart, len);
+                addParameter(parar, key, "");
             }
         }
 
-        // 处理最后一个没有 Value 的 Key (例如: "k1=v1&k2")
-        if (keyEnd != -1) {
-            String key = decoder.decode(data, keyStart, keyEnd);
-            addParameter(parar, key, "");
-        }
-        // 如果只有一个 Key 且没有 = 和 & (例如: "k1")
-        else if (keyStart < len) {
-            String key = decoder.decode(data, keyStart, len);
-            addParameter(parar, key, "");
-        }
         if (urlEnd > 0) {
             return data.substring(0, urlEnd);
         } else {

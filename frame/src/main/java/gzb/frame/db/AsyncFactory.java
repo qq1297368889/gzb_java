@@ -18,6 +18,7 @@
 
 package gzb.frame.db;
 
+import gzb.tools.Queue;
 import gzb.tools.Tools;
 import gzb.tools.log.Log;
 import gzb.tools.thread.ServiceThread;
@@ -26,42 +27,54 @@ import gzb.tools.thread.ThreadPool;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class AsyncFactory<T> {
+public class AsyncFactory{
 
     public static class Result {
         public String sql;
         public Object[] objects;
         public Runnable fail;
+        public Runnable success;
 
         public Result(String sql, Object[] objects) {
             this.sql = sql;
             this.objects = objects;
         }
-        public Result(String sql, Object[] objects, Runnable fail) {
+
+        public Result(String sql, Object[] objects, Runnable fail, Runnable success) {
             this.sql = sql;
             this.objects = objects;
             this.fail = fail;
+            this.success = success;
         }
+    }
+
+    public static class QueueEntity {
+        ConcurrentLinkedQueue<Result> results = null;
+
     }
 
     public ThreadPool threadPool = null;
     public Log log = Log.log;
     public int batchSize;
     public int batchAwait;
+    public int queueSize;
     public Lock lock;
-    public Map<String, ConcurrentLinkedQueue<Result>> cacheMap;
+    public Map<String, Queue<Result>> cacheMap;
     public DataBase dataBase;
 
-    public AsyncFactory(DataBase dataBase, int threadNum, int batchSize, int batchAwait) {
+    public AsyncFactory(DataBase dataBase, int threadNum, int batchSize, int batchAwait, int queueSize) {
         this.dataBase = dataBase;
         this.batchSize = batchSize;
         this.batchAwait = batchAwait;
+        this.queueSize = queueSize;
         if (threadNum < 1) {
             log.w("警告，后台异步线程数小于1，所有异步操作将无法执行,如需要请至少设置为1，请检查配置文件中的 db.mysql.数据库名.async.thread.num=0");
         } else {
@@ -69,6 +82,7 @@ public class AsyncFactory<T> {
             cacheMap = new ConcurrentHashMap<>();
             startThread(threadNum);
         }
+
     }
 
     public void startThread(int threadNum) {
@@ -87,32 +101,35 @@ public class AsyncFactory<T> {
         threadPool = new ThreadPool(threadNum, threadNum * 1000);
     }
 
-    public boolean execMapSql(Map<String, ConcurrentLinkedQueue<Result>> cacheMap) throws SQLException {
+    public boolean execMapSql(Map<String, Queue<Result>> cacheMap) throws SQLException {
         boolean runNum = false;
         for (String sql : cacheMap.keySet()) {
-            ConcurrentLinkedQueue<Result> queue = null;
+            Queue<Result> queue = null;
             lock.lock();
             try {
-                queue = cacheMap.remove(sql);
+                queue = cacheMap.get(sql);
+                if (queue != null) {
+                    cacheMap.put(sql, new Queue<Result>(queueSize));
+                }
             } finally {
                 lock.unlock();
             }
-            if (queue != null && queue.size() > 0) {
+
+            if (queue != null && !queue.isEmpty()) {
                 runNum = true;
                 Connection connection = dataBase.getConnection();
-                int size = queue.size();
                 PreparedStatement preparedStatement = null;
                 try {
                     connection.setAutoCommit(false);
                     preparedStatement = connection.prepareStatement(sql);
-                    List<Result> list = new ArrayList<>();
+                    List<Result> list = new ArrayList<>(batchSize);
                     long start = System.currentTimeMillis();
                     long end = 0;
                     int i = 0;
                     int num = 0;
+                    int callBackSuccess = 0;
                     while (true) {
                         i++;
-                        size--;
                         try {
                             Result result = queue.poll();
                             if (result == null) {
@@ -122,43 +139,42 @@ public class AsyncFactory<T> {
                             for (int i1 = 0; i1 < result.objects.length; i1++) {
                                 preparedStatement.setObject(i1 + 1, result.objects[i1]);
                             }
+                            if (result.success != null) {
+                                callBackSuccess++;
+                            }
                             preparedStatement.addBatch();
                             num++;
-                            if (i % batchSize == 0 || size == 0) {
+                            if (i % batchSize == 0 || queue.isEmpty()) {
                                 preparedStatement.executeBatch();
                                 connection.commit();
                                 end = System.currentTimeMillis();
                                 log.d("异步批量执行SQL", num, "条", "耗时", end - start, "毫秒", sql);
                                 num = 0;
-                                list = new ArrayList<>();
+                                if (callBackSuccess > 0) {
+                                    List<Result> finalList = list;
+                                    if (!threadPool.execute(() -> {
+                                        for (Result result1 : finalList) {
+                                            if (result1.success == null) {
+                                                continue;
+                                            }
+                                            try {
+                                                result1.success.run();
+                                            } catch (Exception e) {
+                                                log.e("异步执行成功，但是成功回调失败", result1);
+                                            }
+                                        }
+                                    })) {
+                                        log.e("异步执行成功，但是成功回调失败,原因是队列满了", list);
+                                    }
+                                }
+                                list = new ArrayList<>(batchSize);
+                                callBackSuccess = 0;
                                 start = System.currentTimeMillis();
                             }
 
                         } catch (SQLException e) {
-                            //log.e("异步批量执行SQL 失败,尝试筛选错误源", sql, e);
-                            connection.rollback();
-                            connection.setAutoCommit(true);
-                            for (int n = 0; n < list.size(); n++) {
-                                Result result = list.get(n);
-                                try {
-                                    for (int k = 0; k < result.objects.length; k++) {
-                                        preparedStatement.setObject(k + 1, result.objects[k]);
-                                    }
-                                    preparedStatement.execute();
-                                } catch (Exception e2) {
-                                    log.e("异步批量执行SQL 失败", sql,result.objects, e);
-                                    if (result.fail==null) {
-                                        log.e("异步执行失败",e);
-                                    }else{
-                                        if (!threadPool.execute(result.fail)) {
-                                            log.e("异步执行失败，并且回调队列溢出",e);
-                                        }
-                                    }
-                                }
-                            }
-                            connection.setAutoCommit(false);
+                            rollbackFun(connection,list,preparedStatement,e);
                         }
-
                     }
                 } finally {
                     dataBase.close(null, preparedStatement);
@@ -168,22 +184,46 @@ public class AsyncFactory<T> {
         }
         return runNum;
     }
-
+    private void rollbackFun(Connection connection,List<Result> list,PreparedStatement preparedStatement, SQLException e) throws SQLException {
+        connection.rollback();
+        connection.setAutoCommit(true);
+        for (int n = 0; n < list.size(); n++) {
+            Result result = list.get(n);
+            try {
+                for (int k = 0; k < result.objects.length; k++) {
+                    preparedStatement.setObject(k + 1, result.objects[k]);
+                }
+                preparedStatement.execute();
+                if (!threadPool.execute(result.success)) {
+                    log.e("异步执行成功，但是回调队列溢出-2");
+                }
+            } catch (Exception e2) {
+                log.e("异步批量执行SQL 失败", result.sql, result.objects, e);
+                if (result.fail == null) {
+                    log.e("异步执行失败", e);
+                } else {
+                    if (!threadPool.execute(result.fail)) {
+                        log.e("异步执行失败，并且回调队列溢出", e);
+                    }
+                }
+            }
+        }
+        connection.setAutoCommit(false);
+    }
     public int add(String sql, Object[] parar) {
         if (parar == null) {
             parar = new Object[0];
         }
         return add(new Result(sql, parar));
     }
-
     public int add(Result result) {
-        ConcurrentLinkedQueue<Result> queue = cacheMap.get(result.sql);
+        Queue<Result> queue = cacheMap.get(result.sql);
         if (queue == null) {
             lock.lock();
             try {
                 queue = cacheMap.get(result.sql);
                 if (queue == null) {
-                    queue = new ConcurrentLinkedQueue<>();
+                    queue = new Queue<>(queueSize);
                     cacheMap.put(result.sql, queue);
                 }
             } finally {

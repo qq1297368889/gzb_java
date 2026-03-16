@@ -19,6 +19,7 @@ public class DataBaseConfig {
     int asyncSleepMilli;
     int asyncBatchSize;
     int asyncThreadNum;
+    int asyncQueueSize;
     String sign;
 
     // type 对应数据库类型
@@ -40,6 +41,9 @@ public class DataBaseConfig {
         dataBaseConfig.setAsyncSleepMilli(Config.getInteger("db." + key + ".async.sleep", 500));
         dataBaseConfig.setAsyncBatchSize(Config.getInteger("db." + key + ".async.batch", 500));
         dataBaseConfig.setAsyncThreadNum(Config.getInteger("db." + key + ".async.thread.num", Math.max(Config.cpu / 4, 2)));
+        dataBaseConfig.setAsyncQueueSize(Config.getInteger("db." + key + ".async.queue.size", dataBaseConfig.getAsyncThreadNum() * 10000));
+
+
         dataBaseConfig.setSign(dataBaseConfig.getIp() + "_" + dataBaseConfig.port + "_" + dataBaseConfig.name);
 
         return dataBaseConfig;
@@ -53,14 +57,15 @@ public class DataBaseConfig {
         return "jdbc:" + type + "://" + ip + ":" + port + "/" + name + (parar != null && parar.length() > 0 ? "?" + parar : "");
     }
 
-    public static DataBaseConfig readConfig(String type, String key, String clz, String ip, int port, String name, String acc, String pwd, int threadMax, int overtime, int asyncSleepMilli, int asyncBatchSize, int asyncThreadNum, String sign) {
-        return new DataBaseConfig(type, key, clz, ip, port, name, acc, pwd, threadMax, overtime, asyncSleepMilli, asyncBatchSize, asyncThreadNum, sign);
+
+    public static DataBaseConfig readConfig(String type, String key, String clz, String ip, int port, String name, String acc, String pwd, int threadMax, int overtime, int asyncSleepMilli, int asyncBatchSize, int asyncThreadNum,int asyncQueueSize, String sign) {
+        return new DataBaseConfig(type, key, clz, ip, port, name, acc, pwd, threadMax, overtime, asyncSleepMilli, asyncBatchSize, asyncThreadNum, asyncQueueSize,sign);
     }
 
     public DataBaseConfig() {
     }
 
-    public DataBaseConfig(String type, String key, String clz, String ip, int port, String name, String acc, String pwd, int threadMax, int overtime, int asyncSleepMilli, int asyncBatchSize, int asyncThreadNum, String sign) {
+    public DataBaseConfig(String type, String key, String clz, String ip, int port, String name, String acc, String pwd, int threadMax, int overtime, int asyncSleepMilli, int asyncBatchSize, int asyncThreadNum,int asyncQueueSize, String sign) {
         setType(type);
         setKey(key);
         setClz(clz);
@@ -69,6 +74,7 @@ public class DataBaseConfig {
         setAsyncSleepMilli(asyncSleepMilli);
         setAsyncBatchSize(asyncBatchSize);
         setAsyncThreadNum(asyncThreadNum);
+        setAsyncQueueSize(asyncQueueSize);
         setSign(sign);
         setIp(ip);
         setPort(port);
@@ -87,6 +93,8 @@ public class DataBaseConfig {
         Config.set("db." + key + ".async.sleep", String.valueOf(asyncSleepMilli));
         Config.set("db." + key + ".async.batch", String.valueOf(asyncBatchSize));
         Config.set("db." + key + ".async.thread.num", String.valueOf(asyncThreadNum));
+        Config.set("db." + key + ".async.queue.size", String.valueOf(asyncQueueSize));
+
         Config.set("db." + key + ".sign", sign);
         Config.set("db." + key + ".ip", ip);
         Config.set("db." + key + ".port", String.valueOf(port));
@@ -201,6 +209,13 @@ public class DataBaseConfig {
         this.asyncThreadNum = asyncThreadNum;
     }
 
+    public int getAsyncQueueSize() {
+        return asyncQueueSize;
+    }
+
+    public void setAsyncQueueSize(int asyncQueueSize) {
+        this.asyncQueueSize = asyncQueueSize;
+    }
     public String getSign() {
         return sign;
     }
@@ -225,6 +240,7 @@ public class DataBaseConfig {
                 "\"asyncSleepMilli\":\""+asyncSleepMilli+"\"," +
                 "\"asyncBatchSize\":\""+asyncBatchSize+"\"," +
                 "\"asyncThreadNum\":\""+asyncThreadNum+"\"," +
+                "\"asyncQueueSize\":\""+asyncQueueSize+"\"," +
                 "\"sign\":\""+sign+"\"," +
                 "\"className\":\""+this.getClass().getName()+"\"" +
                 "}";

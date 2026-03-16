@@ -39,7 +39,8 @@ public class HttpMapping {
     //是否开启跨域 域名替换
     public boolean isCrossDomainOrigin;
     //是否异步 同步的话就在时间循环上执行 默认异步
-    public boolean async = true;
+    public boolean eventLoop = true;
+    public boolean manualRespond = false;
     // 开启接口缓存
     public String[]cacheKey = null;
     public Integer cacheSecond= null;
@@ -81,7 +82,8 @@ public class HttpMapping {
                 ", met=" + met +
                 ", transaction=" + transaction +
                 ", isCrossDomainOrigin=" + isCrossDomainOrigin +
-                ", async=" + async +
+                ", eventLoop=" + eventLoop +
+                ", manualRespond=" + manualRespond +
                 ", semaphore=" + semaphore +
                 ", start=" + start +
                 ", end=" + end +

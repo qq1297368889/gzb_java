@@ -122,11 +122,12 @@ public class DDOS {
                             } else {
                                 this_fail_request_num.incrementAndGet();
                             }
+
                         }
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
-                    //System.out.println(finalI+" "+"线程名"+" "+getName()+" "+ "压测完成");
+                    System.out.println(finalI+" "+"线程名"+" "+getName()+" "+ "压测完成");
                 }
             }.start();
         }
@@ -206,6 +207,7 @@ public class DDOS {
             suc_num_lao = suc_num;
             fail_num_lao = fail_num;
         }
-        System.out.println("运行完毕");
+        Tools.sleep(1000*5);
+        System.out.println("运行完毕 实际请求次数 "+(this_success_request_num.get()+this_fail_request_num.get()));
     }
 }

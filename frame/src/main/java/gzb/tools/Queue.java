@@ -18,27 +18,31 @@
 
 package gzb.tools;
 
+import gzb.tools.log.Log;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Queue<T> {
     private final Deque<T> deque = new ArrayDeque<>();
     private final ReentrantLock lock = new ReentrantLock();
-    private final Condition notEmpty = lock.newCondition();
-    private final int capacity;
-    private final Condition notFull = lock.newCondition();
+    private final Condition producers = lock.newCondition();//生产者
+    private final Condition consumer = lock.newCondition();//消费者
+
+    private final int queue_size;
 
     public Queue() {
-        capacity = Integer.MAX_VALUE;
+        queue_size = Integer.MAX_VALUE;
     }
 
     public Queue(int maxSize) {
         if (maxSize <= 0) throw new IllegalArgumentException("Capacity must be positive");
-        this.capacity = maxSize;
+        this.queue_size = maxSize;
     }
 
     public int size() {
@@ -59,17 +63,39 @@ public class Queue<T> {
         }
     }
 
-    public void put(T... ts) {
+    private void signal(Condition condition, int awaitNum) {
+        if (awaitNum <= 0) return;
+        if (awaitNum <= 3) {
+            for (int i = 0; i < awaitNum; i++) {
+                condition.signal();
+            }
+        } else {
+            condition.signalAll();
+        }
+    }
+
+    private void consumerAwait() throws InterruptedException {
+
+        consumer.await();
+    }
+
+    private void producersAwait() throws InterruptedException {
+
+        producers.await();
+    }
+
+    //自动背压
+    public void add(T... ts) {
         if (ts == null) throw new NullPointerException();
         lock.lock();
         try {
             for (T t : ts) {
-                while (deque.size() >= capacity) {
-                    notFull.await();
+                while (deque.size() >= queue_size) {
+                    producersAwait();
                 }
                 deque.addLast(t);
-                notEmpty.signalAll(); // 唤醒所有等待的消费者
             }
+            consumer.signalAll();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt(); // 恢复中断状态
             throw new RuntimeException("Interrupted during put", e);
@@ -78,83 +104,83 @@ public class Queue<T> {
         }
     }
 
-    public void add(T... ts) {
-        put(ts);
+    public boolean offer(T... ts) {
+        if (ts == null) return false;
+        lock.lock();
+        try {
+            if (deque.size() + ts.length >= queue_size) {
+                return false;
+            }
+            for (T t : ts) {
+                deque.addLast(t);
+            }
+            consumer.signalAll();
+            return true;
+        } finally {
+            lock.unlock();
+        }
     }
 
-    public List<T> take(int batchSize) throws InterruptedException {
+
+    public List<T> readList(int batchSize) throws InterruptedException {
         if (batchSize <= 0) throw new IllegalArgumentException("Batch size must be positive");
         lock.lockInterruptibly();
         try {
-            // 等待队列中有足够元素或至少有一个元素
-            while (deque.size() < Math.min(batchSize, 1)) {
-                notEmpty.await();
+            while (deque.isEmpty()) {
+                consumerAwait();
             }
-
-            List<T> batch = new ArrayList<>(Math.min(batchSize, deque.size()));
-            int count = 0;
-            while (!deque.isEmpty() && count < batchSize) {
+            List<T> batch = new ArrayList<>(batchSize);
+            while (!deque.isEmpty() && batch.size() < batchSize) {
                 batch.add(deque.removeFirst());
-                count++;
             }
-
-            // 唤醒所有生产者，避免在批量消费后有生产者仍在等待
-            if (count > 0) {
-                notFull.signalAll();
+            if (batch.size() > 0) {
+                producers.signalAll();
             }
-
             return batch;
         } finally {
             lock.unlock();
         }
     }
 
-    public T take() throws InterruptedException {
+    public T read() throws InterruptedException {
         lock.lockInterruptibly();
         try {
             while (deque.isEmpty()) {
-                notEmpty.await();
+                consumerAwait();
             }
             T item = deque.removeFirst();
-            notFull.signal(); // 只需要唤醒一个生产者
+            producers.signalAll();
             return item;
         } finally {
             lock.unlock();
         }
     }
 
-    // 兼容老写法
-    public T read() {
-        try {
-            return take();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return null; // 保持原有行为，但建议调用者检查中断状态
-        }
-    }
-
-    // 新增方法：非阻塞获取元素
-    public T poll() {
-        lock.lock();
-        try {
-            return deque.pollFirst();
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    // 新增方法：带超时的获取元素
-    public T poll(long timeoutMillis) throws InterruptedException {
+    public T poll(long time, TimeUnit timeUnit) throws InterruptedException {
         lock.lockInterruptibly();
         try {
             if (deque.isEmpty()) {
-                notEmpty.awaitNanos(timeoutMillis * 1_000_000);
+                if (!consumer.await(time, timeUnit)) {
+                    return null;
+                }
                 if (deque.isEmpty()) return null;
             }
-            T item = deque.removeFirst();
-            notFull.signal();
-            return item;
+            return deque.removeFirst();
         } finally {
+            producers.signalAll();
+            lock.unlock();
+        }
+    }
+
+    public T poll() {
+        lock.lock();
+        try {
+            if (deque.isEmpty()) {
+                return null;
+            }
+            return deque.removeFirst();
+        } finally {
+            producers.signalAll();
             lock.unlock();
         }
     }

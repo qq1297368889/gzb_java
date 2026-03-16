@@ -155,7 +155,7 @@ public interface BaseDao<T> {
      * @throws Exception 如果发生数据库访问错误。
      */
     int saveAsync(T t) throws Exception;
-    int saveAsync(T t,Runnable fail) throws Exception;
+    int saveAsync(T t,Runnable fail,Runnable success) throws Exception;
 
     /**
      * 异步更新一个实体。
@@ -165,7 +165,7 @@ public interface BaseDao<T> {
      * @throws Exception 如果发生数据库访问错误。
      */
     int updateAsync(T t) throws Exception;
-    int updateAsync(T t,Runnable fail) throws Exception;
+    int updateAsync(T t,Runnable fail,Runnable success) throws Exception;
 
     /**
      * 异步删除一个实体。
@@ -175,7 +175,7 @@ public interface BaseDao<T> {
      * @throws Exception 如果发生数据库访问错误。
      */
     int deleteAsync(T t) throws Exception;
-    int deleteAsync(T t,Runnable fail) throws Exception;
+    int deleteAsync(T t,Runnable fail,Runnable success) throws Exception;
 
     /**
      * 根据实体对象、排序和分页信息，返回一个包含分页数据的 JSON 结果。
@@ -271,6 +271,9 @@ public interface BaseDao<T> {
      * @throws Exception 如果发生数据库访问错误。
      */
     int execute(String sql, Object[] params) throws Exception;
+    int executeAsync(AsyncFactory.Result result) throws Exception;
+    int executeAsync(String sql, Object[] params, Runnable fail, Runnable success) throws Exception;
+
     List<T> query(String sql, Object[] params, String sortField, String sortType, int page, int size, int second) throws SQLException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, Exception;
     JSONResult queryPage(String sql, Object[] objects, String sortField, String sortType, Integer page, Integer size, int maxPage, int maxSize) throws Exception;
     JSONResult queryPage(String sql, Object[] objects, String sortField, String sortType, Integer page, Integer size, int maxPage, int maxSize, int second) throws Exception;

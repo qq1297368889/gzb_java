@@ -108,36 +108,6 @@ public class HTTPRequestParameters {
         return new String(this.body, Config.encoding);
     }
 
-    /**
-     * Lazily parses and returns all parameters from the request.
-     * This method is designed for a single-threaded context.
-     *
-     * @return A map of parameter names to a list of their values.
-     */
-    public Map<String, List<Object>> getParameters0() {
-        if (parameters == null) {
-            parameters = new HashMap<>();
-            QueryStringDecoder urlDecoder = new QueryStringDecoder(request.uri());
-            urlDecoder.parameters().forEach((key, valueList) ->
-                    parameters.put(key, new ArrayList<>(valueList))
-            );
-            this.path = ClassTools.webPathFormat(urlDecoder.path());
-            String contentType = request.headers().get("Content-Type");
-            if (contentType != null) {
-                if (contentType.startsWith("application/json")) {
-                    parseJson(parameters);
-                } else if (contentType.startsWith("application/x-www-form-urlencoded")) {
-                    parseUrlEncoded(parameters);
-                } else if (contentType.startsWith("multipart/form-data")) {
-                    parseFormData(parameters);
-                } else {
-                    // Default to plain text body
-                    parameters.computeIfAbsent("body", k -> new ArrayList<>()).add(readString());
-                }
-            }
-        }
-        return parameters;
-    }
 
     ThreadLocal<Map<String, List<Object>>> mapThreadLocal = new ThreadLocal<>();
 
@@ -200,11 +170,11 @@ public class HTTPRequestParameters {
     private void parseFormData(Map<String, List<Object>> params) {
         HttpPostRequestDecoder bodyDecoder = null;
         try {
-            // 使用 HttpDataFactory 和 FullHttpRequest 构造 HttpPostRequestDecoder
             bodyDecoder = new HttpPostRequestDecoder(new DefaultHttpDataFactory(true), request);
             for (InterfaceHttpData data : bodyDecoder.getBodyHttpDatas()) {
                 if (data.getHttpDataType() == InterfaceHttpData.HttpDataType.Attribute) {
                     Attribute attribute = (Attribute) data;
+                    Log.log.i("attribute.getName",attribute.getName());
                     params.computeIfAbsent(attribute.getName(), k -> new ArrayList<>()).add(attribute.getValue());
                 } else if (data.getHttpDataType() == InterfaceHttpData.HttpDataType.FileUpload) {
                     FileUploadEntity fileUploadEntity = new FileUploadEntity((FileUpload) data);
@@ -212,6 +182,7 @@ public class HTTPRequestParameters {
                     params.computeIfAbsent(fileUploadEntity.getName(), k -> new ArrayList<>()).add(fileUploadEntity);
                 }
             }
+            Log.log.i("params",params);
         } catch (Exception e) {
             Log.log.e("parseFormData 出现错误", e);
             params.clear();

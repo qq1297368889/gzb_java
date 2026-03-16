@@ -39,9 +39,9 @@ public class TestApi {
         HTTP_V3 httpV3 = new HTTP_V3();
         List<File> list1 = new ArrayList<>();
         List<File> list2 = new ArrayList<>();
-        list1.add(new File("C:\\Users\\Administrator\\Documents\\Tencent Files\\1297368889\\Image\\Group2\\DZ\\Z]\\1.png"));
-        list2.add(new File("C:\\Users\\Administrator\\Documents\\Tencent Files\\1297368889\\Image\\Group2\\DZ\\Z]\\2.png"));
-        list2.add(new File("C:\\Users\\Administrator\\Documents\\Tencent Files\\1297368889\\Image\\Group2\\DZ\\Z]\\3.png"));
+        list1.add(new File("E:\\codes_20220814\\logo\\1.jpg"));
+        list2.add(new File("E:\\codes_20220814\\logo\\2.jpg"));
+        list2.add(new File("E:\\codes_20220814\\logo\\3.jpg"));
         String postData = "b=1&c=1&d=1&e=1.11&f=1.12&g=true" +
                 "&b1=1&c1=1&d1=1&e1=1.13&f1=1.14&g1=true" +
                 "&b2=1&b2=1&c2=1&c2=1&d2=1&d2=1&e2=1.15&e2=1.16&f2=1.17&f2=1.18&g2=true&g2=false" +
@@ -60,7 +60,7 @@ public class TestApi {
 
         //事务 失败
         httpV3.request("http://127.0.0.1:2080/test/api/post1", "POST", "", null, null, 10000L);
-        System.out.println("post 1 " + httpV3.asString());
+        System.out.println("post 1 预期内错误 " + httpV3.asString());
 
         //检查数量是不是0
         httpV3.request("http://127.0.0.1:2080/test/api/find1?num=0", "GET", "", null, null, 10000L);
@@ -76,7 +76,7 @@ public class TestApi {
 
         //模拟事务 失败
         httpV3.request("http://127.0.0.1:2080/test/api/post3", "POST", "", null, null, 10000L);
-        System.out.println("post 3 " + httpV3.asString());
+        System.out.println("post 3 预期内错误 " + httpV3.asString());
 
         //检查数量是不是1
         httpV3.request("http://127.0.0.1:2080/test/api/find1?num=1", "GET", "", null, null, 10000L);
@@ -394,7 +394,7 @@ public class TestApi {
                 //这里有完整上下文信息 因为这是开发者可以自由引用当前可访问区域的内容 可以进行补偿操作  这不是异步思维 而是补偿操作
                 semaphore.release();
             }
-        });
+        },null);
         if (!semaphore.tryAcquire(2000L, TimeUnit.MILLISECONDS)) {
             // 如果 2000 毫秒内未能获取到许可（回调未触发）
             return gzbJson.fail("异步插入回调超时");

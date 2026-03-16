@@ -80,7 +80,7 @@ class ServerSend extends Thread {
     public void run() {
         while (true) {
             try {
-                List<Packet> list = server.waitSend.take(100);
+                List<Packet> list = server.waitSend.readList(100);
                 for (Packet packet : list) {
                     try {
                         packet.setType(1);
@@ -108,12 +108,12 @@ class ServerHandle extends Thread {
     public void run() {
         while (true) {
             try {
-                List<Packet> list = server.waitHandle.take(100);
+                List<Packet> list = server.waitHandle.readList(100);
                 for (Packet packet : list) {
                     try {
                         //这里是时机业务类后边可能会通过反射调用对应控制器
                         packet.setBytes(("server " + new String(packet.getBytes())).getBytes());
-                        server.waitSend.put(packet);
+                        server.waitSend.add(packet);
                     } catch (Exception e) {
                         server.waitSend.add(packet);
                         e.printStackTrace();
@@ -140,7 +140,7 @@ class ServerRead extends Thread {
                 Packet packet = server.udp.read(server.serverSocket);
                 if (packet != null) {
                     packet.setType(1);
-                    server.waitHandle.put(packet);
+                    server.waitHandle.add(packet);
                 }
             } catch (Exception e) {
                 e.printStackTrace();

@@ -26,12 +26,9 @@ import gzb.entity.ClassEntity;
 import gzb.entity.DecoratorEntity;
 import gzb.entity.HttpMapping;
 import gzb.entity.ThreadEntity;
-import gzb.frame.netty.Server;
 import gzb.frame.netty.entity.*;
-import gzb.frame.netty.handler.HTTPHandler;
 import gzb.frame.netty.HTTPServer;
 import gzb.entity.RunRes;
-import gzb.frame.netty.tools.TCPTools;
 import gzb.tools.*;
 import gzb.tools.cache.Cache;
 import gzb.tools.json.GzbJson;
@@ -40,18 +37,15 @@ import gzb.tools.log.Log;
 import gzb.tools.thread.ThreadPoolV3;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.socket.DatagramPacket;
 import io.netty.handler.codec.http.*;
-import io.netty.util.AttributeKey;
+import jdk.nashorn.internal.ir.IfNode;
 
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class FactoryImplV2 implements Factory {
@@ -456,7 +450,7 @@ public class FactoryImplV2 implements Factory {
         }
         HttpMapping httpMapping = httpMappings[index];
         //同步会在事件循环线程执行
-        if (httpMapping.async) {
+        if (httpMapping.eventLoop) {
             if (!THREAD_POOL.execute(() -> {
                 long end = exec(httpMapping, request, response);
                 log.d("异步 执行耗时",end-start);
@@ -490,7 +484,7 @@ public class FactoryImplV2 implements Factory {
             Map<String, List<Object>> parar = request.getParameter();
             boolean openCache = httpMapping.cacheSecond != null && httpMapping.cacheKey != null;
             String key = null;
-            if (openCache) {
+            if (!httpMapping.manualRespond&&openCache) {
                 key = toKey(httpMapping.cacheKey, parar);
                 byte[] bytes = Cache.gzbCache.getByte(key);
                 if (bytes != null) {
@@ -554,7 +548,8 @@ public class FactoryImplV2 implements Factory {
                     }
                 }
             }
-            if (openCache) {
+            long time=System.nanoTime();
+            if (!httpMapping.manualRespond&&openCache) {
                 if (runRes.getData() instanceof String) {
                     Cache.gzbCache.setByte(key, ((String) runRes.getData()).getBytes(Config.encoding), httpMapping.cacheSecond);
                 } else if (runRes.getData() instanceof byte[]) {
@@ -564,8 +559,9 @@ public class FactoryImplV2 implements Factory {
                 }
             }
             //到这里其实已经执行完毕了 发送的时间不算
-            long time=System.nanoTime();
-            response.sendAndFlush(runRes.getData());
+            if (!httpMapping.manualRespond){
+                response.sendAndFlush(runRes.getData());
+            }
             return time;
         } catch (Exception e) {
             long time = System.nanoTime();
@@ -980,6 +976,7 @@ public class FactoryImplV2 implements Factory {
         public Header headerMethod = null;
         public Limitation limitation = null;
         public EventLoop eventLoop = null;
+        public ManualRespond manualRespond = null;
         public CacheRequest cacheRequest = null;
 
         public Controller controller = null;
@@ -1035,6 +1032,7 @@ public class FactoryImplV2 implements Factory {
                 entityAnnotation.limitation = method.getAnnotation(Limitation.class);
                 entityAnnotation.eventLoop = method.getAnnotation(EventLoop.class);
                 entityAnnotation.cacheRequest = method.getAnnotation(CacheRequest.class);
+                entityAnnotation.manualRespond = method.getAnnotation(ManualRespond.class);
 
 
                 entityAnnotation.crossDomain = crossDomain;
@@ -1247,7 +1245,10 @@ public class FactoryImplV2 implements Factory {
                     ClassTools.generateCORSHeaders(entityAnnotation.metCrossDomain, httpMapping2.header);
                 }
                 if (entityAnnotation.eventLoop != null) {
-                    httpMapping2.async = entityAnnotation.eventLoop.async();
+                    httpMapping2.eventLoop = entityAnnotation.eventLoop.async();
+                }
+                if (entityAnnotation.manualRespond != null) {
+                    httpMapping2.manualRespond = entityAnnotation.manualRespond.value();
                 }
                 if (httpMapping2.header.get("access-control-allow-origin") != null) {
                     if (httpMapping2.header.get("access-control-allow-origin").equals("origin")) {

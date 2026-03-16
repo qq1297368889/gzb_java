@@ -49,7 +49,7 @@ public class Application {
             Server.startHTTPServer(Config.HTTP_PORT);
         }
         long end=System.currentTimeMillis();
-        Log.log.i("服务器自动总耗时",end-start);
+        Log.log.i("启动总耗时",end-start);
     }
 
 

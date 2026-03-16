@@ -12,13 +12,16 @@ public class ddos {
     // 等待put结束 才开始算qps  因为 put qps比较低 后边get比较高 会导致qps 一直抬升 寻找全局平衡  很久才能到达稳态
     //服务端线程数 6
     //客户端线程数 24
-    //key为 key_ + 1-10000随机数
+    //key为 key_ + 1-10000 随机数
     //val 为固定 60位
     //过期时间为随机 1-60秒  模拟真实情况 在压测过程中 部分逐渐过期
     //JDK 25(低版本 qps 会有一些波动不过差距不是很大)
     public static void main(String[] args) throws IOException {
         //main_gzb main_redis
-        main_redis(6,100,60);
+        main_gzb(
+                6,
+                100,
+                60);
         //main_redis(6,100,60);
     }
     public static void main_gzb(int thr_num,int num,int data_size) throws IOException {
@@ -33,7 +36,7 @@ public class ddos {
                         Log.log.i("start", Thread.currentThread().getName());
                         long start, end, ok = 0, no = 0, all = 0;
                         // tcp 地址 端口 数据库索引
-                        CacheSDK cacheSDK = new CacheSDK("127.0.0.1", 6666, 0);
+                        CacheSDK cacheSDK = new CacheSDK("127.0.0.1", 8081, 0);
                         start = System.nanoTime();
                         for (int i = 0; i < 10000; i++) {
                             all++;
