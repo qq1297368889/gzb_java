@@ -68,7 +68,7 @@ public Object users(Long usersId, String usersName, String usersPassword, String
 本指南将帮助你从零开始，快速启动并运行本框架。
 ### 创建基础项目
 1. **创建项目**：创建maven项目
-2. **获取项目模板**：下载项目模板 覆盖到maven项目  [项目模板下载](gzb.one.zip) 项目模板包含一切依赖无需网络下载
+2. **获取项目模板**：下载项目模板 覆盖到maven项目  <a href="gzb.one.zip" download>项目模板下载</a> 项目模板包含一切依赖无需网络下载
 3. **初始化项目**：更新 pom 依赖
 4. **配置文件**：在 application.properties 修改服务器端口 或保持默认  gzb.system.server.http.port=2080
 5. **启动程序**：运行 gzb.start.Start 如无报错 显示 port xx 说明启动成功 
