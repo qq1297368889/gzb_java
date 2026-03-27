@@ -19,18 +19,21 @@
 package gzb.tools;
 
 import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONWriter;
-import com.alibaba.fastjson2.TypeReference;
+import com.alibaba.fastjson2.JSONReader;
+import gzb.entity.ClassEntity;
 import gzb.entity.TableInfo;
 import gzb.frame.db.DataBase;
 import gzb.frame.factory.ClassTools;
 import gzb.frame.factory.Constant;
 import gzb.entity.HttpMapping;
 import gzb.frame.netty.entity.Response;
+import gzb.tools.cache.object.ByteBuff;
 import gzb.tools.http.HTTP;
 import gzb.tools.img.GifCaptcha;
 import gzb.tools.json.JsonSerializable;
 import gzb.tools.json.Result;
+import gzb.tools.thread.GzbThreadLocal;
+
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -46,6 +49,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
@@ -55,7 +59,38 @@ import java.util.jar.JarFile;
 
 public class Tools {
     public static void main(String[] args) {
-        System.out.println(escapeJsonString("123哈哈哈\"` \n \r\n \t 哈sjsj"));
+        ClassEntity classEntity = new ClassEntity();
+        classEntity.sign="1";
+        classEntity.code="2";
+        classEntity.pwd="4";
+        classEntity.filePath="5";
+        classEntity.iv="6";
+        List<ClassEntity>list=new ArrayList<>();
+        list.add(classEntity);
+        list.add(classEntity);
+        list.add(classEntity);
+        list.add(classEntity);
+        list.add(classEntity);
+        for (int i = 0; i < 100; i++) {
+            long start=System.currentTimeMillis();
+            for (int i1 = 0; i1 < 100000; i1++) {
+                Tools.toJsonV2(list);
+            }
+            long end=System.currentTimeMillis();
+            System.out.println("0 "+(end-start));
+            start=System.currentTimeMillis();
+            for (int i1 = 0; i1 < 100000; i1++) {
+                Tools.toJson(list);
+            }
+            end=System.currentTimeMillis();
+            System.out.println("1 "+(end-start));
+            start=System.currentTimeMillis();
+            for (int i1 = 0; i1 < 100000; i1++) {
+                Tools.toJson0(list);
+            }
+            end=System.currentTimeMillis();
+            System.out.println("2 "+(end-start));
+        }
     }
 
     private static Map<String, String> humpMap = new HashMap<>();
@@ -126,21 +161,40 @@ public class Tools {
         return (obj == null) ? 0 : obj.toString().length();
     }
 
-    public static Map<String, Object> jsonToMap(String json) {
-        if (json == null || json.isEmpty()) {
-            return new HashMap<>();
+    public static <T>T jsonToMap(String json) {
+        Map<String, Object>map=new HashMap<>();
+        try (JSONReader reader = JSONReader.of(json)) {
+            if (reader.isArray()) {
+                List<Object>list=reader.readArray();
+                map.put("body",list);
+            }else{
+                reader.readObject(map);
+            }
         }
+        return (T)map;
+    }
 
-        // Fastjson2 推荐使用 TypeReference 来进行泛型解析
-        // TypeReference<Map<String, Object>> 明确告诉解析器，Map的值类型是 Object
-        try {
-            return JSON.parseObject(
-                    json,
-                    new TypeReference<Map<String, Object>>() {
-                    });
-        } catch (Exception e) {
-            System.err.println("Fastjson2 解析失败: " + e.getMessage());
-            return null;
+    public static void jsonToMap(String json,Map<String, List<Object>>parameters) {
+
+        try (JSONReader reader = JSONReader.of(json)) {
+            if (reader.isArray()) {
+                List<Object>list=reader.readArray();
+                System.out.println("list "+list);
+                for (Object object : list) {
+                    if (object instanceof Map) {
+                        Map<String,Object>map0=(Map<String,Object>)object;
+                        for (Map.Entry<String, Object> stringObjectEntry : map0.entrySet()) {
+                            parameters.computeIfAbsent(stringObjectEntry.getKey(), k -> new ArrayList<>()).add(stringObjectEntry.getValue());
+                        }
+                    }
+                }
+            }else{
+                Map<String,Object>map0=new HashMap<>();
+                reader.readObject(map0);
+                for (Map.Entry<String, Object> stringObjectEntry : map0.entrySet()) {
+                    parameters.computeIfAbsent(stringObjectEntry.getKey(), k -> new ArrayList<>()).add(stringObjectEntry.getValue());
+                }
+            }
         }
     }
 
@@ -176,9 +230,6 @@ public class Tools {
     private static final byte[] FALSE_BYTES = "false".getBytes();
     // 预定义null字节数组
     private static final byte[] NULL_BYTES = "null".getBytes();
-
-    // ThreadLocal缓冲区复用（减少数组创建开销）
-    private static final ThreadLocal<byte[]> BUFFER = ThreadLocal.withInitial(() -> new byte[32]);
 
     /**
      * boolean转换为byte[]
@@ -328,8 +379,8 @@ public class Tools {
         byte[] intPart = toBytes(scaled / 1000000);
         int decimalPart = Math.abs((int) (scaled % 1000000));
 
-        // 拼接整数和小数部分
-        byte[] buffer = BUFFER.get();
+        GzbThreadLocal.Entity entity=GzbThreadLocal.context.get();
+        byte[] buffer = entity.byte_buff_32;
         int pos = 0;
 
         // 复制整数部分
@@ -364,8 +415,8 @@ public class Tools {
         byte[] intPart = toBytes(scaled / 1000000);
         int decimalPart = Math.abs((int) (scaled % 1000000));
 
-        // 拼接整数和小数部分
-        byte[] buffer = BUFFER.get();
+        GzbThreadLocal.Entity entity=GzbThreadLocal.context.get();
+        byte[] buffer = entity.byte_buff_32;
         int pos = 0;
 
         // 复制整数部分
@@ -650,6 +701,28 @@ public class Tools {
         }
     }
 
+    public static long parseLong(String s, int start, int end) {
+        long res = 0;
+        for (int i = start; i < end; i++) {
+            res = res * 10 + (s.charAt(i) - '0');
+        }
+        return res;
+    }
+    public static long parseInteger(String s, int start, int end) {
+        int res = 0;
+        for (int i = start; i < end; i++) {
+            res = res * 10 + (s.charAt(i) - '0');
+        }
+
+        return res;
+    }
+    public static long parseShort(String s, int start, int end) {
+        short res = 0;
+        for (int i = start; i < end; i++) {
+            res = (short) (res * 10 + (s.charAt(i) - '0'));
+        }
+        return res;
+    }
 
     /**
      * 核心序列化分发（字节版）：根据对象类型调用对应字节版方法
@@ -716,9 +789,91 @@ public class Tools {
         }
     }
 
+    public static final byte[] comma = ",".getBytes();
+    public static final byte[] MODE_CUSTOM = new byte[]{0}; // 自定义模式 (JSON)
+    public static final byte[] MODE_JDK =  new byte[]{1};    // JDK 原生模式
+
+    public static byte[] serialize(Object obj) {
+        if (obj == null) return null;
+        String className = obj.getClass().getName();
+        if (className.startsWith("java.util.") || obj.getClass().isArray()) {
+            byte[] raw = serialize0(obj);
+            if (raw == null) return null;
+            byte[] result = new byte[raw.length + 1];
+            result[0] = MODE_JDK[0];
+            System.arraycopy(raw, 0, result, 1, raw.length);
+            return result;
+        }
+        GzbThreadLocal.Entity entity = GzbThreadLocal.context.get();
+        byte[] classNameBytes = className.getBytes(Config.encoding);
+        byte[] jsonBytes = JSON.toJSONBytes(obj);
+        int index = entity.byteBuffCacheEntity.open();
+        try {
+            ByteBuff byteBuff = entity.byteBuffCacheEntity.get(index);
+            byteBuff.write(MODE_CUSTOM);
+            byteBuff.write(classNameBytes);
+            byteBuff.write(comma);
+            byteBuff.write(jsonBytes);
+            return byteBuff.get();
+        } finally {
+            entity.byteBuffCacheEntity.close(index);
+        }
+    }
+
+    public static <T> T deserialize(byte[] data) {
+        /// 类型 类名 分隔符 数据  也就是说最少4位
+        if (data == null || data.length < 4) return null;
+        byte mode = data[0];
+        if (mode == MODE_JDK[0]) {
+            byte[] actualData = new byte[data.length - 1];
+            System.arraycopy(data, 1, actualData, 0, actualData.length);
+            return deserialize0(actualData);
+        }
+        int commaIndex = -1;
+        for (int i = 1; i < data.length; i++) {
+            if (data[i] == comma[0]) {
+                commaIndex = i;
+                break;
+            }
+        }
+        if (commaIndex == -1) return null;
+        try {
+            String className = new String(data, 1, commaIndex - 1, Config.encoding);
+            Class<?> clazz = Class.forName(className);
+            int jsonOffset = commaIndex + 1;
+            int jsonLen = data.length - jsonOffset;
+            return JSON.parseObject(data, jsonOffset, jsonLen, clazz);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static byte[] serialize0(Object obj) {
+        if (obj == null) return null;
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+             ObjectOutputStream oos = new ObjectOutputStream(bos)) {
+            oos.writeObject(obj);
+            return bos.toByteArray();
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T deserialize0(byte[] bytes) {
+        if (bytes == null) return null;
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+             ObjectInputStream ois = new ObjectInputStream(bis)) {
+            return (T) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            return null;
+        }
+    }
+
+
 
     public static String toJson0(Object obj) {
-        return JSON.toJSONString(obj, JSONWriter.Feature.WriteNonStringValueAsString);
+        return JSON.toJSONString(obj); //, JSONWriter.Feature.WriteNonStringValueAsString
     }
 
     public static void toJson(Object obj, StringBuilder stringBuilder) {
@@ -726,6 +881,63 @@ public class Tools {
     }
 
 
+    public static String toJsonV2(Object obj) {
+        if (obj == null) {
+            return "null";
+        }
+        GzbThreadLocal.Entity entity = GzbThreadLocal.context.get();
+        int index=entity.stringBuilderCacheEntity.open();
+        try {
+            StringBuilder stringBuilder =entity.stringBuilderCacheEntity.get(index);
+            Class<?> ac = obj.getClass();
+            if (ac.isPrimitive()
+                    || ac == String.class
+                    || ac == Long.class
+                    || ac == Integer.class
+                    || ac == Double.class
+                    || ac == Float.class
+                    || ac == Short.class
+                    || ac == Boolean.class
+                    || ac == Byte.class
+                    || ac == Character.class
+                    || (obj instanceof Class<?> || obj instanceof File || obj instanceof CharSequence)
+            ) {
+                return stringBuilder.append('"').append(escapeJsonString(obj instanceof String?(String)obj :obj.toString())).append('"').toString();
+            }
+            if (obj.getClass().isArray()) {
+                return arrayToJson(obj);
+            }
+            if (obj instanceof Map) {
+                return mapToJson((Map<?, ?>) obj);
+            }
+            if (obj instanceof Iterable) {
+                return iterableToJson((Iterable<?>) obj);
+            }
+            if (obj instanceof GzbMap) {//已知类处理
+                return mapToJson(((GzbMap) obj).getMap());
+            }
+            if (obj instanceof Exception) {
+                return "\"" + escapeJsonString(getExceptionInfo((Exception) obj)) + "\"";
+            }
+            if (obj instanceof Timestamp) {
+                return stringBuilder.append('"').append((escapeJsonString(new DateTime((Timestamp) obj).toString()))).append('"').toString();
+            }
+            if (obj instanceof LocalDateTime) {
+                return stringBuilder.append('"').append((escapeJsonString(new DateTime((LocalDateTime) obj).toString()))).append('"').toString();
+            }
+            if (obj instanceof Date) {
+                return stringBuilder.append('"').append((escapeJsonString(new DateTime((Date) obj).toString()))).append('"').toString();
+            }
+            String data = ClassTools.toJsonObject(obj);
+            if (data == null) {
+                return stringBuilder.append('"').append(escapeJsonString(obj.toString()) ).append('"').toString();
+            }
+            return data;
+        }finally {
+            entity.stringBuilderCacheEntity.close(index);
+        }
+
+    }
     public static String toJson(Object obj) {
         if (obj == null) {
             return "null";
@@ -744,10 +956,9 @@ public class Tools {
         ) {
             return "\"" + escapeJsonString(obj.toString()) + "\"";
         }
-        /*
         if (obj instanceof JsonSerializable) {
             return obj.toString();
-        }*/
+        }
         if (obj.getClass().isArray()) {
             return arrayToJson(obj);
         }
@@ -775,6 +986,9 @@ public class Tools {
         if (obj instanceof Date) {
             return "\"" + escapeJsonString(new DateTime((Date) obj).toString()) + "\"";
         }
+        if (obj instanceof DateTime) {
+            return "\"" + escapeJsonString(obj.toString()) + "\"";
+        }
         String data = ClassTools.toJsonObject(obj);
         if (data == null) {
             return obj.toString();
@@ -788,10 +1002,10 @@ public class Tools {
         if (map == null) {
             return "null";
         }
-        gzb.tools.cache.object.ObjectCache.Entity entity0 = gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
-        int index0 = entity0.open();
+        GzbThreadLocal.Entity entity0 = GzbThreadLocal.context.get();
+        int index0 = entity0.stringBuilderCacheEntity.open();
         try {
-            StringBuilder sb = entity0.get(index0);
+            StringBuilder sb = entity0.stringBuilderCacheEntity.get(index0);
             sb.append("{");
             boolean first = true;
             for (Map.Entry<?, ?> entry : map.entrySet()) {
@@ -810,7 +1024,7 @@ public class Tools {
             sb.append("}");
             return sb.toString();
         } finally {
-            entity0.close(index0);
+            entity0.stringBuilderCacheEntity.close(index0);
         }
 
     }
@@ -820,11 +1034,10 @@ public class Tools {
         if (iterable == null) {
             return "null";
         }
-
-        gzb.tools.cache.object.ObjectCache.Entity entity0 = gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
-        int index0 = entity0.open();
+        GzbThreadLocal.Entity entity0 = GzbThreadLocal.context.get();
+        int index0 = entity0.stringBuilderCacheEntity.open();
         try {
-            StringBuilder sb = entity0.get(index0);
+            StringBuilder sb = entity0.stringBuilderCacheEntity.get(index0);
             sb.setLength(0); // 重置StringBuilder长度，复用缓存
             sb.append("[");
             boolean first = true;
@@ -838,7 +1051,7 @@ public class Tools {
             sb.append("]");
             return sb.toString();
         } finally {
-            entity0.close(index0);
+            entity0.stringBuilderCacheEntity.close(index0);
         }
     }
 
@@ -847,10 +1060,10 @@ public class Tools {
         if (array == null) {
             return "null";
         }
-        gzb.tools.cache.object.ObjectCache.Entity entity0 = gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
-        int index0 = entity0.open();
+        GzbThreadLocal.Entity entity0 = GzbThreadLocal.context.get();
+        int index0 = entity0.stringBuilderCacheEntity.open();
         try {
-            StringBuilder sb = entity0.get(index0);
+            StringBuilder sb = entity0.stringBuilderCacheEntity.get(index0);
             int length = Array.getLength(array);
             sb.append("[");
             for (int i = 0; i < length; i++) {
@@ -862,7 +1075,7 @@ public class Tools {
             sb.append("]");
             return sb.toString();
         } finally {
-            entity0.close(index0);
+            entity0.stringBuilderCacheEntity.close(index0);
         }
     }
 
@@ -875,20 +1088,18 @@ public class Tools {
         if (str == null) {
             return "null";
         }
-        gzb.tools.cache.object.ObjectCache.Entity entity0 = gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
-        int index0 = entity0.open();
+        GzbThreadLocal.Entity entity0 = GzbThreadLocal.context.get();
+        int index0 = entity0.stringBuilderCacheEntity.open();
         try {
-            StringBuilder sb = entity0.get(index0);
+            StringBuilder sb = entity0.stringBuilderCacheEntity.get(index0);
             final int len = str.length();
-            int last = 0; // 上一次追加的起点索引
+            int last = 0;
 
             for (int i = 0; i < len; i++) {
                 char c = str.charAt(i);
 
-                // 检查字符是否需要转义
                 switch (c) {
                     case '"':
-                        // 追加上一段普通字符串
                         if (last < i) {
                             sb.append(str, last, i);
                         }
@@ -938,13 +1149,11 @@ public class Tools {
                         last = i + 1;
                         break;
                     default:
-                        // 检查控制字符 (< ASCII 32)
                         if (c < ' ') {
                             if (last < i) {
                                 sb.append(str, last, i);
                             }
                             sb.append("\\u00");
-                            // 快速转换 4-bit 为 16 进制字符（需实现高效的 toHexChar 辅助方法）
                             sb.append(HEX_CHARS[(c >> 4) & 0xF]); // 高 4 位
                             sb.append(HEX_CHARS[c & 0xF]);        // 低 4 位
                             last = i + 1;
@@ -953,13 +1162,12 @@ public class Tools {
                 }
             }
 
-            // 循环结束后，追加最后一段普通字符串
             if (last < len) {
                 sb.append(str, last, len);
             }
             return sb.toString();
         } finally {
-            entity0.close(index0);
+            entity0.stringBuilderCacheEntity.close(index0);
         }
 
     }
@@ -1050,11 +1258,6 @@ public class Tools {
     }
 
 
-    /**
-     * 从一个大byte[]中寻找一个小byte[]
-     * 大bytes
-     * 小arr
-     */
     public static boolean bytesContains(byte[] bytes, byte[] arr) {
         if (bytes == null || arr == null || arr.length == 0 || bytes.length < arr.length) {
             return false;
@@ -1074,10 +1277,6 @@ public class Tools {
         return false;
     }
 
-    /**
-     * Unicode转字符串
-     * 例如：输入 "\\u4f60\\u597d" 返回 "你好"
-     */
     public static String unicodeToString(String unicodeStr) {
         if (unicodeStr == null) {
             return null;
@@ -1108,10 +1307,6 @@ public class Tools {
         return result.toString();
     }
 
-    /**
-     * 字符串转Unicode
-     * 例如：输入 "你好" 返回 "\\u4f60\\u597d"
-     */
     public static String stringToUnicode(String str) {
         if (str == null) {
             return null;
@@ -2662,7 +2857,7 @@ public class Tools {
             min = a;
         }
 
-        return (long) (random.nextInt((int) (max - min + 1)) + min);
+        return (long)getRandomInt((int)max,(int)min);
     }
 
     /**
@@ -2677,7 +2872,7 @@ public class Tools {
             max = min;
             min = a;
         }
-        return random.nextInt(max - min + 1) + min;
+        return ThreadLocalRandom.current().nextInt(max - min + 1)+ min;
     }
 
     public static String getUUID() {

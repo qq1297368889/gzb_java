@@ -236,7 +236,7 @@ public class FileTools {
                 }
             }
         }
-        Cache.gzbMap.setObject(key, listRes, 22);
+        Cache.gzbMap.setObject(key, listRes, 5);
         return listRes;
     }
 

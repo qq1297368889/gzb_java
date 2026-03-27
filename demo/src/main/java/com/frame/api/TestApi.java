@@ -124,8 +124,6 @@ public class TestApi {
         System.out.println("get 1 " + httpV3.asString());
 
 
-
-
         //统一删除
         httpV3.request("http://127.0.0.1:2080/test/api/del1?t=1", "DELETE", "", null, null, 10000L);
         System.out.println("del 1 " + httpV3.asString());
@@ -133,6 +131,22 @@ public class TestApi {
         //检查数量是不是0
         httpV3.request("http://127.0.0.1:2080/test/api/find1?num=0", "GET", "", null, null, 10000L);
         System.out.println("find 1 " + httpV3.asString());
+
+
+        DateTime dateTime = new DateTime();
+        TestEntity testEntity = new TestEntity();
+        testEntity.setDate(dateTime.toDate());
+        testEntity.setDateTime(dateTime);
+        testEntity.setTimestamp(dateTime.toTimestamp());
+        testEntity.setLocalDateTime(dateTime.toLocalDateTime());
+        // {"localDateTime":"2026-03-20 13:32:44","timestamp":"2026-03-20 13:32:44","date":"2026-03-20 13:32:44","dateTime":"2026-03-20 13:32:44"}
+        String json = Tools.toJson(testEntity);
+        Map<String, String> map0 = new HashMap<>();
+        map0.put("content-type", "application/json");
+        httpV3.request("http://127.0.0.1:2080/test/api/post6"
+                , "POST", "[" + json + "," + json + "]", map0, null, 10000L);
+        System.out.println("post 6 " + httpV3.asString());
+
     }
 
 
@@ -248,9 +262,9 @@ public class TestApi {
 
     @GetMapping("find1")
     public Object find1(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson, int num) throws Exception {
-        List<SysUsers>list=sysUsersDao.query(new SysUsers().setSysUsersAcc("acc_001x"));
+        List<SysUsers> list = sysUsersDao.query(new SysUsers().setSysUsersAcc("acc_001x"));
         if (list.size() != num) {
-            return gzbJson.success("acc_001x 数量不是预期的 " + num +"而是："+list.size());
+            return gzbJson.success("acc_001x 数量不是预期的 " + num + "而是：" + list.size());
         }
         return gzbJson.success("OK");
     }
@@ -386,7 +400,6 @@ public class TestApi {
             log.e("预期中 的错误", e0);
         }
         Semaphore semaphore = new Semaphore(0);
-        log.i(sysUsersDao.getClass().getClassLoader().toString());
         sysUsersDao.saveAsync(sysUsers, new Runnable() {
             @Override
             public void run() {
@@ -394,7 +407,7 @@ public class TestApi {
                 //这里有完整上下文信息 因为这是开发者可以自由引用当前可访问区域的内容 可以进行补偿操作  这不是异步思维 而是补偿操作
                 semaphore.release();
             }
-        },null);
+        }, null);
         if (!semaphore.tryAcquire(2000L, TimeUnit.MILLISECONDS)) {
             // 如果 2000 毫秒内未能获取到许可（回调未触发）
             return gzbJson.fail("异步插入回调超时");
@@ -455,4 +468,26 @@ public class TestApi {
     }
 
 
+    @PostMapping("post6")
+    public Object post6(TestEntity[] testEntitys, Log log, GzbJson gzbJson) throws Exception {
+        if (testEntitys == null || testEntitys.length != 2) {
+            return gzbJson.fail("testEntitys == null");
+        }
+        for (TestEntity testEntity : testEntitys) {
+            if (testEntity.getDate() == null) {
+                return gzbJson.fail("testEntity.getDate() == null");
+            }
+            if (testEntity.getDateTime() == null) {
+                return gzbJson.fail("testEntity.getDateTime() == null");
+            }
+            if (testEntity.getTimestamp() == null) {
+                return gzbJson.fail("testEntity.getTimestamp() == null");
+            }
+            if (testEntity.getLocalDateTime() == null) {
+                return gzbJson.fail("testEntity.getLocalDateTime() == null");
+            }
+        }
+
+        return gzbJson.success("OK");
+    }
 }

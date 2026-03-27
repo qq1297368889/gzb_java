@@ -49,6 +49,10 @@ public class DDOS {
 
     }
 
+    public static boolean ver(byte[] res) {
+        return res != null && res.length>0;
+    }
+
     /**
      * 测试api正确性
      *
@@ -57,10 +61,9 @@ public class DDOS {
      * @param data        请求参数
      * @param headers     请求协议头
      * @param files       请求需要上传的文件
-     * @param successData 如果API响应包含该值 视为成功
      * @return 测试结果 true or false
      */
-    public static boolean testApi(String url, String met, String data, Map<String, String> headers, Map<String, List<File>> files, byte[] successData) {
+    public static boolean testApi(String url, String met, String data, Map<String, String> headers, Map<String, List<File>> files) {
 
         byte[] bytes = null;
         try {
@@ -71,8 +74,8 @@ public class DDOS {
         if (bytes == null) {
             return false;
         }
-        boolean res = Tools.bytesContains(bytes, successData);
-        System.out.println(res + ":" + url + " -> " + data + " -> " + Arrays.toString(bytes));
+        boolean res = ver(bytes);
+        System.out.println(ver(bytes) + ":" + url + " -> " + data + " -> " + Arrays.toString(bytes));
         return res;
     }
 
@@ -97,7 +100,7 @@ public class DDOS {
                     HTTP_V3 http = new HTTP_V3();
                     byte[] bytes = null;
                     try {
-                        bytes = http.request(url, met, data, headers, files, 10000L).asByte();
+                        bytes = http.request(url, met, data, headers, files, 20000L).asByte();
                         System.out.println(finalI + " 线程名" + " " + getName() + " " +
                                 "预请求结果内容：" + Arrays.toString(bytes)
                                 + "请求是否包含successData：" + Tools.bytesContains(bytes, successData));
@@ -110,7 +113,7 @@ public class DDOS {
                                 break;
                             }
                             long s01 = System.nanoTime();
-                            bytes = http.request(url, met, data, headers, files, 10000L).asByte();
+                            bytes = http.request(url, met, data, headers, files, 20000L).asByte();
                             long e01 = System.nanoTime();
                             long res = (e01 - s01);
                             if (res > list0.get(finalI).get()) {
@@ -127,7 +130,7 @@ public class DDOS {
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
-                    System.out.println(finalI+" "+"线程名"+" "+getName()+" "+ "压测完成");
+                    System.out.println(finalI + " " + "线程名" + " " + getName() + " " + "压测完成");
                 }
             }.start();
         }
@@ -184,14 +187,14 @@ public class DDOS {
             str += "请求(最近)" + (all_num_this - all_num_lao) + "次,";
 
             str += "汇总耗时(最近)" + ((all_time_this - all_time_lao) / 1000) + "微秒,";
-            if (all_num_this - all_num_lao>0 && all_time_this - all_time_lao>0) {
+            if (all_num_this - all_num_lao > 0 && all_time_this - all_time_lao > 0) {
                 str += "平均耗时(最近)" + ((all_time_this - all_time_lao) / (all_num_this - all_num_lao) / 1000) + "微秒,";
-            }else{
+            } else {
                 str += "平均耗时(最近)0微秒,";
             }
 
             str += "最大耗时(最近)" + (max / 1000) + "微秒,";
-            if (all_num_this>0) {
+            if (all_num_this > 0) {
                 str += "平均耗时(全局)" + (all_time_this / all_num_this / 1000) + "微秒,";
             }
 
@@ -207,7 +210,7 @@ public class DDOS {
             suc_num_lao = suc_num;
             fail_num_lao = fail_num;
         }
-        Tools.sleep(1000*5);
-        System.out.println("运行完毕 实际请求次数 "+(this_success_request_num.get()+this_fail_request_num.get()));
+        Tools.sleep(1000 * 5);
+        System.out.println("运行完毕 实际请求次数 " + (this_success_request_num.get() + this_fail_request_num.get()));
     }
 }

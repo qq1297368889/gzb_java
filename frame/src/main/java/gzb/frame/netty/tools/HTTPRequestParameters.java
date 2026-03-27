@@ -23,6 +23,7 @@ import gzb.frame.factory.ClassTools;
 import gzb.tools.Config;
 import gzb.tools.Tools;
 import gzb.tools.log.Log;
+import gzb.tools.thread.GzbThreadLocal;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.QueryStringDecoder;
@@ -82,7 +83,7 @@ public class HTTPRequestParameters {
 
     private final FullHttpRequest request;
     private byte[] body;
-    private Map<String, List<Object>> parameters;
+    private Map<String,List<Object>> parameters;
     public String path;
 
     public HTTPRequestParameters(FullHttpRequest request) {
@@ -109,14 +110,12 @@ public class HTTPRequestParameters {
     }
 
 
-    ThreadLocal<Map<String, List<Object>>> mapThreadLocal = new ThreadLocal<>();
-
     public Map<String, List<Object>> getParameters() {
         if (parameters == null) {
-            parameters = mapThreadLocal.get();
+            GzbThreadLocal.Entity entity=GzbThreadLocal.context.get();
             if (parameters == null) {
                 parameters = new HashMap<>();
-                mapThreadLocal.set(parameters);
+                entity.requestMap=parameters;
             }else{
                 parameters.clear();
             }
@@ -133,7 +132,7 @@ public class HTTPRequestParameters {
                     parseFormData(parameters);
                 } else {
                     // Default to plain text body
-                    parameters.computeIfAbsent("body", k -> new ArrayList<>()).add(readString());
+                    parameters.computeIfAbsent("body", k -> new ArrayList<>(1)).add(readString());
                 }
             }
         }
@@ -141,25 +140,14 @@ public class HTTPRequestParameters {
     }
 
     private void parseJson(Map<String, List<Object>> params) {
-        try {
-            Map<String, Object> jsonMap = Tools.jsonToMap(readString());
-            if (jsonMap != null) {
-                for (Map.Entry<String, Object> stringObjectEntry : jsonMap.entrySet()) {
-                    List<Object> list = params.computeIfAbsent(stringObjectEntry.getKey(), k -> new ArrayList<>());
-                    list.add(stringObjectEntry.getValue());
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Failed to parse JSON body: " + e.getMessage());
-            params.clear();
-        }
+        Tools.jsonToMap(readString(),params);
     }
 
     private void parseUrlEncoded(Map<String, List<Object>> params) {
         try {
             QueryStringDecoder bodyDecoder = new QueryStringDecoder(readString(), Config.encoding, false);
             bodyDecoder.parameters().forEach((key, valueList) ->
-                    params.computeIfAbsent(key, k -> new ArrayList<>()).addAll(valueList)
+                    params.computeIfAbsent(key, k -> new ArrayList<>(2)).addAll(valueList)
             );
         } catch (Exception e) {
             System.err.println("Failed to parse URL-encoded body: " + e.getMessage());
@@ -174,15 +162,13 @@ public class HTTPRequestParameters {
             for (InterfaceHttpData data : bodyDecoder.getBodyHttpDatas()) {
                 if (data.getHttpDataType() == InterfaceHttpData.HttpDataType.Attribute) {
                     Attribute attribute = (Attribute) data;
-                    Log.log.i("attribute.getName",attribute.getName());
-                    params.computeIfAbsent(attribute.getName(), k -> new ArrayList<>()).add(attribute.getValue());
+                    params.computeIfAbsent(attribute.getName(), k -> new ArrayList<>(2)).add(attribute.getValue());
                 } else if (data.getHttpDataType() == InterfaceHttpData.HttpDataType.FileUpload) {
                     FileUploadEntity fileUploadEntity = new FileUploadEntity((FileUpload) data);
                     tempFile.add(new TempFile(fileUploadEntity.getFile(), System.currentTimeMillis()));
-                    params.computeIfAbsent(fileUploadEntity.getName(), k -> new ArrayList<>()).add(fileUploadEntity);
+                    params.computeIfAbsent(fileUploadEntity.getName(), k -> new ArrayList<>(2)).add(fileUploadEntity);
                 }
             }
-            Log.log.i("params",params);
         } catch (Exception e) {
             Log.log.e("parseFormData 出现错误", e);
             params.clear();

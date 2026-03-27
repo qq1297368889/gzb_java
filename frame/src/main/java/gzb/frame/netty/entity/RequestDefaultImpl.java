@@ -86,7 +86,7 @@ public class RequestDefaultImpl implements Request {
         this.request = request;
         this.method = request.method().name();
         getParameter();
-        this.response = new ResponseDefaultImpl(ctx);
+        this.response = new ResponseDefaultImpl(ctx,request);
     }
 
     public Map<String, String> getHeaders() {
@@ -219,7 +219,7 @@ public class RequestDefaultImpl implements Request {
         }
         List<Object> list = httpRequestParameters.getParameters().get(key);
         if (list != null && !list.isEmpty()) {
-            return list.toArray(new String[0]);
+            return list.toArray(new String[]{});
         }
         return null;
     }

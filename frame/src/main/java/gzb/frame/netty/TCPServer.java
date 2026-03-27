@@ -91,16 +91,13 @@ public class TCPServer{
                     "start tcp server", port,
                     "netty main 线程数量", main_thread_num,
                     "netty io 线程数量", io_thread_num,
-                    "biz 线程数量", Config.bizThreadNum,
-                    "biz 队列最大数量", Config.bizAwaitNum);
+                    "biz 线程数量", Config.bizThreadNum < 1 ? "动态扩容" : Config.bizThreadNum,
+                    "biz 队列最大数量", Config.bizAwaitNum < 1 ? Config.cpu * 2000 : Config.bizAwaitNum);
             // 1. 绑定端口（同步阻塞，确保绑定完成）
             ChannelFuture bindFuture = bootstrap.bind(new InetSocketAddress(port)).sync();
             // 2. 异步监听closeFuture，而非同步阻塞
             Channel serverChannel = bindFuture.channel();
             serverChannel.closeFuture().addListener(future -> {
-                // 当服务端Channel关闭时，执行优雅停机逻辑
-                System.out.println("http tcp 服务关闭...");
-                // 关闭EventLoopGroup（释放线程池资源）
                 bossGroup.shutdownGracefully();
                 workerGroup.shutdownGracefully();
             });

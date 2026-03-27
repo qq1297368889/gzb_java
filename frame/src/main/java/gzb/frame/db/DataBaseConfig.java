@@ -20,6 +20,7 @@ public class DataBaseConfig {
     int asyncBatchSize;
     int asyncThreadNum;
     int asyncQueueSize;
+    String parar;
     String sign;
 
     // type 对应数据库类型
@@ -43,6 +44,7 @@ public class DataBaseConfig {
         dataBaseConfig.setAsyncThreadNum(Config.getInteger("db." + key + ".async.thread.num", Math.max(Config.cpu / 4, 2)));
         dataBaseConfig.setAsyncQueueSize(Config.getInteger("db." + key + ".async.queue.size", dataBaseConfig.getAsyncThreadNum() * 10000));
 
+        dataBaseConfig.setParar(Config.get("db." + key + ".parar", null));
 
         dataBaseConfig.setSign(dataBaseConfig.getIp() + "_" + dataBaseConfig.port + "_" + dataBaseConfig.name);
 
@@ -50,22 +52,20 @@ public class DataBaseConfig {
     }
 
     public String getUrl() {
-        return getUrl(null);
-    }
-
-    public String getUrl(String parar) {
         return "jdbc:" + type + "://" + ip + ":" + port + "/" + name + (parar != null && parar.length() > 0 ? "?" + parar : "");
     }
 
 
-    public static DataBaseConfig readConfig(String type, String key, String clz, String ip, int port, String name, String acc, String pwd, int threadMax, int overtime, int asyncSleepMilli, int asyncBatchSize, int asyncThreadNum,int asyncQueueSize, String sign) {
-        return new DataBaseConfig(type, key, clz, ip, port, name, acc, pwd, threadMax, overtime, asyncSleepMilli, asyncBatchSize, asyncThreadNum, asyncQueueSize,sign);
+    public static DataBaseConfig readConfig(String type, String key, String clz, String ip, int port, String name, String acc, String pwd, int threadMax, int overtime, int asyncSleepMilli, int asyncBatchSize,
+                                            int asyncThreadNum,int asyncQueueSize, String parar, String sign) {
+        return new DataBaseConfig(type, key, clz, ip, port, name, acc, pwd, threadMax, overtime, asyncSleepMilli, asyncBatchSize, asyncThreadNum, asyncQueueSize,parar,sign);
     }
 
     public DataBaseConfig() {
     }
 
-    public DataBaseConfig(String type, String key, String clz, String ip, int port, String name, String acc, String pwd, int threadMax, int overtime, int asyncSleepMilli, int asyncBatchSize, int asyncThreadNum,int asyncQueueSize, String sign) {
+    public DataBaseConfig(String type, String key, String clz, String ip, int port, String name, String acc, String pwd, int threadMax, int overtime, int asyncSleepMilli, int asyncBatchSize,
+                          int asyncThreadNum,int asyncQueueSize, String parar, String sign) {
         setType(type);
         setKey(key);
         setClz(clz);
@@ -81,6 +81,7 @@ public class DataBaseConfig {
         setName(name);
         setAcc(acc);
         setPwd(pwd);
+        setParar(parar);
         setSign(getIp() + "-" + port + "-" + name);
         save();
     }
@@ -101,10 +102,18 @@ public class DataBaseConfig {
         Config.set("db." + key + ".acc", acc);
         Config.set("db." + key + ".pwd", pwd);
         Config.set("db." + key + ".name", name);
+        Config.set("db." + key + ".parar", parar);
 
         Config.save();
     }
 
+    public String getParar() {
+        return parar;
+    }
+
+    public void setParar(String parar) {
+        this.parar = parar;
+    }
     public String getIp() {
         return ip;
     }

@@ -95,7 +95,12 @@ public class Queue<T> {
                 }
                 deque.addLast(t);
             }
-            consumer.signalAll();
+            if (ts.length==1) {
+                consumer.signal();
+            }else if (ts.length>=1) {
+                consumer.signalAll();
+            }
+
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt(); // 恢复中断状态
             throw new RuntimeException("Interrupted during put", e);
@@ -114,7 +119,7 @@ public class Queue<T> {
             for (T t : ts) {
                 deque.addLast(t);
             }
-            consumer.signalAll();
+            consumer.signal();
             return true;
         } finally {
             lock.unlock();
@@ -165,9 +170,10 @@ public class Queue<T> {
                 }
                 if (deque.isEmpty()) return null;
             }
-            return deque.removeFirst();
-        } finally {
+            T t=deque.removeFirst();
             producers.signalAll();
+            return t;
+        } finally {
             lock.unlock();
         }
     }
@@ -178,9 +184,10 @@ public class Queue<T> {
             if (deque.isEmpty()) {
                 return null;
             }
-            return deque.removeFirst();
-        } finally {
+            T t=deque.removeFirst();
             producers.signalAll();
+            return t;
+        } finally {
             lock.unlock();
         }
     }

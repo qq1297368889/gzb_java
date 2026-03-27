@@ -1,0 +1,300 @@
+/*
+ *
+ *  * Copyright [2025] [GZB ONE]
+ *  *
+ *  * Licensed under the Apache License, Version 2.0 (the "License");
+ *  * you may not use this file except in compliance with the License.
+ *  * You may obtain a copy of the License at
+ *  *
+ *  * http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ *  * Unless required by applicable law or agreed to in writing, software
+ *  * distributed under the License is distributed on an "AS IS" BASIS,
+ *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  * See the License for the specific language governing permissions and
+ *  * limitations under the License.
+ *
+ */
+
+package gzb.frame.netty.entity;
+
+import gzb.frame.factory.Constant;
+import gzb.frame.netty.tools.HTTPRequestParameters;
+import gzb.frame.netty.tools.HTTPTools;
+import gzb.tools.cache.session.Session;
+import gzb.tools.cache.session.SessionImpl;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+public class RequestHTTPImpl implements Request {
+    private ChannelHandlerContext ctx;
+    private String method;
+    private Map<String, String> headers;
+    private Set<Cookie> cookies;
+    private  HTTPTools.Entity entity;
+    private Response response;
+    private Session session;
+
+    public String getUri() {
+        return entity.getURL();
+    }
+
+    public String getMethod() {
+        return method;
+    }
+
+    public String getRemoteIp() {
+        InetSocketAddress remoteAddress = (InetSocketAddress) ctx.channel().remoteAddress();
+        return remoteAddress.getAddress().getHostAddress();
+    }
+
+    public int getRemotePort() {
+        InetSocketAddress remoteAddress = (InetSocketAddress) ctx.channel().remoteAddress();
+        return remoteAddress.getPort();
+    }
+
+    public String getLocalIp() {
+        InetSocketAddress localAddress = (InetSocketAddress) ctx.channel().localAddress();
+        return localAddress.getAddress().getHostAddress();
+    }
+
+    public int getLocalPort() {
+        InetSocketAddress localAddress = (InetSocketAddress) ctx.channel().localAddress();
+        return localAddress.getPort();
+    }
+
+    public String getBodyString() {
+        return entity.getBody();
+    }
+
+    public byte[] getBody() {
+        return entity.getBodyByte();
+    }
+
+    public FullHttpRequest getRequest() {
+        return null;
+    }
+
+    public RequestHTTPImpl(ChannelHandlerContext ctx, HTTPTools.Entity entity) {
+        this.ctx = ctx;
+        this.entity = entity;
+        this.method = Constant.requestMethod[entity.method];
+        this.response = new ResponseHTTPImpl(ctx,entity.isKeep());
+    }
+
+    public Map<String, String> getHeaders() {
+        if (headers == null) {
+            headers=entity.getHeader();
+        }
+        return headers;
+    }
+
+    public long getDateHeader(String name) {
+        if (name == null || name.isEmpty()) {
+            return -1;
+        }
+
+        String headerValue = headers.get(name);
+        if (headerValue == null || headerValue.isEmpty()) {
+            return -1;
+        }
+// HTTP协议标准日期格式及常见变体格式
+        List<SimpleDateFormat> DATE_FORMATTERS;
+        // 初始化支持的日期格式列表
+        DATE_FORMATTERS = new ArrayList<>();
+
+        // 标准HTTP日期格式 (RFC 1123)
+        SimpleDateFormat rfc1123 = new SimpleDateFormat(
+                "EEE, dd MMM yyyy HH:mm:ss zzz",
+                Locale.US
+        );
+        rfc1123.setTimeZone(TimeZone.getTimeZone("GMT"));
+
+        // 旧版HTTP日期格式 (RFC 1036)
+        SimpleDateFormat rfc1036 = new SimpleDateFormat(
+                "EEEE, dd-MMM-yy HH:mm:ss zzz",
+                Locale.US
+        );
+        rfc1036.setTimeZone(TimeZone.getTimeZone("GMT"));
+
+        // ANSI C asctime()格式
+        SimpleDateFormat ansiC = new SimpleDateFormat(
+                "EEE MMM dd HH:mm:ss yyyy",
+                Locale.US
+        );
+        ansiC.setTimeZone(TimeZone.getTimeZone("GMT"));
+
+        DATE_FORMATTERS.add(rfc1123);
+        DATE_FORMATTERS.add(rfc1036);
+        DATE_FORMATTERS.add(ansiC);
+        // 尝试用所有支持的格式解析
+        for (SimpleDateFormat formatter : DATE_FORMATTERS) {
+            try {
+                Date date = formatter.parse(headerValue);
+                return date.getTime(); // 转换为时间戳
+            } catch (ParseException e) {
+                // 解析失败继续尝试下一种格式
+                continue;
+            }
+        }
+
+        // 所有格式都解析失败
+        return -1;
+    }
+
+    public String getHeader(String key) {
+        if (headers == null) {
+            getHeaders();//初始化 协议头数据
+        }
+        return headers.get(key.toLowerCase());
+    }
+
+    public Set<Cookie> getCookies() {
+        if (cookies == null) {
+            if (headers == null) {
+                getHeaders();//初始化 协议头数据
+            }
+            String cookieString = headers.get("cookie");
+            if (cookieString != null) {
+                cookies = ServerCookieDecoder.STRICT.decode(cookieString);
+            }
+            if (cookies == null) {
+                cookies = new HashSet<>();
+            }
+        }
+        return cookies;
+    }
+
+    public ChannelHandlerContext getCtx() {
+        return ctx;
+    }
+
+    public HTTPRequestParameters getRequestParameters() {
+        return null;
+    }
+
+    public Response getResponse() {
+        return response;
+    }
+
+    public Cookie getCookie(String key) {
+        if (cookies == null) {
+            getCookies();//初始化 协议头数据 然后cookie
+        }
+        for (Cookie cookie : cookies) {
+            if (cookie.name().equals(key)) {
+                return cookie;
+            }
+        }
+        return null;
+    }
+
+    public String getCookieVal(String key) {
+        Cookie cookie = getCookie(key);
+        if (cookie == null) {
+            return null;
+        }
+        return cookie.value();
+    }
+
+    public String[] getParameterArray(String key){
+        List<Object> list = getParameter().get(key);
+        if (list != null && !list.isEmpty()) {
+            return list.toArray(new String[]{});
+        }
+        return null;
+    }
+
+    public String getParameterVal(String key){
+        String[] arr1 = getParameterArray(key);
+        if (arr1 == null || arr1.length < 1) {
+            return null;
+        }
+        return arr1[0];
+    }
+
+    public Map<String, List<Object>> getParameter(){
+        try {
+            return entity.getParameters();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String getOrigin() {
+        if (headers == null) {
+            getHeaders();
+        }
+        if (headers != null) {
+            return headers.get("origin");
+        }
+        return null;
+    }
+
+    public String getDomain() {
+        if (headers == null) {
+            getHeaders();
+        }
+        // 1. 检查反向代理头: X-Forwarded-Host
+        // 这是最常用的头，由大多数负载均衡器和代理设置
+        String host = headers.get("x-forwarded-host");
+        if (host != null && !host.isEmpty()) {
+            return host.split(":")[0].trim(); // 移除端口号
+        }
+
+        // 2. 检查反向代理头: Forwarded
+        // 这是较新的RFC 7239标准，但使用不如X-Forwarded-Host广泛
+        host = headers.get("forwarded");
+        if (host != null && !host.isEmpty()) {
+            // 解析host参数，例如 "for=192.0.2.60;proto=http;host=example.com"
+            for (String param : host.split(";")) {
+                if (param.trim().toLowerCase().startsWith("host=")) {
+                    return param.split("=")[1].trim();
+                }
+            }
+        }
+
+        // 3. 回退到标准HTTP Host头
+        // 这是最基础的获取方式
+        host = headers.get("host");
+        if (host != null && !host.isEmpty()) {
+            return host.split(":")[0].trim(); // 移除端口号
+        }
+
+        return null;
+    }
+
+
+    public Session getSession()  {
+        return getSession(true);
+    }
+
+    public Session getSession(boolean sendCookie) {
+        if (session == null) {
+            String token = getHeader("token");
+            if (token == null) {
+                token = getCookieVal("token");
+            }
+            if (token == null) {
+                token = getParameterVal("token");
+            }
+            session = new SessionImpl(token, response, sendCookie);
+        }
+        return session;
+    }
+
+    public void close() {
+
+    }
+    public int getImplType(){
+        return 0;
+    }
+}

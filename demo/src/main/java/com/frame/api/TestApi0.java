@@ -31,7 +31,6 @@ public class TestApi0 {
             response.sendAndFlush(gzbJson.fail("on",sysFile));
         },()->{
             response.sendAndFlush(gzbJson.success("ok",sysFile));
-
         });
     }
 

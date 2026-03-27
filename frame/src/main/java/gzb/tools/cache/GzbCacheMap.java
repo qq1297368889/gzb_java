@@ -290,6 +290,7 @@ public class GzbCacheMap implements GzbCache {
 
     /// 下列各种方法 带序列化和反序列化 其他规则和上述同名方法一致   删除方法共享
 
+
     /**
      * 将 Object 序列化为 byte 数组。
      *
@@ -297,15 +298,7 @@ public class GzbCacheMap implements GzbCache {
      * @return 序列化后的 byte 数组，失败返回 null。
      */
     private byte[] serialize(Object obj) {
-        if (obj == null) return null;
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
-             ObjectOutputStream oos = new ObjectOutputStream(bos)) {
-            oos.writeObject(obj);
-            return bos.toByteArray();
-        } catch (IOException e) {
-            log.e(e, "Error serializing object.");
-            return null;
-        }
+        return Tools.serialize(obj);
     }
 
     /**
@@ -314,18 +307,9 @@ public class GzbCacheMap implements GzbCache {
      * @param bytes 序列化后的 byte 数组。
      * @return 反序列化后的 Object，失败返回 null。
      */
-    @SuppressWarnings("unchecked")
     private <T> T deserialize(byte[] bytes) {
-        if (bytes == null) return null;
-        try (ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-             ObjectInputStream ois = new ObjectInputStream(bis)) {
-            return (T) ois.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            log.e(e, "Error deserializing object.");
-            return null;
-        }
+        return Tools.deserialize(bytes);
     }
-
     @Override
     public void setMapObject(String key, String subKey, Object val, int second) {
         if (key == null || subKey == null || val == null || key.isEmpty() || subKey.isEmpty()) {

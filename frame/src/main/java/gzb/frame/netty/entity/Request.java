@@ -24,6 +24,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.cookie.Cookie;
 
+import java.io.IOException;
 import java.util.*;
 
 public interface Request {
@@ -79,17 +80,17 @@ public interface Request {
     /**
      * 获取 参数 某个元素 数组
      */
-    public String[] getParameterArray(String key) ;
+    public String[] getParameterArray(String key);
 
     /**
      * 获取 参数 某个元素 字符串
      */
-    public String getParameterVal(String key) ;
+    public String getParameterVal(String key);
 
     /**
      * 获取 参数 MAP
      */
-    public Map<String, List<Object>> getParameter() ;
+    public Map<String, List<Object>> getParameter();
 
     /**
      * 获取 协议头 某个 Origin
@@ -148,6 +149,7 @@ public interface Request {
      * 获取 底层对象 req
      */
     public FullHttpRequest getRequest();
+
 
     /**
      * 获取 请求数据 原数据 body

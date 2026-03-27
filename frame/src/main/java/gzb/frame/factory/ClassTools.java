@@ -27,12 +27,14 @@ import gzb.frame.annotation.*;
 import gzb.frame.db.BaseDao;
 import gzb.entity.FileUploadEntity;
 import gzb.frame.db.DataBase;
+import gzb.frame.language.Template;
 import gzb.frame.netty.entity.Request;
 import gzb.frame.netty.entity.Response;
 import gzb.tools.*;
 import gzb.tools.json.GzbJson;
 import gzb.tools.json.Result;
 import gzb.tools.log.Log;
+import gzb.tools.thread.GzbThreadLocal;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
@@ -53,46 +55,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ClassTools {
-    public static void main(String[] args) {
-        RunRes runRes = new RunRes();
-        runRes.setState(1);
-        RunRes runRes2 = new RunRes();
-        runRes2.setState(1);
-        runRes.setData(runRes2);
-        System.out.println(Arrays.toString("\",:{}".getBytes()));
-        System.out.println(new String(Tools.toJson(runRes)));
-        System.out.println(new String(toJsonObjectByte(runRes)));
-        System.out.println(new String(JSON.toJSONBytes(runRes)));
-        long size = 0;
-        long t01 = System.currentTimeMillis();
-        for (int i = 0; i < 1000000; i++) {
-            size += toJsonObjectByte(runRes).length;
-        }
-        long t02 = System.currentTimeMillis();
-        System.out.println((t02 - t01));
-        size = 0;
-        t01 = System.currentTimeMillis();
-        for (int i = 0; i < 1000000; i++) {
-            size += JSON.toJSONString(runRes).length();
-        }
-        t02 = System.currentTimeMillis();
-        System.out.println((t02 - t01));
 
-        size = 0;
-        t01 = System.currentTimeMillis();
-        for (int i = 0; i < 1000000; i++) {
-            size += toJsonObjectByte(runRes).length;
-        }
-        t02 = System.currentTimeMillis();
-        System.out.println((t02 - t01));
-        size = 0;
-        t01 = System.currentTimeMillis();
-        for (int i = 0; i < 1000000; i++) {
-            size += Tools.toJson(runRes).length();
-        }
-        t02 = System.currentTimeMillis();
-        System.out.println((t02 - t01));
-    }
 
     public static Log log = Log.log;
     static Map<Class<?>, Object> mapLoadObjectObject = new ConcurrentHashMap<>();
@@ -979,12 +942,13 @@ public class ClassTools {
                 "        throw new RuntimeException(\"实体类->" + className + "转换JSON异常\",e);\n" +
                 "     }\n" +
                 "   }\n";
+        gzb.tools.thread.GzbThreadLocal.Entity entity0 = gzb.tools.thread.GzbThreadLocal.context.get();
 
         code += "   public String toJson(Object object) throws Exception{\n" +
-                "        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();\n" +
-                "        int index0=entity0.open();\n" +
+                "        gzb.tools.thread.GzbThreadLocal.Entity entity0 = gzb.tools.thread.GzbThreadLocal.context.get();\n" +
+                "        int index0=entity0.stringBuilderCacheEntity.open();\n" +
                 "try{\n" +
-                "        StringBuilder sb = entity0.get(index0);\n" +
+                "        StringBuilder sb = entity0.stringBuilderCacheEntity.get(index0);\n" +
                 "        sb.append(\"{\");" +
                 "        if (object instanceof " + className + ") {\n" +
                 "           " + className + " obj0=(" + className + ")object;\n";
@@ -1071,9 +1035,11 @@ public class ClassTools {
                 "     }catch (Exception e){\n" +
                 "        throw new RuntimeException(\"实体类->" + className + "转换JSON异常\",e);\n" +
                 "   }finally {\n" +
-                "        entity0.close(index0);" +
+                "        entity0.stringBuilderCacheEntity.close(index0);" +
                 "   }\n"+
                 "   }\n";
+
+
         code += "   public void toJson(Object object,StringBuilder sb) throws Exception{\n" +
                 "try{\n" +
                 "        boolean app01=false;\n" +
@@ -1188,6 +1154,8 @@ public class ClassTools {
                 "   }\n" +
                 "   }\n";
 
+
+
         code += "   public Object[] loadObject" +
                 "(java.util.Map<String,java.util.List<Object>> map) throws Exception {\n";
         try {
@@ -1218,7 +1186,7 @@ public class ClassTools {
                             "                    returnObj=new java.util.ArrayList<>(list.size());\n" +
                             "                }\n" +
                             "                for (int i = 0; i < list.size(); i++) {\n" +
-                            "                    if(list.get(i)==null || list.get(i).toString().length()==0 || list.get(0).equals(\"undefined\")){\n" +
+                            "                    if(list.get(i)==null){\n" +
                             "                        continue;" +
                             "                    }\n" +
                             "                    if (i>returnObj.size()-1) {\n" +
@@ -1249,7 +1217,7 @@ public class ClassTools {
                                 "                    returnObj=new java.util.ArrayList<>(list.size());\n" +
                                 "                }\n" +
                                 "                for (int i = 0; i < list.size(); i++) {\n" +
-                                "                    if(list.get(i)==null || list.get(i).toString().length()==0 || list.get(0).equals(\"undefined\")){\n" +
+                                "                    if(list.get(i)==null){\n" +
                                 "                        continue;" +
                                 "                    }\n" +
                                 "                    if (i>returnObj.size()-1) {\n" +
@@ -1287,6 +1255,8 @@ public class ClassTools {
             code += "        return null;\n";
         }
         code += "    }\n";
+
+
         code += "    public Object loadResultSet(java.sql.ResultSet resultSet, java.util.Set<String> names) throws Exception{\n";
         if (classAttribute != null) {
             try {
@@ -1335,10 +1305,10 @@ public class ClassTools {
         if (classAttribute != null) {
             code += "       " + aClass.getName() + " obj=(" + aClass.getName() + ")obj0;\n" +
                     "        String sql = \"delete from " + classAttribute.name() + "\";\n" +
-                    "        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();\n" +
-                    "        int index0=entity0.open();\n" +
+                    "        gzb.tools.thread.GzbThreadLocal.Entity entity0 = gzb.tools.thread.GzbThreadLocal.context.get();\n" +
+                    "        int index0=entity0.stringBuilderCacheEntity.open();\n" +
                     "try {\n" +
-                    "        StringBuilder stringBuilder = entity0.get(index0);\n" +
+                    "        StringBuilder stringBuilder = entity0.stringBuilderCacheEntity.get(index0);\n" +
                     "        java.util.List<Object> params = new java.util.ArrayList<>();\n";
             for (Field field : fields) {
                 if (field.getType() == byte.class || field.getType() == Byte.class
@@ -1399,7 +1369,7 @@ public class ClassTools {
                     "        return new gzb.entity.SqlTemplate(sql + stringBuilder,params.toArray());\n"+
 
                     "}finally {\n" +
-                    "        entity0.close(index0);" +
+                    "        entity0.stringBuilderCacheEntity.close(index0);" +
                     "            }\n";
         } else {
             code += "        return null;\n";
@@ -1444,10 +1414,10 @@ public class ClassTools {
                 ids1 = ids1.substring(0, ids1.length() - 5);
             }
             code += "        String sql = \"update " + classAttribute.name() + " set \";\n" +
-                    "        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();\n" +
-                    "        int index0=entity0.open();\n" +
+                    "        gzb.tools.thread.GzbThreadLocal.Entity entity0 = gzb.tools.thread.GzbThreadLocal.context.get();\n" +
+                    "        int index0=entity0.stringBuilderCacheEntity.open();\n" +
                     "try {\n" +
-                    "        StringBuilder stringBuilder = entity0.get(index0);\n" +
+                    "        StringBuilder stringBuilder = entity0.stringBuilderCacheEntity.get(index0);\n" +
                     "        java.util.List<Object> params = new java.util.ArrayList<>();\n";
             for (Field field : fields) {
                 if (field.getType() == byte.class || field.getType() == Byte.class
@@ -1481,8 +1451,8 @@ public class ClassTools {
                     "        }\n" +
                     ids2 +
                     "        return new gzb.entity.SqlTemplate(sql +stringBuilder +\" where " + ids1 + "\",params.toArray());\n" +
-            "}finally {\n" +
-                    "        entity0.close(index0);" +
+                    "}finally {\n" +
+                    "        entity0.stringBuilderCacheEntity.close(index0);" +
                     "            }\n";;
         } else {
             code += "        return null;\n";
@@ -1578,10 +1548,10 @@ public class ClassTools {
         if (classAttribute != null) {
             code += "       " + aClass.getName() + " obj=(" + aClass.getName() + ")obj0;\n";
             code += "        String sql = \"select * from " + classAttribute.name() + "\";\n" +
-                    "        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();\n" +
-                    "        int index0=entity0.open();\n" +
+                    "        gzb.tools.thread.GzbThreadLocal.Entity entity0 = gzb.tools.thread.GzbThreadLocal.context.get();\n" +
+                    "        int index0=entity0.stringBuilderCacheEntity.open();\n" +
                     "try {\n" +
-                    "        StringBuilder stringBuilder = entity0.get(index0);\n" +
+                    "        StringBuilder stringBuilder = entity0.stringBuilderCacheEntity.get(index0);\n" +
                     "        java.util.List<Object> params = new java.util.ArrayList<>();\n";
             for (Field field : fields) {
                 if (field.getType() == byte.class || field.getType() == Byte.class
@@ -1641,7 +1611,7 @@ public class ClassTools {
                     "        }\n" +
                     "        return new gzb.entity.SqlTemplate(sql + stringBuilder,params.toArray());\n" +
                     "}finally {\n" +
-                    "        entity0.close(index0);" +
+                    "        entity0.stringBuilderCacheEntity.close(index0);" +
                     "            }\n";
 
         } else {
@@ -1654,7 +1624,7 @@ public class ClassTools {
         if (num == 0) {
             return null;
         }
-        //System.out.println(code);
+       // System.out.println(code);
         return code;
     }
 
@@ -1680,14 +1650,14 @@ public class ClassTools {
                 || aClass == DateTime.class
                 || aClass == Timestamp.class;
     }
-
+    public static String gen_call_code_v4(Class<?> aClass) throws Exception {
+        return gen_call_code_v4(aClass,null);
+    }
     //可维护性堪忧 不过应该不需要维护其实
     public static String gen_call_code_v4(Class<?> aClass, String javaCode) throws Exception {
         Method[] methods = ClassTools.getCombinedMethods(aClass);
         Field[] fields = ClassTools.getCombinedFields(aClass, false);
-
-        String code = "";
-        code += "    public Object _gzb_call_x01(" +
+        String code = "    public Object _gzb_call_x01(" +
                 "int _gzb_one_c_id," +
                 "java.util.Map<String, Object> _gzb_one_c_mapObject," +
                 "gzb.frame.netty.entity.Request _g_p_req," +
@@ -1697,7 +1667,6 @@ public class ClassTools {
                 "gzb.tools.log.Log _g_p_log," +
                 "Object[] arrayObject" +
                 ") throws Exception {\n" +
-                //"long start_0=System.nanoTime();\n"+
                 "        Object object_return = null;\n";
 
 //不再需要注入 因为编译时注入了
@@ -1715,7 +1684,7 @@ public class ClassTools {
                     "        this." + fields[i].getName() + " = (" + fields[i].getType().getName() + ") _gzb_one_c_mapObject.get(\"" + impl + "\");\n";
 
         }
-        code += "        java.util.List<Object>t_map_list=null;\n";
+        code += "        java.util.List<Object> t_map_list=null;\n";
 
         for (int i = 0; i < methods.length; i++) {
             Method method = methods[i];
@@ -1758,6 +1727,9 @@ public class ClassTools {
             String[] names = ClassTools.getParameterNamesByAsm(method, types).toArray(new String[0]);
 
             if (names.length != types.length) {
+                if (javaCode==null) {
+                    throw new RuntimeException("获取参数名失败:"+met_Sign);
+                }
                 names = ClassTools.getParameterNames(javaCode, method.getName(), types).toArray(new String[0]);
             }
             if (names.length != types.length) {
@@ -2650,7 +2622,7 @@ public class ClassTools {
                     }
                 }
                 if (obj1 != null) {
-                    log.t("类字段注入", "将", obj1, "注入到对象", object, "的类变量", fields[i].getName(), "该变量的类型为", key);
+                    log.t( Template.THIS_LANGUAGE[83],  obj1, Template.THIS_LANGUAGE[84], object, Template.THIS_LANGUAGE[85], fields[i].getName(), Template.THIS_LANGUAGE[86], key);
                     classInject(obj1, data, mapObjectAll);
                     fields[i].setAccessible(true);
                     fields[i].set(object, obj1);
@@ -2672,10 +2644,10 @@ public class ClassTools {
         if (path == null || path.isEmpty()) {
             return PATH_SEPARATOR_STRING;
         }
-        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
-        int index0=entity0.open();
+        GzbThreadLocal.Entity entity0 = GzbThreadLocal.context.get();
+        int index0 = entity0.stringBuilderCacheEntity.open();
         try {
-            StringBuilder sb = entity0.get(index0);
+            StringBuilder sb = entity0.stringBuilderCacheEntity.get(index0);
             // 1. 确保以 '/' 开头
             if (path.charAt(0) != PATH_SEPARATOR_CHAR) {
                 sb.append(PATH_SEPARATOR_CHAR);
@@ -2706,7 +2678,7 @@ public class ClassTools {
             }
             return sb.toString();
         }finally {
-            entity0.close(index0);
+            entity0.stringBuilderCacheEntity.close(index0);
         }
 
     }
@@ -2934,11 +2906,10 @@ public class ClassTools {
                 continue;
             }
             map.put(anInterface.getName(), object);
-            log.t("储存对象", anInterface.getName(), object.toString());
+            log.t(Template.THIS_LANGUAGE[7], anInterface.getName(), object.toString());
         }
         map.put(clazz.getName(), object);
-        log.t("储存对象", clazz.getName(), object.toString());
-        log.d("储存对象", clazz.getName());
+        log.d(Template.THIS_LANGUAGE[7], clazz.getName(), object.toString());
         if (name != null && !name.isEmpty()) {
             map.put(name, object);
             log.t("储存对象", name, object.toString());

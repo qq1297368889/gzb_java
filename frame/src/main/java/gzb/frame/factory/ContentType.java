@@ -21,12 +21,13 @@ package gzb.frame.factory;
 import gzb.tools.Config;
 
 public class ContentType {
-    public final static String json = "application/json; charset="+Config.encoding;
-    public final static String from = "application/x-www-form-urlencoded; charset="+Config.encoding;
-    public final static String xml = "application/xml; charset="+Config.encoding;
-    public final static String text = "text/plain; charset="+Config.encoding;
-    public final static String html = "text/html; charset="+ Config.encoding;
-    public final static String css = "text/css; charset="+Config.encoding;
-    public final static String javaScript = "text/javascript; charset="+Config.encoding;
+    /// charset = xx 自动追加
+    public final static String json = "application/json";
+    public final static String from = "application/x-www-form-urlencoded";
+    public final static String xml = "application/xml";
+    public final static String text = "text/plain";
+    public final static String html = "text/html";//; charset=
+    public final static String css = "text/css";
+    public final static String javaScript = "text/javascript";
     public final static String file = "application/octet-stream";
 }

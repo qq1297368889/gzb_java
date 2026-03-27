@@ -19,6 +19,7 @@
 package gzb.frame.netty;
 
 import gzb.frame.factory.ClassTools;
+import gzb.frame.netty.tools.HTTPTools;
 import gzb.tools.Config;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
@@ -32,6 +33,72 @@ import java.net.URLDecoder;
 import java.nio.charset.Charset;
 
 public class HTTPStaticFileHandler {
+    public void channelRead0(ChannelHandlerContext ctx, HTTPTools.Entity entity) {
+        RandomAccessFile raf = null;
+        try {
+            if (entity.method != 0) {
+                sendError(ctx, HttpResponseStatus.METHOD_NOT_ALLOWED);
+                return;
+            }
+            String uri = entity.getURL();
+            String path = sanitizeUri(uri);
+            if (path == null) {
+                sendError(ctx, HttpResponseStatus.FORBIDDEN);
+                return;
+            }
+
+            File file = new File(Config.staticDir, path);
+            if (!file.exists()) {
+                sendError(ctx, HttpResponseStatus.NOT_FOUND);
+                return;
+            }
+            if (file.isDirectory()) {
+                file = new File(file, "index.html");
+                if (!file.exists()) {
+                    sendError(ctx, HttpResponseStatus.NOT_FOUND);
+                    return;
+                }
+            }
+
+            raf = new RandomAccessFile(file, "r");
+            long fileLength = raf.length();
+
+            // --- gzb one 极致优化：手动拼接文本 Header ---
+            StringBuilder sb = new StringBuilder(256);
+            sb.append("HTTP/1.1 200 OK\r\n");
+            sb.append("Content-Length: ").append(fileLength).append("\r\n");
+            sb.append("Content-Type: ").append(getContentType(file)).append("\r\n");
+
+            boolean keepAlive = entity.isKeep();
+            if (keepAlive) {
+                sb.append("Connection: keep-alive\r\n");
+            } else {
+                sb.append("Connection: close\r\n");
+            }
+            sb.append("\r\n"); // Header 结束符
+
+            // 1. 发送 Header 字节流
+            byte[] headerBytes = sb.toString().getBytes(Config.encoding);
+            ctx.write(Unpooled.wrappedBuffer(headerBytes));
+
+            // 2. 发送文件体 (零拷贝)
+            // 注意：虽然 DefaultFileRegion 是个对象，但它在 Netty 底层会被转化为 sendfile 系统调用，不经过用户态内存拷贝
+            ChannelFuture sendFileFuture = ctx.write(new DefaultFileRegion(raf.getChannel(), 0, fileLength));
+
+            // 3. 刷出并处理连接关闭
+            ChannelFuture lastContentFuture = ctx.writeAndFlush(Unpooled.EMPTY_BUFFER);
+            if (!keepAlive) {
+                lastContentFuture.addListener(ChannelFutureListener.CLOSE);
+            }
+
+        } catch (Exception e) {
+            if (raf != null) { try { raf.close(); } catch (Exception ignored) {} }
+            e.printStackTrace();
+            if (ctx.channel().isActive()) {
+                sendError(ctx, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+            }
+        }
+    }
     public void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) {
         try {
             // 1. 验证请求
@@ -116,13 +183,6 @@ public class HTTPStaticFileHandler {
         }
     }
 
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        cause.printStackTrace();
-        if (ctx.channel().isActive()) {
-            sendError(ctx, HttpResponseStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     /**
      * 清理请求路径，防止路径遍历攻击
      */
@@ -140,7 +200,15 @@ public class HTTPStaticFileHandler {
         }
         return path;
     }
-
+    private String getContentType(File file) {
+        String fileName = file.getName();
+        if (fileName.endsWith(".html")) return "text/html; charset=" + Config.encoding;
+        if (fileName.endsWith(".css")) return "text/css; charset=" + Config.encoding;
+        if (fileName.endsWith(".js")) return "application/javascript";
+        if (fileName.endsWith(".png")) return "image/png";
+        if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) return "image/jpeg";
+        return "application/octet-stream";
+    }
     /**
      * 设置Content-Type响应头
      */

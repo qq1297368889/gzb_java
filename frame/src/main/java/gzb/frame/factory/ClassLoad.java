@@ -18,12 +18,14 @@
 package gzb.frame.factory;
 
 import gzb.exception.GzbException0;
+import gzb.frame.language.Template;
 import gzb.frame.netty.entity.Request;
 import gzb.frame.netty.entity.Response;
 import gzb.tools.Config;
 import gzb.tools.Tools;
 import gzb.tools.json.GzbJson;
 import gzb.tools.log.Log;
+import gzb.tools.thread.GzbThreadLocal;
 
 import javax.tools.*;
 import java.io.ByteArrayOutputStream;
@@ -36,6 +38,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -59,7 +64,7 @@ public class ClassLoad {
             aClass0.getMethod("_gzb_call_x01"
                     ,int.class, Map.class, Request.class, Response.class, Map.class,
                     GzbJson.class, Log.class,Object[].class);
-            log.d("无需编译", aClass0.getName());
+            log.d(Template.THIS_LANGUAGE[9], aClass0.getName());
             return aClass0;
         } catch (Exception e) {
             long start = System.currentTimeMillis();
@@ -67,7 +72,7 @@ public class ClassLoad {
             sourcesMap.put(className, code);
             Map<String, Class<?>> map = ClassLoadV4.load(sourcesMap);
             long end = System.currentTimeMillis();
-            log.d("编译耗时", end - start, map);
+            log.d(Template.THIS_LANGUAGE[8], end - start, map);
             return map.get(className);
 
         }
@@ -76,9 +81,60 @@ public class ClassLoad {
     public static Map<String, Class<?>> compileJavaCode(Map<String, String> sourcesMap) throws Exception {
         Map<String, Class<?>> map = new ConcurrentHashMap<>();
         for (Map.Entry<String, String> stringStringEntry : sourcesMap.entrySet()) {
-            Class<?> aClass = compileJavaCode(stringStringEntry.getValue(), stringStringEntry.getKey());
-            map.put(stringStringEntry.getKey(), aClass);
+            Class<?>ac01=compileJavaCode(stringStringEntry.getValue(), stringStringEntry.getKey());
+            map.put(stringStringEntry.getKey(), ac01);
         }
+        GzbThreadLocal.context.remove();
+        return map;
+    }
+    public static Map<String, Class<?>> compileJavaCode0(Map<String, String> sourcesMap) throws Exception {
+        Map<String, Class<?>> map = new ConcurrentHashMap<>();
+        int size=Config.cpu-1;
+        if (size<2) {
+            return compileJavaCode0(sourcesMap);
+        }
+        if (size > sourcesMap.size()){
+            size=sourcesMap.size();
+        }
+        Map<String, String> sourcesMap2=new ConcurrentHashMap<>(sourcesMap);
+        CountDownLatch latch = new CountDownLatch(size);
+        Lock lock=new ReentrantLock();
+        for (int i = 0; i < size; i++) {
+            new Thread(){
+                @Override
+                public void run() {
+                    for (int i1 = 0; i1 < sourcesMap.size(); i1++) {
+                        String name =null,code=null;
+                        lock.lock();
+                        try {
+                            for (Map.Entry<String, String> stringStringEntry : sourcesMap2.entrySet()) {
+                                name=stringStringEntry.getKey();
+                                code=stringStringEntry.getValue();
+                                break;
+                            }
+                            if (name==null) {
+                                break;
+                            }
+                            sourcesMap2.remove(name);
+                        }finally {
+                            lock.unlock();
+                        }
+                        try {
+                            Class<?>ac01=compileJavaCode(code, name);
+                            if (ac01!=null) {
+                                map.put(name,ac01);
+                            }
+                        } catch (Exception e) {
+                            Log.log.e("编译错误 跳过",code,name,e);
+                        }
+                    }
+                    latch.countDown();
+                    GzbThreadLocal.context.remove();
+                }
+            }.start();
+        }
+        latch.await();
+        GzbThreadLocal.context.remove();
         return map;
     }
 

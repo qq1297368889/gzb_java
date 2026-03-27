@@ -9,103 +9,29 @@
 
 ### 告别重启！框架允许 您在系统满负载下实现无缝热更新，无需停机。
 
-Please right click->Translate
----
 
 ## 关于性能
-
-### 运行环境
-
-* **CPU**：AMD Ryzen 5 3600
-* **JDK**：GraalVM 21.0.6
-* 以下这份代码 预热后 框架接受请求，全流程 亚微秒级别(小于1微秒) 一秒=10亿纳秒
-* 已经达到jvm物理极限，理论上应该没有其他java框架能超越
-
+* **CPU**：AMD Ryzen 5 3600 （6物理核心12逻辑核心）
+* **JDK**：GraalVM 21
+* **虚拟机**：kali linux 分配 8 逻辑核心
+* 极简http请求 /text（框架内置） 压测 流水线 约 300W QPS | 非流水线 约 30万 QPS
+* ![极简http请求](text-qps.png)
+* 以下端点                     压测 流水线 约 150万 QPS | 非流水线 约 25万 QPS
+* ![序列化请求](users-qps.png)
 ```java
-/**
- * 演示HTTP端点  包含 端点映射 请求参数映射到参数 注入内部对象 组装json字符串 以及判断是否 需要调用一系的组件
- * @param sysUsersAcc 客户端请求参数
- * @param gzbJson 框架内置JSON对象
- * */
-@GetMapping("/test1")//请求端点
-public String test(String sysUsersAcc, GzbJson gzbJson) throws Exception {
-    return gzbJson.success(sysUsersAcc);
+@EventLoop
+@RequestMapping("users/2")
+public Object users(Long usersId, String usersName, String usersPassword, String usersEmail, Integer usersAge) {
+    return new Users(
+            usersId == null ? 8215438L : usersId,
+            usersName == null ?"vpeGb2SNo8Xk" : usersName,
+            usersPassword == null ? "az1Amb2aVJsP": usersPassword,
+            usersEmail == null ? "nWV3qO6qW0zZ@gzb.com" : usersEmail,
+            usersAge == null ? 12: usersAge,
+            null //not time
+    );
 }
 ```
-
-### 为什么不展示压测数据：
-
-#### 由于性能数据极易受测试环境、网络I/O、操作系统和JVM开销等外部因素影响，
-
-#### 我不提供可能存在偏差的压测数据。我的关注点在于框架本身的高效设计，而非受外部因素影响的最终性能数字。
-
-#### 压测效果很惊艳，不过我没有标准的环境进行测试 。
-
-### 压测代码
-
-#### 感兴趣可以通过调用示例项目的 TestDDOS.main 来启动压测。你也可以使用其他压测工具。
-
-* [查看执行耗时日志](执行耗时.md)
-
-### 2026-02-27 补充性能对比数据(求超越 求打脸 求下载 哥求你了)
-
-* 实测 同一次jvm启动的进程 这排除了任何不公平的情况
-* 为了方便观察 服务端为单线程 压测端为24线程
-* 注 qps不够高是因为我的win10系统网络性能有点问题 不是框架性能问题
-* 这是为了对比框架 和 裸写 netty 的性能差异
-* 裸写 netty 的代码如下 其性能为2.9w+ qps:
-
-```java'
-    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
-        // /text 服务端直接返回文本内容，绕过框架的处理逻辑，以测试框架的基础性能
-        if (req.uri().equals("/text")) {
-            FullHttpResponse response = new DefaultFullHttpResponse(
-                    HttpVersion.HTTP_1_1,
-                    HttpResponseStatus.OK,
-                    Unpooled.wrappedBuffer(BYTES));
-            response.headers().set("content-length", BYTES.length);
-            response.headers().set("server", Config.frameName);
-            ctx.writeAndFlush(response);
-        }else{
-            NettyServer.factory.start(ctx,req);
-        }
-    }
-```
-
-*
-* 简单请求无参数 代码如下 其性能为2.9w+ qps:
-
-```java'
-    @EventLoop
-    @GetMapping("get0")
-    public byte[] get0(){
-        return BYTES;
-    }
-```
-
-* 简单请求 1 参数 代码如下 其性能为2.9w+ qps:
-
-```java'
-    @EventLoop
-    @GetMapping("get1")
-    public String get1(String message){
-        return "{\"code\":\"1\",\"time\":\"1769527173990\",\"message\":\""+message+"\"}";
-    }
-```
-
-* 这意味着什么? 框架开销几乎为 0 (并非无开销 只是开销小到完全被io掩盖了 哪怕是微秒级的环回延迟)
-* cpu亲和性等问题已处理 防止造成干扰
-* 测试过程中的埋点计时数据披露(单位纳秒):
-* "总耗时" | "800" | "netty数据获取" | "600" | "框架执行" | "200"(这是随意挑选的一条比较低的耗时数据 并非最低)
-* 计时来自于 gzb.frame.factory.v4.FactoryImplV2 debug方法
-* 完全可复现 嘿 兄弟
-# 缓存服务器性能测试视频 2026-03-10 补充
-### 因为是 vm虚拟机 所以性能受到限制 实际肯定会大于视频数据 作为参考足够
-### 并非是那种手写极度优化 只是基于框架常规开发方式编写 视频含代码 和 完整环境信息
-### 并没有刻意设置什么cpu亲和性等作弊手段 甚至运行都是在idea中 
-### 视频忘了演示无缝热更新 刚想起来 嗯。也是支持的 
-[测试视频在线查看 6核心虚拟机 同机测试（服务端实际占用50-60%） QPS:20w ](https://www.bilibili.com/video/BV1SyPdzeEtB/)
----
 
 ## 核心特性
 
@@ -130,8 +56,6 @@ public String test(String sysUsersAcc, GzbJson gzbJson) throws Exception {
     * **极致解耦**：协议层仅作为“流量入口”，业务层通过框架回调（Interceptor）实现统一的加解密、限流与校验，真正做到协议无感。
     * **逻辑归一**：开发者只需编写一套 Action 代码，即可通过注解配置，让该逻辑同时在 HTTP、TCP、UDP 端口生效。
     * **无感切换**：客户端可根据网络状况灵活切换协议（如：瞬时指令走 UDP，复杂数据走 TCP），后端逻辑层完全无感知，共享同一套内存池与缓存状态。
-
- 
 ---
 
 ## 理念与愿景
@@ -140,67 +64,57 @@ public String test(String sysUsersAcc, GzbJson gzbJson) throws Exception {
 本框架则代表了一种不同的理念：通过消除不必要的运行时抽象，
 **优先考虑原始速度和效率**。它不仅仅是一个框架，更是你应用程序的**高性能引擎**。
 ---
-
 ## 快速上手指南
-
 本指南将帮助你从零开始，快速启动并运行本框架。
+### 创建基础项目
+1. **创建项目**：创建maven项目
+2. **获取项目模板**：下载项目模板 覆盖到maven项目  [项目模板下载](gzb.one.zip) 项目模板包含一切依赖无需网络下载
+3. **初始化项目**：更新 pom 依赖
+4. **配置文件**：在 application.properties 修改服务器端口 或保持默认  gzb.system.server.http.port=2080
+5. **启动程序**：运行 gzb.start.Start 如无报错 显示 port xx 说明启动成功 
+6. **HTTP**：ip:port/text  显示 hello word
+7. **TCP**：参考提供的cache sdk 内部实现了基于 TCP的私有协议通讯
+8. **UDP**：组包逻辑未开发完成 不过可以根据tcp私有协议 转化为udp 即可访问
+9. **WS**：暂未实现
 
-### 第1步：获取源代码与数据库准备
+### 添加ORM支持
+1. **配置数据库信息**：去application.properties 配置数据库信息 配置文件内有例子和注释 根据需求改
+2. **自动生成代码**：创建类Auto.Java 并写入以下代码 并运行
+```java
 
-1. **获取项目**：从 GitHub 或其他代码仓库克隆本项目到本地。
-2. **数据库准备**：找到数据库脚本文件，导入到你的本地 MySQL 数据库中。
-
-### 第2步：配置项目
-
-1. **导入项目**：使用 IntelliJ IDEA 打开项目。
-2. **添加依赖**：参考示例项目中的 `pom.xml` 文件，添加必要的 Maven 依赖，并同步项目。
-3. **创建与编辑配置文件**：
-    * 在 `src/main/resources` 目录下创建 `application.properties` 文件。
-    * 参考示例项目中的 `src/main/resources/application.properties`，其中内含详细注释。
-4. **配置数据库**：目前仅支持 MySQL 和 pg。请按照注释配置数据库连接信息。
-5. **配置缓存与 Session**：如果你的项目使用 Redis，请配置 Redis 连接信息；如果不需要，请将 `session.type` 和 `cache.type`和
-   `db.cache.type` 设置为 `map`。
-6. **核心路径配置**：在配置文件中设置源代码目录（`gzb.system.code.dir`）、上传目录、静态资源目录、临时目录等。
-
-### 第3步：代码生成与启动
-
-1. **生成代码**：参考示例项目中的 `/src/main/java/gzb/start/AutoCode.java`，运行其 `main` 方法，这会为你生成必要的实体类和
-   DAO 层代码以及基础后台管理UI。
-2. **运行项目**：参考示例项目的 `/src/main/java/gzb/start/Start.java`，运行其 `main` 方法以启动应用。
-
-### 第4步：验证与探索
-
-1. **验证启动**：如果启动成功，控制台会显示 `server 1.0.0 started on port xxxx` 等日志信息。
-2. **开始使用**：通过浏览器访问 `http://127.0.0.1:你的端口/page/login.html`。登录账户和密码可以在数据库表 `sys_users`
-   中获取，默认管理员为 `admin`。
+//根据数据库表信息 逆向 生成 dao entity controller （可选 webui）
+public static void main(String[] args) throws Exception {
+  //要生成代码到这个目录
+  String path = Config.thisPath() + "/src/main/java";
+  //要生成代码的包名
+  String pkg = "com";
+  //数据库名 要和 db.mysql.数据库名 这里匹配
+  String dbKey = "db002";
+  //生成代码的函数 感兴趣可以去看看里边 直接调用里边的也可以 甚至可以使用三方生成器 自己生成
+  GenerateJavaCode. generateCode(
+          path,
+          pkg,
+          0,     //0生成全部表  1排除系统表   2生成系统表  系统表指的是 权限管理系统需要的表
+          false, //如果不使用框架权限管理 则填写为false 反之为  true
+          dbKey, //系统数据库名   如果不使用框架权限管理 则填写为业务数据库即可
+          dbKey  //业务数据库名
+  );
+}
+``` 
+3. **扩展功能**：请参考demo项目 可以自动生成 用户权限管理系统相关支持
 
 ### 温馨提示
 
 * **JDK**：本框架与 JDK 8 以上版本兼容。
-* **数据库**：目前只支持 MySQL。
+* **数据库**：目前只支持 mysql 和 postgresql。
 * 你无需关注 `entity` 和 `dao` 层，只需专注于 `service` 和 `controller` 的业务逻辑开发即可。
 * 有一个问题 现在web服务器 真的还有视图层吗？ 其实 直接把 service 注解为端点 提供给框架即可
 
 ---
 
 ## 文档
-
 * 示例项目 可以直接在 IntelliJ IDEA 运行。
 * 持续更新中...
 * 文档不够齐全，但是和spring主流环境 差异很小 参考经验 和 示例项目 即可
 * [文档在这里，持续更新中......](doc.md)
-
-## JAR包下载
-
-* 下载后引入 查看示例项目
-* [JAR包下载 1.0.0](frame.one-1.0.0-fat.jar)
-
-```maven
-        <dependency>
-            <groupId>gzb</groupId>
-            <artifactId>frame.one</artifactId>
-            <version>1.0.0</version>
-            <scope>system</scope>
-            <systemPath>E:/frame.one-1.0.0.jar</systemPath>
-        </dependency>
-```
+ 

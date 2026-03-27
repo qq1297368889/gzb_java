@@ -18,6 +18,9 @@
 
 package gzb.tools;
 
+import gzb.frame.language.Template;
+import gzb.tools.log.Log;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.InputStreamReader;
@@ -38,6 +41,8 @@ public class OSUtils {
     private static final boolean IS_LINUX = OS_NAME.contains("linux");
     // Linux通用正则（备用，若需保留top方案时使用）
     private static final Pattern TOP_CPU_PATTERN = Pattern.compile("Cpu\\(s\\):\\s*([0-9.]+)\\s*us.*?([0-9.]+)\\s*sy.*?([0-9.]+)\\s*id");
+    private static double cpuUsage;
+    private static double time;
 
     public static void main(String[] args) {
         while (true) {
@@ -54,12 +59,18 @@ public class OSUtils {
      * @return CPU 占用百分比 (0.0 到 100.0)，获取失败返回 -1.0
      */
     public static double getSystemCpuLoadPercentage() {
+        long time1 = System.currentTimeMillis();
+        if (time1 - time < 300) {
+            return cpuUsage;
+        }
         if (IS_WINDOWS) {
-            return getWindowsCpuLoad();
+            cpuUsage = getWindowsCpuLoad();
+            time=time1;
+            return cpuUsage;
         } else if (IS_LINUX) {
-            // Linux最优解：读取/proc/stat，无兼容问题，性能极致
-            return getLinuxCpuLoadByProcStat();
-            // 若需保留top命令方案，替换为：return getLinuxCpuLoadByTop();
+            cpuUsage = getLinuxCpuLoadByProcStat();
+            time=time1;
+            return cpuUsage;
         } else {
             System.err.println("Unsupported OS: " + OS_NAME);
             return -1.0;
@@ -69,6 +80,7 @@ public class OSUtils {
     // -------------------------------------------------------------------------
     // Windows实现：WMIC调用，与任务管理器一致，稳定可靠
     // -------------------------------------------------------------------------
+
     /**
      * 【Windows 实现】使用 WMIC 获取总 CPU 负载，与任务管理器“总CPU”完全一致
      */
@@ -79,7 +91,7 @@ public class OSUtils {
             Process process = pb.start();
 
             // 5秒超时，防止进程挂起
-            if (!process.waitFor(5, TimeUnit.SECONDS)) {
+            if (!process.waitFor(3, TimeUnit.SECONDS)) {
                 process.destroyForcibly();
                 throw new Exception("WMIC command timed out (5s)");
             }
@@ -100,7 +112,7 @@ public class OSUtils {
                 }
             }
         } catch (Exception e) {
-            System.err.println("获取Windows CPU负载失败: " + e.getMessage());
+            Log.log.d(Template.THIS_LANGUAGE[89],e.getMessage());
         }
         return -1.0;
     }
@@ -108,9 +120,11 @@ public class OSUtils {
     // -------------------------------------------------------------------------
     // Linux最优实现：读取/proc/stat，内核标准文件，无兼容问题，性能极致
     // -------------------------------------------------------------------------
+
     /**
      * 【Linux 最优实现】读取/proc/stat内核标准文件，计算系统整体CPU使用率
      * 所有Linux发行版格式统一，与top使用相同数据源，性能极致（耗时＜1ms）
+     *
      * @return 0.0-100.0，失败返回-1.0
      */
     private static double getLinuxCpuLoadByProcStat() {
@@ -159,6 +173,7 @@ public class OSUtils {
 
     /**
      * 辅助方法：读取/proc/stat的CPU核心统计数据，返回[非空闲时间, 总CPU时间]
+     *
      * @return long[2]：index0=非空闲时间，index1=总CPU时间；失败返回null
      */
     private static long[] readProcStatCpuData() {
@@ -194,9 +209,11 @@ public class OSUtils {
     // -------------------------------------------------------------------------
     // Linux备用实现：top命令+通用正则，适配99%发行版（若需保留top方案时使用）
     // -------------------------------------------------------------------------
+
     /**
      * 【Linux 备用实现】top命令+通用正则，适配99%Linux发行版
      * 若业务需求必须保留top调用，使用此方法，兼容不同发行版格式差异
+     *
      * @return 0.0-100.0，失败返回-1.0
      */
     private static double getLinuxCpuLoadByTop() {

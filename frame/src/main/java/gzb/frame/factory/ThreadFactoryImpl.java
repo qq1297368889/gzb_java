@@ -27,7 +27,7 @@ public class ThreadFactoryImpl {
     }
 
     public static Log log = Log.log;
-    public static Map<String, List<Object>> _parar = new HashMap<>();
+    public static Map<String,List<Object>> _parar = new HashMap<>();
     public static Object[] objArray = new Object[0];
     Map<String, Map<String, Entity>> threadMap = new ConcurrentHashMap<>();
 

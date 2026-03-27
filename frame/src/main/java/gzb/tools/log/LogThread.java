@@ -20,6 +20,7 @@ package gzb.tools.log;
 
 import gzb.tools.*;
 import gzb.tools.cache.Cache;
+import gzb.tools.thread.GzbThreadLocal;
 import gzb.tools.thread.ServiceThread;
 import java.io.*;
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class LogThread {
+
 
     public static String[] lvNames = new String[]{"trace", "debug", "info ", "warn ", "error"};
     private static final List<ConcurrentLinkedQueue<byte[]>> logQueues = new ArrayList<>();
@@ -48,15 +50,21 @@ public class LogThread {
         }
         //启动保存线程
         startSave();
-        //自动更新线程
-        ServiceThread.start("LogThread.update.config-服务线程",new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    loadConfig();
-                    Tools.sleep(3100);
+        //启动服务线程
+        ServiceThread.start("LogThread.read-config",()->{
+            while (true) {
+                try {
+                    LogThread.loadConfig();
+                } catch (Exception e) {
+                    Log.log.e("LogThread.loadConfig", e);
                 }
 
+                try {
+                    Thread.sleep(3001);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();//响应中断
+                    break;
+                }
             }
         });
     }
@@ -107,7 +115,6 @@ public class LogThread {
                         byte[] buffer = new byte[(int) (buff_size)];
                         int size = 0;
                         while (true) {
-                            /// 实现目的 不阻塞读取并删除 如果存在则一直读 或 读到一定长度
                             byte[] bytes = logQueues.get(i).poll();
                             if (bytes != null) {
                                 int remainingToCopy = bytes.length; // 这一块 byte[] 还有多少没处理
@@ -118,32 +125,24 @@ public class LogThread {
                                     int bufferRemainingSpace = buffer.length - size; // buffer 还能放多少
                                     int copyLength = Math.min(remainingToCopy, bufferRemainingSpace); // 本次能复制多少
 
-                                    // 1. 执行复制
                                     System.arraycopy(bytes, srcPos, buffer, size, copyLength);
 
-                                    // 2. 更新 size 和 剩余长度
                                     size += copyLength;
                                     srcPos += copyLength;
                                     remainingToCopy -= copyLength;
 
-                                    // 3. 检查缓冲区是否写满 (或刚好写满)
                                     if (size == buffer.length) {
-                                        // 缓冲区满了，写入文件
                                         save(i, time0, buffer, size);
                                         size = 0;
                                     }
                                 }
 
-                                // 4. 处理换行符 (只有在 bytes 被完整处理后才添加)
-                                // 仅在 buffer 还有空间容纳 BYTES_RN 时添加
                                 if (size + BYTES_RN.length < buffer.length) {
                                     System.arraycopy(BYTES_RN, 0, buffer, size, BYTES_RN.length);
                                     size += BYTES_RN.length;
                                 } else {
-                                    // 如果连换行符都放不下了，先保存当前 buffer，然后在新 buffer 里放换行符
                                     save(i, time0, buffer, size);
                                     size = 0;
-                                    // 将换行符放入新的 buffer
                                     System.arraycopy(BYTES_RN, 0, buffer, size, BYTES_RN.length);
                                     size += BYTES_RN.length;
                                 }
@@ -198,7 +197,7 @@ public class LogThread {
         try {
             deleteOldLogFiles();
         }catch (Exception e){
-            e.printStackTrace();
+            e.printStackTrace();//日志类不调日志类 只能输出了 日志类原则上不允许报错
         }
     }
 
@@ -227,9 +226,9 @@ public class LogThread {
         Thread currentThread = Thread.currentThread();
         //String threadName = currentThread.getName();
         long threadId = currentThread.getId();
-        gzb.tools.cache.object.ObjectCache.Entity entity0 = gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
-        int index0 = entity0.open();
-        StringBuilder sb = entity0.get(index0);
+        GzbThreadLocal.Entity entity0 = GzbThreadLocal.context.get();
+        int index0 = entity0.stringBuilderCacheEntity.open();
+        StringBuilder sb = entity0.stringBuilderCacheEntity.get(index0);
         try {
             sb.append(new DateTime().formatDateTime("yyyy-MM-dd HH:mm:ss.SSS"))
                     .append(" ")
@@ -288,7 +287,7 @@ public class LogThread {
             }
             return sb.toString();
         }finally {
-            entity0.close(index0);
+            entity0.stringBuilderCacheEntity.close(index0);
         }
 
     }

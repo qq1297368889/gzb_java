@@ -27,8 +27,10 @@ import gzb.exception.GzbException0;
 import gzb.frame.PublicEntrance;
 import gzb.frame.annotation.EntityAttribute;
 import gzb.frame.db.entity.TransactionEntity;
+import gzb.frame.language.Template;
 import gzb.tools.*;
 import gzb.tools.log.Log;
+import gzb.tools.thread.GzbThreadLocal;
 
 import java.lang.reflect.Field;
 import java.sql.*;
@@ -70,14 +72,13 @@ public class DataBaseImpl implements DataBase {
             if (clazz == LocalDateTime.class) {
                 return new DateTime((String) object).toLocalDateTime();
             }
-            throw new GzbException0("转换为数据库类型失败 DataBaseImpl.Column.toValue(Object object) 转换的值为:" + object + " 类型为：" + clazz.getName());
+            throw new GzbException0(Template.THIS_LANGUAGE[48]+" DataBaseImpl.Column.toValue(Object object) "+Template.THIS_LANGUAGE[49]+":" + object + " "+
+                    Template.THIS_LANGUAGE[50]+"：" + clazz.getName());
         }
     }
 
     static Object[] defNullArray = new Object[0];
-    //数据库连接
-    private final ThreadLocal<Connection> connectionThreadLocal = new ThreadLocal<>();
-    public static final ThreadLocal<TransactionEntity> open_transaction = new ThreadLocal<>();
+
 
     public AsyncFactory asyncFactory = null;
 
@@ -107,8 +108,9 @@ public class DataBaseImpl implements DataBase {
         initDataBase();
     }
 
-    public DataBaseImpl(String type, String key, String clz, String ip, int port, String name, String acc, String pwd, int threadMax, int overtime, int asyncSleepMilli, int asyncBatchSize, int asyncThreadNum, int asyncQueueSize, String sign) throws Exception {
-        dataBaseConfig = DataBaseConfig.readConfig(type, key, clz, ip, port, name, acc, pwd, threadMax, overtime, asyncSleepMilli, asyncBatchSize, asyncThreadNum,asyncQueueSize, sign);
+    public DataBaseImpl(String type, String key, String clz, String ip, int port, String name, String acc, String pwd, int threadMax, int overtime, int asyncSleepMilli, int asyncBatchSize,
+                        int asyncThreadNum, int asyncQueueSize, String parar, String sign) throws Exception {
+        dataBaseConfig = DataBaseConfig.readConfig(type, key, clz, ip, port, name, acc, pwd, threadMax, overtime, asyncSleepMilli, asyncBatchSize, asyncThreadNum, asyncQueueSize, parar, sign);
         initDataBase();
     }
 
@@ -125,21 +127,20 @@ public class DataBaseImpl implements DataBase {
     }
 
     private void initDataBase() {
-        log.d("数据库配置信息", dataBaseConfig);
+        log.d(Template.THIS_LANGUAGE[0], Template.THIS_LANGUAGE[1], dataBaseConfig);
         try {
             hds = getHikariDataSource();
-            log.d("数据库：[" + dataBaseConfig.name + "]，连接成功........");
-
+            log.d(Template.THIS_LANGUAGE[0], Template.THIS_LANGUAGE[2],dataBaseConfig.name);
             readTableInfo();
-            log.d("数据库：[" + dataBaseConfig.name + "]，数据表信息抓取成功........");
+            log.d(Template.THIS_LANGUAGE[0], Template.THIS_LANGUAGE[3],dataBaseConfig.name);
 
             asyncFactory = new AsyncFactory(
                     this, dataBaseConfig.asyncThreadNum, dataBaseConfig.asyncBatchSize
                     , dataBaseConfig.asyncSleepMilli, dataBaseConfig.asyncQueueSize);
-            log.d("数据库：[" + dataBaseConfig.name + "]，异步服务启动成功........", "后台异步线程数", dataBaseConfig.asyncThreadNum);
+            log.d(Template.THIS_LANGUAGE[0], Template.THIS_LANGUAGE[4], Template.THIS_LANGUAGE[5],dataBaseConfig.asyncThreadNum,dataBaseConfig.name);
 
         } catch (Exception e) {
-            throw new RuntimeException("数据库：[" + dataBaseConfig.name + "]，连接失败........", e);
+            throw new RuntimeException(Template.THIS_LANGUAGE[0]+"[" + dataBaseConfig.name + "]，"+Template.THIS_LANGUAGE[6], e);
         }
     }
 
@@ -187,18 +188,8 @@ public class DataBaseImpl implements DataBase {
 
         // 设置连接池名称（便于监控和日志识别）
         config.setPoolName("hikari-" + dataBaseConfig.sign + "-pool");
-        String para01 = "autoReconnect=true&" +/// 自动重连
-                "useUnicode=true&" +/// 使用 Unicode
-                "characterEncoding=" + Config.encoding + "&" +/// 设置编码
-                "useSSL=false&" +/// 允许不使用ssl
-                "zeroDateTimeBehavior=convertToNull&" +/// 防止日期转换错误
-                "serverTimezone=UTC&" +/// 统一时区
-                "rewriteBatchedStatements=true&" +/// 允许sql合并
-                "allowMultiQueries=true&" +/// 允许1次执行多个sql
-                "useServerPrepStmts=true&" +/// 服务端缓存sql
-                "cachePrepStmts=true&";/// 客户端缓存sql
         // 数据库连接基础配置
-        config.setJdbcUrl(dataBaseConfig.getUrl(para01));        // 数据库连接URL
+        config.setJdbcUrl(dataBaseConfig.getUrl());        // 数据库连接URL
         config.setUsername(dataBaseConfig.acc);            // 数据库用户名
         config.setPassword(dataBaseConfig.pwd);            // 数据库密码
         config.setDriverClassName(dataBaseConfig.clz);     // 数据库驱动类名
@@ -227,7 +218,7 @@ public class DataBaseImpl implements DataBase {
         // 预编译语句缓存大小（最多缓存250条不同SQL）
         config.addDataSourceProperty("prepStmtCacheSize", "250");
         // 允许缓存的SQL最大长度（复杂查询可能需要更大值）
-        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+        config.addDataSourceProperty("prepStmtCacheSqlLimit", "4096");
         // 使用服务器端预编译（而非客户端），优化查询执行计划
         config.addDataSourceProperty("useServerPrepStmts", "true");
 
@@ -583,7 +574,7 @@ public class DataBaseImpl implements DataBase {
                                     "ORDER BY " +
                                     "a.attnum");
                 } else {
-                    log.w("无法连接数据库类型", dataBaseConfig.type);
+                    log.w(Template.THIS_LANGUAGE[47], dataBaseConfig.type);
                 }
                 conn = getConnection();
                 ps = conn.prepareStatement("select * from " + tableInfo.name + " order by 1 limit 1");
@@ -651,89 +642,86 @@ public class DataBaseImpl implements DataBase {
 
     @Override
     public Connection getConnection() throws SQLException {
-        Connection connection1 = connectionThreadLocal.get();
-        if (connection1 != null) {
-            log.t("获取连接 缓存", connection1.getAutoCommit(), connection1);
-            return connection1;
+        GzbThreadLocal.Entity entity=GzbThreadLocal.context.get();
+
+        if (entity.connection != null) {
+            log.t(Template.THIS_LANGUAGE[46], entity.connection.getAutoCommit(), entity.connection);
+            return entity.connection;
         }
-        connection1 = hds.getConnection();
+        entity.connection = hds.getConnection();
         try {
             Integer is = readTransactionState();
             if (is == null) {
-                connection1.setAutoCommit(true);
+                entity.connection.setAutoCommit(true);
             } else if (is == 1) {
-                connection1.setAutoCommit(false);
+                entity.connection.setAutoCommit(false);
             } else if (is == 2) {
-                connection1.setAutoCommit(true);
+                entity.connection.setAutoCommit(true);
             } else {
-                log.w("事务类型异常 ", is);
+                log.w(Template.THIS_LANGUAGE[45], is);
             }
         } catch (SQLException e) {
             log.e(e);
         }
-        connectionThreadLocal.set(connection1);
-        log.t("获取连接 新的", connection1.getAutoCommit(), connection1);
-        return connection1;
+        log.t( Template.THIS_LANGUAGE[44], entity.connection.getAutoCommit(), entity.connection);
+        return entity.connection;
     }
 
     @Override
     public void setConnection(Connection connection0) {
         try {
-            log.t("框架 指定连接", connection0.getAutoCommit(), connection0);
+            log.t(Template.THIS_LANGUAGE[43], connection0.getAutoCommit(), connection0);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        connectionThreadLocal.set(connection0);
+        GzbThreadLocal.Entity entity=GzbThreadLocal.context.get();
+        entity.connection=connection0;
     }
 
     @Override
     public Integer readTransactionState() {
-        TransactionEntity transaction = open_transaction.get();
-        if (transaction == null) {
+        GzbThreadLocal.Entity entity=GzbThreadLocal.context.get();
+        if (entity.transactionEntity == null) {
             return null;
         }
-        return transaction.simulate;
+        return entity.transactionEntity.simulate;
     }
 
     //开启事务 主要是框架内部调用 当然 也可以手动
     @Override
     public void openTransaction(boolean simulation) {
         if (readTransactionState() != null) {
-            throw new GzbException0("事务已被开启，无法开启多次事务，如需要多次事务请改为多段事务，而不是同时开启多个事务\n" +
-                    "1.开启事务 openTransaction\n" +
-                    "2.提交事务 commit\n" +
-                    "3.回滚事务 rollback\n" +
-                    "4.关闭事务 endTransaction 如果手动开启事务那么必须调用本方法，框架开启 无需手动调用\n");
+            throw new GzbException0( Template.THIS_LANGUAGE[42] );
         }
-        open_transaction.set(new TransactionEntity(simulation ? 2 : 1));
-        log.t("开启事物", simulation ? "模拟" : "真实");
+        GzbThreadLocal.Entity entity=GzbThreadLocal.context.get();
+        entity.transactionEntity=new TransactionEntity(simulation ? 2 : 1);
+        log.t(Template.THIS_LANGUAGE[39], simulation ? Template.THIS_LANGUAGE[40] :Template.THIS_LANGUAGE[41]);
     }
 
     //关闭事务 主要是框架内部调用 当然 也可以手动
     @Override
     public void endTransaction() {
-        open_transaction.remove();
+        GzbThreadLocal.Entity entity=GzbThreadLocal.context.get();
+        entity.transactionEntity=null;
         close(null, null);
-        log.t("关闭事务", connectionThreadLocal.get(), connectionThreadLocal.get());
+        log.t(Template.THIS_LANGUAGE[38], entity.connection);
     }
 
     //提交并且关闭事务  同时也会归还连接 主要是框架内部调用 当然 也可以手动
     @Override
     public void commit() throws Exception {
-
-        TransactionEntity transaction = open_transaction.get();
-        if (transaction == null) {
-            log.w("commit 无事物");
-        } else if (transaction.simulate == 1) {
-            Connection connection1 = connectionThreadLocal.get();
-            log.t("commit 真实事物", connection1);
-            if (connection1 != null) {
-                connection1.commit();
+        GzbThreadLocal.Entity entity=GzbThreadLocal.context.get();
+        if (entity.transactionEntity == null) {
+            log.w(Template.THIS_LANGUAGE[35]);
+        } else if (entity.transactionEntity.simulate == 1) {
+            log.t(Template.THIS_LANGUAGE[36], entity.connection);
+            if (entity.connection != null) {
+                entity.connection.commit();
             }
-        } else if (transaction.simulate == 2) {
-            Map<String, List<Object[]>> map1 = transaction.data;
-            log.t("commit 模拟事物 转化真实事务", map1);
-            transaction.simulate = 1;
+        } else if (entity.transactionEntity.simulate == 2) {
+            Map<String, List<Object[]>> map1 = entity.transactionEntity.data;
+            log.t(Template.THIS_LANGUAGE[37], map1);
+            entity.transactionEntity.simulate = 1;
             try {
                 if (map1 != null) {
                     for (Map.Entry<String, List<Object[]>> stringListEntry : map1.entrySet()) {
@@ -754,18 +742,17 @@ public class DataBaseImpl implements DataBase {
     //回滚并且关闭事务  同时也会归还连接 主要是框架内部调用 当然 也可以手动
     @Override
     public void rollback() throws SQLException {
-        TransactionEntity transaction = open_transaction.get();
-        if (transaction == null) {
-            log.w("rollback 无事物");
-        } else if (transaction.simulate == 1) {
-            Connection connection1 = connectionThreadLocal.get();
-            log.t("rollback 真实事务", connection1);
-            if (connection1 != null) {
-                connection1.rollback();
+        GzbThreadLocal.Entity entity=GzbThreadLocal.context.get();
+        if (entity.transactionEntity == null) {
+            log.w(Template.THIS_LANGUAGE[32]);
+        } else if (entity.transactionEntity.simulate == 1) {
+            log.t(Template.THIS_LANGUAGE[33], entity.connection);
+            if (entity.connection != null) {
+                entity.connection.rollback();
             }
-        } else if (transaction.simulate == 2) {
-            log.t("rollback 模拟事务");
-            transaction.data = null;
+        } else if (entity.transactionEntity.simulate == 2) {
+            log.t(Template.THIS_LANGUAGE[34]);
+            entity.transactionEntity.data = null;
         }
     }
 
@@ -816,26 +803,25 @@ public class DataBaseImpl implements DataBase {
                 log.e(e);
             }
         }
-        Connection connection0 = connectionThreadLocal.get();
-        if (connection0 != null) {
+        GzbThreadLocal.Entity entity=GzbThreadLocal.context.get();
+        if (entity.connection != null) {
             try {
-                TransactionEntity transaction = open_transaction.get();
-                if (transaction == null) {
-                    log.t("close 无事物", connection0);
-                    connection0.close();
-                    connectionThreadLocal.remove();
-                } else if (transaction.simulate == 1) {
-                    log.t("close 真实事务", connection0);
-                } else if (transaction.simulate == 2) {
-                    log.t("close 模拟事务", connection0);
-                    connection0.close();
-                    connectionThreadLocal.remove();
+                if (entity.transactionEntity == null) {
+                    log.t(Template.THIS_LANGUAGE[16], entity.connection);
+                    entity.connection.close();
+                    entity.connection=null;
+                } else if (entity.transactionEntity.simulate == 1) {
+                    log.t(Template.THIS_LANGUAGE[17], entity.connection);
+                } else if (entity.transactionEntity.simulate == 2) {
+                    log.t(Template.THIS_LANGUAGE[18], entity.connection);
+                    entity.connection.close();
+                    entity.connection=null;
                 }
             } catch (SQLException e) {
                 log.e(e);
             }
         } else {
-            log.t("close 数据连接 为空 跳过");
+            log.t(Template.THIS_LANGUAGE[9]);
         }
     }
 
@@ -972,10 +958,11 @@ public class DataBaseImpl implements DataBase {
             times[3] = System.currentTimeMillis();
         } finally {
             times[4] = System.currentTimeMillis();
-            sb.append(",[连接：").append(times[1] - times[0]).append("ms]");
-            sb.append(",[执行：").append(times[2] - times[1]).append("ms]");
-            sb.append(",[组装：").append(times[3] - times[2]).append("ms]");
-            sb.append(",[耗时：").append(times[4] - times[0]).append("ms]");
+
+            sb.append(",[").append(Template.THIS_LANGUAGE[20]).append(':').append(times[1] - times[0]).append(Template.THIS_LANGUAGE[13]).append("]");
+            sb.append(",[").append(Template.THIS_LANGUAGE[21]).append(':').append(times[1] - times[0]).append(Template.THIS_LANGUAGE[13]).append("]");
+            sb.append(",[").append(Template.THIS_LANGUAGE[22]).append(':').append(times[1] - times[0]).append(Template.THIS_LANGUAGE[13]).append("]");
+            sb.append(",[").append(Template.THIS_LANGUAGE[23]).append(':').append(times[1] - times[0]).append(Template.THIS_LANGUAGE[13]).append("]");
             if (times[4] - times[0] > 200) {
                 log.w(sb);
             } else {
@@ -1004,17 +991,17 @@ public class DataBaseImpl implements DataBase {
         if (sql == null) {
             return -1;
         }
-        String key = PublicEntrance.open_transaction_key.get();
+        GzbThreadLocal.Entity entity=GzbThreadLocal.context.get();
+        String key = entity.open_transaction_key;
         if (key != null && !key.equals(dataBaseConfig.getSign())) {
-            throw new GzbException0("数据库[" + key + "]的事务中出现了数据库[" + dataBaseConfig.getSign() + "]的调用");
+            throw new RuntimeException(Template.THIS_LANGUAGE[0]+" " + key + " "+Template.THIS_LANGUAGE[31]+" " + dataBaseConfig.getSign() );
         }
-        TransactionEntity transaction = open_transaction.get();
-        if (transaction != null && transaction.simulate == 2) {
-            log.t("收集SQL", sql, params);
-            List<Object[]> list = transaction.data.get(sql);
+        if (entity.transactionEntity != null && entity.transactionEntity.simulate == 2) {
+            log.t(Template.THIS_LANGUAGE[30], sql, params);
+            List<Object[]> list = entity.transactionEntity.data.get(sql);
             if (list == null) {
                 list = new ArrayList<>();
-                transaction.data.put(sql, list);
+                entity.transactionEntity.data.put(sql, list);
             }
             list.add(params);
             return 0;
@@ -1036,25 +1023,24 @@ public class DataBaseImpl implements DataBase {
     }
 
 
-    // autoCommit    true的话 自动提交sql     false的话 自己手动提交 connection.setAutoCommit(true false);
     public int runSqlBatch(String sql, List<Object[]> list_parameter) throws Exception {
         int allRow = 0;
         long a = 0, b = 0, c = 0;
         ResultSet rs = null;
         PreparedStatement ps = null;
         StringBuilder sb = null;
-        String key = PublicEntrance.open_transaction_key.get();
+        GzbThreadLocal.Entity entity=GzbThreadLocal.context.get();
+        String key = entity.open_transaction_key;
         if (key != null && !key.equals(dataBaseConfig.getSign())) {
-            throw new GzbException0("数据库[" + key + "]的事务中出现了数据库[" + dataBaseConfig.getSign() + "]的调用");
+            throw new RuntimeException(Template.THIS_LANGUAGE[0]+" " + key + " "+Template.THIS_LANGUAGE[31]+" " + dataBaseConfig.getSign() );
         }
-        TransactionEntity transaction = open_transaction.get();
-        if (transaction != null && transaction.simulate == 2) {
-            List<Object[]> list = transaction.data.get(sql);
+        if (entity.transactionEntity != null && entity.transactionEntity.simulate == 2) {
+            List<Object[]> list = entity.transactionEntity.data.get(sql);
             if (list == null) {
                 list = new ArrayList<>();
-                transaction.data.put(sql, list);
+                entity.transactionEntity.data.put(sql, list);
             }
-            log.t("收集SQL", sql, list_parameter);
+            log.t(Template.THIS_LANGUAGE[30], sql, list_parameter);
             for (Object[] objects : list_parameter) {
                 list.add(objects);
             }
@@ -1095,7 +1081,7 @@ public class DataBaseImpl implements DataBase {
                     int[] rows = ps.executeBatch();
                     for (int i = 0; i < rows.length; i++) {
                         if (rows[i] == -3) {
-                            log.e("SQL执行失败：", Arrays.toString(list_parameter.get(j - (20 - i))));
+                            log.e(Template.THIS_LANGUAGE[29], Arrays.toString(list_parameter.get(j - (20 - i))));
                         }
                     }
                     if (readTransactionState() == null) {
@@ -1104,19 +1090,21 @@ public class DataBaseImpl implements DataBase {
 
                     c = System.currentTimeMillis();
                     allRow += rows.length;
-                    sb.append(",[进度:").append(j + 1).append("/").append(list_parameter.size()).append("]");
-                    sb.append(",[组装:").append(b - a).append("ms]");
-                    sb.append(",[执行:").append(c - b).append("ms]");
-                    sb.append(",[耗时:").append(c - a).append("ms]");
-                    sb.append(",[条数:").append((j + 1) % 200 == 0 ? 200 : (j + 1) % 200).append("条]");
-                    sb.append(",[影响:").append(rows.length).append("行]");
+                    sb.append(",[").append(Template.THIS_LANGUAGE[24]).append(':').append(j + 1).append("/").append(list_parameter.size()).append("]");
+                    sb.append(",[").append(Template.THIS_LANGUAGE[21]).append(':').append(b - a).append(Template.THIS_LANGUAGE[13]).append("]");
+                    sb.append(",[").append(Template.THIS_LANGUAGE[22]).append(':').append(c - b).append(Template.THIS_LANGUAGE[13]).append("]");
+                    sb.append(",[").append(Template.THIS_LANGUAGE[23]).append(':').append(c - a).append(Template.THIS_LANGUAGE[13]).append("]");
+                    sb.append(",[").append(Template.THIS_LANGUAGE[26]).append(':').append((j + 1) % 200 == 0 ? 200 : (j + 1) % 200).append(Template.THIS_LANGUAGE[11]).append("]");
+                    sb.append(",[").append(Template.THIS_LANGUAGE[25]).append(':').append(rows.length).append("]");
                 } else {
-                    sb.append(",[进度:").append(j + 1).append("/").append(list_parameter.size()).append("]");
+                    sb.append(",[").append(Template.THIS_LANGUAGE[24]).append(':').append(j + 1).append("/").append(list_parameter.size()).append("]");
                 }
             }
         } catch (Exception e) {
-            connection.rollback();
-            throw new RuntimeException("异常：" + sb, e);
+            if (!connection.getAutoCommit()) {
+                connection.rollback();
+            }
+            throw new RuntimeException(Template.THIS_LANGUAGE[28]+"：" + sb, e);
         } finally {
             close(rs, ps);
         }
@@ -1127,7 +1115,7 @@ public class DataBaseImpl implements DataBase {
     @Override
     public int runSqlAsync(String sql, Object[] para) {
         if (readTransactionState() != null) {
-            throw new GzbException0("事务开启时不支持异步执行，会打破事务原子性，如需异步请关闭事务");
+            throw new RuntimeException(Template.THIS_LANGUAGE[27]);
         }
         return asyncFactory.add(sql, para);
     }
@@ -1135,14 +1123,15 @@ public class DataBaseImpl implements DataBase {
     @Override
     public int runSqlAsync(String sql, Object[] para, Runnable fail, Runnable success) {
         if (readTransactionState() != null) {
-            throw new GzbException0("事务开启时不支持异步执行，会打破事务原子性，如需异步请关闭事务");
+            throw new RuntimeException(Template.THIS_LANGUAGE[27]);
         }
-        return runSqlAsync(new AsyncFactory.Result(sql, para, fail,success));
+        return runSqlAsync(new AsyncFactory.Result(sql, para, fail, success));
     }
+
     @Override
     public int runSqlAsync(AsyncFactory.Result result) {
         if (readTransactionState() != null) {
-            throw new GzbException0("事务开启时不支持异步执行，会打破事务原子性，如需异步请关闭事务");
+            throw new RuntimeException(Template.THIS_LANGUAGE[27]);
         }
         return asyncFactory.add(result);
     }

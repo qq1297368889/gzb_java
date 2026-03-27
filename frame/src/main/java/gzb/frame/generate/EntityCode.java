@@ -144,10 +144,10 @@ public class EntityCode extends Base {
                     "\n" +*/
                     "    @Override\n" +
                     "    public String toString() {\n" +
-                    "        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();\n" +
-                    "            int index0=entity0.open();\n" +
+                    "        gzb.tools.thread.GzbThreadLocal.Entity entity0 = gzb.tools.thread.GzbThreadLocal.context.get();\n" +
+                    "        int index0=entity0.stringBuilderCacheEntity.open();\n" +
                     "            try {\n" +
-                    "                StringBuilder sb = entity0.get(index0);\n" +
+                    "                StringBuilder sb = entity0.stringBuilderCacheEntity.get(index0);\n" +
                     "       boolean app01=false;\n" +
                     "        sb.append(\"{\");\n";
 
@@ -191,7 +191,7 @@ public class EntityCode extends Base {
 //json.entity.data
             code += "       return sb.append(\"}\").toString();\n" +
                     "            }finally {\n" +
-                    "                entity0.close(index0);\n" +
+                    "                entity0.stringBuilderCacheEntity.close(index0);\n" +
                     "            }" +
                     "    }\n" +
                     "\n" +

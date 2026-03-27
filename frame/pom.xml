@@ -7,12 +7,12 @@
     <groupId>gzb</groupId>
     <artifactId>gzb.one</artifactId>
     <name>gzb.one</name>
-    <version>1.0.7</version>
+    <version>1.0.14</version>
     <description>项目基础框架</description>
 
     <properties>
-        <maven.compiler.source>25</maven.compiler.source>
-        <maven.compiler.target>25</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 

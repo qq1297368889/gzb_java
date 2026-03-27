@@ -40,7 +40,7 @@ public class ResultImpl implements Result, java.io.Serializable {
         this(new HashMap<String, Object>());
     }
     public ResultImpl(String jsonString) {
-        this(Tools.jsonToMap(jsonString));
+        rootMap=Tools.jsonToMap(jsonString);
     }
     public ResultImpl(Map<String, Object> rootMap) {
         this.rootMap = rootMap;

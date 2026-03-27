@@ -40,13 +40,12 @@ public class UDPHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    /**
-     * 超时/异常处理
-     */
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        String sessionId = ctx.channel().id().asLongText();
-        Log.log.e("UDP连接错误", "sessionId", sessionId, cause);
+        if (cause.getMessage().contains("Connection reset")) {
+            return;
+        }
+        Log.log.e("netty err0r", ctx, cause);
         ctx.close();
     }
 }

@@ -2,6 +2,7 @@ package gzb.frame.netty;
 
 import gzb.frame.PublicEntrance;
 import gzb.frame.factory.Factory;
+import gzb.frame.language.Template;
 import gzb.tools.Config;
 import gzb.tools.log.Log;
 
@@ -21,7 +22,7 @@ public class Server {
                 factory.loadJavaDir(Config.codeDir, Config.codePwd, Config.codeIv);
             }
             long end = System.currentTimeMillis();
-            Log.log.i("初始化耗时", end - start);
+            Log.log.i(Template.THIS_LANGUAGE[80], end - start);
         }
     }
 

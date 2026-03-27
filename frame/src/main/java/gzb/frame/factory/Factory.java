@@ -21,6 +21,7 @@ package gzb.frame.factory;
 import gzb.frame.netty.entity.PacketPromise;
 import gzb.frame.netty.entity.Request;
 import gzb.frame.netty.entity.Response;
+import gzb.frame.netty.tools.HTTPTools;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
 
@@ -29,6 +30,7 @@ import java.util.Map;
 
 public interface Factory {
     void start(Request request, Response response);
+    void startV2(Request request, Response response, HTTPTools.Entity entity);
     void loadJavaDir(String classDir, String pwd, String iv) throws Exception;
 
      Map<String, Object> getMapObject();

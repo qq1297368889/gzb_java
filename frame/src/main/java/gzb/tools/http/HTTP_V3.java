@@ -55,20 +55,8 @@ public class HTTP_V3 {
         System.out.println(tools.asString());
     }
 
-    // 默认配置（保留原配置，仅移除自定义连接池）
-    public static final long DEF_TIMEOUT = 10000L;
     public static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36";
 
-    // 【关键】JDK 原生 Keep-Alive 配置（静态代码块，全局生效）
-/*
-    static {
-        System.setProperty("http.keepAlive", "true"); // 启用原生 Keep-Alive
-        System.setProperty("http.maxConnections", "1000"); // 原生连接池最大连接数（按需求调整）
-        System.setProperty("http.keepAlive.timeout", "30000"); // 连接闲置30秒后关闭（避免无效连接）
-        System.setProperty("https.keepAlive", "true"); // 若需支持 HTTPS，补充配置
-        System.setProperty("https.maxConnections", "1000");
-    }
-*/
 
     static {
         System.setProperty("http.keepAlive", "true");
@@ -81,7 +69,7 @@ public class HTTP_V3 {
     private Map<String, String> responseHeaders = new HashMap<>();
 
     // 实例配置（完全保留）
-    private long timeout = DEF_TIMEOUT;
+    private long timeout = 10000L;
     private String charset = "UTF-8";
     private Map<String, String> headers = new HashMap<>();
     private boolean keepAlive = true; // 默认启用 Keep-Alive
@@ -128,9 +116,8 @@ public class HTTP_V3 {
             initConnectionSettings(connection, method, reqTimeout, requestHeaders);
             handleRequestBody(connection, method, data, files, requestHeaders);
             processResponse(connection);
-
         } catch (Exception e) {
-            throw e;
+            return this;
         } finally {
             if (connection != null) {
                connection.disconnect();

@@ -18,12 +18,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class PublicEntrance {
-    //上下文缓存 主要用于传递环境信息
-    public static final ThreadLocal<Object[]> context = new ThreadLocal<>();
-    //数据库事件 深度配置
-    public static final ThreadLocal<Integer> depth = new ThreadLocal<>();
-    //数据库事务签名
-    public static final ThreadLocal<String> open_transaction_key = new ThreadLocal<>();
     //json模板实现类
     public static final GzbJson gzbJson = new GzbJsonImpl();
     //框架核心实现类

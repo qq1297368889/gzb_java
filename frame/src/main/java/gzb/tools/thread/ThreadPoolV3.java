@@ -1,5 +1,6 @@
 package gzb.tools.thread;
 
+import gzb.frame.language.Template;
 import gzb.tools.*;
 import gzb.tools.log.Log;
 
@@ -67,18 +68,14 @@ public class ThreadPoolV3 {
     }
 
     private void autoStartThread() {
-        StackTraceElement[] stackTrace = new Throwable().getStackTrace();
-        for (StackTraceElement stackTraceElement : stackTrace) {
-            log.d(stackTraceElement.getClassName(),stackTraceElement.getMethodName(),stackTraceElement.getLineNumber());
-        }
         for (int i = 0; i < THREAD_MIN_NUM; i++) {
             startWork();
         }
         if (!AUTO_MATIC) {
-            log.t("线程池不自动扩容");
+            log.d(Template.THIS_LANGUAGE[51]);
             return;
         }
-
+        ThreadPoolV3 threadPoolV3 =this;
         Thread thread = new Thread() {
             @Override
             public void run() {
@@ -87,20 +84,19 @@ public class ThreadPoolV3 {
                         stopNum.set(0);//防止扣除到小于-21亿
                     }
                     CPU_LOAD = OSUtils.getSystemCpuLoadPercentage();
-                    log.i("CPU_LOAD",CPU_LOAD);
                     if (thrNum.get() > THREAD_MAX_NUM) {
                         continue;
                     }
                     int workNum = runnableQueue.size();
                     int threadNum = thrNum.get();
-                    log.t( "积压数量", runnableQueue.size(), "线程数量", thrNum.get());
+                    log.t( Template.THIS_LANGUAGE[52], runnableQueue.size(), Template.THIS_LANGUAGE[53], thrNum.get(), Template.THIS_LANGUAGE[54],CPU_LOAD,threadPoolV3.toString());
                     //积压小于线程数 不扩张
                     if (workNum*1.5 < threadNum) {
-                        log.t("小于线程数", "积压数量", runnableQueue.size(), "线程数量", thrNum.get());
+                        log.t(Template.THIS_LANGUAGE[55], Template.THIS_LANGUAGE[52], runnableQueue.size(), Template.THIS_LANGUAGE[53], thrNum.get());
                         //目前 积压数量小于线程数量 并且线程数量大于cpu*2可以考虑缩容
                         if (threadNum > Config.cpu * 2) {
                             stopNum.set(1);
-                            log.t("缩容", 1,thrNum.get(),runnableQueue.size());
+                            log.t(Template.THIS_LANGUAGE[56], 1,thrNum.get(),runnableQueue.size());
                             Tools.sleep(1000);
                             continue;
                         }
@@ -113,7 +109,7 @@ public class ThreadPoolV3 {
                     }
                     for (int i = 0; i < Config.cpu; i++) {
                         startWork();//启动一个线程
-                        log.t("启动线程", CPU_LOAD, "积压数量", runnableQueue.size(), "线程数量", thrNum.get());
+                        log.t(Template.THIS_LANGUAGE[57], Template.THIS_LANGUAGE[54],CPU_LOAD,Template.THIS_LANGUAGE[52], runnableQueue.size(), Template.THIS_LANGUAGE[53], thrNum.get());
                     }
                     double cpu_2 = OSUtils.getSystemCpuLoadPercentage();//获取cpu变化
 
@@ -121,12 +117,12 @@ public class ThreadPoolV3 {
                     int threadNum2 = thrNum.get();
                     //显著停止恶化 不扩张
                     if (workNum2 < workNum * 0.8) {
-                        log.t("停止恶化", "积压数量", runnableQueue.size(), "线程数量", thrNum.get());
+                        log.t(Template.THIS_LANGUAGE[58], Template.THIS_LANGUAGE[52], runnableQueue.size(), Template.THIS_LANGUAGE[53], thrNum.get());
                         continue;
                     }
                     //积压小于线程数 不扩张
                     if (workNum2 < threadNum2) {
-                        log.t("小于线程数", "积压数量", runnableQueue.size(), "线程数量", thrNum.get());
+                        log.t(Template.THIS_LANGUAGE[59], Template.THIS_LANGUAGE[52], runnableQueue.size(), Template.THIS_LANGUAGE[53], thrNum.get());
                         continue;
                     }
                     double k01 = (cpu_2 - cpu_1) / 5; //获取平均负载
@@ -139,7 +135,8 @@ public class ThreadPoolV3 {
                     //根据平均负载 启动新线程 激进 但是问题不大 因为是给io线程用的
                     while (cpu_2 < MAX_CPU_JVM_LOAD) {
                         startWork();//启动一个线程
-                        log.t("启动线程 快速扩张", CPU_LOAD, "积压数量", runnableQueue.size(), "线程数量", thrNum.get(), "CPU预计", k01);
+                        log.t(Template.THIS_LANGUAGE[57],Template.THIS_LANGUAGE[60], CPU_LOAD, Template.THIS_LANGUAGE[52], runnableQueue.size(), Template.THIS_LANGUAGE[53], thrNum.get()
+                                , Template.THIS_LANGUAGE[61], k01);
                         cpu_2 += k01;
                     }
                 }
@@ -147,17 +144,14 @@ public class ThreadPoolV3 {
         };
         thread.setName("thread-pool-main");
         thread.start();
-        log.t("start thread main ", thread.getName(), thread);
     }
 
     Lock lock = LockFactory.getLock("thread-pool-startWork-exit");
     private void startWork() {
         if (thrNum.get() > THREAD_MAX_NUM) {
-            log.t("扩容上限", "积压数量", thrNum.get() > THREAD_MAX_NUM);
             return;
         }
         if (thrNum.get() > THREAD_MIN_NUM && runnableQueue.size() < thrNum.get()) {
-            log.t("积压数量很少 停止扩容", "积压数量", runnableQueue.size(), "线程数量", thrNum.get());
             return;
         }
         thrNum.incrementAndGet();
@@ -172,8 +166,7 @@ public class ThreadPoolV3 {
                             try {
                                 if (thrNum.get() > THREAD_MIN_NUM) {
                                     thrNum.decrementAndGet();
-
-                                    log.t("遵从缩容指令", Thread.currentThread().getName(), "剩余线程数", thrNum.get());
+                                    log.t(Template.THIS_LANGUAGE[62], Thread.currentThread().getName(),Template.THIS_LANGUAGE[53], thrNum.get());
                                     break;
                                 }
                                 continue;
@@ -188,7 +181,7 @@ public class ThreadPoolV3 {
                             try {
                                 if (thrNum.get() > THREAD_MIN_NUM) {
                                     thrNum.decrementAndGet();
-                                    log.t("空闲线程结束", Thread.currentThread().getName(), "剩余线程数", thrNum.get());
+                                    log.t(Template.THIS_LANGUAGE[63], Thread.currentThread().getName(),Template.THIS_LANGUAGE[53], thrNum.get());
                                     break;
                                 }
                                 continue;
@@ -198,11 +191,11 @@ public class ThreadPoolV3 {
                         }
                         runnable.run();
                     } catch (InterruptedException e) {
-                        log.d("线程被中断", Thread.currentThread().getName(), e);
+                        log.d(Template.THIS_LANGUAGE[64], Thread.currentThread().getName(), e);
                         thrNum.decrementAndGet();
                         break;
                     } catch (Throwable e) {
-                        log.e("线程运行出错", Thread.currentThread().getName(), e);
+                        log.e(Template.THIS_LANGUAGE[65], Thread.currentThread().getName(), e);
                     }
                 }
             }

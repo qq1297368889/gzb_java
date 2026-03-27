@@ -10,6 +10,9 @@ gzbClassCache/
 tmp/
 target/
 logs/
+tfb/
+jar/
+*.mp4
 *.class
 *.log
 *.cache

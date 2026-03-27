@@ -1,5 +1,6 @@
 package gzb.frame.netty.tools;
 
+
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,25 +12,7 @@ import java.util.Map;
  * 专注于 Char 级操作，最小化 String/Byte 转换和对象创建。
  */
 public class OptimizedParameterParser {
-    public static void main(String[] args) throws InterruptedException {
-        for (int n = 0; n < 100000; n++) {
-            Map<String, List<Object>> map = new HashMap<>();
-            long t01 = System.nanoTime();
-            parseUrlEncoded("/test/api0/get1?message=message001", map, false);
-            long t02 = System.nanoTime();
-            System.out.println(((t02 - t01) ) +"  "+map);
-        }
-        Thread.sleep(1000);
-        for (int n = 0; n < 100000; n++) {
-            Map<String, List<Object>> map = new HashMap<>();
-            long t01 = System.nanoTime();
-            parseUrlEncoded("/test/api0/get1?message=message001", map, false);
-            long t02 = System.nanoTime();
-            System.out.println(((t02 - t01) ) +"  "+map);
-        }
 
-
-    }
 
     private static final byte[] HEX_TABLE = new byte[128];
 
@@ -43,16 +26,7 @@ public class OptimizedParameterParser {
             HEX_TABLE['a' + i] = (byte) (10 + i);
         }
     }
-    /**
-     * 顺序解析 URL 或 POST Body 中的键值对。
-     * 例如：?k1=v1&k2=v2 或 k1=v1&k2=v2
-     * 目标：尽可能减少对 String.substring() 的依赖，并优化 URL 解码。
-     *
-     * @param data  要解析的参数字符串。
-     * @param parar 存储解析结果的 Map<String, List<Object>>。
-     */
     public static String parseUrlEncoded(String data, Map<String, List<Object>> parar, boolean post) {
-
         if (data == null || data.isEmpty()) {
             return data;
         }
@@ -63,6 +37,7 @@ public class OptimizedParameterParser {
         int urlEnd = 0;
         if (post) {
             valueStart = 0;
+            keyStart=0;
         } else {
             valueStart = data.indexOf('?');
             if (valueStart > -1) {
@@ -130,19 +105,11 @@ public class OptimizedParameterParser {
         }
     }
 
-    /**
-     * 辅助方法：添加参数到 Map
-     */
     private static void addParameter(Map<String, List<Object>> parar, String key, String value) {
         List<Object> values = parar.computeIfAbsent(key, k -> new ArrayList<>(1));
         // 注意：这里存储的是 String，如果需要 Object，请自行转换
         values.add(value);
     }
-
-    /**
-     * 内部高性能 URL 解码器 (处理 %xx 和 +)
-     * 使用 char 数组和位操作，以减少堆分配。
-     */
     private static class Decoder {
         private final char[] chars;
         private final byte[] bytes;

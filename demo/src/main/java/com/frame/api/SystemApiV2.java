@@ -6,6 +6,7 @@ import gzb.entity.FileUploadEntity;
 import gzb.entity.TableInfo;
 import gzb.frame.annotation.*;
 import gzb.frame.db.DataBase;
+import gzb.frame.factory.ContentType;
 import gzb.frame.generate.GenerateJavaCode;
 import gzb.frame.netty.handler.HTTPHandler;
 import gzb.frame.netty.entity.Request;
@@ -27,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Controller
 //@CrossDomain(allowCredentials = false)
-@Header(item = {@HeaderItem(key = "content-type", val = "application/json;charset=UTF-8")})
+@Header(item = {@HeaderItem(key = "content-type", val = ContentType.json)})
 @RequestMapping(value = "/system/v2")
 public class SystemApiV2 {
     @Resource
@@ -61,12 +62,10 @@ public class SystemApiV2 {
     @Resource
     SysOptionRequestDao sysOptionRequestDao;
 
-
-    @GetMapping(value = "read/data")
-    public Object readData() {
-        Object obj = HTTPHandler.reqInfo;
-        HTTPHandler.reqInfo = new ConcurrentHashMap<>();
-        return obj;
+    /// getDate(1000*60*60*24) // 获取一天后的时间
+    public Date getDate(long ms){
+        Tools.sleep(ms);
+        return new Date();
     }
 
     //获取验证码  /system/v2/image/code

@@ -46,7 +46,6 @@ public class ClassLoadV4 {
         if (nameJavaCodeMap == null || nameJavaCodeMap.isEmpty()) {
             throw new IllegalArgumentException("源码Map不能为空或空集合");
         }
-/// 检查编译缓存
         Map<String, Class<?>> compiledClasses = new HashMap<>();
         Iterator<Map.Entry<String, String>> iterator = nameJavaCodeMap.entrySet().iterator();
 
@@ -58,19 +57,17 @@ public class ClassLoadV4 {
                 maps.forEach((k, v) -> {
                     compiledClasses.put(k, v);
                 });
-                iterator.remove();//保留未缓存的类 编译
+                iterator.remove();
             }
         }
         if (nameJavaCodeMap.size() < 1) {
             return compiledClasses;
         }
-        // 1. 获取JDK编译器
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler == null) {
             throw new IllegalStateException("无法获取Java编译器，请确保运行环境为JDK（非JRE）");
         }
 
-        // 2. 准备编译单元（纯内存，不落盘）
         List<JavaFileObject> compilationUnits = new ArrayList<>();
         for (Map.Entry<String, String> entry : nameJavaCodeMap.entrySet()) {
             String className = entry.getKey();
@@ -78,10 +75,8 @@ public class ClassLoadV4 {
             compilationUnits.add(new JavaSourceFromString(className, javaCode));
         }
 
-        // 3. 内存字节码收集器（捕获主类+内部类）
         Map<String, JavaClassInMemory> classByteCollector = new HashMap<>();
         DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-        // 4. 定制文件管理器（纯内存输出，不落盘）
         StandardJavaFileManager standardFileManager = compiler.getStandardFileManager(diagnostics, null, Charset.forName(Config.encoding.name()));
         JavaFileManager fileManager = new ForwardingJavaFileManager<StandardJavaFileManager>(standardFileManager) {
             @Override
@@ -96,28 +91,25 @@ public class ClassLoadV4 {
             }
         };
 
-        // 5. 编译选项配置
         List<String> options = new ArrayList<>();
+        options.add("-Xdiags:verbose");
         options.add("-parameters");          // 保留方法参数名
         options.add("-encoding");            // 编码配置
         options.add(Config.encoding.name());
         options.add("-classpath");           // 类路径（复用当前运行环境）
         options.add(System.getProperty("java.class.path") + File.pathSeparator + ".");
 
-        // 6. 执行编译
         JavaCompiler.CompilationTask task = compiler.getTask(
                 null, fileManager, diagnostics, options, null, compilationUnits
         );
         boolean compileSuccess = task.call();
 
-        // 7. 编译失败处理
         if (!compileSuccess) {
             StringBuilder errorMsg = new StringBuilder("编译失败：\n");
             diagnostics.getDiagnostics().forEach(d -> errorMsg.append(d.getMessage(null)).append("\n"));
             throw new Exception(errorMsg.toString());
         }
 
-        // 8. 批量加载字节码（每个类独立加载器）
         Map<String, byte[]> byteMap = new HashMap<>();
         for (Map.Entry<String, JavaClassInMemory> entry : classByteCollector.entrySet()) {
             String className = entry.getKey();
@@ -134,7 +126,6 @@ public class ClassLoadV4 {
         for (Map.Entry<String, Class<?>> stringClassEntry : compiledClasses2.entrySet()) {
             compiledClasses.put(stringClassEntry.getKey(), stringClassEntry.getValue());
         }
-        // 9. 加载字节码并返回结果
         return compiledClasses;
     }
 
@@ -187,30 +178,20 @@ public class ClassLoadV4 {
 
     public static class HotSwapClassLoader extends ClassLoader {
         Map<String, byte[]> byteMap=null;
-        /**
-         * 构造器：父加载器绑定当前上下文类加载器（保证归属应用类加载器层级）
-         */
         public HotSwapClassLoader(ClassLoader parent) {
             super(parent);
         }
 
-        /**
-         * 强制父加载器为AppClassLoader（主加载器），复刻同项目的加载器层级
-         */
         public HotSwapClassLoader(Map<String, byte[]> byteMap) {
             super(ClassLoader.getSystemClassLoader());
-            this.byteMap=byteMap;
+            if (this.byteMap==null) {
+                this.byteMap=new HashMap<>();
+            }
+            for (Map.Entry<String, byte[]> stringEntry : byteMap.entrySet()) {
+                this.byteMap.put(stringEntry.getKey(), stringEntry.getValue());
+            }
         }
-
-        /**
-         * 内存加载字节码（不落盘）
-         *
-         * @param className  类全限定名
-         * @param classBytes 类字节码
-         * @return 加载后的Class实例
-         */
         public Class<?> loadFromBytes(String className, byte[] classBytes) {
-            //System.out.println("loadFromBytes " + className);
             if (className == null || className.trim().isEmpty()) {
                 throw new IllegalArgumentException("类名不能为空");
             }
@@ -221,16 +202,15 @@ public class ClassLoadV4 {
         }
         @Override
         protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-            byte[] c_bs = byteMap.get(name);//有个坑 编译缓存会导致内部类异常 这里补充一下
-            if (c_bs != null) {
-                return loadFromBytes(name, c_bs);
-            }
             Class<?> c = findLoadedClass(name);
             if (c == null) {
-                c = super.loadClass(name, resolve);
+                byte[] c_bs = byteMap.remove(name);
+                if (c_bs != null) {
+                    c = defineClass(name, c_bs, 0, c_bs.length);
+                }
             }
             if (c == null) {
-                throw new GzbException0("类加载失败：" + name);
+                c = super.loadClass(name, resolve);
             }
             return c;
         }

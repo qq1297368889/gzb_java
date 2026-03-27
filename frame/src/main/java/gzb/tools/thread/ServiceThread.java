@@ -35,5 +35,25 @@ public class ServiceThread {
         list.add(thread);
         thread.start();
     }
+    public static void startWhile(String name,Runnable runnable) {
+        if (name == null) {
+            name = "ServiceThread." + OnlyId.getDistributed();
+        }
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true){
+                    runnable.run();
+                }
+            }
+        }, name);
+        List<Thread> list = serviceThread.get(name);
+        if (list == null) {
+            list = new ArrayList<>();
+            serviceThread.put(name, list);
+        }
+        list.add(thread);
+        thread.start();
+    }
 
 }

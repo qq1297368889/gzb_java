@@ -17,6 +17,7 @@
  */
 
 package gzb.start;
+import gzb.frame.language.Template;
 import gzb.frame.netty.Server;
 import gzb.tools.Config;
 import gzb.tools.Tools;
@@ -49,7 +50,7 @@ public class Application {
             Server.startHTTPServer(Config.HTTP_PORT);
         }
         long end=System.currentTimeMillis();
-        Log.log.i("启动总耗时",end-start);
+        Log.log.i(Template.THIS_LANGUAGE[79],end-start);
     }
 
 

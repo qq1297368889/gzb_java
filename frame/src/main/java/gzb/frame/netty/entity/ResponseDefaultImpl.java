@@ -18,19 +18,16 @@
 
 package gzb.frame.netty.entity;
 
-import gzb.tools.AES_CBC_128;
-import gzb.tools.Config;
 import gzb.tools.NettyTools;
-import gzb.tools.Tools;
-import gzb.tools.log.Log;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 
-import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -41,19 +38,15 @@ public class ResponseDefaultImpl implements Response {
     private ChannelHandlerContext ctx;
     private Set<Cookie> cookies; // Added cookies field
     private boolean isSendHeaders = false;
+    private FullHttpRequest request = null;
 
-    public ResponseDefaultImpl(ChannelHandlerContext ctx) {
+    boolean keepAlive = false;
+
+    public ResponseDefaultImpl(ChannelHandlerContext ctx, FullHttpRequest request) {
         this.ctx = ctx;
-    }
+        this.request = request;
+        keepAlive = HttpUtil.isKeepAlive(request);
 
-    public Response setStatus(int status) {
-        this.status = HttpResponseStatus.valueOf(status);
-        return this;
-    }
-
-    public Response setCharset(String charset) {
-        this.charset = charset;
-        return this;
     }
 
     /**
@@ -63,20 +56,25 @@ public class ResponseDefaultImpl implements Response {
         if (!isSendHeaders) {
             isSendHeaders = true;
             HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, status);
-            response.headers().set("server", Config.frameName);
-            response.headers().set("content-type","text/html;charset="+Config.encoding.name());
+            //response.headers().set(HttpHeaderNames.SERVER, NettyTools.SERVER_NAME);
+            //response.headers().set(HttpHeaderNames.DATE, NettyTools.THIS_TIME);
             response.headers().set(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
             if (headers != null) {
                 for (Map.Entry<String, String> entry : headers.entrySet()) {
                     response.headers().set(entry.getKey(), entry.getValue());
                 }
             }
+            if (keepAlive) {
+                //response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
+            } else {
+                response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+            }
             if (cookies != null) {
                 for (Cookie cookie : cookies) {
-                    response.headers().set("Set-Cookie", NettyTools.encodeSingleCookie(cookie));
+                    response.headers().add("Set-Cookie", NettyTools.encodeSingleCookie(cookie));
                 }
             }
-            ctx.writeAndFlush(response);
+            ctx.write(response);
         }
         return this;
     }
@@ -91,7 +89,7 @@ public class ResponseDefaultImpl implements Response {
             sendHeaders();
         }
         if (chunk != null) {
-            HttpContent content = new DefaultHttpContent(Unpooled.copiedBuffer(chunk));
+            HttpContent content = new DefaultHttpContent(Unpooled.wrappedBuffer(chunk));
             ctx.write(content);
         }
         return this;
@@ -104,32 +102,53 @@ public class ResponseDefaultImpl implements Response {
         if (!isSendHeaders) {
             sendHeaders();
         }
-        ctx.flush();
-        ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+        ChannelFuture future = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+        if (!keepAlive) {
+            future.addListener(ChannelFutureListener.CLOSE);
+        }
         return this;
     }
 
     public Response sendAndFlush(Object chunk) {
-        ByteBuf buf=NettyTools.toByteBuf(chunk);
+        ByteBuf buf = NettyTools.toByteBuf(chunk);
         FullHttpResponse response = new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
-                HttpResponseStatus.OK,buf);
-        response.headers().set("server", Config.frameName);
-        response.headers().set("content-type","text/html;charset="+Config.encoding.name());
-        response.headers().set("content-length", buf.readableBytes());
+                HttpResponseStatus.OK,
+                buf,
+                false
+        );
+        response.headers().set(HttpHeaderNames.CONTENT_LENGTH, buf.readableBytes());
+        //response.headers().set(HttpHeaderNames.SERVER, NettyTools.SERVER_NAME);
+        //response.headers().set(HttpHeaderNames.DATE, NettyTools.THIS_TIME);
         if (headers != null) {
             for (Map.Entry<String, String> entry : headers.entrySet()) {
                 response.headers().set(entry.getKey(), entry.getValue());
             }
         }
-
+        if (keepAlive) {
+            //response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
+        } else {
+            response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+        }
         if (cookies != null) {
             for (Cookie cookie : cookies) {
-                response.headers().set("Set-Cookie", NettyTools.encodeSingleCookie(cookie));
+                response.headers().add("Set-Cookie", NettyTools.encodeSingleCookie(cookie));
             }
         }
+        //ChannelFuture future = ctx.writeAndFlush(response);
+        ChannelFuture future = ctx.write(response);
+        if (!keepAlive) {
+            future.addListener(ChannelFutureListener.CLOSE);
+        }
+        return this;
+    }
+    public Response setStatus(int status) {
+        this.status = HttpResponseStatus.valueOf(status);
+        return this;
+    }
 
-        ctx.writeAndFlush(response);
+    public Response setCharset(String charset) {
+        this.charset = charset;
         return this;
     }
 

@@ -74,10 +74,10 @@ public class SysGroupPermission implements Serializable, JsonSerializable{
     }
     @Override
     public String toString() {
-        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
-            int index0=entity0.open();
+        gzb.tools.thread.GzbThreadLocal.Entity entity0 = gzb.tools.thread.GzbThreadLocal.context.get();
+        int index0=entity0.stringBuilderCacheEntity.open();
             try {
-                StringBuilder sb = entity0.get(index0);
+                StringBuilder sb = entity0.stringBuilderCacheEntity.get(index0);
        boolean app01=false;
         sb.append("{");
         if (this.sysGroupPermissionId != null) {
@@ -109,7 +109,7 @@ public class SysGroupPermission implements Serializable, JsonSerializable{
         }
        return sb.append("}").toString();
             }finally {
-                entity0.close(index0);
+                entity0.stringBuilderCacheEntity.close(index0);
             }    }
 
     public Result toJson() {

@@ -18,11 +18,14 @@
 
 package gzb.frame.db;
 
+import gzb.frame.language.Template;
+import gzb.tools.Config;
 import gzb.tools.Queue;
 import gzb.tools.Tools;
 import gzb.tools.log.Log;
 import gzb.tools.thread.ServiceThread;
 import gzb.tools.thread.ThreadPool;
+import gzb.tools.thread.ThreadPoolV3;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -56,18 +59,14 @@ public class AsyncFactory{
         }
     }
 
-    public static class QueueEntity {
-        ConcurrentLinkedQueue<Result> results = null;
 
-    }
-
-    public ThreadPool threadPool = null;
+    public ThreadPoolV3 threadPool = null;
     public Log log = Log.log;
     public int batchSize;
     public int batchAwait;
     public int queueSize;
     public Lock lock;
-    public Map<String, Queue<Result>> cacheMap;
+    public Map<String, ConcurrentLinkedQueue<Result>> cacheMap;
     public DataBase dataBase;
 
     public AsyncFactory(DataBase dataBase, int threadNum, int batchSize, int batchAwait, int queueSize) {
@@ -98,18 +97,18 @@ public class AsyncFactory{
             }
         });
         //创建等同于 后台异步线程数的线程池  允许大量积压 因为可能同时批量失败
-        threadPool = new ThreadPool(threadNum, threadNum * 1000);
+        threadPool = new ThreadPoolV3(queueSize,threadNum, Config.cpu,85.0,true);
     }
 
-    public boolean execMapSql(Map<String, Queue<Result>> cacheMap) throws SQLException {
+    public boolean execMapSql(Map<String, ConcurrentLinkedQueue<Result>> cacheMap) throws SQLException {
         boolean runNum = false;
         for (String sql : cacheMap.keySet()) {
-            Queue<Result> queue = null;
+            ConcurrentLinkedQueue<Result> queue = null;
             lock.lock();
             try {
                 queue = cacheMap.get(sql);
                 if (queue != null) {
-                    cacheMap.put(sql, new Queue<Result>(queueSize));
+                    cacheMap.put(sql, new ConcurrentLinkedQueue<Result>());
                 }
             } finally {
                 lock.unlock();
@@ -148,7 +147,7 @@ public class AsyncFactory{
                                 preparedStatement.executeBatch();
                                 connection.commit();
                                 end = System.currentTimeMillis();
-                                log.d("异步批量执行SQL", num, "条", "耗时", end - start, "毫秒", sql);
+                                log.d(Template.THIS_LANGUAGE[10], num, Template.THIS_LANGUAGE[11],  Template.THIS_LANGUAGE[12], end - start,  Template.THIS_LANGUAGE[13], sql);
                                 num = 0;
                                 if (callBackSuccess > 0) {
                                     List<Result> finalList = list;
@@ -160,11 +159,11 @@ public class AsyncFactory{
                                             try {
                                                 result1.success.run();
                                             } catch (Exception e) {
-                                                log.e("异步执行成功，但是成功回调失败", result1);
+                                                log.e( Template.THIS_LANGUAGE[14], result1);
                                             }
                                         }
                                     })) {
-                                        log.e("异步执行成功，但是成功回调失败,原因是队列满了", list);
+                                        log.e(Template.THIS_LANGUAGE[15], list);
                                     }
                                 }
                                 list = new ArrayList<>(batchSize);
@@ -217,13 +216,13 @@ public class AsyncFactory{
         return add(new Result(sql, parar));
     }
     public int add(Result result) {
-        Queue<Result> queue = cacheMap.get(result.sql);
+        ConcurrentLinkedQueue<Result> queue = cacheMap.get(result.sql);
         if (queue == null) {
             lock.lock();
             try {
                 queue = cacheMap.get(result.sql);
                 if (queue == null) {
-                    queue = new Queue<>(queueSize);
+                    queue = new ConcurrentLinkedQueue<>();
                     cacheMap.put(result.sql, queue);
                 }
             } finally {

@@ -18,7 +18,9 @@
 
 package gzb.entity;
 
-public class ClassEntity {
+import java.io.Serializable;
+
+public class ClassEntity implements Serializable {
     public Class<?> clazz;
 
     //http 或者 文件

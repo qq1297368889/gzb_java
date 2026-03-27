@@ -1,6 +1,7 @@
 package gzb.tools.cache.object;
 
 import gzb.tools.log.Log;
+import io.netty.util.ReferenceCounted;
 
 /// 类非线程安全 如果哪个大聪明非要多线程共享 请加锁
 

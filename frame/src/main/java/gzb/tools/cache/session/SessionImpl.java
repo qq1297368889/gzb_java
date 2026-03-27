@@ -174,6 +174,7 @@ public class SessionImpl implements Session {
         }
         int a02 = a01 + 1;
         put(key, a02 + "");
+
         return a02;
     }
 

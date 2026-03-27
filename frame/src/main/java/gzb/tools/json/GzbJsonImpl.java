@@ -22,6 +22,7 @@ import com.alibaba.fastjson2.JSON;
 import gzb.frame.PublicEntrance;
 import gzb.tools.Config;
 import gzb.tools.Tools;
+import gzb.tools.thread.GzbThreadLocal;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,10 +33,10 @@ public class GzbJsonImpl implements GzbJson {
 
     @Override
     public String initJson(Integer code, String msg, String url, Object data, Integer page, Integer size, Integer total) {
-        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
-        int index0 = entity0.open();
+        GzbThreadLocal.Entity entity0 = GzbThreadLocal.context.get();
+        int index0 = entity0.stringBuilderCacheEntity.open();
         try {
-            StringBuilder sb = entity0.get(index0);
+            StringBuilder sb = entity0.stringBuilderCacheEntity.get(index0);
             sb.append("{\"").append(Config.stateName).append("\":\"").append(code).append("\"");
 
             sb.append(",\"").append(Config.timeName).append("\":\"").append(System.currentTimeMillis()).append("\"");
@@ -66,7 +67,7 @@ public class GzbJsonImpl implements GzbJson {
             sb.append("}");
             return sb.toString();
         } finally {
-            entity0.close(index0);
+            entity0.stringBuilderCacheEntity.close(index0);
         }
     }
 
@@ -115,10 +116,10 @@ public class GzbJsonImpl implements GzbJson {
      */
     @Override
     public String response(int code, String msg, String url, Object data) {
-        gzb.tools.cache.object.ObjectCache.Entity entity0=gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
-        int index0 = entity0.open();
+        GzbThreadLocal.Entity entity0 = GzbThreadLocal.context.get();
+        int index0 = entity0.stringBuilderCacheEntity.open();
         try {
-            StringBuilder sb = entity0.get(index0);
+            StringBuilder sb = entity0.stringBuilderCacheEntity.get(index0);
             sb.append("{\"").append(Config.stateName).append("\":\"").append(code).append("\"")
                     .append(",\"")
                     .append(Config.timeName).append("\":\"").append(System.currentTimeMillis()).append("\"");
@@ -140,7 +141,7 @@ public class GzbJsonImpl implements GzbJson {
             sb.append("}");
             return sb.toString();
         } finally {
-            entity0.close(index0);
+            entity0.stringBuilderCacheEntity.close(index0);
         }
     }
 

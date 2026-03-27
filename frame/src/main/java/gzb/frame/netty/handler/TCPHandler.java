@@ -64,8 +64,10 @@ public class TCPHandler extends ChannelInboundHandlerAdapter {
      */
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        String sessionId = ctx.channel().id().asLongText();
-        Log.log.e("TCP连接错误","sessionId", sessionId,cause);
+        if (cause.getMessage().contains("Connection reset")) {
+            return;
+        }
+        Log.log.e("netty err0r", ctx, cause);
         ctx.close();
     }
 }

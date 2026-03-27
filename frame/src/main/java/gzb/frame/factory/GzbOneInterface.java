@@ -23,7 +23,7 @@ import gzb.frame.netty.entity.Response;
 import gzb.tools.json.GzbJson;
 import gzb.tools.log.Log;
 
-import java.util.Map;
+import java.util.List;
 
 public interface GzbOneInterface {
 /*    public Object _gzb_call_x01(
@@ -32,12 +32,13 @@ public interface GzbOneInterface {
                                 Map<String, Object> mapObject, Object[] arrayObject,
                                 boolean openTransaction
     )throws Exception;*/
+
 public Object _gzb_call_x01(
         int _gzb_one_c_id,
         java.util.Map<String, Object> _gzb_one_c_mapObject,
         Request _g_p_req,
         Response _g_p_resp,
-        java.util.Map<String, java.util.List<Object>> _gzb_one_c_requestMap,
+        java.util.Map<String, List<Object>> _gzb_one_c_requestMap,
         GzbJson _g_p_gzbJson,
         Log _g_p_log,
         Object[] arrayObject

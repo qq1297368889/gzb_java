@@ -14,24 +14,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class GzbQueueImpl implements GzbQueue {
-    public static void main(String[] args) {
-        GzbQueue gzbQueue = new GzbQueueImpl(Tools.getProjectRoot()+"/test.queue");
-        if (gzbQueue.size()==0) {
-            for (int i = 0; i < 1000; i++) {
-                gzbQueue.produce("哈哈哈哈 "+i);
-            }
-        }
-
-        log.d("consume",gzbQueue.size());
-        log.d("consume",gzbQueue.consume(-1));
-        log.d("consume",gzbQueue.consume(-1));
-        log.d("consume",gzbQueue.consume(-1));
-        log.d("consume",gzbQueue.consume(-1));
-        log.d("consume",gzbQueue.consume(-1));
-        log.d("consume",gzbQueue.size());
-    }
-    public static Log log = Log.log;
-
     public AtomicLong idGenerator = new AtomicLong(0);
 
     public LinkedBlockingQueue<Entity> queueCache = new LinkedBlockingQueue<>();
@@ -66,7 +48,7 @@ public class GzbQueueImpl implements GzbQueue {
             consumeMap = null;//后续一定出错  防止继续执行】
             //重新消费
             for (Map.Entry<Long, Entity> longEntityEntry : consumeMap0.entrySet()) {
-                log.e("jvm被关闭，消费中未知状态", longEntityEntry.getValue());
+                Log.log.e("jvm被关闭，消费中未知状态", longEntityEntry.getValue());
             }
             saveToFile(queueCache0, consumeMap0); // 程序关闭时最终保存一次
         }));
@@ -85,9 +67,9 @@ public class GzbQueueImpl implements GzbQueue {
             dataContainer.put("idGenerator", idGenerator);
             dataContainer.put("queueCache", queueCache0);
             oos.writeObject(dataContainer);
-            log.d("Cache saved successfully to: " + persistenceFilePath);
+            Log.log.d("Cache saved successfully to: " + persistenceFilePath);
         } catch (IOException e) {
-            log.e(e, "Error saving cache to file: " + persistenceFilePath);
+            Log.log.e(e, "Error saving cache to file: " + persistenceFilePath);
         }
 
     }
@@ -108,9 +90,9 @@ public class GzbQueueImpl implements GzbQueue {
             Map<String, Object> dataContainer = (Map<String, Object>) ois.readObject();
             idGenerator = (AtomicLong) dataContainer.get("idGenerator");
             queueCache = (LinkedBlockingQueue<Entity>) dataContainer.get("queueCache");
-            log.d("Cache loaded successfully from: " + persistenceFilePath);
+            Log.log.d("Cache loaded successfully from: " + persistenceFilePath);
         } catch (IOException | ClassNotFoundException e) {
-            log.e(e, "Error loading cache from file: " + persistenceFilePath);
+            Log.log.e(e, "Error loading cache from file: " + persistenceFilePath);
         }
     }
 
@@ -139,11 +121,11 @@ public class GzbQueueImpl implements GzbQueue {
                                 queueCache.add(entity);
                                 iterator.remove();
                             } else {
-                                log.e("消费失败", entity);
+                                Log.log.e("消费失败", entity);
                             }
                         }
                     } catch (Exception e) {
-                        log.e(e);//防止崩溃
+                        Log.log.e(e);//防止崩溃
                     }
 
                     Tools.sleep(timeSleep); //不会被线程中断影响
@@ -183,7 +165,7 @@ public class GzbQueueImpl implements GzbQueue {
                 entity = queueCache.poll(second, TimeUnit.SECONDS);
             }
         } catch (Exception e) {
-            log.e(e);
+            Log.log.e(e);
         }
         if (entity == null) {
             return null;
@@ -209,7 +191,7 @@ public class GzbQueueImpl implements GzbQueue {
                 cacheEntity = queueCache.poll(second, TimeUnit.SECONDS);
             }
         } catch (Exception e) {
-            log.e(e);
+            Log.log.e(e);
         }
         if (cacheEntity == null) {
             return null;

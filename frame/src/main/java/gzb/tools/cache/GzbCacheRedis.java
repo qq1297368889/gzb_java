@@ -1,6 +1,7 @@
 package gzb.tools.cache;
 
 import gzb.tools.Config;
+import gzb.tools.Tools;
 import gzb.tools.log.Log;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -241,43 +242,25 @@ public class GzbCacheRedis implements GzbCache {
     public void removeMap(String key) {
         remove(key);
     }
-
-    /// 下列各种方法 带序列化和反序列化 其他规则和上述同名方法一致   删除方法共享
     /**
      * 将 Object 序列化为 byte 数组。
+     *
      * @param obj 要序列化的对象。
      * @return 序列化后的 byte 数组，失败返回 null。
      */
     private byte[] serialize(Object obj) {
-        if (obj == null) return null;
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
-             ObjectOutputStream oos = new ObjectOutputStream(bos)) {
-            oos.writeObject(obj);
-            return bos.toByteArray();
-        } catch (IOException e) {
-            log.e(e, "Error serializing object.");
-            return null;
-        }
+        return Tools.serialize(obj);
     }
 
     /**
      * 将 byte 数组反序列化为 Object。
+     *
      * @param bytes 序列化后的 byte 数组。
      * @return 反序列化后的 Object，失败返回 null。
      */
-    @SuppressWarnings("unchecked")
     private <T> T deserialize(byte[] bytes) {
-        if (bytes == null) return null;
-        try (ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-             ObjectInputStream ois = new ObjectInputStream(bis)) {
-            return (T) ois.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            log.e(e, "Error deserializing object.");
-            return null;
-        }
+        return Tools.deserialize(bytes);
     }
-
-// --- 新增 Object 存取方法 (使用 byte[] 进行序列化) ---
 
     @Override
     public void setObject(String key, Object val, int second) {

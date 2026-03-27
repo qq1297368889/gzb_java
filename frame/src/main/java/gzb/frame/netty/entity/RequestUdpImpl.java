@@ -157,13 +157,7 @@ public class RequestUdpImpl implements Request {
             OptimizedParameterParser.parseUrlEncoded(data, parameters, true);
         } else if (packetPromise.type == 1) {
             String data = getBodyString();
-            Map<String, Object> jsonMap = Tools.jsonToMap(data);
-            if (jsonMap != null) {
-                for (Map.Entry<String, Object> stringObjectEntry : jsonMap.entrySet()) {
-                    List<Object> list = parameters.computeIfAbsent(stringObjectEntry.getKey(), k -> new ArrayList<>());
-                    list.add(stringObjectEntry.getValue());
-                }
-            }
+            Tools.jsonToMap(data,parameters);
         }
         // body类型不做处理
     }

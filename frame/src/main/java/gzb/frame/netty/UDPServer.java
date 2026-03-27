@@ -50,8 +50,8 @@ public class UDPServer {
                     "start udp server", port,
                     "netty main 线程数量", main_thread_num,
                     "netty io 线程数量", io_thread_num,
-                    "biz 线程数量", Config.bizThreadNum,
-                    "biz 队列最大数量", Config.bizAwaitNum);
+                    "biz 线程数量", Config.bizThreadNum < 1 ? "动态扩容" : Config.bizThreadNum,
+                    "biz 队列最大数量", Config.bizAwaitNum < 1 ? Config.cpu * 2000 : Config.bizAwaitNum);
             Channel channel = bootstrap.bind(port).sync().channel();
 
             channel.closeFuture().addListener(future -> {

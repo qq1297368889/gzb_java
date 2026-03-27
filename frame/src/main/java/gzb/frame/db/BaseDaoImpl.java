@@ -26,6 +26,7 @@ import gzb.tools.*;
 import gzb.tools.cache.Cache;
 import gzb.tools.cache.GzbCache;
 import gzb.tools.log.Log;
+import gzb.tools.thread.GzbThreadLocal;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.ParameterizedType;
@@ -143,9 +144,9 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             lock = LockFactory.getLock(key, second);
             lock.lock();
         }
-        gzb.tools.cache.object.ObjectCache.Entity entity0 = gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
-        int index0 = entity0.open();
-        StringBuilder sb = entity0.get(index0);
+        GzbThreadLocal.Entity entity0 = GzbThreadLocal.context.get();
+        int index0 = entity0.stringBuilderCacheEntity.open();
+        StringBuilder sb = entity0.stringBuilderCacheEntity.get(index0);
         sb.append(key);
         try {
             if (second > 0) {
@@ -201,7 +202,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
                 sb.append(",[组装：").append(times[3] - times[2]).append("ms]");
                 log.s(sb, times[0], times[4]);
             }
-            entity0.close(index0);
+            entity0.stringBuilderCacheEntity.close(index0);
         }
 
         return _t01;
@@ -237,9 +238,9 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
             lock = LockFactory.getLock(key, second);
             lock.lock();
         }
-        gzb.tools.cache.object.ObjectCache.Entity entity0 = gzb.tools.cache.object.ObjectCache.SB_CACHE0.get();
-        int index0 = entity0.open();
-        StringBuilder sb = entity0.get(index0);
+        GzbThreadLocal.Entity entity0 = GzbThreadLocal.context.get();
+        int index0 = entity0.stringBuilderCacheEntity.open();
+        StringBuilder sb = entity0.stringBuilderCacheEntity.get(index0);
         try {
             sb.append(key);
             if (second > 0) {
@@ -290,7 +291,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
                 sb.append(",[组装：").append(times[3] - times[2]).append("ms]");
                 log.s(sb, times[0], times[4]);
             }
-            entity0.close(index0);
+            entity0.stringBuilderCacheEntity.close(index0);
         }
 
         return list;

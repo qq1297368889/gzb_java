@@ -18,6 +18,8 @@
 
 package gzb.tools;
 
+import gzb.tools.log.Log;
+import gzb.tools.log.LogThread;
 import gzb.tools.thread.ServiceThread;
 import gzb.tools.thread.ThreadPool;
 
@@ -27,7 +29,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Config {
-    public static final String frameName = "gzb.one";
+    public static final String frameName = "gzb.one/1.0.14";
     public static Map<String, String> config = new ConcurrentHashMap<>();
     public static String thisPath = null;
     public static File configFile = null;
@@ -36,6 +38,7 @@ public class Config {
 
     public static int cpu;
     public static String domain;
+    public static Integer PIPELINE;
     public static int HTTP_PORT;
     public static int TCP_PORT;
     public static int UDP_PORT;
@@ -121,11 +124,12 @@ public class Config {
         TCP_PORT = Config.getInteger("gzb.system.server.tcp.port", 0);
         UDP_PORT = Config.getInteger("gzb.system.server.udp.port", 0);
         WS_PORT = Config.getInteger("gzb.system.server.ws.port", 0);
+        PIPELINE = Config.getInteger("gzb.system.server.pipeline", 16);
 
         mainThreadNum = getInteger("gzb.system.server.main.thread.num", Math.max(cpu / 10, 1));
         ioThreadNum = getInteger("gzb.system.server.io.thread.num", cpu * 2);
-        bizThreadNum = getInteger("gzb.system.server.biz.thread.num", cpu * 2);
-        bizAwaitNum = Config.getInteger("gzb.system.server.biz.await.num", cpu * 100);
+        bizThreadNum = getInteger("gzb.system.server.biz.thread.num", 0);
+        bizAwaitNum = Config.getInteger("gzb.system.server.biz.await.num", 0);
         maxPostSize = Config.getInteger("gzb.system.server.http.post.size", 1024 * 1024 * 5);
         compressionMinSize = Config.getInteger("gzb.system.server.http.compression.min.size", 1024 * 5);
         compression = Config.getBoolean("gzb.system.server.http.compression", false);
@@ -152,7 +156,6 @@ public class Config {
         failVal = Config.getInteger("json.fail.code", 2);
         errorVal = Config.getInteger("json.error.code", 3);
         jumpVal = Config.getInteger("json.jump.code", 4);
-
 
     }
 
@@ -188,23 +191,19 @@ public class Config {
                 configFile = file;
             }
             load(configFile);
-            ServiceThread.start("config-auto-update-服务线程", new Runnable() {
-                @Override
-                public void run() {
-                    thread = Thread.currentThread();
-                    while (true) {
-                        try {
-                            load(configFile);
-                        } catch (Exception e) { //这里不允许出错， 也无法记录日志 因为会循环依赖
-                            e.printStackTrace();
-                        }
-                        try {
-                            Thread.sleep(3000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();//响应中断
-                            break;
-                        }
-
+            //启动服务线程
+            ServiceThread.start("Config.read",()->{
+                while (true) {
+                    try {
+                        Config.load(Config.configFile);
+                    } catch (Exception e) {
+                        Log.log.e("Config.load", e);
+                    }
+                    try {
+                        Thread.sleep(3000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();//响应中断
+                        break;
                     }
                 }
             });

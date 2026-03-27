@@ -6,10 +6,12 @@ import gzb.frame.annotation.*;
 import gzb.entity.DataBaseEventEntity;
 import gzb.frame.factory.ClassTools;
 import gzb.frame.factory.GzbOneInterface;
+import gzb.frame.language.Template;
 import gzb.frame.netty.entity.Request;
 import gzb.frame.netty.entity.Response;
 import gzb.tools.json.GzbJson;
 import gzb.tools.log.Log;
+import gzb.tools.thread.GzbThreadLocal;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -28,7 +30,7 @@ public class EventFactoryImpl implements EventFactory {
     //添加事件到队列   感觉无需异步 因此取消  因为dao 内部 有异步方法 可以在执行的时候选择 异步执行 某一个sql  同时  同步执行某个sql  也可全部同步 全部异步
     //ConcurrentLinkedQueue<String> eventList=new ConcurrentLinkedQueue<>();
     //为了兼容性 调用代码 为空 会报错 懒得改了
-    private final Map<String, List<Object>> requestMap = new ConcurrentHashMap<>();
+    private final Map<String, java.util.List<Object[]>> requestMap = new ConcurrentHashMap<>();
 
     public EventFactoryImpl(Map<String, Object> mapObject, Log log) {
         this.mapObject = mapObject;
@@ -68,17 +70,17 @@ public class EventFactoryImpl implements EventFactory {
             if (dataBaseEventEntity.type == type) {
                 //检查 主操作 执行之前 或 执行之后 是否匹配
                 if (dataBaseEventEntity.before == before) {
-                    Integer dep = PublicEntrance.depth.get();
-                    PublicEntrance.depth.set((dep == null ? 1 : dep) + 1);//深度+1
-                    if (dep != null && dep > dataBaseEventEntity.depth) {
+                    GzbThreadLocal.Entity entity=GzbThreadLocal.context.get();
+                    entity.depth++;
+                    if (entity.depth > dataBaseEventEntity.depth) {
                         throw new GzbException0(
                                 "数据库事件传播层数异常",
                                 "超过预设深度",
                                 dataBaseEventEntity.depth,
                                 "当前深度",
-                                dep);
+                                entity.depth);
                     }
-                    Object[] objects = PublicEntrance.context.get();
+                    Object[] objects = GzbThreadLocal.context.get().objects;
                     Object[] newArray = Arrays.copyOf(objects, objects.length + 1);
                     newArray[newArray.length - 1] = entity_obj;
                     //无返回值 错误将会中断后续流程,因为不中断的话 可能掩盖问题 或者出现不可预知问题
@@ -87,7 +89,7 @@ public class EventFactoryImpl implements EventFactory {
                             mapObject,//公共 service 单例对象引用
                             (Request) objects[3],
                             (Response) objects[4],
-                            (Map<String, List<Object>>) objects[5],
+                            (Map<String, java.util.List<Object>>) objects[5],
                             (GzbJson) objects[1],
                             (Log) objects[2],
                             newArray//私有对象
@@ -96,13 +98,7 @@ public class EventFactoryImpl implements EventFactory {
                     if (object instanceof Boolean && !(Boolean) object) {
                         return false;
                     }
-
-                    if (dep == null) {
-                        PublicEntrance.depth.remove();
-                    } else {
-                        PublicEntrance.depth.set(dep);//深度-1
-                    }
-
+                    entity.depth--;
                 }
 
             }
@@ -117,7 +113,7 @@ public class EventFactoryImpl implements EventFactory {
         Method[] methods = aClass.getDeclaredMethods();
         GzbOneInterface obj = null;
         for (Method method : methods) {
-            log.t("register method ", method);
+            log.t(Template.THIS_LANGUAGE[88], method);
             DataBaseEventSelect dataBaseEventSelect = method.getAnnotation(DataBaseEventSelect.class);
             DataBaseEventSave dataBaseEventSave = method.getAnnotation(DataBaseEventSave.class);
             DataBaseEventDelete dataBaseEventDelete = method.getAnnotation(DataBaseEventDelete.class);
@@ -132,7 +128,7 @@ public class EventFactoryImpl implements EventFactory {
                 continue;
             }
             if (obj == null) {
-               /* obj = (GzbOneInterface) mapObject.get(declaringClass.getName());*/
+                /* obj = (GzbOneInterface) mapObject.get(declaringClass.getName());*/
                 obj = (GzbOneInterface) ClassTools.gen_call_code_v4_object(declaringClass, code);
                 mapObject.put(declaringClass.getName(), obj);
             }
@@ -166,7 +162,7 @@ public class EventFactoryImpl implements EventFactory {
         if (dataBaseEventEntity.depth < 1) {
             return;
         }
-        log.t("注册数据库事件", dataBaseEventEntity.entityClass, dataBaseEventEntity.type, dataBaseEventEntity.before);
+        log.t(Template.THIS_LANGUAGE[87], dataBaseEventEntity.entityClass, dataBaseEventEntity.type, dataBaseEventEntity.before);
         open = true;
         List<DataBaseEventEntity> list = map_mapping.get(dataBaseEventEntity.entityClass.getName());
         if (list == null) {
