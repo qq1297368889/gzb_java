@@ -1,5 +1,6 @@
 .idea/
 .run/
+/.run/
 nodeimage/
 colorimage/
 hot_update_system/
@@ -12,6 +13,9 @@ target/
 logs/
 tfb/
 jar/
+files/
+out/
+server_cache/
 *.mp4
 *.class
 *.log
