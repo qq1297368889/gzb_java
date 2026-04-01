@@ -1,0 +1,1486 @@
+
+--- /text | 1c | Pipeline | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8081/text
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     9.54ms   31.29ms 391.83ms   30.86%
+    Req/Sec   331.28k    97.19k  386.58k    86.36%
+  6529088 requests in 10.01s, 485.68MB read
+Requests/sec: 652209.24
+Transfer/sec:     48.52MB
+
+--- /text | 1c | Pipeline | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8081/text
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.34ms    3.24ms  56.36ms   62.90%
+    Req/Sec   371.62k    26.97k  384.65k    96.50%
+  7397120 requests in 10.01s, 550.25MB read
+Requests/sec: 738652.33
+Transfer/sec:     54.95MB
+
+--- /text | 1c | Pipeline | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8081/text
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.18ms    2.47ms  19.81ms   48.51%
+    Req/Sec   370.46k    36.87k  386.58k    98.02%
+  7511168 requests in 13.66s, 558.73MB read
+  Socket errors: connect 0, read 0, write 0, timeout 120
+Requests/sec: 549985.06
+Transfer/sec:     40.91MB
+
+--- /text | 1c | Pipeline | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8081/text
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.22ms    2.65ms  19.24ms   51.87%
+    Req/Sec   375.16k     3.67k  384.65k    71.00%
+  7467328 requests in 10.00s, 555.47MB read
+Requests/sec: 746488.33
+Transfer/sec:     55.53MB
+
+--- /text | 1c | Pipeline | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8081/text
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.26ms    2.79ms  16.52ms   54.69%
+    Req/Sec   374.75k     8.57k  387.88k    59.50%
+  7460672 requests in 10.01s, 554.97MB read
+Requests/sec: 745080.49
+Transfer/sec:     55.42MB
+
+--- /text | 1c | Pipeline | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8081/text
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.31ms    2.77ms  12.30ms   54.44%
+    Req/Sec   370.41k    37.49k  387.88k    99.01%
+  7450944 requests in 13.58s, 554.25MB read
+  Socket errors: connect 0, read 0, write 0, timeout 120
+Requests/sec: 548724.46
+Transfer/sec:     40.82MB
+
+--- /text | 1c | Request | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8081/text
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.30ms  136.00us   6.20ms   85.95%
+    Req/Sec    46.24k     2.85k   55.91k    75.00%
+  920008 requests in 10.00s, 68.44MB read
+Requests/sec:  91992.49
+Transfer/sec:      6.84MB
+
+--- /text | 1c | Request | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8081/text
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.28ms  122.04us   7.93ms   86.70%
+    Req/Sec    46.81k     2.26k   52.06k    64.50%
+  931330 requests in 10.01s, 69.28MB read
+Requests/sec:  93063.36
+Transfer/sec:      6.92MB
+
+--- /text | 1c | Request | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8081/text
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.27ms   90.29us   3.92ms   79.31%
+    Req/Sec    46.78k     5.22k   56.35k    94.55%
+  941127 requests in 13.58s, 70.01MB read
+  Socket errors: connect 0, read 0, write 0, timeout 120
+Requests/sec:  69299.27
+Transfer/sec:      5.15MB
+
+--- /text | 1c | Request | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8081/text
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.30ms  139.47us   8.29ms   92.21%
+    Req/Sec    46.31k     2.09k   51.23k    65.00%
+  921513 requests in 10.01s, 68.55MB read
+Requests/sec:  92082.71
+Transfer/sec:      6.85MB
+
+--- /text | 1c | Request | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8081/text
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.25ms   98.12us   3.15ms   74.12%
+    Req/Sec    48.22k     2.89k   56.46k    71.50%
+  959567 requests in 10.00s, 71.38MB read
+Requests/sec:  95946.83
+Transfer/sec:      7.14MB
+
+--- /text | 1c | Request | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8081/text
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.26ms  102.74us   3.12ms   75.55%
+    Req/Sec    47.30k     5.47k   55.55k    94.06%
+  951809 requests in 13.59s, 70.80MB read
+  Socket errors: connect 0, read 0, write 0, timeout 119
+Requests/sec:  70061.52
+Transfer/sec:      5.21MB
+
+--- /text | 2c | Pipeline | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8082/text
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     7.22ms   20.37ms 303.41ms   28.52%
+    Req/Sec   322.33k    94.66k  386.58k    86.18%
+  12771904 requests in 10.02s, 0.93GB read
+Requests/sec: 1275239.03
+Transfer/sec:     94.86MB
+
+--- /text | 2c | Pipeline | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8082/text
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.44ms    2.84ms  25.25ms   53.71%
+    Req/Sec   362.18k    11.66k  387.23k    73.50%
+  14420032 requests in 10.01s, 1.05GB read
+Requests/sec: 1439894.62
+Transfer/sec:    107.11MB
+
+--- /text | 2c | Pipeline | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8082/text
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.70ms    4.14ms  71.08ms   78.84%
+    Req/Sec   360.07k    46.44k  387.88k    96.04%
+  14603520 requests in 13.67s, 1.06GB read
+  Socket errors: connect 0, read 0, write 0, timeout 240
+Requests/sec: 1068662.51
+Transfer/sec:     79.49MB
+
+--- /text | 2c | Pipeline | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8082/text
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.43ms    2.85ms  17.59ms   54.21%
+    Req/Sec   363.79k    20.92k  387.88k    94.75%
+  14480640 requests in 10.01s, 1.05GB read
+Requests/sec: 1447040.65
+Transfer/sec:    107.64MB
+
+--- /text | 2c | Pipeline | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8082/text
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.39ms    2.88ms  15.50ms   55.18%
+    Req/Sec   366.73k     9.34k  383.35k    80.00%
+  14601664 requests in 10.00s, 1.06GB read
+Requests/sec: 1459496.64
+Transfer/sec:    108.57MB
+
+--- /text | 2c | Pipeline | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8082/text
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.40ms    2.88ms  18.98ms   55.45%
+    Req/Sec   366.25k    43.37k  683.96k    98.51%
+  14784768 requests in 13.67s, 1.07GB read
+  Socket errors: connect 0, read 0, write 0, timeout 240
+Requests/sec: 1081661.10
+Transfer/sec:     80.46MB
+
+--- /text | 2c | Request | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8082/text
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.23ms  282.43us   9.06ms   94.98%
+    Req/Sec    49.31k     2.15k   57.01k    81.25%
+  1962664 requests in 10.01s, 146.00MB read
+Requests/sec: 196086.75
+Transfer/sec:     14.59MB
+
+--- /text | 2c | Request | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8082/text
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.20ms  292.04us   7.51ms   91.01%
+    Req/Sec    50.16k     4.14k  110.22k    91.52%
+  2000522 requests in 10.10s, 148.81MB read
+Requests/sec: 198065.23
+Transfer/sec:     14.73MB
+
+--- /text | 2c | Request | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8082/text
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.22ms  328.41us  16.78ms   97.68%
+    Req/Sec    49.09k     4.99k   54.45k    98.75%
+  1972464 requests in 13.57s, 146.72MB read
+  Socket errors: connect 0, read 0, write 0, timeout 240
+Requests/sec: 145318.02
+Transfer/sec:     10.81MB
+
+--- /text | 2c | Request | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8082/text
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.23ms  174.13us   5.98ms   92.34%
+    Req/Sec    48.84k     3.50k   53.79k    88.25%
+  1943595 requests in 10.00s, 144.58MB read
+Requests/sec: 194292.12
+Transfer/sec:     14.45MB
+
+--- /text | 2c | Request | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8082/text
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.23ms  435.99us  17.99ms   96.38%
+    Req/Sec    49.26k     2.21k   58.02k    79.00%
+  1961523 requests in 10.01s, 145.91MB read
+Requests/sec: 195975.84
+Transfer/sec:     14.58MB
+
+--- /text | 2c | Request | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8082/text
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.21ms  180.19us   9.09ms   94.72%
+    Req/Sec    49.29k     5.18k   54.88k    97.52%
+  1983033 requests in 13.59s, 147.51MB read
+  Socket errors: connect 0, read 0, write 0, timeout 230
+Requests/sec: 145967.97
+Transfer/sec:     10.86MB
+
+--- /test/hello | 1c | Pipeline | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8081/test/hello
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.37ms    4.04ms  62.44ms   34.93%
+    Req/Sec   316.22k    37.34k  333.58k    96.00%
+  6291904 requests in 10.01s, 546.04MB read
+Requests/sec: 628529.50
+Transfer/sec:     54.55MB
+
+--- /test/hello | 1c | Pipeline | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8081/test/hello
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     6.11ms    3.26ms  13.95ms   54.83%
+    Req/Sec   322.45k     3.08k  330.34k    67.50%
+  6414976 requests in 10.00s, 556.72MB read
+Requests/sec: 641321.30
+Transfer/sec:     55.66MB
+
+--- /test/hello | 1c | Pipeline | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8081/test/hello
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     6.18ms    3.28ms  13.77ms   55.49%
+    Req/Sec   318.87k    31.49k  331.64k    99.00%
+  6409024 requests in 13.57s, 556.20MB read
+  Socket errors: connect 0, read 0, write 0, timeout 120
+Requests/sec: 472275.98
+Transfer/sec:     40.99MB
+
+--- /test/hello | 1c | Pipeline | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8081/test/hello
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     6.10ms    3.25ms  15.82ms   54.82%
+    Req/Sec   322.88k     7.14k  341.33k    58.00%
+  6426752 requests in 10.00s, 557.74MB read
+Requests/sec: 642399.35
+Transfer/sec:     55.75MB
+
+--- /test/hello | 1c | Pipeline | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8081/test/hello
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     6.09ms    3.23ms  13.42ms   54.58%
+    Req/Sec   323.20k     7.04k  338.10k    55.00%
+  6436288 requests in 10.01s, 558.57MB read
+Requests/sec: 643147.66
+Transfer/sec:     55.82MB
+
+--- /test/hello | 1c | Pipeline | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8081/test/hello
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     6.17ms    3.27ms  13.69ms   55.32%
+    Req/Sec   318.98k    32.14k  331.64k    99.01%
+  6418240 requests in 13.58s, 557.00MB read
+  Socket errors: connect 0, read 0, write 0, timeout 120
+Requests/sec: 472659.04
+Transfer/sec:     41.02MB
+
+--- /test/hello | 1c | Request | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8081/test/hello
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.34ms  120.11us   4.14ms   84.28%
+    Req/Sec    45.03k     2.76k   57.72k    80.00%
+  896063 requests in 10.00s, 77.76MB read
+Requests/sec:  89595.79
+Transfer/sec:      7.78MB
+
+--- /test/hello | 1c | Request | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8081/test/hello
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.35ms  120.09us   4.35ms   80.84%
+    Req/Sec    44.49k     2.70k   55.71k    76.50%
+  885117 requests in 10.00s, 76.81MB read
+Requests/sec:  88498.61
+Transfer/sec:      7.68MB
+
+--- /test/hello | 1c | Request | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8081/test/hello
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.37ms  189.71us  11.03ms   95.04%
+    Req/Sec    43.47k     4.86k   51.83k    96.53%
+  879420 requests in 13.62s, 76.32MB read
+  Socket errors: connect 0, read 0, write 0, timeout 120
+Requests/sec:  64547.73
+Transfer/sec:      5.60MB
+
+--- /test/hello | 1c | Request | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8081/test/hello
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.34ms  118.98us   5.65ms   81.10%
+    Req/Sec    44.84k     2.76k   55.40k    74.50%
+  892207 requests in 10.00s, 77.43MB read
+Requests/sec:  89207.68
+Transfer/sec:      7.74MB
+
+--- /test/hello | 1c | Request | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8081/test/hello
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.39ms   96.38us   4.88ms   78.46%
+    Req/Sec    43.21k     1.75k   47.70k    66.50%
+  859673 requests in 10.00s, 74.61MB read
+Requests/sec:  85955.64
+Transfer/sec:      7.46MB
+
+--- /test/hello | 1c | Request | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8081/test/hello
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.45ms    1.37ms  43.41ms   99.69%
+    Req/Sec    42.95k     5.17k   49.23k    94.06%
+  867941 requests in 13.66s, 75.32MB read
+  Socket errors: connect 0, read 0, write 0, timeout 119
+Requests/sec:  63554.85
+Transfer/sec:      5.52MB
+
+--- /test/hello | 2c | Pipeline | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8082/test/hello
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     7.11ms    5.37ms  69.59ms   81.60%
+    Req/Sec   296.58k    41.67k  327.04k    94.00%
+  11810048 requests in 10.01s, 1.00GB read
+Requests/sec: 1179797.98
+Transfer/sec:    102.39MB
+
+--- /test/hello | 2c | Pipeline | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8082/test/hello
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     6.38ms    3.43ms  21.80ms   55.70%
+    Req/Sec   310.82k    11.49k  349.09k    73.00%
+  12376896 requests in 10.02s, 1.05GB read
+Requests/sec: 1235532.85
+Transfer/sec:    107.22MB
+
+--- /test/hello | 2c | Pipeline | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8082/test/hello
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     6.25ms    3.18ms  20.74ms   52.09%
+    Req/Sec   313.87k     7.67k  331.52k    83.50%
+  12497344 requests in 10.01s, 1.06GB read
+Requests/sec: 1248919.60
+Transfer/sec:    108.39MB
+
+--- /test/hello | 2c | Pipeline | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8082/test/hello
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     6.25ms    3.29ms  18.74ms   54.17%
+    Req/Sec   315.39k     8.28k  341.98k    74.00%
+  12552448 requests in 10.01s, 1.06GB read
+Requests/sec: 1254210.08
+Transfer/sec:    108.85MB
+
+--- /test/hello | 2c | Pipeline | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8082/test/hello
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     6.39ms    3.44ms  22.14ms   56.16%
+    Req/Sec   308.80k    31.39k  345.86k    98.00%
+  12409216 requests in 13.57s, 1.05GB read
+  Socket errors: connect 0, read 0, write 0, timeout 240
+Requests/sec: 914156.67
+Transfer/sec:     79.33MB
+
+--- /test/hello | 2c | Pipeline | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8082/test/hello
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     6.37ms    3.36ms  19.49ms   54.35%
+    Req/Sec   310.08k    11.79k  332.28k    81.75%
+  12344384 requests in 10.01s, 1.05GB read
+Requests/sec: 1232850.73
+Transfer/sec:    106.99MB
+
+--- /test/hello | 2c | Request | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8082/test/hello
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.29ms  174.33us   6.98ms   93.80%
+    Req/Sec    46.76k     1.56k   52.85k    75.00%
+  1860811 requests in 10.00s, 161.49MB read
+Requests/sec: 186059.80
+Transfer/sec:     16.15MB
+
+--- /test/hello | 2c | Request | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8082/test/hello
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.29ms  257.49us  13.27ms   96.02%
+    Req/Sec    46.17k     4.81k   52.54k    97.77%
+  1855822 requests in 13.57s, 161.06MB read
+  Socket errors: connect 0, read 0, write 0, timeout 239
+Requests/sec: 136735.95
+Transfer/sec:     11.87MB
+
+--- /test/hello | 2c | Request | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8082/test/hello
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.28ms  222.02us   7.67ms   94.92%
+    Req/Sec    47.02k     1.65k   55.66k    75.00%
+  1871102 requests in 10.01s, 162.38MB read
+Requests/sec: 186968.42
+Transfer/sec:     16.23MB
+
+--- /test/hello | 2c | Request | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8082/test/hello
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.29ms  204.75us  10.36ms   95.35%
+    Req/Sec    46.60k     1.52k   50.73k    72.75%
+  1854228 requests in 10.00s, 160.92MB read
+Requests/sec: 185394.34
+Transfer/sec:     16.09MB
+
+--- /test/hello | 2c | Request | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8082/test/hello
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.29ms  201.46us   9.29ms   95.00%
+    Req/Sec    46.07k     4.82k   51.40k    97.77%
+  1853559 requests in 13.58s, 160.86MB read
+  Socket errors: connect 0, read 0, write 0, timeout 240
+Requests/sec: 136476.26
+Transfer/sec:     11.84MB
+
+--- /test/hello | 2c | Request | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8082/test/hello
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.29ms  161.30us   7.12ms   92.97%
+    Req/Sec    46.43k     1.47k   51.39k    69.50%
+  1847325 requests in 10.00s, 160.32MB read
+Requests/sec: 184689.54
+Transfer/sec:     16.03MB
+
+--- /test/users/1 | 1c | Pipeline | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/1
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    13.44ms   56.92ms 511.25ms    9.58%
+    Req/Sec   186.32k    31.40k  202.34k    92.71%
+  3565056 requests in 10.01s, 853.38MB read
+Requests/sec: 356029.87
+Transfer/sec:     85.22MB
+
+--- /test/users/1 | 1c | Pipeline | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/1
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.28ms    5.61ms  22.24ms   56.92%
+    Req/Sec   192.11k    19.13k  200.40k    99.00%
+  3862208 requests in 13.58s, 0.90GB read
+  Socket errors: connect 0, read 0, write 0, timeout 120
+Requests/sec: 284443.86
+Transfer/sec:     68.09MB
+
+--- /test/users/1 | 1c | Pipeline | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/1
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.20ms    5.57ms  21.66ms   56.29%
+    Req/Sec   193.41k     1.98k  201.60k    82.00%
+  3849152 requests in 10.01s, 0.90GB read
+Requests/sec: 384668.51
+Transfer/sec:     92.08MB
+
+--- /test/users/1 | 1c | Pipeline | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/1
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.17ms    5.56ms  22.78ms   56.35%
+    Req/Sec   193.86k     1.30k  198.46k    78.00%
+  3859136 requests in 10.00s, 0.90GB read
+Requests/sec: 385773.45
+Transfer/sec:     92.34MB
+
+--- /test/users/1 | 1c | Pipeline | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/1
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.29ms    5.62ms  23.19ms   56.98%
+    Req/Sec   191.60k    19.08k  197.82k    99.00%
+  3849984 requests in 13.57s, 0.90GB read
+  Socket errors: connect 0, read 0, write 0, timeout 120
+Requests/sec: 283623.00
+Transfer/sec:     67.89MB
+
+--- /test/users/1 | 1c | Pipeline | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/1
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.20ms    5.58ms  23.06ms   56.37%
+    Req/Sec   193.25k     1.69k  198.46k    75.50%
+  3846656 requests in 10.00s, 0.90GB read
+Requests/sec: 384523.67
+Transfer/sec:     92.04MB
+
+--- /test/users/1 | 1c | Request | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/1
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.74ms  126.02us   3.25ms   77.45%
+    Req/Sec    34.57k     1.89k   38.90k    68.50%
+  688091 requests in 10.00s, 164.71MB read
+Requests/sec:  68798.66
+Transfer/sec:     16.47MB
+
+--- /test/users/1 | 1c | Request | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/1
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.70ms  165.87us   3.08ms   67.03%
+    Req/Sec    35.09k     4.64k   41.39k    84.16%
+  706593 requests in 13.59s, 169.14MB read
+  Socket errors: connect 0, read 0, write 0, timeout 120
+Requests/sec:  52003.32
+Transfer/sec:     12.45MB
+
+--- /test/users/1 | 1c | Request | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/1
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.74ms  119.68us   3.51ms   78.47%
+    Req/Sec    34.70k     1.69k   39.00k    72.50%
+  690321 requests in 10.00s, 165.24MB read
+Requests/sec:  69023.09
+Transfer/sec:     16.52MB
+
+--- /test/users/1 | 1c | Request | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/1
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.60ms  153.68us   4.98ms   74.57%
+    Req/Sec    37.59k     3.04k   45.84k    72.00%
+  747973 requests in 10.00s, 179.04MB read
+Requests/sec:  74784.86
+Transfer/sec:     17.90MB
+
+--- /test/users/1 | 1c | Request | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/1
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.69ms  128.71us   5.11ms   79.29%
+    Req/Sec    35.30k     3.96k   40.92k    94.55%
+  711092 requests in 13.60s, 170.22MB read
+  Socket errors: connect 0, read 0, write 0, timeout 119
+Requests/sec:  52284.11
+Transfer/sec:     12.52MB
+
+--- /test/users/1 | 1c | Request | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/1
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.75ms  117.16us   3.05ms   74.07%
+    Req/Sec    34.34k     1.72k   38.74k    71.50%
+  683173 requests in 10.00s, 163.53MB read
+Requests/sec:  68307.43
+Transfer/sec:     16.35MB
+
+--- /test/users/1 | 2c | Pipeline | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/1
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    12.58ms   13.16ms 214.40ms   95.08%
+    Req/Sec   179.38k    30.00k  359.43k    90.93%
+  7097792 requests in 10.06s, 1.66GB read
+Requests/sec: 705640.34
+Transfer/sec:    168.91MB
+
+--- /test/users/1 | 2c | Pipeline | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/1
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.45ms    5.76ms  40.17ms   57.71%
+    Req/Sec   189.56k    20.68k  230.40k    96.53%
+  7653504 requests in 13.64s, 1.79GB read
+  Socket errors: connect 0, read 0, write 0, timeout 240
+Requests/sec: 561138.43
+Transfer/sec:    134.32MB
+
+--- /test/users/1 | 2c | Pipeline | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/1
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.41ms    5.75ms  34.49ms   57.09%
+    Req/Sec   190.45k     6.10k  219.80k    91.25%
+  7581184 requests in 10.02s, 1.77GB read
+Requests/sec: 756278.68
+Transfer/sec:    181.03MB
+
+--- /test/users/1 | 2c | Pipeline | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/1
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.45ms    5.77ms  33.24ms   57.24%
+    Req/Sec   189.59k     5.87k  212.48k    81.75%
+  7549824 requests in 10.01s, 1.76GB read
+Requests/sec: 754178.97
+Transfer/sec:    180.53MB
+
+--- /test/users/1 | 2c | Pipeline | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/1
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.55ms    5.84ms  30.91ms   58.01%
+    Req/Sec   187.71k    19.86k  219.80k    96.04%
+  7596928 requests in 13.65s, 1.78GB read
+  Socket errors: connect 0, read 0, write 0, timeout 240
+Requests/sec: 556711.95
+Transfer/sec:    133.26MB
+
+--- /test/users/1 | 2c | Pipeline | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/1
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.37ms    5.55ms  37.91ms   55.13%
+    Req/Sec   190.24k     3.99k  195.23k    85.25%
+  7575488 requests in 10.01s, 1.77GB read
+Requests/sec: 756724.50
+Transfer/sec:    181.14MB
+
+--- /test/users/1 | 2c | Request | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/1
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.67ms  317.61us   7.93ms   90.82%
+    Req/Sec    36.21k     3.08k   40.84k    88.25%
+  1441420 requests in 10.01s, 345.04MB read
+Requests/sec: 144051.42
+Transfer/sec:     34.48MB
+
+--- /test/users/1 | 2c | Request | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/1
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.63ms  230.78us   8.06ms   92.69%
+    Req/Sec    36.61k     3.77k   42.39k    98.76%
+  1484508 requests in 13.66s, 355.35MB read
+  Socket errors: connect 0, read 0, write 0, timeout 240
+Requests/sec: 108679.46
+Transfer/sec:     26.01MB
+
+--- /test/users/1 | 2c | Request | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/1
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.67ms  311.81us   8.50ms   91.68%
+    Req/Sec    36.23k     2.38k   49.20k    85.11%
+  1452299 requests in 10.10s, 347.64MB read
+Requests/sec: 143802.22
+Transfer/sec:     34.42MB
+
+--- /test/users/1 | 2c | Request | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/1
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.63ms  278.85us   7.49ms   92.72%
+    Req/Sec    36.86k     1.96k   52.30k    83.87%
+  1477836 requests in 10.10s, 353.75MB read
+Requests/sec: 146325.79
+Transfer/sec:     35.03MB
+
+--- /test/users/1 | 2c | Request | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/1
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.63ms  258.34us   7.19ms   93.40%
+    Req/Sec    36.55k     3.93k   41.32k    97.52%
+  1470784 requests in 13.58s, 352.06MB read
+  Socket errors: connect 0, read 0, write 0, timeout 240
+Requests/sec: 108267.78
+Transfer/sec:     25.92MB
+
+--- /test/users/1 | 2c | Request | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/1
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.64ms  229.06us   7.02ms   92.42%
+    Req/Sec    36.67k     1.72k   40.74k    81.50%
+  1459427 requests in 10.00s, 349.35MB read
+Requests/sec: 145877.22
+Transfer/sec:     34.92MB
+
+--- /test/users/2 | 1c | Pipeline | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     9.63ms    4.89ms  56.90ms   51.06%
+    Req/Sec   199.68k    15.75k  210.75k    97.00%
+  3974592 requests in 10.00s, 803.58MB read
+Requests/sec: 397324.39
+Transfer/sec:     80.33MB
+
+--- /test/users/2 | 1c | Pipeline | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.21ms    6.83ms 105.57ms   71.42%
+    Req/Sec   198.26k    25.91k  207.51k    98.02%
+  3989312 requests in 13.58s, 806.55MB read
+  Socket errors: connect 0, read 0, write 0, timeout 120
+Requests/sec: 293704.99
+Transfer/sec:     59.38MB
+
+--- /test/users/2 | 1c | Pipeline | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     9.74ms    5.23ms  22.83ms   55.29%
+    Req/Sec   202.46k     3.39k  212.69k    67.50%
+  4027968 requests in 10.00s, 814.37MB read
+Requests/sec: 402637.88
+Transfer/sec:     81.40MB
+
+--- /test/users/2 | 1c | Pipeline | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     9.72ms    5.14ms  20.59ms   54.33%
+    Req/Sec   202.56k     2.58k  208.81k    69.50%
+  4030848 requests in 10.01s, 814.95MB read
+Requests/sec: 402860.61
+Transfer/sec:     81.45MB
+
+--- /test/users/2 | 1c | Pipeline | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     9.74ms    5.21ms  22.39ms   55.11%
+    Req/Sec   202.29k     2.33k  209.45k    71.00%
+  4026048 requests in 10.00s, 813.98MB read
+Requests/sec: 402554.44
+Transfer/sec:     81.39MB
+
+--- /test/users/2 | 1c | Pipeline | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     9.75ms    5.23ms  24.36ms   55.22%
+    Req/Sec   202.07k     3.17k  210.10k    72.50%
+  4023104 requests in 10.01s, 813.39MB read
+Requests/sec: 401974.79
+Transfer/sec:     81.27MB
+
+--- /test/users/2 | 1c | Request | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.61ms  113.73us   3.07ms   75.97%
+    Req/Sec    37.09k     4.13k   41.99k    98.02%
+  747925 requests in 13.60s, 151.21MB read
+  Socket errors: connect 0, read 0, write 0, timeout 120
+Requests/sec:  54974.85
+Transfer/sec:     11.11MB
+
+--- /test/users/2 | 1c | Request | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.64ms  126.27us   7.88ms   87.54%
+    Req/Sec    36.84k     1.42k   40.79k    68.50%
+  733065 requests in 10.00s, 148.21MB read
+Requests/sec:  73296.48
+Transfer/sec:     14.82MB
+
+--- /test/users/2 | 1c | Request | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.59ms  102.97us   3.04ms   79.14%
+    Req/Sec    37.83k     1.58k   41.79k    72.00%
+  752746 requests in 10.00s, 152.19MB read
+Requests/sec:  75263.51
+Transfer/sec:     15.22MB
+
+--- /test/users/2 | 1c | Request | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.63ms  121.06us   3.15ms   78.89%
+    Req/Sec    36.63k     4.17k   43.69k    94.06%
+  737885 requests in 13.59s, 149.18MB read
+  Socket errors: connect 0, read 0, write 0, timeout 119
+Requests/sec:  54294.40
+Transfer/sec:     10.98MB
+
+--- /test/users/2 | 1c | Request | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.62ms  132.00us   3.07ms   75.69%
+    Req/Sec    37.24k     2.38k   43.83k    76.50%
+  740546 requests in 10.00s, 149.72MB read
+Requests/sec:  74042.87
+Transfer/sec:     14.97MB
+
+--- /test/users/2 | 1c | Request | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.63ms  115.76us   3.35ms   79.80%
+    Req/Sec    36.84k     1.82k   40.84k    68.50%
+  733102 requests in 10.00s, 148.22MB read
+Requests/sec:  73298.27
+Transfer/sec:     14.82MB
+
+--- /test/users/2 | 2c | Pipeline | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.26ms    5.42ms  75.35ms   54.82%
+    Req/Sec   190.36k    27.14k  220.16k    90.59%
+  7672192 requests in 13.60s, 1.51GB read
+  Socket errors: connect 0, read 0, write 0, timeout 240
+Requests/sec: 564247.10
+Transfer/sec:    114.08MB
+
+--- /test/users/2 | 2c | Pipeline | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.36ms    6.30ms  72.02ms   64.06%
+    Req/Sec   194.96k    14.08k  230.79k    85.75%
+  7791744 requests in 10.05s, 1.54GB read
+Requests/sec: 774992.77
+Transfer/sec:    156.69MB
+
+--- /test/users/2 | 2c | Pipeline | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.63ms    8.30ms 138.89ms   84.40%
+    Req/Sec   194.78k    18.87k  217.60k    95.00%
+  7755072 requests in 10.01s, 1.53GB read
+Requests/sec: 774535.85
+Transfer/sec:    156.59MB
+
+--- /test/users/2 | 2c | Pipeline | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.13ms    5.57ms  32.91ms   57.66%
+    Req/Sec   195.57k    23.14k  224.97k    93.81%
+  7892160 requests in 13.62s, 1.56GB read
+  Socket errors: connect 0, read 0, write 0, timeout 240
+Requests/sec: 579594.00
+Transfer/sec:    117.18MB
+
+--- /test/users/2 | 2c | Pipeline | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.04ms    5.43ms  30.42ms   55.93%
+    Req/Sec   197.25k     9.48k  219.52k    88.75%
+  7854208 requests in 10.01s, 1.55GB read
+Requests/sec: 784486.16
+Transfer/sec:    158.61MB
+
+--- /test/users/2 | 2c | Pipeline | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     9.93ms    5.36ms  27.73ms   55.74%
+    Req/Sec   199.01k     6.13k  232.08k    74.75%
+  7923136 requests in 10.02s, 1.56GB read
+Requests/sec: 791065.77
+Transfer/sec:    159.94MB
+
+--- /test/users/2 | 2c | Request | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.52ms  286.01us   7.26ms   92.07%
+    Req/Sec    39.32k     4.89k   44.12k    95.05%
+  1591814 requests in 13.65s, 321.83MB read
+  Socket errors: connect 0, read 0, write 0, timeout 238
+Requests/sec: 116646.93
+Transfer/sec:     23.58MB
+
+--- /test/users/2 | 2c | Request | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.51ms  292.49us   6.93ms   92.61%
+    Req/Sec    39.95k     2.56k   45.39k    85.50%
+  1589778 requests in 10.00s, 321.42MB read
+Requests/sec: 158941.70
+Transfer/sec:     32.13MB
+
+--- /test/users/2 | 2c | Request | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.47ms  309.73us   7.36ms   93.02%
+    Req/Sec    41.01k     4.00k   93.85k    96.77%
+  1640023 requests in 10.10s, 331.58MB read
+Requests/sec: 162382.23
+Transfer/sec:     32.83MB
+
+--- /test/users/2 | 2c | Request | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.50ms  244.30us   7.39ms   95.06%
+    Req/Sec    39.62k     4.20k   43.40k    98.76%
+  1594874 requests in 13.59s, 322.45MB read
+  Socket errors: connect 0, read 0, write 0, timeout 240
+Requests/sec: 117394.23
+Transfer/sec:     23.73MB
+
+--- /test/users/2 | 2c | Request | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.49ms  272.21us   7.12ms   93.90%
+    Req/Sec    40.34k     1.38k   45.03k    72.75%
+  1605993 requests in 10.00s, 324.70MB read
+Requests/sec: 160575.18
+Transfer/sec:     32.46MB
+
+--- /test/users/2 | 2c | Request | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/2?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.51ms  240.14us   7.11ms   94.72%
+    Req/Sec    39.81k     1.43k   43.77k    71.25%
+  1584499 requests in 10.00s, 320.35MB read
+Requests/sec: 158392.55
+Transfer/sec:     32.02MB
+
+--- /test/users/3 | 1c | Pipeline | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.22ms    5.04ms  71.42ms    0.00%
+    Req/Sec   187.82k    21.96k  193.94k    98.02%
+  3781632 requests in 13.60s, 764.57MB read
+  Socket errors: connect 0, read 0, write 0, timeout 120
+Requests/sec: 278111.48
+Transfer/sec:     56.23MB
+
+--- /test/users/3 | 1c | Pipeline | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.32ms    5.51ms  25.49ms   54.89%
+    Req/Sec   190.77k     1.92k  195.84k    67.50%
+  3798464 requests in 10.01s, 767.97MB read
+Requests/sec: 379590.56
+Transfer/sec:     76.75MB
+
+--- /test/users/3 | 1c | Pipeline | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.30ms    5.47ms  21.79ms   54.47%
+    Req/Sec   190.98k     1.55k  194.59k    77.50%
+  3802496 requests in 10.01s, 768.78MB read
+Requests/sec: 379861.00
+Transfer/sec:     76.80MB
+
+--- /test/users/3 | 1c | Pipeline | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.43ms    5.58ms  22.72ms   55.86%
+    Req/Sec   189.07k    18.54k  193.94k    99.01%
+  3832512 requests in 13.66s, 774.85MB read
+  Socket errors: connect 0, read 0, write 0, timeout 120
+Requests/sec: 280584.35
+Transfer/sec:     56.73MB
+
+--- /test/users/3 | 1c | Pipeline | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.30ms    5.44ms  21.84ms   54.17%
+    Req/Sec   190.83k     1.30k  193.94k    73.00%
+  3800192 requests in 10.00s, 768.32MB read
+Requests/sec: 379901.54
+Transfer/sec:     76.81MB
+
+--- /test/users/3 | 1c | Pipeline | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.33ms    5.57ms  24.03ms   55.62%
+    Req/Sec   190.80k     2.23k  195.23k    76.00%
+  3798016 requests in 10.00s, 767.88MB read
+Requests/sec: 379622.08
+Transfer/sec:     76.75MB
+
+--- /test/users/3 | 1c | Request | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.72ms  127.98us   3.45ms   75.79%
+    Req/Sec    34.68k     3.95k   39.56k    96.53%
+  698843 requests in 13.59s, 141.29MB read
+  Socket errors: connect 0, read 0, write 0, timeout 120
+Requests/sec:  51415.24
+Transfer/sec:     10.40MB
+
+--- /test/users/3 | 1c | Request | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.65ms  140.24us   3.29ms   88.30%
+    Req/Sec    36.50k     2.36k   40.34k    84.00%
+  726289 requests in 10.00s, 146.84MB read
+Requests/sec:  72619.47
+Transfer/sec:     14.68MB
+
+--- /test/users/3 | 1c | Request | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.73ms  157.18us   5.62ms   80.46%
+    Req/Sec    34.90k     2.52k   40.76k    78.00%
+  694259 requests in 10.00s, 140.36MB read
+Requests/sec:  69420.00
+Transfer/sec:     14.04MB
+
+--- /test/users/3 | 1c | Request | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.66ms  148.11us   3.30ms   75.76%
+    Req/Sec    35.87k     4.43k   44.79k    93.56%
+  722017 requests in 13.59s, 145.98MB read
+  Socket errors: connect 0, read 0, write 0, timeout 120
+Requests/sec:  53146.63
+Transfer/sec:     10.75MB
+
+--- /test/users/3 | 1c | Request | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.70ms  135.42us   3.02ms   76.92%
+    Req/Sec    35.47k     2.16k   39.43k    67.50%
+  705550 requests in 10.00s, 142.65MB read
+Requests/sec:  70544.77
+Transfer/sec:     14.26MB
+
+--- /test/users/3 | 1c | Request | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.69ms  126.95us   3.46ms   81.10%
+    Req/Sec    35.63k     1.98k   41.78k    77.00%
+  709139 requests in 10.00s, 143.37MB read
+Requests/sec:  70902.16
+Transfer/sec:     14.33MB
+
+--- /test/users/3 | 2c | Pipeline | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.02ms    5.05ms  43.65ms   43.06%
+    Req/Sec   181.53k    21.00k  193.94k    95.30%
+  7318144 requests in 13.61s, 1.44GB read
+  Socket errors: connect 0, read 0, write 0, timeout 240
+Requests/sec: 537894.94
+Transfer/sec:    108.75MB
+
+--- /test/users/3 | 2c | Pipeline | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.88ms    6.06ms  32.38ms   57.97%
+    Req/Sec   183.11k    14.18k  195.23k    89.75%
+  7290944 requests in 10.01s, 1.44GB read
+Requests/sec: 728260.11
+Transfer/sec:    147.24MB
+
+--- /test/users/3 | 2c | Pipeline | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.52ms    5.58ms  29.06ms   54.62%
+    Req/Sec   187.28k     4.81k  202.99k    80.00%
+  7458368 requests in 10.01s, 1.47GB read
+Requests/sec: 745065.43
+Transfer/sec:    150.64MB
+
+--- /test/users/3 | 2c | Pipeline | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.61ms    5.70ms  25.31ms   55.93%
+    Req/Sec   185.45k    18.73k  200.96k    99.01%
+  7518272 requests in 13.66s, 1.48GB read
+  Socket errors: connect 0, read 0, write 0, timeout 240
+Requests/sec: 550356.21
+Transfer/sec:    111.27MB
+
+--- /test/users/3 | 2c | Pipeline | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.52ms    5.64ms  35.03ms   55.25%
+    Req/Sec   187.57k     5.61k  212.69k    77.50%
+  7468096 requests in 10.01s, 1.47GB read
+Requests/sec: 745877.25
+Transfer/sec:    150.80MB
+
+--- /test/users/3 | 2c | Pipeline | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.61ms    5.73ms  31.93ms   55.80%
+    Req/Sec   186.43k     9.34k  203.64k    91.50%
+  7423616 requests in 10.01s, 1.47GB read
+Requests/sec: 741576.27
+Transfer/sec:    149.93MB
+
+--- /test/users/3 | 2c | Request | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.56ms  232.79us   7.11ms   93.93%
+    Req/Sec    38.68k     1.51k   41.51k    77.50%
+  1540029 requests in 10.00s, 311.36MB read
+Requests/sec: 153949.66
+Transfer/sec:     31.13MB
+
+--- /test/users/3 | 2c | Request | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.55ms  287.88us   7.31ms   93.19%
+    Req/Sec    38.99k     2.23k   56.15k    83.37%
+  1563977 requests in 10.10s, 316.20MB read
+Requests/sec: 154809.34
+Transfer/sec:     31.30MB
+
+--- /test/users/3 | 2c | Request | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.55ms  247.69us   8.61ms   94.23%
+    Req/Sec    38.52k     4.02k   43.02k    98.00%
+  1547765 requests in 13.57s, 312.93MB read
+  Socket errors: connect 0, read 0, write 0, timeout 240
+Requests/sec: 114096.29
+Transfer/sec:     23.07MB
+
+--- /test/users/3 | 2c | Request | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.55ms  307.56us   7.64ms   93.12%
+    Req/Sec    39.05k     1.83k   43.08k    79.25%
+  1554379 requests in 10.00s, 314.26MB read
+Requests/sec: 155389.87
+Transfer/sec:     31.42MB
+
+--- /test/users/3 | 2c | Request | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.58ms  328.06us   7.44ms   90.98%
+    Req/Sec    38.28k     2.67k   45.99k    86.75%
+  1523709 requests in 10.01s, 308.06MB read
+Requests/sec: 152270.83
+Transfer/sec:     30.79MB
+
+--- /test/users/3 | 2c | Request | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/3?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.56ms  245.02us   8.81ms   94.11%
+    Req/Sec    38.13k     4.00k   42.38k    98.27%
+  1534831 requests in 13.59s, 310.31MB read
+  Socket errors: connect 0, read 0, write 0, timeout 240
+Requests/sec: 112929.67
+Transfer/sec:     22.83MB
+
+--- /test/users/array/1 | 1c | Pipeline | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/array/1?size=10
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    21.83ms   11.26ms  86.78ms   53.00%
+    Req/Sec    89.99k     7.78k  100.50k    87.50%
+  1791522 requests in 10.00s, 2.92GB read
+Requests/sec: 179077.52
+Transfer/sec:    298.53MB
+
+--- /test/users/array/1 | 1c | Pipeline | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/array/1?size=10
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    21.39ms   11.95ms  45.07ms   57.49%
+    Req/Sec    92.30k     1.16k   95.06k    75.50%
+  1835874 requests in 10.00s, 2.99GB read
+Requests/sec: 183537.73
+Transfer/sec:    305.96MB
+
+--- /test/users/array/1 | 1c | Pipeline | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/array/1?size=10
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    21.66ms   11.97ms  43.99ms   57.71%
+    Req/Sec    91.08k    10.36k  101.84k    98.02%
+  1832802 requests in 13.59s, 2.98GB read
+  Socket errors: connect 0, read 0, write 0, timeout 120
+Requests/sec: 134881.07
+Transfer/sec:    224.85MB
+
+--- /test/users/array/1 | 1c | Pipeline | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/array/1?size=10
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    21.72ms   12.43ms  97.15ms   59.20%
+    Req/Sec    91.68k     6.74k  111.36k    75.00%
+  1830208 requests in 10.06s, 2.98GB read
+Requests/sec: 181882.60
+Transfer/sec:    303.20MB
+
+--- /test/users/array/1 | 1c | Pipeline | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/array/1?size=10
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    21.43ms   11.99ms  45.16ms   57.52%
+    Req/Sec    92.04k     3.42k   99.54k    65.00%
+  1832034 requests in 10.01s, 2.98GB read
+Requests/sec: 183107.07
+Transfer/sec:    305.24MB
+
+--- /test/users/array/1 | 1c | Pipeline | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/array/1?size=10
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    21.58ms   11.93ms  44.07ms   57.68%
+    Req/Sec    91.43k    10.59k  102.44k    96.53%
+  1845858 requests in 13.61s, 3.00GB read
+  Socket errors: connect 0, read 0, write 0, timeout 120
+Requests/sec: 135578.48
+Transfer/sec:    226.01MB
+
+--- /test/users/array/1 | 1c | Request | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/array/1?size=10
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.15ms  130.28us   3.57ms   83.93%
+    Req/Sec    27.99k     1.12k   30.66k    75.50%
+  557172 requests in 10.00s, 0.91GB read
+Requests/sec:  55708.18
+Transfer/sec:     92.87MB
+
+--- /test/users/array/1 | 1c | Request | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/array/1?size=10
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.17ms  138.20us   6.28ms   84.92%
+    Req/Sec    27.74k     1.11k   30.74k    74.00%
+  551957 requests in 10.00s, 0.90GB read
+Requests/sec:  55189.42
+Transfer/sec:     92.00MB
+
+--- /test/users/array/1 | 1c | Request | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/array/1?size=10
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.20ms  161.47us   3.70ms   88.53%
+    Req/Sec    27.08k     3.01k   29.68k    96.04%
+  545162 requests in 13.59s, 0.89GB read
+  Socket errors: connect 0, read 0, write 0, timeout 120
+Requests/sec:  40112.78
+Transfer/sec:     66.87MB
+
+--- /test/users/array/1 | 1c | Request | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/array/1?size=10
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.20ms  153.41us   5.17ms   87.75%
+    Req/Sec    27.45k     1.41k   32.45k    83.50%
+  545898 requests in 10.00s, 0.89GB read
+Requests/sec:  54578.55
+Transfer/sec:     90.98MB
+
+--- /test/users/array/1 | 1c | Request | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/array/1?size=10
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.16ms  138.73us   3.57ms   83.01%
+    Req/Sec    27.94k     1.27k   30.17k    74.50%
+  555916 requests in 10.00s, 0.91GB read
+Requests/sec:  55585.79
+Transfer/sec:     92.66MB
+
+--- /test/users/array/1 | 1c | Request | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8081/test/users/array/1?size=10
+  2 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.16ms  132.77us   3.45ms   82.56%
+    Req/Sec    27.57k     3.00k   30.30k    96.04%
+  555477 requests in 13.59s, 0.90GB read
+  Socket errors: connect 0, read 0, write 0, timeout 120
+Requests/sec:  40868.85
+Transfer/sec:     68.13MB
+
+--- /test/users/array/1 | 2c | Pipeline | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/array/1?size=10
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    22.93ms   11.70ms  96.90ms   52.38%
+    Req/Sec    85.48k     7.83k  105.07k    84.50%
+  3403272 requests in 10.01s, 5.54GB read
+Requests/sec: 340083.39
+Transfer/sec:    566.93MB
+
+--- /test/users/array/1 | 2c | Pipeline | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/array/1?size=10
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    22.85ms   12.94ms  75.84ms   58.59%
+    Req/Sec    86.58k     6.10k  106.28k    80.50%
+  3448550 requests in 10.01s, 5.61GB read
+Requests/sec: 344539.85
+Transfer/sec:    574.36MB
+
+--- /test/users/array/1 | 2c | Pipeline | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/array/1?size=10
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    22.82ms   12.74ms  66.30ms   58.16%
+    Req/Sec    86.49k    11.29k  114.12k    91.75%
+  3477508 requests in 13.59s, 5.66GB read
+  Socket errors: connect 0, read 0, write 0, timeout 240
+Requests/sec: 255972.24
+Transfer/sec:    426.71MB
+
+--- /test/users/array/1 | 2c | Pipeline | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/array/1?size=10
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    22.45ms   12.56ms  59.43ms   57.68%
+    Req/Sec    87.94k     6.01k  110.89k    71.25%
+  3501764 requests in 10.01s, 5.70GB read
+Requests/sec: 349932.64
+Transfer/sec:    583.35MB
+
+--- /test/users/array/1 | 2c | Pipeline | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/array/1?size=10
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    22.67ms   12.77ms  64.93ms   58.18%
+    Req/Sec    87.24k     7.97k  115.41k    75.75%
+  3474790 requests in 10.02s, 5.66GB read
+Requests/sec: 346877.17
+Transfer/sec:    578.25MB
+
+--- /test/users/array/1 | 2c | Pipeline | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/array/1?size=10
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    22.98ms   12.85ms  63.85ms   58.21%
+    Req/Sec    85.80k     9.68k   98.26k    95.79%
+  3471872 requests in 13.64s, 5.65GB read
+  Socket errors: connect 0, read 0, write 0, timeout 240
+Requests/sec: 254585.55
+Transfer/sec:    424.40MB
+
+--- /test/users/array/1 | 2c | Request | Iter 1 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/array/1?size=10
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.05ms  283.40us   7.96ms   93.66%
+    Req/Sec    29.39k     0.97k   32.19k    74.00%
+  1169778 requests in 10.01s, 1.90GB read
+Requests/sec: 116878.27
+Transfer/sec:    194.84MB
+
+--- /test/users/array/1 | 2c | Request | Iter 2 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/array/1?size=10
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.09ms  329.92us   7.76ms   89.33%
+    Req/Sec    28.90k     1.71k   32.43k    72.25%
+  1150372 requests in 10.01s, 1.87GB read
+Requests/sec: 114963.70
+Transfer/sec:    191.65MB
+
+--- /test/users/array/1 | 2c | Request | Iter 3 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/array/1?size=10
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.05ms  351.61us   8.64ms   90.09%
+    Req/Sec    29.07k     4.29k   64.92k    93.28%
+  1174087 requests in 13.67s, 1.91GB read
+  Socket errors: connect 0, read 0, write 0, timeout 239
+Requests/sec:  85907.73
+Transfer/sec:    143.21MB
+
+--- /test/users/array/1 | 2c | Request | Iter 4 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/array/1?size=10
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.06ms  297.12us   7.70ms   92.06%
+    Req/Sec    29.19k     1.24k   31.84k    76.50%
+  1162069 requests in 10.00s, 1.89GB read
+Requests/sec: 116155.00
+Transfer/sec:    193.63MB
+
+--- /test/users/array/1 | 2c | Request | Iter 5 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/array/1?size=10
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.03ms  334.25us   7.96ms   91.91%
+    Req/Sec    29.69k     1.69k   39.45k    88.34%
+  1190601 requests in 10.10s, 1.94GB read
+Requests/sec: 117893.04
+Transfer/sec:    196.53MB
+
+--- /test/users/array/1 | 2c | Request | Iter 6 ---
+Running 10s test @ http://127.0.0.1:8082/test/users/array/1?size=10
+  4 threads and 240 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.05ms  322.76us   8.02ms   92.05%
+    Req/Sec    29.05k     3.51k   32.11k    95.05%
+  1169233 requests in 13.59s, 1.90GB read
+  Socket errors: connect 0, read 0, write 0, timeout 232
+Requests/sec:  86062.79
+Transfer/sec:    143.47MB
