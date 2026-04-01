@@ -34,7 +34,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-public class RequestHTTPImpl implements Request {
+public class RequestHTTPImpl {
     private ChannelHandlerContext ctx;
     private String method;
     private Map<String, String> headers;

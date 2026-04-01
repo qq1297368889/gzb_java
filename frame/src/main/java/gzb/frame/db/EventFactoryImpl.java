@@ -10,6 +10,7 @@ import gzb.frame.language.Template;
 import gzb.frame.netty.entity.Request;
 import gzb.frame.netty.entity.Response;
 import gzb.tools.json.GzbJson;
+import gzb.tools.json.GzbJsonImpl;
 import gzb.tools.log.Log;
 import gzb.tools.thread.GzbThreadLocal;
 
@@ -80,18 +81,18 @@ public class EventFactoryImpl implements EventFactory {
                                 "当前深度",
                                 entity.depth);
                     }
-                    Object[] objects = GzbThreadLocal.context.get().objects;
+                    Object[] objects =entity.objects;
                     Object[] newArray = Arrays.copyOf(objects, objects.length + 1);
                     newArray[newArray.length - 1] = entity_obj;
                     //无返回值 错误将会中断后续流程,因为不中断的话 可能掩盖问题 或者出现不可预知问题
                     Object object = dataBaseEventEntity.run._gzb_call_x01(
                             dataBaseEventEntity.met_id,//方法调用标识
                             mapObject,//公共 service 单例对象引用
-                            (Request) objects[3],
-                            (Response) objects[4],
-                            (Map<String, java.util.List<Object>>) objects[5],
-                            (GzbJson) objects[1],
-                            (Log) objects[2],
+                            entity.request,
+                            entity.response,
+                            entity.requestMap,
+                            GzbJson.json,
+                            Log.log,
                             newArray//私有对象
                     );
                     //如果返回 false 中断

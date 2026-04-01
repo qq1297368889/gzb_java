@@ -22,12 +22,14 @@ import gzb.tools.*;
 import gzb.tools.cache.Cache;
 import gzb.tools.thread.GzbThreadLocal;
 import gzb.tools.thread.ServiceThread;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class LogThread {
+    public static final LogThread logThread = new LogThread();
 
 
     public static String[] lvNames = new String[]{"trace", "debug", "info ", "warn ", "error"};
@@ -39,9 +41,12 @@ public class LogThread {
     public static int buff_size = 1024 * 1024;
     public static String lastDeleteDateStr = "";
     public static int days = 30;
-
-
+    public static void installHOOK() {
+        //System.setOut(new HOOK(1));
+        //System.setErr(new HOOK(4));
+    }
     static {
+        installHOOK();
         //加载配置
         loadConfig();
         //初始化 日志队列
@@ -51,7 +56,7 @@ public class LogThread {
         //启动保存线程
         startSave();
         //启动服务线程
-        ServiceThread.start("LogThread.read-config",()->{
+        ServiceThread.start("LogThread.read-config", () -> {
             while (true) {
                 try {
                     LogThread.loadConfig();
@@ -69,7 +74,6 @@ public class LogThread {
         });
     }
 
-
     public static void deleteOldLogFiles() throws Exception {
         DateTime dateTime = new DateTime();
         String dateStr = dateTime.formatDateTime("yyyy/MM/dd");
@@ -83,7 +87,7 @@ public class LogThread {
                 String path = logDir.getPath().trim() + File.separator + getDay(dateTime) + ".log";
                 File file = new File(path).getParentFile();
                 if (file.exists()) {
-                    List<File> list =FileTools.subFileAll(file,3);
+                    List<File> list = FileTools.subFileAll(file, 3);
                     for (File file1 : list) {
                         file1.delete();
                     }
@@ -105,7 +109,7 @@ public class LogThread {
     }
 
     public static void startSave() {
-        ServiceThread.start("LogThread.save.file-服务线程",new Runnable() {
+        ServiceThread.start("LogThread.save.file-服务线程", new Runnable() {
             @Override
             public void run() {
                 int sleep_sec = 5000;
@@ -189,14 +193,14 @@ public class LogThread {
             }
             if (!logFile[i].exists()) {
                 if (!FileTools.mkdir(logFile[i])) {
-                    System.err.println("loadConfig 创建日志目录失败:" + logFile[i].getPath());
+                    HOOK.err0.println("loadConfig 创建日志目录失败:" + logFile[i].getPath());
                 }
             }
         }
         days = Config.getInteger("gzb.log.save.days", 30);
         try {
             deleteOldLogFiles();
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();//日志类不调日志类 只能输出了 日志类原则上不允许报错
         }
     }
@@ -207,6 +211,7 @@ public class LogThread {
     }
 
     public void addLog(int index, Class<?> aClass, Object[] log) {
+         final GzbThreadLocal.Entity ENTITY = GzbThreadLocal.context.get();
         int configValue = lvConfig[index];
         String msg = null;
         //   lvConfig.get(index)0 显示但不保存 1 保存但不显示 2 不显示也不保存 3 显示且保存
@@ -214,7 +219,13 @@ public class LogThread {
             msg = appendLog(index, aClass, log);
         }
         if (configValue == 0 || configValue == 3) {
-            System.out.println(lvColour[index] + msg + lvColour[lvColour.length - 1]);
+            int index0=ENTITY.stringBuilderCacheEntity.open();
+            StringBuilder sb=ENTITY.stringBuilderCacheEntity.get(index0);
+            try {
+                HOOK.out0.println(sb.append(lvColour[index]).append(msg).append(lvColour[lvColour.length - 1]).toString());
+            }finally {
+                ENTITY.stringBuilderCacheEntity.close(index0);
+            }
         }
         if (configValue == 1 || configValue == 3) {
             logQueues.get(index).add(msg.getBytes(Config.encoding));
@@ -286,7 +297,7 @@ public class LogThread {
                 sb.append("null");
             }
             return sb.toString();
-        }finally {
+        } finally {
             entity0.stringBuilderCacheEntity.close(index0);
         }
 

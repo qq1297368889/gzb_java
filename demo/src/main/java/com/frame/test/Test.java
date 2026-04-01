@@ -1,6 +1,7 @@
 package com.frame.test;
 import gzb.frame.annotation.*;
 import gzb.tools.Config;
+import gzb.tools.Tools;
 import gzb.tools.log.Log;
 
 import java.lang.reflect.Field;
@@ -14,6 +15,34 @@ import java.util.Map;
 @RequestMapping("test")
 @Header(item = {@HeaderItem(key = "Content-Type", val = "application/json")})
 public class Test {
+    public static void main(String[] args) {
+        List<Users>list=new ArrayList<>();
+        for (int i = 0; i < 20; i++) {
+            list.add(users);
+        }
+
+        System.out.println("toJsonV2 "+(Tools.toJson0(list)));
+        for (int i = 0; i < 1000; i++) {
+            long start=System.currentTimeMillis();
+            for (int i1 = 0; i1 < 100000; i1++) {
+                Tools.toJsonV2(list);
+            }
+            long end=System.currentTimeMillis();
+            System.out.println("toJsonV2 "+(end-start));
+            start=System.currentTimeMillis();
+            for (int i1 = 0; i1 < 100000; i1++) {
+                Tools.toJson(list);
+            }
+            end=System.currentTimeMillis();
+            System.out.println("toJson "+(end-start));
+            start=System.currentTimeMillis();
+            for (int i1 = 0; i1 < 100000; i1++) {
+                Tools.toJson0(list);
+            }
+            end=System.currentTimeMillis();
+            System.out.println("toJson0 "+(end-start));
+        }
+    }
     public Test(){
         Log.log.i("new Test");
     }

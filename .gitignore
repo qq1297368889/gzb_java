@@ -15,7 +15,6 @@ tfb/
 jar/
 files/
 out/
-server_cache/
 *.mp4
 *.class
 *.log

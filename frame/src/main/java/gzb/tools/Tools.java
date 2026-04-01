@@ -20,6 +20,7 @@ package gzb.tools;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONReader;
+import com.alibaba.fastjson2.JSONWriter;
 import gzb.entity.ClassEntity;
 import gzb.entity.TableInfo;
 import gzb.frame.db.DataBase;
@@ -41,6 +42,7 @@ import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.net.*;
+import java.nio.charset.Charset;
 import java.security.CodeSource;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -60,36 +62,36 @@ import java.util.jar.JarFile;
 public class Tools {
     public static void main(String[] args) {
         ClassEntity classEntity = new ClassEntity();
-        classEntity.sign="1";
-        classEntity.code="2";
-        classEntity.pwd="4";
-        classEntity.filePath="5";
-        classEntity.iv="6";
-        List<ClassEntity>list=new ArrayList<>();
+        classEntity.sign = "1";
+        classEntity.code = "2";
+        classEntity.pwd = "4";
+        classEntity.filePath = "5";
+        classEntity.iv = "6";
+        List<ClassEntity> list = new ArrayList<>();
         list.add(classEntity);
         list.add(classEntity);
         list.add(classEntity);
         list.add(classEntity);
         list.add(classEntity);
         for (int i = 0; i < 100; i++) {
-            long start=System.currentTimeMillis();
+            long start = System.currentTimeMillis();
             for (int i1 = 0; i1 < 100000; i1++) {
                 Tools.toJsonV2(list);
             }
-            long end=System.currentTimeMillis();
-            System.out.println("0 "+(end-start));
-            start=System.currentTimeMillis();
+            long end = System.currentTimeMillis();
+            System.out.println("0 " + (end - start));
+            start = System.currentTimeMillis();
             for (int i1 = 0; i1 < 100000; i1++) {
                 Tools.toJson(list);
             }
-            end=System.currentTimeMillis();
-            System.out.println("1 "+(end-start));
-            start=System.currentTimeMillis();
+            end = System.currentTimeMillis();
+            System.out.println("1 " + (end - start));
+            start = System.currentTimeMillis();
             for (int i1 = 0; i1 < 100000; i1++) {
                 Tools.toJson0(list);
             }
-            end=System.currentTimeMillis();
-            System.out.println("2 "+(end-start));
+            end = System.currentTimeMillis();
+            System.out.println("2 " + (end - start));
         }
     }
 
@@ -113,6 +115,36 @@ public class Tools {
             DateTimeFormatter.ofPattern("HH"),
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
     };
+
+    public static byte[] getResourceBytes(Class<?> clazz, String fileName) {
+        // 直接使用 clazz.getResourceAsStream(fileName)
+        // 它会自动查找 clazz 所在包目录下的文件，无需手动拼 packagePath
+        try (InputStream in = clazz.getResourceAsStream(fileName)) {
+            if (in == null) {
+                // 调试技巧：如果找不到，打印一下实际尝试读取的路径
+                // System.out.println("Resource not found: " + clazz.getPackage().getName().replace('.', '/') + "/" + fileName);
+                return null;
+            }
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] buffer = new byte[8192];
+            int len;
+            while ((len = in.read(buffer)) != -1) {
+                out.write(buffer, 0, len);
+            }
+            return out.toByteArray();
+        } catch (Exception e) {
+            e.printStackTrace(); // gzb one 建议保留异常追踪
+            return null;
+        }
+    }
+
+    // 如果你还需要转字符串，我也给你带上
+    public static String getResourceString(Class<?> clazz, String fileName, Charset charset) {
+        byte[] bytes = getResourceBytes(clazz, fileName);
+        if (bytes == null) return null;
+        return new String(bytes, charset);
+    }
 
     public static java.sql.Timestamp getTimestamp() {
         return new Timestamp(System.currentTimeMillis());
@@ -161,35 +193,35 @@ public class Tools {
         return (obj == null) ? 0 : obj.toString().length();
     }
 
-    public static <T>T jsonToMap(String json) {
-        Map<String, Object>map=new HashMap<>();
+    public static <T> T jsonToMap(String json) {
+        Map<String, Object> map = new HashMap<>();
         try (JSONReader reader = JSONReader.of(json)) {
             if (reader.isArray()) {
-                List<Object>list=reader.readArray();
-                map.put("body",list);
-            }else{
+                List<Object> list = reader.readArray();
+                map.put("body", list);
+            } else {
                 reader.readObject(map);
             }
         }
-        return (T)map;
+        return (T) map;
     }
 
-    public static void jsonToMap(String json,Map<String, List<Object>>parameters) {
+    public static void jsonToMap(String json, Map<String, List<Object>> parameters) {
 
         try (JSONReader reader = JSONReader.of(json)) {
             if (reader.isArray()) {
-                List<Object>list=reader.readArray();
-                System.out.println("list "+list);
+                List<Object> list = reader.readArray();
+                System.out.println("list " + list);
                 for (Object object : list) {
                     if (object instanceof Map) {
-                        Map<String,Object>map0=(Map<String,Object>)object;
+                        Map<String, Object> map0 = (Map<String, Object>) object;
                         for (Map.Entry<String, Object> stringObjectEntry : map0.entrySet()) {
                             parameters.computeIfAbsent(stringObjectEntry.getKey(), k -> new ArrayList<>()).add(stringObjectEntry.getValue());
                         }
                     }
                 }
-            }else{
-                Map<String,Object>map0=new HashMap<>();
+            } else {
+                Map<String, Object> map0 = new HashMap<>();
                 reader.readObject(map0);
                 for (Map.Entry<String, Object> stringObjectEntry : map0.entrySet()) {
                     parameters.computeIfAbsent(stringObjectEntry.getKey(), k -> new ArrayList<>()).add(stringObjectEntry.getValue());
@@ -379,7 +411,7 @@ public class Tools {
         byte[] intPart = toBytes(scaled / 1000000);
         int decimalPart = Math.abs((int) (scaled % 1000000));
 
-        GzbThreadLocal.Entity entity=GzbThreadLocal.context.get();
+        GzbThreadLocal.Entity entity = GzbThreadLocal.context.get();
         byte[] buffer = entity.byte_buff_32;
         int pos = 0;
 
@@ -415,7 +447,7 @@ public class Tools {
         byte[] intPart = toBytes(scaled / 1000000);
         int decimalPart = Math.abs((int) (scaled % 1000000));
 
-        GzbThreadLocal.Entity entity=GzbThreadLocal.context.get();
+        GzbThreadLocal.Entity entity = GzbThreadLocal.context.get();
         byte[] buffer = entity.byte_buff_32;
         int pos = 0;
 
@@ -708,6 +740,7 @@ public class Tools {
         }
         return res;
     }
+
     public static long parseInteger(String s, int start, int end) {
         int res = 0;
         for (int i = start; i < end; i++) {
@@ -716,6 +749,7 @@ public class Tools {
 
         return res;
     }
+
     public static long parseShort(String s, int start, int end) {
         short res = 0;
         for (int i = start; i < end; i++) {
@@ -791,7 +825,7 @@ public class Tools {
 
     public static final byte[] comma = ",".getBytes();
     public static final byte[] MODE_CUSTOM = new byte[]{0}; // 自定义模式 (JSON)
-    public static final byte[] MODE_JDK =  new byte[]{1};    // JDK 原生模式
+    public static final byte[] MODE_JDK = new byte[]{1};    // JDK 原生模式
 
     public static byte[] serialize(Object obj) {
         if (obj == null) return null;
@@ -871,9 +905,14 @@ public class Tools {
     }
 
 
-
     public static String toJson0(Object obj) {
-        return JSON.toJSONString(obj); //, JSONWriter.Feature.WriteNonStringValueAsString
+        if (obj instanceof GzbMap) {
+            obj=((GzbMap) obj).getMap();
+        }
+        if (obj instanceof Exception) {
+            return "\"" + escapeJsonString(getExceptionInfo((Exception) obj)) + "\"";
+        }
+        return JSON.toJSONString(obj, "yyyy-MM-dd HH:mm:ss", JSONWriter.Feature.WriteNonStringValueAsString); //, JSONWriter.Feature.WriteNonStringValueAsString
     }
 
     public static void toJson(Object obj, StringBuilder stringBuilder) {
@@ -886,9 +925,9 @@ public class Tools {
             return "null";
         }
         GzbThreadLocal.Entity entity = GzbThreadLocal.context.get();
-        int index=entity.stringBuilderCacheEntity.open();
+        int index = entity.stringBuilderCacheEntity.open();
         try {
-            StringBuilder stringBuilder =entity.stringBuilderCacheEntity.get(index);
+            StringBuilder stringBuilder = entity.stringBuilderCacheEntity.get(index);
             Class<?> ac = obj.getClass();
             if (ac.isPrimitive()
                     || ac == String.class
@@ -902,7 +941,7 @@ public class Tools {
                     || ac == Character.class
                     || (obj instanceof Class<?> || obj instanceof File || obj instanceof CharSequence)
             ) {
-                return stringBuilder.append('"').append(escapeJsonString(obj instanceof String?(String)obj :obj.toString())).append('"').toString();
+                return stringBuilder.append('"').append(escapeJsonString(obj instanceof String ? (String) obj : obj.toString())).append('"').toString();
             }
             if (obj.getClass().isArray()) {
                 return arrayToJson(obj);
@@ -930,14 +969,15 @@ public class Tools {
             }
             String data = ClassTools.toJsonObject(obj);
             if (data == null) {
-                return stringBuilder.append('"').append(escapeJsonString(obj.toString()) ).append('"').toString();
+                return stringBuilder.append('"').append(escapeJsonString(obj.toString())).append('"').toString();
             }
             return data;
-        }finally {
+        } finally {
             entity.stringBuilderCacheEntity.close(index);
         }
 
     }
+
     public static String toJson(Object obj) {
         if (obj == null) {
             return "null";
@@ -971,9 +1011,6 @@ public class Tools {
         if (obj instanceof GzbMap) {//已知类处理
             return mapToJson(((GzbMap) obj).getMap());
         }
-        if (obj instanceof Class<?> || obj instanceof File || obj instanceof CharSequence) {
-            return "\"" + escapeJsonString(obj.toString()) + "\"";
-        }
         if (obj instanceof Exception) {
             return "\"" + escapeJsonString(getExceptionInfo((Exception) obj)) + "\"";
         }
@@ -987,6 +1024,9 @@ public class Tools {
             return "\"" + escapeJsonString(new DateTime((Date) obj).toString()) + "\"";
         }
         if (obj instanceof DateTime) {
+            return "\"" + escapeJsonString(obj.toString()) + "\"";
+        }
+        if (obj instanceof Class<?> || obj instanceof File || obj instanceof CharSequence) {
             return "\"" + escapeJsonString(obj.toString()) + "\"";
         }
         String data = ClassTools.toJsonObject(obj);
@@ -1169,7 +1209,6 @@ public class Tools {
         } finally {
             entity0.stringBuilderCacheEntity.close(index0);
         }
-
     }
 
     public static String escapeJsonString0(String str, StringBuilder sb) {
@@ -2857,7 +2896,7 @@ public class Tools {
             min = a;
         }
 
-        return (long)getRandomInt((int)max,(int)min);
+        return (long) getRandomInt((int) max, (int) min);
     }
 
     /**
@@ -2872,7 +2911,7 @@ public class Tools {
             max = min;
             min = a;
         }
-        return ThreadLocalRandom.current().nextInt(max - min + 1)+ min;
+        return ThreadLocalRandom.current().nextInt(max - min + 1) + min;
     }
 
     public static String getUUID() {

@@ -20,51 +20,66 @@ import java.util.Random;
 @Controller
 @RequestMapping("test/api0")
 public class TestApi0 {
+    public TestApi0() {
+        System.out.println("1002");
+        System.err.println("104");
+    }
 
     ///  127.0.0.1:2080/test/api0/test1
     @EventLoop
     @ManualRespond
     @GetMapping("test1")
-    public void test1(SysFileDao sysFileDao, Response response,GzbJson gzbJson) throws Exception {
+    public void test1(SysFileDao sysFileDao, Response response, GzbJson gzbJson) throws Exception {
         SysFile sysFile = new SysFile();
-        sysFileDao.saveAsync(sysFile.setSysFileMd5(Tools.getRandomString(32)),()->{
-            response.sendAndFlush(gzbJson.fail("on",sysFile));
-        },()->{
-            response.sendAndFlush(gzbJson.success("ok",sysFile));
+        sysFileDao.saveAsync(sysFile.setSysFileMd5(Tools.getRandomString(32)), () -> {
+            response.sendAndFlush(gzbJson.fail("on", sysFile));
+        }, () -> {
+            response.sendAndFlush(gzbJson.success("ok", sysFile));
         });
+    }
+    @EventLoop
+    @GetMapping("test11")
+    public Object test11(SysFileDao sysFileDao, Response response, GzbJson gzbJson) throws Exception {
+        SysFile sysFile = new SysFile();
+        sysFileDao.saveAsync(sysFile.setSysFileMd5(Tools.getRandomString(32)));
+        return gzbJson.success("ok");
     }
 
     @GetMapping("test2")
     public String test2(SysFileDao sysFileDao, GzbJson gzbJson) throws Exception {
         SysFile sysFile = new SysFile();
         sysFileDao.save(sysFile.setSysFileMd5(Tools.getRandomString(32)));
-        return (gzbJson.success("ok",sysFile));
+        return (gzbJson.success("ok", sysFile));
     }
 
     //test/api0/get1?message=message001
-    public static final byte[]BYTES="Hello, World!".getBytes(Config.encoding);
+    public static final byte[] BYTES = "Hello, World!".getBytes(Config.encoding);
 
     @EventLoop
     @GetMapping("get0")
-    public byte[] get0(){
+    public byte[] get0() {
         return BYTES;
     }
+
     /// 前端请求的 body 直接是 {"sysUsersAcc:"xxx"}  sysUsers的参数 sysUsersAcc 能接受到  而定义的 string sysUsersAcc 也能接受到
     @EventLoop
     @GetMapping("get1")
     @Header(item = {@HeaderItem(key = "content-type", val = "application/json;charset=UTF-8")})
-    public String get1(String message){
-        return "{\"code\":\"1\",\"time\":\"1769527173990\",\"message\":\""+message+"\"}";
+    public String get1(String message) {
+        return "{\"code\":\"1\",\"time\":\"1769527173990\",\"message\":\"" + message + "\"}";
     }
+
     @Resource
     SysLogDao sysLogDao;
+
     /// value={xx,xx} xx对应请求参数  最终会生成 key 两次请求 同key 将会命中缓存(前提未过期) second 缓存时间 单位秒
     //@CacheRequest(value={"p1","p2","xxx"},second=10)
     @GetMapping("get2")
     public Object get2(String message) throws Exception {
         return sysLogDao.find(new SysLog().setSysLogId(getRandomLong(20, 1)));
     }
-/// test/api0/get3
+
+    /// test/api0/get3
 
     @GetMapping("get3")
     public Object get3(String message) throws Exception {

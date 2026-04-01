@@ -281,6 +281,11 @@ public class FactoryImplV2 implements Factory {
             }
         }
     }
+    public void load(ClassEntity classEntity) throws Exception {
+        List<ClassEntity>list=new ArrayList<>();
+        list.add(classEntity);
+        load(list);
+    }
 
     public void load(Map<String, String> sourcesMap, String pwd, String iv) throws Exception {
         if (sourcesMap == null || sourcesMap.size() == 0) {
@@ -425,193 +430,22 @@ public class FactoryImplV2 implements Factory {
             95.0,
             Config.bizThreadNum < 1);
 
-    public void start0(Request request, Response response) {
-        long start = System.nanoTime();
-        String metName = request.getMethod();
-        String key = request.getUri();
-        HttpMapping[] httpMappings = mapHttpMapping0.get(key);
-        if (httpMappings == null) {
-            if (request.getImplType() == 0) {
-                HTTPServer.HTTPStaticFileHandler.channelRead0(request.getCtx(), request.getRequest());
-            } else {
-                response.sendAndFlush(gzbJson.fail("没找到对应处理器"));
-                request.close();
-            }
-            return;
-        }
-        int index = -1;
-        for (int i = 0; i < httpMappings.length; i++) {
-            if (metName.equals(met[i])) {
-                if (httpMappings[i] == null) {
-                    response.sendAndFlush(gzbJson.fail("对应处理器不存在"));
-                    request.close();
-                    return;
-                }
-                index = i;
-                break;
-            }
-        }
-        if (index == -1) {
-            if (request.getImplType() == 0) {
-                HTTPServer.HTTPStaticFileHandler.channelRead0(request.getCtx(), request.getRequest());
-            } else {
-                response.sendAndFlush(gzbJson.fail("没找到对应处理器-2"));
-                request.close();
-            }
-            return;
-        }
-        HttpMapping httpMapping = httpMappings[index];
-        //同步会在事件循环线程执行
-        if (httpMapping.eventLoop) {
-            if (!THREAD_POOL.execute(() -> {
-                long end = exec(httpMapping, request, response);
-                log.d("异步 执行耗时", end - start);
-            })) {
-                response.sendAndFlush(gzbJson.fail("服务器繁忙"));
-                long end = System.nanoTime();
-                log.d("异步 繁忙 执行耗时", end - start);
-            }
-        } else {
-            long end = exec(httpMapping, request, response);
-            log.d("同步 执行耗时", end - start);
-        }
-    }
-
-    public long exec(HttpMapping httpMapping, Request request, Response response) {
-        GzbThreadLocal.Entity entity = null;
-        try {
-            if (httpMapping.header.size() > 0) {
-                response.setHeaders(new HashMap<>(httpMapping.header));
-            }
-            if (httpMapping.isCrossDomainOrigin) {
-                String host = request.getOrigin();
-                if (host == null) {
-                    host = request.getDomain();
-                }
-                response.setHeader("access-control-allow-origin", host);
-            }
-            if (httpMapping.semaphore != null && !httpMapping.semaphore.tryAcquire()) {
-                response.sendAndFlush(_fail_json);
-                return System.nanoTime();
-            }
-            Map<String, List<Object>> parar = request.getParameter();
-            boolean openCache = httpMapping.cacheSecond != null && httpMapping.cacheKey != null;
-            String key = null;
-            if (!httpMapping.manualRespond && openCache) {
-                key = toKey(httpMapping.cacheKey, parar);
-                byte[] bytes = Cache.gzbCache.getByte(key);
-                if (bytes != null) {
-                    response.sendAndFlush(bytes);
-                    return System.nanoTime();
-                }
-            }
-            entity = GzbThreadLocal.context.get();
-            Object[] objects = entity.objects;
-            RunRes runRes = null;
-            if (objects == null) {
-                runRes = new RunRes();
-                objects = new Object[]{
-                        runRes,
-                        gzbJson,
-                        log,
-                        request,
-                        response,
-                        parar  // 请求参数
-                };
-                entity.objects = objects;
-            } else {
-                objects[3] = request;
-                objects[4] = response;
-                //objects[5] = parar; //这个map本身就是线程复用的不需要再次赋值
-                runRes = (RunRes) objects[0];
-            }
-            for (DecoratorEntity decoratorEntity : httpMapping.start) {
-                log.t("调用 前置装饰器", decoratorEntity.sign);
-                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, objects);
-                if (runRes1 != null) {
-                    if (runRes1.getState() != 200) {
-                        response.setContentType("application/json;charset=UTF-8");
-                        response.sendAndFlush(runRes1.getData());
-                        return System.nanoTime();
-                    } else {
-                        objects[0] = runRes1;
-                        if (runRes1.getData() != null) {
-                            Object[] newArray = Arrays.copyOf(objects, objects.length + 1);
-                            newArray[newArray.length - 1] = runRes1.getData();
-                            objects = newArray;
-                            runRes1.setData(null);
-                        }
-                    }
-                }
-            }
-            Object obj02 = httpMapping.httpMappingFun._gzb_call_x01(httpMapping.id, mapObject0, request, response, parar, gzbJson, log, objects);
-            runRes.setData(obj02);
-            for (DecoratorEntity decoratorEntity : httpMapping.end) {
-                log.t("调用 后置装饰器", decoratorEntity.sign);
-                RunRes runRes1 = (RunRes) decoratorEntity.call
-                        ._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, objects);
-                if (runRes1 != null) {
-                    if (runRes1.getState() != 200) {
-                        response.setContentType("application/json;charset=UTF-8");
-                        response.sendAndFlush(runRes1.getData());
-                        return System.nanoTime();
-                    } else {
-                        objects[0] = runRes1;
-                    }
-                }
-            }
-            long time = System.nanoTime();
-            if (!httpMapping.manualRespond && openCache) {
-                if (runRes.getData() instanceof String) {
-                    Cache.gzbCache.setByte(key, ((String) runRes.getData()).getBytes(Config.encoding), httpMapping.cacheSecond);
-                } else if (runRes.getData() instanceof byte[]) {
-                    Cache.gzbCache.setByte(key, (byte[]) runRes.getData(), httpMapping.cacheSecond);
-                } else {
-                    Cache.gzbCache.setByte(key, (Tools.toJson(runRes.getData())).getBytes(Config.encoding), httpMapping.cacheSecond);
-                }
-            }
-            //到这里其实已经执行完毕了 发送的时间不算
-            if (!httpMapping.manualRespond) {
-                response.sendAndFlush(runRes.getData());
-            }
-            return time;
-        } catch (Exception e) {
-            long time = System.nanoTime();
-            log.e("框架层错误日志",
-                    request.getUri(),
-                    request.getMethod(),
-                    request.getParameter(),
-                    e);
-            response.sendAndFlush(_err_json);
-            return time;
-        } finally {
-            //限流如果开启 解除占用
-            if (httpMapping.semaphore != null) {
-                httpMapping.semaphore.release();
-            }
-            if (entity != null && entity.objects != null) {
-                RunRes runRes = (RunRes) entity.objects[0];
-                runRes.setData(null);
-                runRes.setState(200);
-                entity.objects[3] = null;
-                entity.objects[4] = null;
-                ((Map<String,List<Object>>)entity.objects[5]).clear();
-            }
-        }
-    }
-
     public void start(Request request, Response response) {
         String metName = request.getMethod();
         String key = request.getUri();
         HttpMapping[] httpMappings = mapHttpMapping0.get(key);
         if (httpMappings == null) {
-            if (request.getImplType() == 0) {
-                HTTPServer.HTTPStaticFileHandler.channelRead0(request.getCtx(), request.getRequest());
-            } else {
-                response.sendAndFlush(gzbJson.fail("没找到对应处理器"));
-                request.close();
+            key=request.webPathFormat();
+            httpMappings = mapHttpMapping0.get(key);
+            if (httpMappings == null) {
+                if (request.getImplType() == 0) {
+                    HTTPServer.HTTPStaticFileHandler.channelRead0(request.getCtx(), request.getRequest());
+                } else {
+                    response.sendAndFlush(gzbJson.fail("没找到对应处理器"));
+                    request.close();
+                }
+                return;
             }
-            return;
         }
         int index = -1;
         for (int i = 0; i < httpMappings.length; i++) {
@@ -638,65 +472,17 @@ public class FactoryImplV2 implements Factory {
         //同步会在事件循环线程执行
         if (httpMapping.eventLoop) {
             if (!THREAD_POOL.execute(() -> {
-                exec1(httpMapping, request, response);
+                exec(httpMapping, request, response);
                 response.getCtx().flush();
             })) {
                 response.sendAndFlush(gzbJson.fail("服务器繁忙"));
             }
         } else {
-            exec1(httpMapping, request, response);
+            exec(httpMapping, request, response);
         }
     }
 
-    public void startV2(Request request, Response response, HTTPTools.Entity entity) {
-        String metName = request.getMethod();
-        String key = request.getUri();
-        HttpMapping[] httpMappings = mapHttpMapping0.get(key);
-        if (httpMappings == null) {
-            if (request.getImplType() == 0) {
-                HTTPServer.HTTPStaticFileHandler.channelRead0(request.getCtx(), entity);
-            } else {
-                NettyTools.sendHTTP(request.getCtx(), gzbJson.fail("没找到对应处理器"), 200, NettyTools.content_type_text, true);
-                request.close();
-            }
-            return;
-        }
-        int index = -1;
-        for (int i = 0; i < httpMappings.length; i++) {
-            if (metName.equals(met[i])) {
-                if (httpMappings[i] == null) {
-                    NettyTools.sendHTTP(request.getCtx(), gzbJson.fail("对应处理器不存在-1"), 200, NettyTools.content_type_text, true);
-                    request.close();
-                    return;
-                }
-                index = i;
-                break;
-            }
-        }
-        if (index == -1) {
-            if (request.getImplType() == 0) {
-                HTTPServer.HTTPStaticFileHandler.channelRead0(request.getCtx(), request.getRequest());
-            } else {
-                NettyTools.sendHTTP(request.getCtx(), gzbJson.fail("没找到对应处理器-2"), 200, NettyTools.content_type_text, true);
-                request.close();
-            }
-            return;
-        }
-        HttpMapping httpMapping = httpMappings[index];
-        //同步会在事件循环线程执行
-        if (httpMapping.eventLoop) {
-            if (!THREAD_POOL.execute(() -> {
-                exec1(httpMapping, request, response);
-                response.getCtx().flush();
-            })) {
-                NettyTools.sendHTTP(request.getCtx(), gzbJson.fail("服务器繁忙"), 200, NettyTools.content_type_text, true);
-            }
-        } else {
-            exec1(httpMapping, request, response);
-        }
-    }
-
-    public void exec1(HttpMapping httpMapping, Request request, Response response) {
+    public void exec(HttpMapping httpMapping, Request request, Response response) {
         GzbThreadLocal.Entity entity = null;
         try {
             if (httpMapping.header.size() > 0) {
@@ -725,60 +511,36 @@ public class FactoryImplV2 implements Factory {
                 }
             }
             entity = GzbThreadLocal.context.get();
-            Object[] objects = entity.objects;
-            RunRes runRes = null;
-            if (objects == null) {
-                runRes = new RunRes();
-                objects = new Object[]{
-                        runRes,
-                        gzbJson,
-                        log,
-                        request,
-                        response,
-                        parar  // 请求参数
-                };
-
-                entity.objects = objects;
-            } else {
-                objects[3] = request;
-                objects[4] = response;
-                objects[5] = parar;
-                runRes = (RunRes) objects[0];
-                runRes.setData(null);
-                runRes.setState(200);
-            }
+            entity.request=request;
+            entity.response=response;
+            RunRes runRes = entity.runRes;
             for (DecoratorEntity decoratorEntity : httpMapping.start) {
-                log.t("调用 前置装饰器", decoratorEntity.sign);
-                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, objects);
+                RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log,
+                        entity.objects);
                 if (runRes1 != null) {
                     if (runRes1.getState() != 200) {
-                        response.setContentType("application/json;charset=UTF-8");
                         response.sendAndFlush(runRes1.getData());
                         return;
                     } else {
-                        objects[0] = runRes1;
                         if (runRes1.getData() != null) {
-                            Object[] newArray = Arrays.copyOf(objects, objects.length + 1);
+                            Object[] newArray = Arrays.copyOf(entity.objects, entity.objects.length + 1);
                             newArray[newArray.length - 1] = runRes1.getData();
-                            objects = newArray;
-                            runRes1.setData(null);
+                            entity.objects = newArray;
                         }
                     }
                 }
             }
-            Object obj02 = httpMapping.httpMappingFun._gzb_call_x01(httpMapping.id, mapObject0, request, response, parar, gzbJson, log, objects);
+            Object obj02 = httpMapping.httpMappingFun._gzb_call_x01(httpMapping.id, mapObject0, request, response, parar, gzbJson, log, entity.objects);
             runRes.setData(obj02);
             for (DecoratorEntity decoratorEntity : httpMapping.end) {
-                log.t("调用 后置装饰器", decoratorEntity.sign);
                 RunRes runRes1 = (RunRes) decoratorEntity.call
-                        ._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, objects);
+                        ._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, entity.objects);
                 if (runRes1 != null) {
                     if (runRes1.getState() != 200) {
-                        response.setContentType("application/json;charset=UTF-8");
                         response.sendAndFlush(runRes1.getData());
                         return;
                     } else {
-                        objects[0] = runRes1;
+                        entity.runRes.setData(runRes1.getData());
                     }
                 }
             }
@@ -807,13 +569,14 @@ public class FactoryImplV2 implements Factory {
             if (httpMapping.semaphore != null) {
                 httpMapping.semaphore.release();
             }
-            if (entity != null && entity.objects != null) {
-                RunRes runRes = (RunRes) entity.objects[0];
-                runRes.setData(null);
-                runRes.setState(200);
-                entity.objects[3] = null;
-                entity.objects[4] = null;
-                entity.objects[5] = null;
+            if (entity != null) {
+                if (entity.runRes != null) {
+                    entity.runRes.setState(200);
+                    entity.runRes.setData(null);
+                }
+                if (entity.objects.length>1) {
+                    entity.objects=new Object[]{entity.runRes};
+                }
             }
         }
     }

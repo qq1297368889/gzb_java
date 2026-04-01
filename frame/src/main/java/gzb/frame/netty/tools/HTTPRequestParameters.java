@@ -83,7 +83,7 @@ public class HTTPRequestParameters {
 
     private final FullHttpRequest request;
     private byte[] body;
-    private Map<String,List<Object>> parameters;
+    private Map<String, List<Object>> parameters;
     public String path;
 
     public HTTPRequestParameters(FullHttpRequest request) {
@@ -109,19 +109,22 @@ public class HTTPRequestParameters {
         return new String(this.body, Config.encoding);
     }
 
+    public String webPathFormat() {
+        this.path = ClassTools.webPathFormat(this.path);
+        return this.path;
+    }
 
     public Map<String, List<Object>> getParameters() {
         if (parameters == null) {
-            GzbThreadLocal.Entity entity=GzbThreadLocal.context.get();
+            GzbThreadLocal.Entity entity = GzbThreadLocal.context.get();
             if (parameters == null) {
                 parameters = new HashMap<>();
-                entity.requestMap=parameters;
-            }else{
+                entity.requestMap = parameters;
+            } else {
                 parameters.clear();
             }
             String url = request.uri();
-            String path0 = OptimizedParameterParser.parseUrlEncoded(url, parameters, false);
-            this.path = ClassTools.webPathFormat(path0);
+            this.path = OptimizedParameterParser.parseUrlEncoded(url, parameters, false);
             String contentType = request.headers().get("Content-Type");
             if (contentType != null) {
                 if (contentType.startsWith("application/json")) {
@@ -140,7 +143,7 @@ public class HTTPRequestParameters {
     }
 
     private void parseJson(Map<String, List<Object>> params) {
-        Tools.jsonToMap(readString(),params);
+        Tools.jsonToMap(readString(), params);
     }
 
     private void parseUrlEncoded(Map<String, List<Object>> params) {

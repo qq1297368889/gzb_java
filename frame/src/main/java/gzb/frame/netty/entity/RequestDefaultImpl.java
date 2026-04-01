@@ -44,6 +44,9 @@ public class RequestDefaultImpl implements Request {
     public String getUri() {
         return httpRequestParameters.path;
     }
+    public String webPathFormat() {
+        return httpRequestParameters.webPathFormat();
+    }
 
     public String getMethod() {
         return method;

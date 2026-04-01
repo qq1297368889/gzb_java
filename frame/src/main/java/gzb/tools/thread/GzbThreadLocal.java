@@ -1,5 +1,9 @@
 package gzb.tools.thread;
+
+import gzb.entity.RunRes;
 import gzb.frame.db.entity.TransactionEntity;
+import gzb.frame.netty.entity.Request;
+import gzb.frame.netty.entity.Response;
 import gzb.tools.Tools;
 import gzb.tools.cache.object.ArrayBuffCache;
 import gzb.tools.cache.object.ByteBuffCache;
@@ -17,16 +21,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class GzbThreadLocal {
-/*    public static final  AtomicLong atomicLong1 = new AtomicLong(0);
-    public static final  AtomicLong atomicLong2 = new AtomicLong(0);
-    static{
-        new Thread(()->{
-            while (true){
-                Tools.sleep(1000);
-                System.out.println(atomicLong1.get()+"   "+atomicLong2.get());
-            }
-        }).start();
-    }*/
+    /*    public static final  AtomicLong atomicLong1 = new AtomicLong(0);
+        public static final  AtomicLong atomicLong2 = new AtomicLong(0);
+        static{
+            new Thread(()->{
+                while (true){
+                    Tools.sleep(1000);
+                    System.out.println(atomicLong1.get()+"   "+atomicLong2.get());
+                }
+            }).start();
+        }*/
   /*      public StringBuilderCache.Entity stringBuilderCacheEntity=new StringBuilderCache.Entity(){
             @Override
             public int open() {
@@ -41,28 +45,34 @@ public class GzbThreadLocal {
             }
         };*/
     public static final ThreadLocal<Entity> context = ThreadLocal.withInitial(Entity::new);
-    public static class Entity{
-        public Object[] objects=null;
-        public int depth=0;
-        public String open_transaction_key=null;
-        public Map<String, List<Object>>requestMap=null;
-        public byte[]byte_buff_32=new byte[32];
+
+    public static class Entity {
+        public int depth = 0;
+        public String open_transaction_key = null;
+        public Map<String, List<Object>> requestMap = null;
+        public byte[] byte_buff_32 = new byte[32];
         public Connection connection;
         public TransactionEntity transactionEntity;
-        public ByteBuffCache.Entity byteBuffCacheEntity=new ByteBuffCache.Entity();
-        public StringBuilderCache.Entity stringBuilderCacheEntity=new StringBuilderCache.Entity();
+        public ByteBuffCache.Entity byteBuffCacheEntity = new ByteBuffCache.Entity();
+        public StringBuilderCache.Entity stringBuilderCacheEntity = new StringBuilderCache.Entity();
+        public Request request;
+        public Response response;
+        public RunRes runRes = new RunRes();
+        public Object[] objects = new Object[]{runRes};
     }
-    static Map<Long,Object>data=new ConcurrentHashMap<>();
-    static{
+
+    static Map<Long, Object> data = new ConcurrentHashMap<>();
+
+    static {
         ServiceThread.start(new Runnable() {
             @Override
             public void run() {
-                ThreadMXBean threadMXBean=ManagementFactory.getThreadMXBean();
-                while (true){
+                ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+                while (true) {
                     Iterator<Map.Entry<Long, Object>> it = data.entrySet().iterator();
                     while (it.hasNext()) {
                         Map.Entry<Long, Object> ent = it.next();
-                        if (threadMXBean.getThreadInfo(ent.getKey())==null) {
+                        if (threadMXBean.getThreadInfo(ent.getKey()) == null) {
                             it.remove();
                         }
                     }
@@ -77,16 +87,20 @@ public class GzbThreadLocal {
             }
         });
     }
-    public static <T>T get(){
-        return (T)data.get(Thread.currentThread().getId());
+
+    public static <T> T get() {
+        return (T) data.get(Thread.currentThread().getId());
     }
-    public static void set(Object t){
-        data.put(Thread.currentThread().getId(),t);
+
+    public static void set(Object t) {
+        data.put(Thread.currentThread().getId(), t);
     }
-    public static void remove(){
+
+    public static void remove() {
         data.remove(Thread.currentThread().getId());
     }
-    public static Map<Long,Object> read(){
+
+    public static Map<Long, Object> read() {
         return data;
     }
 }

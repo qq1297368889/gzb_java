@@ -227,7 +227,7 @@ public class TestApi {
     @PostMapping("post1")
     public Object post1(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
         sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x"));
-        throw new GzbException0("抛出错误");
+        throw new GzbException0("抛出错误 post1 预期中的错误");
     }
 
     //事务成功
@@ -243,7 +243,7 @@ public class TestApi {
     @PostMapping("post3")
     public Object post3(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
         sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x"));
-        throw new GzbException0("抛出错误");
+        throw new GzbException0("抛出错误 post3 预期中的错误");
     }
 
     //事务成功 模拟

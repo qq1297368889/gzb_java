@@ -1,5 +1,6 @@
 package gzb.frame.netty.entity;
 
+import gzb.frame.factory.ClassTools;
 import gzb.frame.netty.tools.HTTPRequestParameters;
 import gzb.frame.netty.tools.OptimizedParameterParser;
 import gzb.tools.Tools;
@@ -205,6 +206,11 @@ public class RequestTcpImpl implements Request {
     @Override
     public String getUri() {
         return packetPromise.url;
+    }
+
+    @Override
+    public String webPathFormat() {
+        return ClassTools.webPathFormat(packetPromise.url);
     }
 
     /**

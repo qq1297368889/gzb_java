@@ -21,6 +21,7 @@ package gzb.tools.json;
 import java.util.List;
 
 public interface GzbJson {
+    public static final GzbJson json = new GzbJsonImpl();
     /**
      * 分页 基础方法
      */

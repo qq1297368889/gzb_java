@@ -1,5 +1,7 @@
 package gzb.tools;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONWriter;
 import gzb.tools.cache.object.ByteBuff;
 import gzb.tools.log.Log;
 import gzb.tools.thread.GzbThreadLocal;
@@ -115,39 +117,15 @@ public class NettyTools {
     }
 
     public static ByteBuf toByteBuf(Object chunk) {
-        if (chunk instanceof byte[]) {
-            return Unpooled.copiedBuffer((byte[]) chunk);
-        } else if (chunk instanceof String) {
-            return Unpooled.copiedBuffer((String) chunk, Config.encoding);
+        if (chunk instanceof String) {
+            return Unpooled.wrappedBuffer(((String) chunk).getBytes(Config.encoding));
+        } else if (chunk instanceof byte[]) {
+            return Unpooled.wrappedBuffer((byte[]) chunk);
         } else if (chunk == null) {
             return Unpooled.EMPTY_BUFFER;
         } else {
-            String str1 = Tools.toJson(chunk);
-            if (str1 == null) {
-                return Unpooled.EMPTY_BUFFER;
-            } else {
-                return Unpooled.copiedBuffer(str1, Config.encoding);
-            }
+            return Unpooled.wrappedBuffer(JSON.toJSONBytes(chunk, "yyyy-MM-dd HH:mm:ss", JSONWriter.Feature.WriteNonStringValueAsString));
         }
-    }
-
-    public static ByteBuf toByteBuf0(Object chunk) {
-        byte[] bytes;
-        if (chunk instanceof byte[]) {
-            bytes = (byte[]) chunk;
-        } else if (chunk instanceof String) {
-            bytes = ((String) chunk).getBytes(Config.encoding);
-        } else if (chunk == null) {
-            bytes = new byte[0];
-        } else {
-            String str1 = Tools.toJson(chunk);
-            if (str1 == null) {
-                bytes = new byte[0];
-            } else {
-                bytes = str1.getBytes(Config.encoding);
-            }
-        }
-        return Unpooled.copiedBuffer(bytes);
     }
 
     public static byte[] toByte(Object chunk) {

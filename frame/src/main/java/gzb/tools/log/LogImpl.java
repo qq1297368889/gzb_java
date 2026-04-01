@@ -23,7 +23,6 @@ import gzb.frame.annotation.Service;
 
 @Service
 public class LogImpl implements Log {
-    public static LogThread thread = new LogThread();
     Class<?>aClass;
 
     public LogImpl() {
@@ -35,7 +34,7 @@ public class LogImpl implements Log {
 
     @Override
     public void print(int index, Object... log) {
-       thread.addLog(index,this.aClass,log);
+        LogThread.logThread.addLog(index,this.aClass,log);
     }
 
     @Override

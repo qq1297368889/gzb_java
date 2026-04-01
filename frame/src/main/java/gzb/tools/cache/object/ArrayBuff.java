@@ -5,6 +5,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class ArrayBuff{
+    long a1,a2,a3,a4,a5,a6,a7,s8;
     Object[] cache;
     int this_index = 0;
     public ArrayBuff(int size) {

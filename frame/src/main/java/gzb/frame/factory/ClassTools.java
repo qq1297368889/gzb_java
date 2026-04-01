@@ -44,18 +44,68 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
+import java.lang.reflect.Parameter;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ClassTools {
+    public static void main(String[] args) throws InterruptedException {
+        int urlCount = 10000;
+        int loopCount = 1000000;
+        Map<String, String> map = new ConcurrentHashMap<>(urlCount);
 
+        // 1. 初始化 10000 个 URL
+        String[] urls = new String[urlCount];
+        for (int i = 0; i < urlCount; i++) {
+            urls[i] = "/test/users/" + i;
+            map.put(urls[i], "123456" + i);
+        }
+
+        // 2. 定义测试线程逻辑
+        Runnable task = () -> {
+            while (true) {
+                long start = System.nanoTime();
+                long blackhole = 0;
+
+                for (int i = 0; i < loopCount; i++) {
+                    // 随机获取 0-9999 的 URL
+                    int index = ThreadLocalRandom.current().nextInt(urlCount);
+                    String val = map.get(urls[index]);
+
+                    // 防止代码被优化消除
+                    if (val != null) {
+                        blackhole += val.length();
+                    }
+                }
+
+                long end = System.nanoTime();
+                long durationMs = (end - start) / 1000000;
+                double avgNs = (double) (end - start) / loopCount;
+
+                System.out.printf("线程 [%s] | 耗时: %4dms | 平均: %6.2fns | 校验位: %d\n",
+                        Thread.currentThread().getName(), durationMs, avgNs, blackhole);
+            }
+        };
+
+        // 3. 启动两个线程进行压测
+        Thread t1 = new Thread(task, "Gzb-Thread-1");
+        Thread t2 = new Thread(task, "Gzb-Thread-2");
+
+        t1.start();
+        t2.start();
+
+        t1.join();
+        t2.join();
+    }
 
     public static Log log = Log.log;
     static Map<Class<?>, Object> mapLoadObjectObject = new ConcurrentHashMap<>();
@@ -263,6 +313,31 @@ public class ClassTools {
         }
         return parameterNames;
 
+    }
+
+    public static <T extends Annotation> T getAnnotation(Parameter parameter, Class<T> annoClass) {
+        T t=parameter.getAnnotation(annoClass);
+        if (t!=null) {
+            return t;
+        }
+        t=parameter.getDeclaredAnnotation(annoClass);
+        return t;
+    }
+    public static <T extends Annotation> T getAnnotation(Method method, Class<T> annoClass) {
+        T t=method.getAnnotation(annoClass);
+        if (t!=null) {
+            return t;
+        }
+        t=method.getDeclaredAnnotation(annoClass);
+        return t;
+    }
+    public static <T extends Annotation> T getAnnotation(Class<?>aClass, Class<T> annoClass) {
+        T t=aClass.getAnnotation(annoClass);
+        if (t!=null) {
+            return t;
+        }
+        t=aClass.getDeclaredAnnotation(annoClass);
+        return t;
     }
 
     /**
@@ -1736,6 +1811,14 @@ public class ClassTools {
                 Log.log.w("获取参数失败", method);
                 continue;
             }
+            Parameter[]parameter = method.getParameters();
+            for (int i1 = 0; i1 < parameter.length; i1++) {
+                gzb.frame.annotation.Parameter parameter1= parameter[i1].getAnnotation(gzb.frame.annotation.Parameter.class);
+                if (parameter1==null) {
+                    continue;
+                }
+                names[i1]=parameter1.value();
+            }
             code += "        //方法ID匹配\n" +
                     "        if (_gzb_one_c_id == " + met_id + ") {\n";
 
@@ -2641,6 +2724,9 @@ public class ClassTools {
 
 
     public static String webPathFormat(String path) {
+         return webPathFormatV2(path);
+    }
+    public static String webPathFormatV1(String path) {
         if (path == null || path.isEmpty()) {
             return PATH_SEPARATOR_STRING;
         }
@@ -2682,7 +2768,59 @@ public class ClassTools {
         }
 
     }
+    public static String webPathFormatV2(String path) {
+        if (path == null || path.isEmpty()) {
+            return PATH_SEPARATOR_STRING;
+        }
 
+        int len = path.length();
+        boolean needFix = false;
+        if (path.charAt(0) != PATH_SEPARATOR_CHAR) {
+            needFix = true;
+        } else {
+            for (int i = 0; i < len; i++) {
+                char c = path.charAt(i);
+                if (c == WINDOWS_SEPARATOR_CHAR || (i > 0 && c == PATH_SEPARATOR_CHAR && path.charAt(i - 1) == PATH_SEPARATOR_CHAR)) {
+                    needFix = true;
+                    break;
+                }
+            }
+            if (!needFix && len > 1 && path.charAt(len - 1) == PATH_SEPARATOR_CHAR) {
+                needFix = true;
+            }
+        }
+        if (!needFix) {
+            return path;
+        }
+
+        GzbThreadLocal.Entity entity0 = GzbThreadLocal.context.get();
+        int index0 = entity0.stringBuilderCacheEntity.open();
+        try {
+            StringBuilder sb = entity0.stringBuilderCacheEntity.get(index0);
+            sb.setLength(0);
+            if (path.charAt(0) != PATH_SEPARATOR_CHAR) {
+                sb.append(PATH_SEPARATOR_CHAR);
+            }
+
+            char lastChar = LAST_CHAR;
+            for (int i = 0; i < len; i++) {
+                char c = path.charAt(i);
+                if (c == WINDOWS_SEPARATOR_CHAR) c = PATH_SEPARATOR_CHAR;
+
+                if (c == PATH_SEPARATOR_CHAR && lastChar == PATH_SEPARATOR_CHAR) {
+                    continue;
+                }
+                sb.append(c);
+                lastChar = c;
+            }
+            if (sb.length() > 1 && sb.charAt(sb.length() - 1) == PATH_SEPARATOR_CHAR) {
+                sb.setLength(sb.length() - 1);
+            }
+            return sb.toString();
+        } finally {
+            entity0.stringBuilderCacheEntity.close(index0);
+        }
+    }
     /**
      * 根据 CrossDomain 注解和请求头信息生成对应的 HTTP 响应头。
      */

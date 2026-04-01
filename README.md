@@ -8,8 +8,7 @@
 这不仅是一个 Web 框架，它还是一个**一站式解决方案**，一个强大的**低代码平台**。
 
 ### 告别重启！框架允许 您在系统满负载下实现无缝热更新，无需停机。
-
-
+ 
 ## 关于性能
 * **CPU**：AMD Ryzen 5 3600 （6物理核心12逻辑核心）
 * **JDK**：GraalVM 21
@@ -32,6 +31,7 @@ public Object users(Long usersId, String usersName, String usersPassword, String
             null //not time
     );
 }
+
 ```
 ###  🔥 性能结论
 * /text = 裸 Netty 极致性能

@@ -119,6 +119,7 @@ public interface Request {
      * 获取 请求 路径
      */
     public String getUri();
+    public String webPathFormat();
 
     /**
      * 获取 请求 方法
