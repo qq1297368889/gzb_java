@@ -10,36 +10,7 @@
 ### 告别重启！框架允许 您在系统满负载下实现无缝热更新，无需停机。
  
 ## 关于性能
-* **CPU**：AMD Ryzen 5 3600 （6物理核心12逻辑核心）
-* **JDK**：GraalVM 21
-* **虚拟机**：kali linux 分配 8 逻辑核心
-* **压测命令**：wrk -t24 -c120 -d20s -s pipeline.lua url -- 1024 |  wrk -t24 -c120 -d20s url
-* 极简http请求 /text（框架内置） 压测 流水线 约 300W QPS | 非流水线 约 30万 QPS
-* ![极简http请求](text-qps.png)
-* 以下端点                     压测 流水线 约 150万 QPS | 非流水线 约 25万 QPS
-* ![序列化请求](users-qps.png)
-```java
-@EventLoop
-@RequestMapping("users/2")
-public Object users(Long usersId, String usersName, String usersPassword, String usersEmail, Integer usersAge) {
-    return new Users(
-            usersId == null ? 8215438L : usersId,
-            usersName == null ?"vpeGb2SNo8Xk" : usersName,
-            usersPassword == null ? "az1Amb2aVJsP": usersPassword,
-            usersEmail == null ? "nWV3qO6qW0zZ@gzb.com" : usersEmail,
-            usersAge == null ? 12: usersAge,
-            null //not time
-    );
-}
-
-```
-###  🔥 性能结论
-* /text = 裸 Netty 极致性能
-* /test/users/2 = 框架全流程 + 路由 + 参数解析 + JSON 序列化
-* 两者单次请求耗时差距：仅 270 纳秒！ 0.00000027 毫秒
-* 几乎无限接近原生 Netty！
-* 在同硬件、同 JDK、同返回体、同压力模型下，压测了多个业内主流框架 相同逻辑 完全一致的代码 上述代码
-* 本框架 QPS 表现领先多个业内主流框架，性能分别比对比框架高 1～4 倍（非流水线压测）
+[性能报告-单线程服务端 QPS 70万+](pressure_testing/2026-03-31-A.md)
 ## 核心特性
 
 * **性能至上**
