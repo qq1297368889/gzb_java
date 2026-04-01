@@ -5,13 +5,11 @@ nodeimage/
 colorimage/
 hot_update_system/
 spring-webflux/
-tfb_test/
 META-INF/
 gzbClassCache/
 tmp/
 target/
 logs/
-tfb/
 jar/
 files/
 out/
