@@ -3,6 +3,8 @@
 
 ## 1. 极限吞吐量对比 (Max Load QPS)
 ## 1. Maximum Throughput Comparison (Max Load QPS)
+#### 非 HTTP 流水线测试
+#### Non-HTTP Pipeline Testing
 | Scene              | gzb-one | Quarkus | Spring WebFlux | Leading margin（Quarkus） |
 |:------------------| :--- | :--- | :--- |:--------------|
 | Hello World       | **473,229** | 180,162 | 167,012 | +162%         |
@@ -91,7 +93,7 @@
 - **Rejection of Reflection:** The core workflow has no reflection and relies entirely on compilation enhancement for survival. At startup and when **seamless hot reloading** is detected, the framework uses compilation enhancement to process your classes.
 - **Memory Pooling:** This wasn't actually reflected in the load test because I didn't use my own serialization implementation but instead used a third-party library. This library is ridiculously fast, and it's very difficult to surpass it. I'm lazy...
 - Actually, it's not about code quality; the difference is in the architectural level. I haven't actually done any extreme optimization of the framework. Currently, the parts I know of that haven't been optimized can save at least 100 nanoseconds per request.
- 
+  
 ### 5. 框架完整性说明
 -  gzb one 不是一个跑分玩具 他功能完备 性能卓越 唯一美中不足的是只经历过十来个真实web项目洗礼
 -  全栈能力：内置 IOC, AOP, ORM, Cache, Log, Hot Update。
