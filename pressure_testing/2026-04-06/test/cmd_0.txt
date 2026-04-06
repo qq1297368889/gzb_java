@@ -1,0 +1,9 @@
+
+taskset -c 6-11  wrk2 -t9 -c900 -d10s -R500000 --latency "http://127.0.0.1:8081/test/hello"
+taskset -c 6-11  wrk2 -t9 -c900 -d10s -R500000 --latency "http://127.0.0.1:8081/text"
+
+
+
+
+wrk2 -t6 -c500 -d10s -R500000 --latency "http://127.0.0.1:8081/text"
+taskset -c 6-11 wrk2 -t9 -c900 -d10s -R5000000 -s pipeline.lua --latency "http://127.0.0.1:8081/text" -- 64

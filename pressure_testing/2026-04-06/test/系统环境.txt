@@ -1,0 +1,114 @@
+#             内核参数默认 无任何特殊调优
+# 总览  Ubuntu 20.04.6 LTS + JDK21 +r5 3600(6/12) + 32G(3200hz) 
+# 下边是设备环境信息 命令原始输出，想看的能看懂，看不懂的估计也不想看....
+# Below is the device environment information and the raw command output. Those who want to see it can understand it; those who can't probably don't want to see it...
+gzb@gzb-System-Product-Name:~/gzb/test$ uname -a
+Linux gzb-System-Product-Name 5.15.0-67-generic #74~20.04.1-Ubuntu SMP Wed Feb 22 14:52:34 UTC 2023 x86_64 x86_64 x86_64 GNU/Linux
+gzb@gzb-System-Product-Name:~/gzb/test$ cat /etc/os-release
+NAME="Ubuntu"
+VERSION="20.04.6 LTS (Focal Fossa)"
+ID=ubuntu
+ID_LIKE=debian
+PRETTY_NAME="Ubuntu 20.04.6 LTS"
+VERSION_ID="20.04"
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+VERSION_CODENAME=focal
+UBUNTU_CODENAME=focal
+gzb@gzb-System-Product-Name:~/gzb/test$ neofetch
+            .-/+oossssoo+/-.               gzb@gzb-System-Product-Name 
+        `:+ssssssssssssssssss+:`           --------------------------- 
+      -+ssssssssssssssssssyyssss+-         OS: Ubuntu 20.04.6 LTS x86_64 
+    .ossssssssssssssssssdMMMNysssso.       Kernel: 5.15.0-67-generic 
+   /ssssssssssshdmmNNmmyNMMMMhssssss/      Uptime: 6 hours 
+  +ssssssssshmydMMMMMMMNddddyssssssss+     Packages: 1510 (dpkg), 9 (snap) 
+ /sssssssshNMMMyhhyyyyhmNMMMNhssssssss/    Shell: bash 5.0.17 
+.ssssssssdMMMNhsssssssssshNMMMdssssssss.   Resolution: 2560x1440 
++sssshhhyNMMNyssssssssssssyNMMMysssssss+   DE: GNOME 
+ossyNMMMNyMMhsssssssssssssshmmmhssssssso   WM: Mutter 
+ossyNMMMNyMMhsssssssssssssshmmmhssssssso   WM Theme: Adwaita 
++sssshhhyNMMNyssssssssssssyNMMMysssssss+   Theme: Yaru [GTK2/3] 
+.ssssssssdMMMNhsssssssssshNMMMdssssssss.   Icons: Yaru [GTK2/3] 
+ /sssssssshNMMMyhhyyyyhdNMMMNhssssssss/    Terminal: gnome-terminal 
+  +sssssssssdmydMMMMMMMMddddyssssssss+     CPU: AMD Ryzen 5 3600 (12) @ 3.600GH 
+   /ssssssssssshdmNNNNmyNMMMMhssssss/      GPU: NVIDIA GeForce GTX 1060 3GB 
+    .ossssssssssssssssssdMMMNysssso.       Memory: 2869MiB / 32012MiB 
+      -+sssssssssssssssssyyyssss+-
+        `:+ssssssssssssssssss+:`                                   
+            .-/+oossssoo+/-.                                       
+
+
+gzb@gzb-System-Product-Name:~/gzb/test$ lscpu
+架构：                           x86_64
+CPU 运行模式：                   32-bit, 64-bit
+字节序：                         Little Endian
+Address sizes:                   43 bits physical, 48 bits virtual
+CPU:                             12
+在线 CPU 列表：                  0-11
+每个核的线程数：                 2
+每个座的核数：                   6
+座：                             1
+NUMA 节点：                      1
+厂商 ID：                        AuthenticAMD
+CPU 系列：                       23
+型号：                           113
+型号名称：                       AMD Ryzen 5 3600 6-Core Processor
+步进：                           0
+Frequency boost:                 enabled
+CPU MHz：                        1863.037
+CPU 最大 MHz：                   4208.2031
+CPU 最小 MHz：                   2200.0000
+BogoMIPS：                       7186.77
+虚拟化：                         AMD-V
+L1d 缓存：                       192 KiB
+L1i 缓存：                       192 KiB
+L2 缓存：                        3 MiB
+L3 缓存：                        32 MiB
+NUMA 节点0 CPU：                 0-11
+Vulnerability Itlb multihit:     Not affected
+Vulnerability L1tf:              Not affected
+Vulnerability Mds:               Not affected
+Vulnerability Meltdown:          Not affected
+Vulnerability Mmio stale data:   Not affected
+Vulnerability Retbleed:          Mitigation; untrained return thunk; SMT enabled
+                                  with STIBP protection
+Vulnerability Spec store bypass: Mitigation; Speculative Store Bypass disabled v
+                                 ia prctl and seccomp
+Vulnerability Spectre v1:        Mitigation; usercopy/swapgs barriers and __user
+                                  pointer sanitization
+Vulnerability Spectre v2:        Mitigation; Retpolines, IBPB conditional, STIBP
+                                  always-on, RSB filling, PBRSB-eIBRS Not affect
+                                 ed
+Vulnerability Srbds:             Not affected
+Vulnerability Tsx async abort:   Not affected
+标记：                           fpu vme de pse tsc msr pae mce cx8 apic sep mtr
+                                 r pge mca cmov pat pse36 clflush mmx fxsr sse s
+                                 se2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtsc
+                                 p lm constant_tsc rep_good nopl nonstop_tsc cpu
+                                 id extd_apicid aperfmperf rapl pni pclmulqdq mo
+                                 nitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt
+                                  aes xsave avx f16c rdrand lahf_lm cmp_legacy s
+                                 vm extapic cr8_legacy abm sse4a misalignsse 3dn
+                                 owprefetch osvw ibs skinit wdt tce topoext perf
+                                 ctr_core perfctr_nb bpext perfctr_llc mwaitx cp
+                                 b cat_l3 cdp_l3 hw_pstate ssbd mba ibpb stibp v
+                                 mmcall fsgsbase bmi1 avx2 smep bmi2 cqm rdt_a r
+                                 dseed adx smap clflushopt clwb sha_ni xsaveopt 
+                                 xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm
+                                 _mbm_total cqm_mbm_local clzero irperf xsaveerp
+                                 tr rdpru wbnoinvd arat npt lbrv svm_lock nrip_s
+                                 ave tsc_scale vmcb_clean flushbyasid decodeassi
+                                 sts pausefilter pfthreshold avic v_vmsave_vmloa
+                                 d vgif v_spec_ctrl umip rdpid overflow_recov su
+                                 ccor smca sme sev sev_es
+gzb@gzb-System-Product-Name:~/gzb/test$ ulimit -n
+1024
+gzb@gzb-System-Product-Name:~/gzb/test$ java -version
+java version "21.0.7" 2025-04-15 LTS
+Java(TM) SE Runtime Environment Oracle GraalVM 21.0.7+8.1 (build 21.0.7+8-LTS-jvmci-23.1-b60)
+Java HotSpot(TM) 64-Bit Server VM Oracle GraalVM 21.0.7+8.1 (build 21.0.7+8-LTS-jvmci-23.1-b60, mixed mode, sharing)
+gzb@gzb-System-Product-Name:~/gzb/test$ 
+
+

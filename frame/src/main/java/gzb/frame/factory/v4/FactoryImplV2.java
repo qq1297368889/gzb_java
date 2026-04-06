@@ -577,6 +577,9 @@ public class FactoryImplV2 implements Factory {
                 if (entity.objects.length>1) {
                     entity.objects=new Object[]{entity.runRes};
                 }
+            /*    if (entity.requestMap.size()>16) {
+                    entity.requestMap=null;
+                }*/
             }
         }
     }
