@@ -87,7 +87,7 @@
 * 服务端程序源码：test/xxx/src/*（xxx 每个目录下各一个）
 * 原始压测日志：test/0406-B.txt （来自于/test/start.sh的直接输出） [log text](0406-B.md)
 * 原始压测脚本：[ddos script](test/start.sh)（压测脚本，更换环境 可能无法直接运行，没做兼容处理， 可手动压测）
-* 服务端由于太大需要去这里下载 [download-server-program-address](download-server-program-address.txt)
+* 服务端由于太大需要去这里下载 [download-server-program-address](test/download-server-program-address.txt)
 #### ⚠️ 关于脚本兼容性（/test/start.sh） ：
 #### 本文的自动化压测脚本（监控 CPU/内存并生成 Markdown 报表）主要是为了我自己方便。
 #### 说实话，我不擅长写 Shell 脚本，这逻辑大半也是让 Gemini 帮我撸出来的。
