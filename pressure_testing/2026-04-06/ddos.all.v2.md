@@ -57,7 +57,7 @@
 
 ### 4. 为什么 执行效率相差这么大？ 
 - **动态织入** 比如装饰器（框架专用AOP） 当gzb.one发现你需要装饰器是才会置入 装饰器调用代码，如果不需要 那么连一个if都没有
-- **扁平处理** 火焰图发现 [gzb.one-pic](gzb-one.html) [quarkus-pic](quarkus.html) [spring-pic](spring.html)
+- **扁平处理** 火焰图发现 [gzb.one-pic](https://qq1297368889.github.io/gzb_java/pressure_testing/2026-04-06/gzb-one.html) [quarkus-pic](https://qq1297368889.github.io/gzb_java/pressure_testing/2026-04-06/quarkus.html) [spring-pic](https://qq1297368889.github.io/gzb_java/pressure_testing/2026-04-06/spring.html)
 - **编译增强** 有些处理和判断 gzb.one 选择在编译期 处理判断 核心链路 是一条直线大马路
 - **拒绝反射** 核心链路无反射 全靠编译增强续命 启动时和检测到需要 **无缝热更新** 时，框架会使用编译增强处理你的类
 - **池化内存** 其实这点在压测没体现，因为我没有使用我实现的序列化而是采用了三方库，因为这个库快的离谱想超越很困难 我懒....
