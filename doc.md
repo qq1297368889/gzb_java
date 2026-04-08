@@ -169,39 +169,27 @@
 - English: In the files where classes such as Controller, Decorator, ThreadFactory, and Service are located, do not define multiple top-level parallel classes (e.g., public class a{} class b{}); inner subclasses of public classes can be defined normally, mainly to prevent exceptions when the framework inserts code.
 ---
 # 参数注入介绍 | Parameter Injection Introduction
-
-#### 所有被框架管理的 类 都可以被注入  可以注入到 类变量 和 方法参数
-
+ 
 - 中文：所有被框架管理的类都可以被注入，可以注入到类变量和方法参数
 
 - English: All classes managed by the framework can be injected, and can be injected into class variables and method parameters
-
-#### http 请求流程的对象 Request(请求对象 .getSession()可以获取session )  Response(响应对象) Map<List<Object>>(请求参数) Log(框架日志对象) GzbJson(JSON对象) 会被注入
-
+ 
 - 中文：HTTP 请求流程的对象 Request（请求对象，.getSession()可以获取session）、Response（响应对象）、Map<List<Object>>（请求参数）、Log（框架日志对象）、GzbJson（JSON对象）会被注入
 
 - English: Objects in the HTTP request flow: Request (request object, .getSession() can get the session), Response (response object), Map<List<Object>> (request parameters), Log (framework log object), GzbJson (JSON object) will be injected
-
-#### 在装饰器 DecoratorStart 中 runRes 注入的对象 也会在后续流程被注入
-
+ 
 - 中文：在装饰器 DecoratorStart 中 runRes 注入的对象，也会在后续流程被注入
 
 - English: The object injected by runRes in the decorator DecoratorStart will also be injected in the subsequent process
-
-#### 有一个例外 线程模型 不会注入http相关的变量 因为他与http请求无关
-
+ 
 - 中文：有一个例外，线程模型不会注入HTTP相关的变量，因为它与HTTP请求无关（修正：原文“他”改为“它”）
 
 - English: There is one exception: the thread model will not inject HTTP-related variables because it is irrelevant to HTTP requests
-
-#### 什么时候会被注入: Controller Decorator ThreadFactory DataBaseEventFactory 这些标注类 内部的 变量 和 注册的方法参数 都会被注入
-
+ 
 - 中文：什么时候会被注入：Controller、Decorator、ThreadFactory、DataBaseEventFactory 这些标注类内部的变量和注册的方法参数，都会被注入
 
 - English: When will it be injected: Variables and registered method parameters inside the annotated classes such as Controller, Decorator, ThreadFactory, and DataBaseEventFactory will all be injected
-
-#### 需要注意的点 复杂对象是根据类型匹配的 如果两个同类型对象可能会导致意外问题 但是 我认为 为什么要重复呢 避免重复即可 如果为了边缘问题设置一大堆配置方案 那么是否得不偿失?
-
+ 
 - 中文：需要注意的点：复杂对象是根据类型匹配的，如果两个同类型对象可能会导致意外问题；但我认为，为什么要重复呢？避免重复即可；如果为了边缘问题设置一大堆配置方案，那么是否得不偿失？
 
 - English: Points to note: Complex objects are matched by type; if there are two objects of the same type, it may cause unexpected problems. However, I think, why repeat them? Just avoid repetition. Is it worth the cost to set up a lot of configuration schemes for edge cases?
@@ -213,49 +201,36 @@
 - 中文：这是主要差异点，任何请求参数都会被扁平化封装为 map<string,list<object>>
 
 - English: This is the main difference: any request parameter will be flatly encapsulated into map<string,list<object>>
-
-#### 因为我不想增加前端工作负担 传参时 还要 obj.xxx=xx  或者 obj{xx:xx}  他们可以 直接 xxx=xx 或者 {xx:xx}
-
+ 
 - 中文：因为我不想增加前端工作负担，传参时不需要写成 obj.xxx=xx 或者 obj{xx:xx}，前端可以直接 xxx=xx 或者 {xx:xx}
 
 - English: Because I don't want to increase the front-end workload; when passing parameters, there's no need to write obj.xxx=xx or obj{xx:xx}; they can directly write xxx=xx or {xx:xx}
-
-#### 这也就导致了 会有妥协 不支持嵌套对象解析 但是可以定义一个 map<string,list<object>> 接受原始对象
-
+ 
 - 中文：这也就导致了一定的妥协，框架不支持嵌套对象解析，但可以定义一个 map<string,list<object>> 接收原始对象
 
 - English: This also leads to a compromise: nested object parsing is not supported, but you can define a map<string,list<object>> to receive the original object
-
-#### 当定义一个 复杂对象的时候 框架会扫描这个对象的各个参数变量 如果参数名 和 请求参数名匹配 那么就会把这个参数封装到这个对象里边
-
+ 
 - 中文：当定义一个复杂对象的时候，框架会扫描这个对象的各个参数变量，如果参数名和请求参数名匹配，那么就会把这个参数封装到这个对象里边
 
 - English: When a complex object is defined, the framework will scan each parameter variable of this object; if the parameter name matches the request parameter name, the parameter will be encapsulated into this object
-
-#### 这种方式 既支持了表单提交 又支持了 json提交 并且统一抽象了兼容层 map 控制器无需关心参数来自于表单 还是 json 又或者查询参数
-
+ 
 - 中文：这种方式既支持了表单提交，又支持了JSON提交，并且统一抽象了兼容层 map，控制器无需关心参数来自于表单、JSON还是查询参数
 
 - English: This method supports both form submission and JSON submission, and uniformly abstracts a compatibility layer map; the controller does not need to care whether the parameters come from forms, JSON or query parameters
-
-#### 但是不支持嵌套对象解析到复杂对象 或者说会解析成意外的情况 这就是代价 但我认为这个代价是值得的 只要按照规则 那么你的认知负担将会极低
-
+ 
 - 中文：但是不支持将嵌套对象解析到复杂对象中，否则会解析成意外的情况，这就是代价；但我认为这个代价是值得的，只要按照规则来，你的认知负担将会极低
 
 - English: However, parsing nested objects into complex objects is not supported, otherwise it will be parsed into unexpected situations; this is the cost, but I think this cost is worth it; as long as you follow the rules, your cognitive burden will be very low
-
-#### 这是一个权衡问题或设计思想问题 我认为 参数不应该嵌套 增加了太多认知负担 而扁平化天生匹配我们人类的大脑思维模式
-
+ 
 - 中文：这是一个权衡问题或设计思想问题；我认为，参数不应该嵌套，嵌套增加了太多认知负担，而扁平化天生匹配我们人类的大脑思维模式
 
 - English: This is a trade-off or design philosophy issue; I believe that parameters should not be nested, as nesting increases too much cognitive burden, while flattening is inherently compatible with the human brain's thinking mode
-
-#### 比如说 {xx:xx,data:[{dataxx:xx},{}....]} 应该怎么扁平化的传递? xx=xx&dataxx=xx&dataxx=xxx..... 后台接收 fun(string xx,string[] dataxx)
-#### 对象怎么匹配 比如传递 {xx:xx} 后端定义 fun(xxobj obj) 只要obj 拥有变量 xx 那么也就能接收到
-#### 有人会说了 重名怎么办?说实在的 这是你的习惯不好 我创建数据库固定是 表名_列名 生成的实体类是 驼峰形式的 表名和列名 天生不重名
-#### 接收对象直接用entity 不比定义一堆 DTO要好?? 对不对 而且它拥有强一致规范 返回的数据 和接收的数据 天然匹配 规则即文档 降低对接成本
-
-- 中文：比如说 {xx:xx,data:[{dataxx:xx},{}....]} 应该怎么扁平化传递？可以写成 xx=xx&dataxx=xx&dataxx=xxx.....，后台用 fun(string xx, string[] dataxx) 接收即可；对象怎么匹配？比如传递 {xx:xx}，后端定义 fun(xxobj obj)，只要 obj 拥有变量 xx，就能接收到参数；有人会问重名怎么办？说实在的，这是你的习惯不好，我创建数据库时固定用“表名_列名”，生成的实体类是驼峰形式，表名和列名天生不重名；接收对象直接用 entity 不比定义一堆 DTO 更好吗？对不对？而且这样拥有强一致规范，返回的数据和接收的数据天然匹配，规则即文档，降低对接成本。
+ 
+- 中文：比如说 {xx:xx,data:[{dataxx:xx},{}....]} 应该怎么扁平化传递？可以写成 xx=xx&dataxx=xx&dataxx=xxx.....，
+- 后台用 fun(string xx, string[] dataxx) 接收即可；对
+- 象怎么匹配？比如传递 {xx:xx}，后端定义 fun(xxobj obj)，只要 obj 拥有变量 xx，就能接收到参数；
+- 有人会问重名怎么办？说实在的，这是你的习惯不好，我创建数据库时固定用“表名_列名”，生成的实体类是驼峰形式，表名和列名天生不重名；
+- 接收对象直接用 entity 不比定义一堆 DTO 更好吗？对不对？而且这样拥有强一致规范，返回的数据和接收的数据天然匹配，规则即文档，降低对接成本。
 
 - English: For example, how to flatly pass {xx:xx,data:[{dataxx:xx},{}....]}? It can be written as xx=xx&dataxx=xx&dataxx=xxx....., and the backend can receive it with fun(string xx, string[] dataxx); How to match objects? For example, when passing {xx:xx}, the backend defines fun(xxobj obj), and as long as obj has a variable xx, the parameter can be received; Some people may ask, what if there are duplicate names? To be honest, this is a bad habit. When I create a database, I use "table name_column name" by default, and the generated entity class is in camelCase, so table names and column names are naturally not duplicated; Isn't it better to receive objects directly with entity than to define a bunch of DTOs? Moreover, it has strong consistent specifications, the returned data and received data are naturally matched, rules are documents, and docking costs are reduced.
 
@@ -385,6 +360,10 @@ public class Test0 {
 # 控制器  action Controller 篇
 #### 参数映射 可以把表单提交的参数(a=1&b=2)和 json参数({xxx:xxx,xx:xx}) 映射到方法的参数 复杂JSON请定义Map<String,Object>
 #### 数据响应 可以直接 return 字符串 byte 或者直接从 HttpServletResponse 手动响应数据 如果手动响应请 return null;
+# Controller (Action) Section
+#### Parameter Mapping You can map form submission parameters (a=1&b=2) and JSON parameters ({xxx:xxx,xx:xx}) to method parameters. For complex JSON, define a Map<String,Object>.
+#### Data Response You can directly return a string (byte) or manually respond with data from HttpServletResponse. If responding manually, return null;
+
 ```java
 import com.authorizationSystem.dao.ApplicationDao;
 import com.authorizationSystem.entity.Application;
@@ -482,6 +461,8 @@ public class RequestDecorator {
 
 ## 线程模型
 ### 线程模型主要为了解决热更新 线程持有老对象问题
+## Thread Model
+### The thread model primarily addresses the issue of hot updates and threads holding onto old objects.
 ```java
 package com.frame.thread;
 import com.frame.dao.SysUsersDao;
@@ -515,7 +496,7 @@ public class ThreadClass {
 
 
 ```
-## 数据库 事件例子
+## 数据库 事件例子  Database event examples
 ```java
  package com.frame.component;
 
@@ -588,7 +569,18 @@ public class DataBaseEvent {
 #### 这意味着 100 次 saveAsync 调用，可能只触发 1 次批量写入，从而大幅减少 JDBC 调用开销
 #### 相比于传统的单条同步 SQL 写入，此机制能将数据层的写入吞吐量提升 5 到 30 倍，有效解决在高并发插入的性能问题。
 #### 数据库的真正瓶颈不在于网络 I/O，而在于数据库服务器 CPU 的事务处理效率和锁竞争开销。异步无法解决此根本问题。
-### 代码示例
+
+# Regarding Asynchronous Database Operations: Note that this is a synchronous framework.
+## Why use the asynchronous method `dao.saveAsync()`?
+### The real purpose of asynchronous SQL (e.g., `saveAsync`) is to overcome the system's hard I/O limit:
+#### Asynchronous commits are not for releasing HTTP threads, but for aggregating multiple discrete SQL statements into one or a few high-throughput data queues in the background.
+### Intelligent Merging and Batch Writing (SQL Aggregation):
+#### The framework can intelligently aggregate and merge similar SQL operations in a background thread.
+#### This means that 100 `saveAsync` calls may only trigger one batch write, thus significantly reducing JDBC call overhead.
+#### Compared to traditional single synchronous SQL writes, this mechanism can increase the write throughput of the data layer by 5 to 30 times, effectively solving performance issues in high-concurrency inserts.
+#### The real bottleneck of a database lies not in network I/O, but in the transaction processing efficiency of the database server's CPU and the overhead of lock contention. Asynchronous processing cannot solve this fundamental problem.
+
+### 代码示例  demo 
 ```java
 
 @PostMapping("test")
