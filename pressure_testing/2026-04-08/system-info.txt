@@ -1,6 +1,7 @@
 #             内核参数默认 无任何特殊调优
 # 总览  Ubuntu 20.04.6 LTS + JDK21 +r5 3600(6/12) + 32G(3200hz) 
 # 下边是设备环境信息 命令原始输出，想看的能看懂，看不懂的估计也不想看....
+# Below is the device environment information and the raw command output. Those who want to see it can understand it; those who can't probably don't want to see it...
 gzb@gzb-System-Product-Name:~$ cat /sys/devices/system/cpu/cpu*/topology/thread_siblings_list
 0,6
 4,10
@@ -16,9 +17,8 @@ gzb@gzb-System-Product-Name:~$ cat /sys/devices/system/cpu/cpu*/topology/thread_
 2,8
 3,9
 
-4,10,5,11
+# server:4,10,5,11
 
-# Below is the device environment information and the raw command output. Those who want to see it can understand it; those who can't probably don't want to see it...
 gzb@gzb-System-Product-Name:~/gzb/test$ uname -a
 Linux gzb-System-Product-Name 5.15.0-67-generic #74~20.04.1-Ubuntu SMP Wed Feb 22 14:52:34 UTC 2023 x86_64 x86_64 x86_64 GNU/Linux
 gzb@gzb-System-Product-Name:~/gzb/test$ cat /etc/os-release
@@ -120,8 +120,7 @@ Vulnerability Tsx async abort:   Not affected
                                  sts pausefilter pfthreshold avic v_vmsave_vmloa
                                  d vgif v_spec_ctrl umip rdpid overflow_recov su
                                  ccor smca sme sev sev_es
-gzb@gzb-System-Product-Name:~/gzb/test$ ulimit -n
-1024
+
 gzb@gzb-System-Product-Name:~/gzb/test$ java -version
 java version "21.0.7" 2025-04-15 LTS
 Java(TM) SE Runtime Environment Oracle GraalVM 21.0.7+8.1 (build 21.0.7+8-LTS-jvmci-23.1-b60)
