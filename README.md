@@ -18,6 +18,30 @@ Say goodbye to restarts! The framework allows seamless hot updates under full lo
 #### [性能报告-单线程服务端 QPS 70万+](pressure_testing/2026-03-31-A.md)  
 #### [Performance Report - Single-threaded Server QPS 700,000+](pressure_testing/2026-03-31-A.md)
 #### [性能报告-gzb.one vs spring vs quarkus](pressure_testing/2026-04-06/ddos.all.v2.md)
+### gzb-one 的诞生史 (The Birth of gzb-one)
+
+> * **gzb-one 是我从 2017 年开始，从初学者一步一步走过来的 (Started in 2017 as a beginner, progressing step by step).**
+> * **一边进行业务开发，一边进行封装，逐步演化。几乎它的每一个功能，都是为了解决某个业务问题 (Evolved through real-world business development to solve practical problems).**
+> **gzb-one 的进化史 (The Evolution Path):**
+> * 基于 **Struts2 + Spring + Hibernate** （"框架"雏形出现，初步封装 (Prototype emerged)）
+> * 基于 **Spring MVC + Spring + Hibernate** （进行改进，听说 Spring MVC 更好用 (Improved with Spring MVC)）
+> * 基于 **Spring Boot + Spring MVC + Spring + Hibernate** （可以打包成 JAR 了，可以独立运行了 (Standalone JAR packaging)）
+> * 基于 **Spring Boot + Spring MVC + Spring + MyBatis** （听说 MyBatis 更好用 (Switching to MyBatis)）
+> * **我开始关注性能，因为爱好。写代码是我的娱乐活动 (Focusing on performance as a hobby/entertainment).**
+> * 基于 **Spring Boot + 自研 WEB 核心 + 自研 ORM + 自研 IOC** （感觉 MyBatis 不好用，但 Hibernate 太重，我选择自研 ORM (Built my own Web/ORM/IOC)）
+> * **写 Entity/DAO 这些模板代码太痛苦了** （新增根据数据库逆向生成全套代码 (Added reverse engineering/code generation)）
+> * 基于 **Spring Boot + Servlet + Groovy + 自研 WEB 核心 + 自研 ORM** （我可以热更新了！完美应对客户改来改去的烦恼 (Hot-swapping achieved for changing requirements)）
+> * **我意外的发现，热更新更大的好处在于开发过程中。以前无法想象的便利，所见即所得，代码写下去立马看到执行结果 (Accidentally discovered the WYSIWYG development experience).**
+> * 基于 **Tomcat.jar + Groovy + 自研 WEB 核心 + 自研 ORM** （我长大了，要独立了。再见 Spring (Independent phase, Goodbye Spring)）
+> * **有性能提升，但是差别不大 (Performance improved, but < 100%)**
+> * 基于 **Netty + Groovy + 自研 WEB 核心 + 自研 ORM** （似乎 Netty 性能更好一点 (Switching to Netty for better performance)）
+> * **巨大的性能提升，我开始研究性能优化 (Massive performance boost, > 100%)**
+> * 基于 **Netty + 自定义类加载器 + 自研 WEB 核心 + 自研 ORM** （Groovy 性能损耗有点不能接受，虽然它已经很接近 Java 了 (Removing Groovy overhead)）
+> * 基于 **Netty + 自定义类加载器 + 自研 WEB 核心 + 自研 ORM + 自研 LOG + 等等...** （**gzb-one 完全体已经出现了 (The complete form of gzb-one)**）
+> * **逐渐的，在优化的过程中，计时单位逐渐变成了：纳秒 (The unit of measurement became: Nanoseconds).**
+> * **非常多我想做的功能和优化，但是精力不足，毕竟这是我独立开发的 (Many ideas, limited energy for solo development).**
+> * **持续中... 但是迟早那些想做还没做的，都会出现在 gzb-one 中 (Ongoing... everything envisioned will eventually be built).**
+ 
 ## 核心特性 / Key Features
 
 * **性能至上** / **Performance First**
