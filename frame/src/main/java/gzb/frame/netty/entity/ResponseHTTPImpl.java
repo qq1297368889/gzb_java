@@ -18,7 +18,6 @@
 
 package gzb.frame.netty.entity;
 
-import gzb.tools.Config;
 import gzb.tools.NettyTools;
 import gzb.tools.thread.GzbThreadLocal;
 import io.netty.buffer.Unpooled;
@@ -39,8 +38,6 @@ public class ResponseHTTPImpl implements Response {
     private ChannelHandlerContext ctx;
     private Set<Cookie> cookies; // Added cookies field
     private boolean isSendHeaders = false;
-    private FullHttpRequest request = null;
-
     boolean keepAlive = false;
 
     public ResponseHTTPImpl(ChannelHandlerContext ctx, boolean keepAlive) {

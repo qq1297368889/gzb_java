@@ -1,0 +1,218 @@
+# Java性能比我们的预期中高了四倍，gzb-one证明了它（一份严谨的压测报告）
+## 前言
+### 我进行测试的目的是什么？
+> * 我想证明 java的性能上限 不等于 各大框架的性能上限，甚至天差地别
+> * java 并不慢，gzb-one 在本次测试中 已经证明了这些，就算面对一些静态语言框架也未必不能 一较长短
+> * 当然 gzb-one 绝对也不是最优解，一定存在一些 性能更加极致 且保持和spring一样易用性的框架，只是他们或许并不公开（TFB榜单的发包机不算框架）
+> * 我不是为了打败谁（虽然客观上是这样），至少在生态成熟性上，目前还做不到
+
+### 前几天我发布了帖子
+> *  前几天发布了一个帖子，咨询大家怎么压测才能获取更可靠的数据
+> *  很高兴 我收到了很多建议  我答应了 我会去做
+
+### 根据大家建议 今天 我做了这些事
+> *  1.本次压测 来自于真机 Ubuntu 20.04.6 LTS（我给自己的电脑装了双系统）脱离虚拟机释放性能极限
+> *  2.压测工具抛弃了 wrk 采用 wrk2  获取更精确的数据
+> *  3.每个进程分别都绑定了不同的核心 减少了 压测数据波动
+> *  4.提供了及其详细的系统信息
+> *  5.确保本次结论可以被复现，提供了 代码+可执行程序+压测脚本
+> *  6.锁定了CPU频率为 3.6G（没有严格做到，因为我不想修改bios，只是在操作系统层面锁定，但他是公平的）
+
+### 这是我无法做到的，并非不愿意去做：
+> *  **硬件限制**：有人建议我采用两台服务器压测，但我目前的网络环境无法承载 gzb-one 级别的吞吐量。
+> *  **PPS 压力**：这是框架吞吐量测试而非业务逻辑测试。在 40 万+ QPS 下产生的 PPS（每秒包数）极其巨大，普通网络设备会先行崩溃。（本次测试我只用了两个物理核心）
+> *  **拒绝性能稀释**：网络只能掩盖框架的性能。这对于追求极致架构的测试是不公平的。
+> *  **IO 模型一致性**：gzb-one 的网络底层由 Netty 强力驱动。在 IO 层面，大家的物理极限是一致的。如果一个框架在“环回路径”下跑不赢 gzb-one，那么在任何网络环境下，它都没有反超的逻辑支撑。
+> *  #### 为了一次压测专门购买两台高性能服务器，并且搭建一个能承受几百万QPS的网络设施，显然是不理智的。
+> *  当然如果谁有专属机房，欢迎测试，文中提供了本次测试的全套资料程序
+
+---
+#### 感谢大家的建议 本次测试可靠性 应该会大幅度提升，如果哪里有致命问题，我会继续改进再次测试
+
+## 非常有趣的发现
+> * 原本我想对很多框架进行测试的。但是我发现......
+> * 感谢某些框架提供的'灵感'，让我意识到仅仅测试Hello World和静态的POJO 是对开发者智商的侮辱。（别问我，我不知道）
+> * 我发现某些框架 /test/hello 和 /test/users 的QPS 基本一致 甚至后者略有反超？
+> * 这让我非常震惊！我的天 他怎么做到的！0开销序列化？甚至还有CPU加速功能，开发者之神吗？
+> * 于是我加入了 ThreadLocalRandom.current().nextInt(0, 10), 嗯 他的QPS 腰斩了。。。。。
+> * 当然 也可能是我的测试环境波动较大， 恩 在压测他的时候出现 50%波动，
+> * 或者恰好JIT给了他某种超神级特殊优化？可恶的JIT为什么不给我这种待遇 太可恶了！！ ORACLE 全责
+> * 哈哈哈哈哈
+> * ................
+
+## 正文 （所有必要信息几乎都有提供，请查看下方文中的链接）
+> * 公开完整测试环境：服务端源码，服务端可执行程序，压测脚本，系统参数，硬件参数，等详细信息（下方提供）
+> * 测试数据经过多次测试，确认没有极端值。
+> * 本次测试并不是多次测试成绩最好的，比如 /test/hello 我私下测试经常达到50万 QPS 以上
+
+### 以下测试均为非流水线测试 
+
+## 1. 极限吞吐量 (Max QPS) 与性能领先幅度对比
+注：本阶段旨在获取所有框架的峰值QPS 
+
+| 测试路径 (URL) | 框架方案 | 实际 Max QPS | 相对 Webflux 领先 | 相对 Quarkus 领先 |
+| :--- | :--- | :--- | :--- | :--- |
+| **`/test/hello`** | **gzb-one** | **489,026** | **↑ 221.2%** | **↑ 197.9%** |
+| (纯净返回) | Quarkus | 164,127 | ↑ 7.8% | - |
+| | Spring Webflux | 152,236 | - | - |
+| **`/test/users`** | **gzb-one** | **403,342** | **↑ 402.1%** | **↑ 259.1%** |
+| (多参数解析) | Quarkus | 112,308 | ↑ 39.8% | - |
+| | Spring Webflux | 80,333 | - | - |
+
+## 2. 80% 峰值负载下的资源转化效率对比(0.8 * Max QPS)
+   注：本阶段通过固定请求速率（QPS），强制所有框架运行在各自峰值的80% 负载下。这模拟了高水位运行状态，能够反映框架在持续高压下的CPU 效率与内存确定性。
+
+| 框架方案 | 测试路径 | 实际 QPS | CPU 均值 (%) | 内存 均值 | **QPS / 1% CPU (效率比)** |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **gzb-one** | `test/hello` | **389,038** | **295.2** | 351.7MB | **1,317.8** |
+| **gzb-one** | `test/users` | **321,318** | **295.7** | 483.1MB | **1,086.6** |
+| Quarkus | `test/hello` | 130,567 | 302.5 | 59.6MB | 431.6 |
+| Quarkus | `test/users` | 89,225 | 298.6 | 65.3MB | 298.8 |
+| Webflux | `test/hello` | 120,945 | 307.9 | 626.6MB | 392.8 |
+| Webflux | `test/users` | 63,915 | 305.6 | 738.5MB | 209.1 |
+ 
+## 3. 高80% 峰值负载下的响应质量对比(延迟指标 0.8 * Max QPS)
+
+| 测试路径 | 框架方案 | P50 (中位数) | P99 (长尾) | P99.9 (极端) | Max 延迟 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **`test/hello`** | **gzb-one** | **1.21ms** | **3.63ms** | **9.31ms** | 35.68ms |
+| | Quarkus | 1.28ms | 6.19ms | 7.33ms | 9.31ms |
+| | Webflux | 1.20ms | 4.40ms | 9.61ms | 15.99ms |
+| **`test/users`** | **gzb-one** | **1.18ms** | **3.87ms** | **10.42ms** | 25.10ms |
+| | Quarkus | 1.79ms | 6.58ms | 8.42ms | 10.55ms |
+| | Webflux | 1.23ms | 6.50ms | 13.49ms | 20.30ms |
+
+## 4. 同水平低压测试对比 (定量 20,000 QPS)
+
+注：本阶段通过固定请求速率20000（QPS）
+
+| 框架方案 | 测试路径 | 实际 QPS | CPU 均值 (%) | 内存 均值 | **QPS / 1% CPU (效率比)** |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **gzb-one** | `test/hello` | **19,856** | **19.6** | 352.1MB | **1,013.1** |
+| **gzb-one** | `test/users` | **19,857** | **22.9** | 483.1MB | **867.1** |
+| Quarkus | `test/hello` | 19,855 | 52.3 | 50.6MB | 379.6 |
+| Quarkus | `test/users` | 19,855 | 74.7 | 52.5MB | 265.8 |
+| Webflux | `test/hello` | 19,855 | 52.7 | 626.7MB | 376.7 |
+| Webflux | `test/users` | 19,883 | 93.9 | 738.2MB | 211.7 |
+
+---
+
+## 5. 同水平低压响应质量对比 (延迟指标 @ 20,000 QPS)
+
+| 测试路径             | 框架方案 | P50 (中位数) | P99 (长尾) | P99.9 (极端) | Max 延迟 |
+|:-----------------| :--- | :--- | :--- | :--- | :--- |
+| **`test/hello`**     | **gzb-one** | **0.81ms** | **2.16ms** | **2.54ms** | 10.38ms |
+|                  | Quarkus | 0.87ms | 2.48ms | 5.86ms | 7.09ms |
+|                  | Webflux | 0.86ms | 2.18ms | 3.09ms | 14.48ms |
+| **`test/users`** | **gzb-one** | **0.84ms** | **2.13ms** | **2.53ms** | 11.97ms |
+|                  | Quarkus | 0.92ms | 4.77ms | 6.51ms | 8.04ms |
+|                  | Webflux | 0.91ms | 2.11ms | 5.38ms | 14.26ms |
+
+---
+
+### 6. 为什么 没有测试 ORM
+> * ORM性能测试 很难做到公平 因为我做的是 处理流程上的优化 比如：
+> * dao.saveAsync(entity，fail，success) 我在底层实现了无感知sql合并，这导致无法公平测试（这不是异步这是合并）
+> * dao.save(entity) 如果采用这个框架接口 领先的幅度太小，只有无反射节省下来的那一点损耗，
+> * dao.query(entity,sec)也是类似原因，我原生提供了查询折叠，他也是不公平的
+> * 如果强制使用 dao.query(entity) 原因同上 领先的幅度太小，同样只有无反射节省下来的那一点损耗，根据我和某框架对比 find(id) 仅10-20%优势，没意思
+> * 我认为高频接口就应该使用 saveAsync 就应该 dao.query(entity,sec) 非让我选择次优解，我宁愿不测
+
+
+### 7. 为什么 执行效率相差这么大？
+> * **动态织入** 比如装饰器（控制器AOP） 当gzb-one发现你需要装饰器是才会置入 装饰器调用代码，如果不需要 那么连一个if都没有
+> * **扁平处理** 火焰图可以观察到gzb-one的开销： [gzb-one 火焰图](http://43.133.69.62/github.io/gzb_java/pressure_testing/2026-04-08/gzb_one.html)
+> * **编译增强** 有些处理和判断 gzb-one 选择在编译期处理判断，核心链路是一条直线大马路
+> * **拒绝反射** 核心链路无反射 全靠编译增强续命 启动时和检测到需要 **无缝热更新** 时，框架会使用编译增强处理你的类
+> * **池化内存** 其实这点在压测没体现，因为我没有使用我实现的序列化而是采用了三方库，因为这个库快的离谱想超越很困难 我懒....
+> * 其实并不在于代码优劣 差距是架构代差 我其实并没有极端优化框架，目前我知道且没优化的部分一个请求至少可以节省100纳秒
+
+
+### 8. 框架完整性说明
+> *  gzb one 不是一个跑分玩具 他功能完备 性能卓越 唯一美中不足的是只经历过少量真实web项目洗礼
+> *  无依赖运行：无需引入臃肿的外部库，自身即是一个高性能宇宙，天生免疫依赖冲突问题。
+> *  全栈能力：内置 IOC, AOP, ORM, Cache, Log, Hot Update。
+> *  无感热更新：支持在高 QPS 极压环境下进行**动态逻辑热更**，且 QPS 无明显波动。
+> *  低代码引擎：内置轻量级驱动（根据数据库信息逆向生成:entity,dao,action,web ui），在极致性能的基础上兼顾开发效率。
+> *  多协议统一：同一个 Action，同时提供 HTTP / TCP / UDP（UDP 已通 Demo）服务。
+> *  这只是部分功能 详细参考 [开源仓库文档](http://43.133.69.62/github.com/qq1297368889/gzb_java/blob/main/doc.md)
+> *  现实意义上 我完全可以称呼gzb one为 无性能开销
+> ##  其他说明：本次压测额外测试了gzb-one的流水线请求 :
+> *  test/hello (QPS:220W+)
+> *  裸写 netty(/text 框架内置) (QPS:230w+) 框架损耗反映在qps上 < 10%
+> *  备注：框架只是支持流水线压测 不支持http标准流水线，支持的话风险太大，遇到攻击毫无抵抗之力
+
+
+## gzb-one 关于性能与取舍的思考
+### 核心哲学：轻装前行，极致爆发
+Spring 与 Quarkus 作为先驱者，背负了太多的**历史包袱**以维持庞大的生态兼容；而 **gzb-one** 选择在 2026 年**轻装前行**。
+> **他们的目标是兼容一切，而我的理念是再快一点。**
+---
+### ⚖️ 坦诚的权衡
+在架构设计中，没有免费的午餐。我们必须诚实地面对取舍：
+> * 追求不同：性能并非他们的唯一追求，正如极端兼容性也并非我的强项。
+> * 主动剪裁：为了压榨出每一滴硬件性能，我主动牺牲了部分为了抽象而抽象的通用性。
+> * 认知差异：站在Java 规范的通用角度，我似乎“牺牲”了很多；但站在服务端开发的实战角度，我认为我几乎什么都没有牺牲。
+> * 这值得吗？答案是肯定的。在毫秒必争的生产环境下，这种“牺牲”是通往极致的必经之路。
+---
+## 关于环境信息
+> * 系统 Ubuntu 20.04.6 LTS（纯净内核，无补丁，有些补丁会导致性能下降，他不是针对gzb-one 而是系统整体性能下降，但是计算密度越高受影响越大，据我测试，安装补丁 qps会下降20%，其他框架下降15%）
+> * 关于调优：无任何激进调优，仅做了基本的性能优化（比如关闭交换分区，调整内核参数），并且所有框架都在同一环境下进行测试，确保公平对比。
+> * 压测工具 wrk2 -t9 -c900 -d20s -R5000000 --latency "http://xxxxx"
+> * 资源隔离（CPU 亲和性）：
+> * 服务器端：隔离 2 个物理核心 + 2 个超线程核心。
+> * 压力测试端：隔离 3 个物理核心 + 3 个超线程核心。
+> * 系统/操作系统：预留剩余核心。
+> * 在整个测试过程中，内存均未成为瓶颈。
+> * 可复现环境：test/ 目录   (包含可执行程序 启动脚本 压测脚本 等完整信息...)
+> * 系统环境： [查看完整环境信息](http://43.133.69.62/github.com/qq1297368889/gzb_java/blob/main/pressure_testing/2026-04-08/system-info.txt)（系统设置 cpu 内存 内核 JVM 系统参数等详细信息）
+> * 服务端程序源码：test/xxx/src/*（xxx 每个目录下各一个）
+> * 原始压测日志：[查看压测时原始输出日志](http://43.133.69.62/github.com/qq1297368889/gzb_java/blob/main/pressure_testing/2026-04-08/001.md)（来自于/test/start.sh的直接输出 也是MD文档 脚本输出的就是标准格式 ）
+ 
+
+> # 被测URL
+> * /test/hello
+> * /test/users?usersId=1000&usersName=usersName1&usersPassword=usersPassword1&usersEmail=usersEmail@gzb.com&usersAge=99
+
+## 完整test 目录下载：
+> * 完整test 目录下载，需要额外下载，因为他太大了： [download-server-program-address](http://43.133.69.62/github.com/qq1297368889/gzb_java/blob/main/pressure_testing/2026-04-08/download-server-program-address.txt)
+
+### 测试代码：
+> * 以下为 gzb-one的代码，各个框架除了 注解规则不同外 完全一致
+> * 我并不是各个框架的优化专家 但是我并没有限制其运行参数，
+> * 都是默认参数启动，启动命令就是简单的 ./xxxx 后边没有参数
+```java
+package gzb.start;
+import gzb.frame.annotation.*;
+import gzb.frame.factory.ContentType;
+import gzb.tools.Config;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+@Controller
+@RequestMapping("test")
+@Header(item = {@HeaderItem(key = "Content-Type", val = ContentType.json)})
+public class Test {
+    public static final byte[] HELLO_WORD = "Hello, World!".getBytes(Config.encoding);
+    @EventLoop
+    @RequestMapping("hello")
+    @Header(item = {@HeaderItem(key = "Content-Type", val = ContentType.html)})
+    public byte[] hello() {
+        return HELLO_WORD;
+    }
+    @EventLoop
+    @RequestMapping("users")
+    public Users users(Long usersId, String usersName, String usersPassword, String usersEmail, Integer usersAge) {
+        int ram_id = ThreadLocalRandom.current().nextInt(0, 10);
+        return new Users(
+                usersId == null ? (long) ram_id : usersId + ram_id,
+                usersName == null ? "vpeGb2SNo8Xk" : usersName,
+                usersPassword == null ? "az1Amb2aVJsP" : usersPassword,
+                usersEmail == null ? "nWV3qO6qW0zZ@gzb.com" : usersEmail,
+                usersAge == null ? 12 : usersAge
+        );
+    }
+}
+```
+### gzb-one 性能卓越，他证明了 java的性能远超预期，java的性能并不差 
+

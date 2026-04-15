@@ -6,6 +6,7 @@ import com.frame.entity.SysFile;
 import com.frame.entity.SysLog;
 import com.frame.entity.SysUsers;
 import gzb.frame.annotation.*;
+import gzb.frame.factory.ContentType;
 import gzb.frame.netty.entity.Response;
 import gzb.tools.Config;
 import gzb.tools.Tools;
@@ -64,7 +65,7 @@ public class TestApi0 {
     /// 前端请求的 body 直接是 {"sysUsersAcc:"xxx"}  sysUsers的参数 sysUsersAcc 能接受到  而定义的 string sysUsersAcc 也能接受到
     @EventLoop
     @GetMapping("get1")
-    @Header(item = {@HeaderItem(key = "content-type", val = "application/json;charset=UTF-8")})
+    @Header(item = {@HeaderItem(key = "content-type", val = ContentType.json)})
     public String get1(String message) {
         return "{\"code\":\"1\",\"time\":\"1769527173990\",\"message\":\"" + message + "\"}";
     }

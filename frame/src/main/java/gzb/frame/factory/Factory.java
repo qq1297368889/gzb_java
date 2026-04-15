@@ -30,6 +30,7 @@ import java.util.Map;
 
 public interface Factory {
     void start(Request request, Response response);
+    void start(Request request, Response response,HTTPTools.Entity entity);
     void loadJavaDir(String classDir, String pwd, String iv) throws Exception;
 
      Map<String, Object> getMapObject();

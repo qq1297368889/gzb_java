@@ -7,7 +7,7 @@
     <groupId>gzb</groupId>
     <artifactId>gzb.one</artifactId>
     <name>gzb.one</name>
-    <version>1.0.15</version>
+    <version>1.0.17</version>
     <description>项目基础框架</description>
 
     <properties>
@@ -106,6 +106,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>

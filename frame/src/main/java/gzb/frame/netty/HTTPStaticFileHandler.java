@@ -21,6 +21,7 @@ package gzb.frame.netty;
 import gzb.frame.factory.ClassTools;
 import gzb.frame.netty.tools.HTTPTools;
 import gzb.tools.Config;
+import gzb.tools.log.Log;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
@@ -63,7 +64,6 @@ public class HTTPStaticFileHandler {
             raf = new RandomAccessFile(file, "r");
             long fileLength = raf.length();
 
-            // --- gzb one 极致优化：手动拼接文本 Header ---
             StringBuilder sb = new StringBuilder(256);
             sb.append("HTTP/1.1 200 OK\r\n");
             sb.append("Content-Length: ").append(fileLength).append("\r\n");
@@ -77,23 +77,18 @@ public class HTTPStaticFileHandler {
             }
             sb.append("\r\n"); // Header 结束符
 
-            // 1. 发送 Header 字节流
             byte[] headerBytes = sb.toString().getBytes(Config.encoding);
             ctx.write(Unpooled.wrappedBuffer(headerBytes));
-
-            // 2. 发送文件体 (零拷贝)
-            // 注意：虽然 DefaultFileRegion 是个对象，但它在 Netty 底层会被转化为 sendfile 系统调用，不经过用户态内存拷贝
             ChannelFuture sendFileFuture = ctx.write(new DefaultFileRegion(raf.getChannel(), 0, fileLength));
 
-            // 3. 刷出并处理连接关闭
             ChannelFuture lastContentFuture = ctx.writeAndFlush(Unpooled.EMPTY_BUFFER);
             if (!keepAlive) {
                 lastContentFuture.addListener(ChannelFutureListener.CLOSE);
             }
 
         } catch (Exception e) {
+            Log.log.e(e);
             if (raf != null) { try { raf.close(); } catch (Exception ignored) {} }
-            e.printStackTrace();
             if (ctx.channel().isActive()) {
                 sendError(ctx, HttpResponseStatus.INTERNAL_SERVER_ERROR);
             }

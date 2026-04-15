@@ -21,19 +21,19 @@ package gzb.frame.netty.handler;
 import gzb.frame.netty.Server;
 import gzb.frame.netty.entity.Request;
 import gzb.frame.netty.entity.RequestDefaultImpl;
-import gzb.frame.netty.entity.RequestHTTPImpl;
-import gzb.frame.netty.tools.HTTPTools;
-import gzb.tools.Config;
 import gzb.tools.NettyTools;
-import gzb.tools.log.Log;
-import gzb.tools.thread.GzbThreadLocal;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
+import gzb.frame.netty.entity.RequestHTTPImpl;
+import gzb.frame.netty.tools.HTTPTools;
+import gzb.tools.Config;
+import gzb.tools.log.Log;
+import gzb.tools.thread.GzbThreadLocal;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.CompositeByteBuf;
 import io.netty.util.AsciiString;
 import io.netty.util.AttributeKey;
 
@@ -46,17 +46,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @ChannelHandler.Sharable
 public class HTTPHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        if (cause.getMessage().contains("Connection reset")) {
-            return;
-        }
 
-        Log.log.e("netty error", ctx, cause);
-        ctx.close();
-    }
 /*
-    /// 试验性 主题逻辑通了 不过想实用 需要大量优化 目前总耗时大概3微秒
+    /// 试验性 主 逻辑通了 不过想实用 需要大量优化 目前总耗时大概3微秒
     public static final AttributeKey<ByteBuf> SESSION_BUF = AttributeKey.valueOf("session_buf");
    @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -115,7 +107,7 @@ public class HTTPHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
         //headers.set(HttpHeaderNames.SERVER, NettyTools.SERVER_NAME);
         //headers.set(HttpHeaderNames.DATE, NettyTools.THIS_TIME);
     }
-    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
+   protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) {
         if (req.uri().equals("/text")) {
             ctx.write(response.retainedDuplicate());
         } else {
@@ -124,4 +116,5 @@ public class HTTPHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
         }
         ctx.flush();
     }
+
 }

@@ -63,9 +63,12 @@ public class NettyTools {
     /// header0+code+header1+date+header2+size+header3
     public static byte[] header0 = ("HTTP/1.1 ").getBytes(Config.encoding);
     public static byte[] STATE_200 = "200".getBytes(Config.encoding);
-    public static byte[] header1 = (" OK\r\nServer: " + Config.frameName + "\r\nDate: ").getBytes(Config.encoding);
-    public static byte[] header2 = ("\r\nContent-Length: ").getBytes(Config.encoding);
+    //public static byte[] header1 = (" OK\r\nServer: " + Config.frameName + "\r\nDate: ").getBytes(Config.encoding);
+    //public static byte[] header2 = ("\r\nContent-Length: ").getBytes(Config.encoding);
+    public static byte[] header1 = (" OK\r\nContent-Length: ").getBytes(Config.encoding);
     public static byte[] header3 = ("\r\n").getBytes(Config.encoding);
+
+
     public static byte[] keepAlive_true = "Connection: keep-alive\r\n".getBytes(Config.encoding);
     public static byte[] keepAlive_false = "Connection: close\r\n".getBytes(Config.encoding);
     public static byte[] send_start="transfer-encoding: chunked\r\n".getBytes();
@@ -85,12 +88,10 @@ public class NettyTools {
                 byteBuff.write((code + "").getBytes(Config.encoding));
             }
             byteBuff.write(header1);
-            byteBuff.write(THIS_TIME_BYTE);
-            byteBuff.write(header2);
             byteBuff.write((bytes.length + "").getBytes(Config.encoding));
             byteBuff.write(header3);
             if (keepAlive) {
-                byteBuff.write(keepAlive_true);
+                //byteBuff.write(keepAlive_true);
             } else {
                 byteBuff.write(keepAlive_false);
             }
@@ -100,6 +101,7 @@ public class NettyTools {
 
             byteBuff.write(header3);
             byteBuff.write(bytes);
+            //Log.log.i(new String(byteBuff.get()));
             ChannelFuture future = ctx.channel().write(Unpooled.wrappedBuffer(byteBuff.get()));
             if (!keepAlive) {
                 future.addListener(ChannelFutureListener.CLOSE);

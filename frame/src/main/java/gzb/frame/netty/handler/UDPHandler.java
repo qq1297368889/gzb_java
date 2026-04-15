@@ -40,12 +40,4 @@ public class UDPHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        if (cause.getMessage().contains("Connection reset")) {
-            return;
-        }
-        Log.log.e("netty err0r", ctx, cause);
-        ctx.close();
-    }
 }

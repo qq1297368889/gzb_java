@@ -18,9 +18,7 @@
 
 package gzb.frame.netty;
 
-import gzb.frame.netty.handler.ExceptionHandler;
-import gzb.frame.netty.handler.HTTPDomainFilterHandler;
-import gzb.frame.netty.handler.HTTPHandler;
+import gzb.frame.netty.handler.*;
 import gzb.tools.Config;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
@@ -29,34 +27,25 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
-
+import io.netty.handler.flush.FlushConsolidationHandler;
+/// 性能优化麻烦 暂时搁置
 @ChannelHandler.Sharable
 public class HTTPServerInitializerV2 extends ChannelInitializer<SocketChannel> {
 
     public static HTTPDomainFilterHandler domainFilterHandler = new HTTPDomainFilterHandler(HTTPServer.allowedDomains);
- 
-    public static HTTPHandler httpHandler = new HTTPHandler();
+
+    public static HTTPHandlerV2 httpHandler = new HTTPHandlerV2();
     public static ExceptionHandler exceptionHandler=new ExceptionHandler();
+
     @Override
     protected void initChannel(SocketChannel ch) {
         ChannelPipeline p = ch.pipeline();
-        p.addLast(exceptionHandler);
-        // 异常处理器
-        if (!HTTPServer.allowedDomains.contains("0.0.0.0")) {
-            p.addLast(domainFilterHandler);
-        }
 
-        // 编解码器：将字节流转换为 HTTP 消息对象
-        p.addLast(new HttpServerCodec());
+        p.addLast(new FlushConsolidationHandler(Config.PIPELINE, true));
 
-        // 消息聚合器：将分段的 HTTP 消息聚合为一个完整的请求/响应
-        p.addLast(new HttpObjectAggregator(Config.maxPostSize < 1 ? Integer.MAX_VALUE : Config.maxPostSize));
-
-        // 请求处理器
+        p.addLast(new GzbHttpDecoder());
         p.addLast(httpHandler);
-        if (Config.compression) {
-            p.addLast(new  HttpContentCompressor(6, 15, 8, Config.compressionMinSize));
-        }
 
+        p.addLast(exceptionHandler);
     }
 }

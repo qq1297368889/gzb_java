@@ -411,17 +411,6 @@ public class FactoryImplV2 implements Factory {
     public static final byte[] _err_404 = ("{\"" + Config.stateName + "\":\"" + Config.failVal + "\",\"" + Config.messageName + "\":\"server the resource does not exist / 服务器 资源不存在\"}").getBytes(Config.encoding);
     public static final byte[] _intercept_400 = ("{\"" + Config.stateName + "\":\"" + Config.failVal + "\",\"" + Config.messageName + "\":\"server the resource does not exist / 服务器 资源不存在\"}").getBytes(Config.encoding);
 
-    public long send(ChannelHandlerContext ctx, byte[] msg) {
-        FullHttpResponse response = new DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1,
-                HttpResponseStatus.OK,
-                Unpooled.copiedBuffer(msg));
-        response.headers().set("content-length", msg.length);
-        ctx.writeAndFlush(response);
-        return System.nanoTime();
-    }
-
-
     //public static final ThreadPool THREAD_POOL = new ThreadPool(Config.bizThreadNum, Config.bizAwaitNum);
     public static final ThreadPoolV3 THREAD_POOL = new ThreadPoolV3(
             Config.cpu * 1000,
@@ -430,6 +419,57 @@ public class FactoryImplV2 implements Factory {
             95.0,
             Config.bizThreadNum < 1);
 
+    public void start(Request request, Response response,HTTPTools.Entity entity) {
+        String metName = request.getMethod();
+        String key = request.getUri();
+        HttpMapping[] httpMappings = mapHttpMapping0.get(key);
+        if (httpMappings == null) {
+            key=request.webPathFormat();
+            httpMappings = mapHttpMapping0.get(key);
+            if (httpMappings == null) {
+                if (request.getImplType() == 0) {
+                    HTTPServer.HTTPStaticFileHandler.channelRead0(request.getCtx(),entity);
+                } else {
+                    response.sendAndFlush(gzbJson.fail("没找到对应处理器"));
+                    request.close();
+                }
+                return;
+            }
+        }
+        int index = -1;
+        for (int i = 0; i < httpMappings.length; i++) {
+            if (metName.equals(met[i])) {
+                if (httpMappings[i] == null) {
+                    response.sendAndFlush(gzbJson.fail("对应处理器不存在"));
+                    request.close();
+                    return;
+                }
+                index = i;
+                break;
+            }
+        }
+        if (index == -1) {
+            if (request.getImplType() == 0) { 
+                HTTPServer.HTTPStaticFileHandler.channelRead0(request.getCtx(),entity);
+            } else {
+                response.sendAndFlush(gzbJson.fail("没找到对应处理器-2"));
+                request.close();
+            }
+            return;
+        }
+        HttpMapping httpMapping = httpMappings[index];
+        //同步会在事件循环线程执行
+        if (httpMapping.eventLoop) {
+            if (!THREAD_POOL.execute(() -> {
+                exec(httpMapping, request, response);
+                response.getCtx().flush();
+            })) {
+                response.sendAndFlush(gzbJson.fail("服务器繁忙"));
+            }
+        } else {
+            exec(httpMapping, request, response);
+        }
+    }
     public void start(Request request, Response response) {
         String metName = request.getMethod();
         String key = request.getUri();
@@ -558,12 +598,13 @@ public class FactoryImplV2 implements Factory {
                 response.sendAndFlush(runRes.getData());
             }
         } catch (Exception e) {
-            log.e("框架层错误日志",
+            long id=OnlyId.getDistributed();
+            log.e(id,"框架捕获到错误",
                     request.getUri(),
                     request.getMethod(),
                     request.getParameter(),
                     e);
-            response.sendAndFlush(_err_json);
+            response.sendAndFlush(gzbJson.error("server error / 服务器 异常;request id = "+id));
         } finally {
             //限流如果开启 解除占用
             if (httpMapping.semaphore != null) {

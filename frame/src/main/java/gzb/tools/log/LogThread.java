@@ -30,17 +30,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class LogThread {
     public static final LogThread logThread = new LogThread();
-
-
-    public static String[] lvNames = new String[]{"trace", "debug", "info ", "warn ", "error"};
     private static final List<ConcurrentLinkedQueue<byte[]>> logQueues = new ArrayList<>();
     public static File[] logFile = new File[]{null, null, null, null, null};
-    public static Integer[] lvConfig = new Integer[]{0, 0, 0, 0, 0};
-    public static String[] lvColour = new String[]{"\u001B[90m", "\u001B[32m", "\u001B[94m", "\u001B[33m", "\u001B[31m", "\u001B[0m"};
     public static byte[] BYTES_RN = "\r\n".getBytes();
     public static int buff_size = 1024 * 1024;
-    public static String lastDeleteDateStr = "";
-    public static int days = 30;
     public static void installHOOK() {
         //System.setOut(new HOOK(1));
         //System.setErr(new HOOK(4));
@@ -48,7 +41,7 @@ public class LogThread {
     static {
         installHOOK();
         //加载配置
-        loadConfig();
+        LogConfig.loadConfig(logFile);
         //初始化 日志队列
         for (int i = 0; i < logFile.length; i++) {
             logQueues.add(new ConcurrentLinkedQueue<>());
@@ -59,13 +52,12 @@ public class LogThread {
         ServiceThread.start("LogThread.read-config", () -> {
             while (true) {
                 try {
-                    LogThread.loadConfig();
+                    LogConfig.loadConfig(logFile);
                 } catch (Exception e) {
                     Log.log.e("LogThread.loadConfig", e);
                 }
-
                 try {
-                    Thread.sleep(3001);
+                    Thread.sleep(3005);
                 } catch (InterruptedException e) {
                     e.printStackTrace();//响应中断
                     break;
@@ -74,47 +66,13 @@ public class LogThread {
         });
     }
 
-    public static void deleteOldLogFiles() throws Exception {
-        DateTime dateTime = new DateTime();
-        String dateStr = dateTime.formatDateTime("yyyy/MM/dd");
-        //确保每天运行一次
-        if (!lastDeleteDateStr.equals(dateStr)) {
-            lastDeleteDateStr = dateStr;
-            long time0 = 1000L * 60 * 60 * 24 * days;
-            dateTime.operation(-time0);
-            for (File logDir : logFile) {
-                //只删除 前一天的 如果前边有 说明程序运行中断 不管删除
-                String path = logDir.getPath().trim() + File.separator + getDay(dateTime) + ".log";
-                File file = new File(path).getParentFile();
-                if (file.exists()) {
-                    List<File> list = FileTools.subFileAll(file, 3);
-                    for (File file1 : list) {
-                        file1.delete();
-                    }
-                    list = FileTools.subFileAll(file, 2);
-                    for (File file1 : list) {
-                        file1.delete();
-                    }
-                    file.delete();
-                }
-            }
-        }
-    }
-
-    public static String getDay(DateTime dateTime) {
-        if (dateTime == null) {
-            dateTime = new DateTime();
-        }
-        return dateTime.formatDateTime("yyyy" + File.separator + "MM" + File.separator + "dd" + File.separator + "HH");
-    }
-
     public static void startSave() {
         ServiceThread.start("LogThread.save.file-服务线程", new Runnable() {
             @Override
             public void run() {
                 int sleep_sec = 5000;
                 while (true) {
-                    String time0 = getDay(null);
+                    String time0 = LogConfig.getDay(null);
                     for (int i = 0; i < logFile.length; i++) {
                         byte[] buffer = new byte[(int) (buff_size)];
                         int size = 0;
@@ -185,26 +143,6 @@ public class LogThread {
 
     }
 
-    public static void loadConfig() {
-        for (int i = 0; i < lvNames.length; i++) {
-            lvConfig[i] = Config.getInteger("gzb.log." + lvNames[i].trim(), 0);
-            if (logFile[i] == null) {
-                logFile[i] = new File(Config.get("gzb.log.path") + lvNames[i].trim());
-            }
-            if (!logFile[i].exists()) {
-                if (!FileTools.mkdir(logFile[i])) {
-                    HOOK.err0.println("loadConfig 创建日志目录失败:" + logFile[i].getPath());
-                }
-            }
-        }
-        days = Config.getInteger("gzb.log.save.days", 30);
-        try {
-            deleteOldLogFiles();
-        } catch (Exception e) {
-            e.printStackTrace();//日志类不调日志类 只能输出了 日志类原则上不允许报错
-        }
-    }
-
 
     public LogThread() {
 
@@ -212,7 +150,7 @@ public class LogThread {
 
     public void addLog(int index, Class<?> aClass, Object[] log) {
          final GzbThreadLocal.Entity ENTITY = GzbThreadLocal.context.get();
-        int configValue = lvConfig[index];
+        int configValue = LogConfig.lvConfig[index];
         String msg = null;
         //   lvConfig.get(index)0 显示但不保存 1 保存但不显示 2 不显示也不保存 3 显示且保存
         if (configValue == 0 || configValue == 1 || configValue == 3) {
@@ -222,7 +160,7 @@ public class LogThread {
             int index0=ENTITY.stringBuilderCacheEntity.open();
             StringBuilder sb=ENTITY.stringBuilderCacheEntity.get(index0);
             try {
-                HOOK.out0.println(sb.append(lvColour[index]).append(msg).append(lvColour[lvColour.length - 1]).toString());
+                HOOK.out0.println(sb.append(LogConfig.lvColour[index]).append(msg).append(LogConfig.lvColour[LogConfig.lvColour.length - 1]).toString());
             }finally {
                 ENTITY.stringBuilderCacheEntity.close(index0);
             }
@@ -243,7 +181,7 @@ public class LogThread {
         try {
             sb.append(new DateTime().formatDateTime("yyyy-MM-dd HH:mm:ss.SSS"))
                     .append(" ")
-                    .append(lvNames[index])
+                    .append(LogConfig.lvNames[index])
                     //.append(" ")
                     //.append(threadName)
                     .append(" ")
@@ -304,7 +242,7 @@ public class LogThread {
     }
 
     public String deduplication(String msg, int index) {
-        if (lvConfig[index] == 0 || lvConfig[index] == 3) {
+        if (LogConfig.lvConfig[index] == 0 || LogConfig.lvConfig[index] == 3) {
             //控制台输出开启的话 说明是调试目的 就直接输出  避免清空控制台后 不知道发生了什么错误
             return msg;
         } else {

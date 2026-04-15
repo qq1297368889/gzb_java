@@ -17,7 +17,8 @@ Say goodbye to restarts! The framework allows seamless hot updates under full lo
 ## 关于性能 / Performance Report
 #### [性能报告-单线程服务端 QPS 70万+](pressure_testing/2026-03-31-A.md)  
 #### [Performance Report - Single-threaded Server QPS 700,000+](pressure_testing/2026-03-31-A.md)
-#### [性能报告-gzb.one vs spring vs quarkus](pressure_testing/2026-04-06/ddos.all.v2.md)
+#### 性能报告-gzb.one vs spring vs quarkus  [中文](pressure_testing/2026-04-08/v1.md) - [English](pressure_testing/2026-04-08/v1.en.md)
+
 ### gzb-one 的诞生史 (The Birth of gzb-one)
 
 > * **gzb-one 是我从 2017 年开始，从初学者一步一步走过来的 (Started in 2017 as a beginner, progressing step by step).**

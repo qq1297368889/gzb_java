@@ -34,7 +34,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-public class RequestHTTPImpl {
+public class RequestHTTPImpl implements Request{
     private ChannelHandlerContext ctx;
     private String method;
     private Map<String, String> headers;
@@ -45,6 +45,11 @@ public class RequestHTTPImpl {
 
     public String getUri() {
         return entity.getURL();
+    }
+
+    @Override
+    public String webPathFormat() {
+        return "";
     }
 
     public String getMethod() {

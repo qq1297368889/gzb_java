@@ -188,10 +188,7 @@ public class TestApi {
         return gzbJson.success("OK");
     }
 
-    @GetMapping("get2")
-    public Object get2(TestEntity[] testEntitys, Log log, GzbJson gzbJson) throws Exception {
 
-    }
     //数组对象
     @GetMapping("get2")
     public Object get2(TestEntity[] testEntitys, Log log, GzbJson gzbJson) throws Exception {

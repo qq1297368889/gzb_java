@@ -7,7 +7,6 @@ import gzb.tools.log.Log;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.ByteProcessor;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -220,6 +219,7 @@ public class HTTPTools {
      * 如果数据不足一个整包，返回 null，且 byteBuf 指针保持不动。
      */
     public static Entity analysis(ByteBuf byteBuf) {
+        //Unsafe.getUnsafe().getLong()
         int beginReaderIndex = byteBuf.readerIndex();
         int readableBytes = byteBuf.readableBytes();
         if (readableBytes < 10) return null;
