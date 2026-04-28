@@ -69,20 +69,20 @@ public class PublicEntrance {
     }
 
     /// 注册数据库事件
-    public static void registerDataBaseEvent(Class<?> clazz, String javaCode) throws Exception {
+    public static void registerDataBaseEvent(Class<?> clazz, String javaCode) throws Throwable {
         EventFactory eventFactory = (EventFactory) factory.mapObject0.get(EventFactory.class.getName());
         eventFactory.register(clazz, javaCode);
     }
 
     /// 注册类到容器 会自动识别类型
-    public static void registerClass(String className, String javaCode, String aes_cbc_128_pwd, String aes_cbc_128_iv) throws Exception {
+    public static void registerClass(String className, String javaCode, String aes_cbc_128_pwd, String aes_cbc_128_iv) throws Throwable {
         Map<String, String> sourcesMap = new HashMap<>();
         sourcesMap.put(className, javaCode);
         PublicEntrance.factory.load(sourcesMap, aes_cbc_128_pwd, aes_cbc_128_iv);
     }
 
     /// 注册类到容器 会自动识别类型  自动获取类名
-    public static void registerClass(String javaCode, String aes_cbc_128_pwd, String aes_cbc_128_iv) throws Exception {
+    public static void registerClass(String javaCode, String aes_cbc_128_pwd, String aes_cbc_128_iv) throws Throwable {
         String className = ClassTools.extractPublicClassName(javaCode);
         registerClass(className, javaCode, aes_cbc_128_pwd, aes_cbc_128_iv);
     }

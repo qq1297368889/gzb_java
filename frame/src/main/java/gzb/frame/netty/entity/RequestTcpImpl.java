@@ -1,15 +1,22 @@
 package gzb.frame.netty.entity;
 
+import gzb.entity.FileUploadEntity;
 import gzb.frame.factory.ClassTools;
 import gzb.frame.netty.tools.HTTPRequestParameters;
 import gzb.frame.netty.tools.OptimizedParameterParser;
 import gzb.tools.Tools;
 import gzb.tools.cache.session.Session;
+import gzb.tools.log.Log;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.util.CharsetUtil;
 
+import java.io.File;
+import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.*;
 
 public class RequestTcpImpl implements Request {
@@ -17,7 +24,7 @@ public class RequestTcpImpl implements Request {
     private PacketPromise packetPromise;
     private Response response;
 
-    private Map<String,List<Object>> parameters;
+    private Map<String, List<Object>> parameters;
 
     public RequestTcpImpl(ChannelHandlerContext ctx, PacketPromise packetPromise) {
         this.ctx = ctx;
@@ -144,6 +151,14 @@ public class RequestTcpImpl implements Request {
     }
 
 
+    public void requestClose(){
+        if (gzbFiles!=null) {
+            for (GzbFile gzbFile : gzbFiles) {
+                gzbFile.deleteAllFile();
+            }
+        }
+
+    }
     /**
      * 获取 参数 MAP
      */
@@ -158,9 +173,52 @@ public class RequestTcpImpl implements Request {
             OptimizedParameterParser.parseUrlEncoded(data, parameters, true);
         } else if (packetPromise.type == 1) {
             String data = getBodyString();
-            Tools.jsonToMap(data,parameters);
+            Tools.jsonToMap(data, parameters);
+        } else if (packetPromise.type == 2) {
+            readFiles(getBody(), parameters);
         }
         // body类型不做处理
+    }
+
+    /// 参数名/文件名/文件类型/md5/文件流长度/文件byte内容 ..... 循环读取
+
+    static byte bytes1 = "/".getBytes()[0];
+
+    public List<GzbFile> gzbFiles = null;
+    public  void readFiles(byte[] bytes, Map<String, List<Object>> parameters) {
+        int[] start_and_end = new int[2];
+        while (start_and_end[0] < bytes.length) {
+            String name = Tools.byteReadString(bytes, bytes1, start_and_end);
+            if (name == null) break;
+            String fileName = Tools.byteReadString(bytes, bytes1, start_and_end);
+            if (fileName == null) break;
+            String type = Tools.byteReadString(bytes, bytes1, start_and_end);
+            if (type == null) break;
+            String md5 = Tools.byteReadString(bytes, bytes1, start_and_end);
+            if (md5 == null) break;
+            int size = Tools.byteReadInt(bytes, bytes1, start_and_end);
+            if (size < 1 || start_and_end[0] + size < bytes.length) break;
+            byte[] data = new byte[size];
+            if (!Tools.toMd5(data).equals(md5)) {
+                Log.log.e("file md5 error", name, type, size, md5);
+                continue;
+            }
+            System.arraycopy(bytes, start_and_end[0], data, 0, size);
+            start_and_end[0] += size;
+            start_and_end[1] = start_and_end[0];
+            GzbFile file = new GzbFileImpl(name, fileName, type, data);
+            List<Object> files = parameters.get(name);
+            if (files == null) {
+                files = new ArrayList<>();
+                parameters.put(name, files);
+            }
+            files.add(file);
+            if (gzbFiles==null) {
+                gzbFiles=new ArrayList<>();
+            }
+            gzbFiles.add(file);
+            Log.log.i("已映射文件:", name, type, "Size:", size, "file", file);
+        }
     }
 
     /**
@@ -274,7 +332,8 @@ public class RequestTcpImpl implements Request {
     public void close() {
         ctx.close();
     }
-    public int getImplType(){
+
+    public int getImplType() {
         return 1;
     }
 }

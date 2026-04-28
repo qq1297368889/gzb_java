@@ -157,7 +157,6 @@ public class DataBaseImpl implements DataBase {
         columnInfoMap.put((tableName + "." + name).toLowerCase(), column);
         columnInfoMap.put((Tools.lowStr_hump(tableName, false) + "." + Tools.lowStr_hump(name, false)).toLowerCase(), column);
 
-
     }
 
     private void readTableInfo() throws Exception {
@@ -194,6 +193,7 @@ public class DataBaseImpl implements DataBase {
         config.setPassword(dataBaseConfig.pwd);            // 数据库密码
         config.setDriverClassName(dataBaseConfig.clz);     // 数据库驱动类名
 
+        //setCachePreparedStatements
         config.setMinimumIdle(dataBaseConfig.threadMax > 10 ? dataBaseConfig.threadMax / 3 : dataBaseConfig.threadMax);
         // 最大连接数：控制池的最大连接数量，避免资源耗尽
         config.setMaximumPoolSize(dataBaseConfig.threadMax);
@@ -212,7 +212,6 @@ public class DataBaseImpl implements DataBase {
         // 连接验证SQL：用于验证连接是否有效的简单查询
         config.setConnectionTestQuery("SELECT 1");
 
-        // MySQL 性能优化参数（预编译语句缓存）
         // 开启预编译语句缓存，避免重复解析SQL
         config.addDataSourceProperty("cachePrepStmts", "true");
         // 预编译语句缓存大小（最多缓存250条不同SQL）
@@ -222,34 +221,36 @@ public class DataBaseImpl implements DataBase {
         // 使用服务器端预编译（而非客户端），优化查询执行计划
         config.addDataSourceProperty("useServerPrepStmts", "true");
 
-        // 连接状态与批处理优化
         // 使用本地会话状态，减少与服务器的状态查询开销
         config.addDataSourceProperty("useLocalSessionState", "true");
         // 优化批量SQL语句（合并多个INSERT/UPDATE为一个）
         config.addDataSourceProperty("rewriteBatchedStatements", "true");
 
-        // 元数据与配置缓存
         // 缓存结果集元数据（避免重复获取表结构信息）
         config.addDataSourceProperty("cacheResultSetMetadata", "true");
         // 缓存服务器配置信息，减少与服务器的配置交互
         config.addDataSourceProperty("cacheServerConfiguration", "true");
 
-        // 性能优化与统计
         // 减少不必要的setAutoCommit()调用，降低开销
         config.addDataSourceProperty("elideSetAutoCommits", "true");
         // 关闭SQL执行时间统计（生产环境通常不需要详细统计）
         config.addDataSourceProperty("maintainTimeStats", "false");
 
         // 目录与空值处理
-        // 当SQL中catalog为null时，使用当前数据库
         config.addDataSourceProperty("nullCatalogMeansCurrent", "true");
 
         // 连接容错与重试机制
-        // 当所有服务器都不可用时，重试连接的次数
         config.addDataSourceProperty("retriesAllDown", "3");
         // 两次重试之间的间隔时间（秒）
         config.addDataSourceProperty("secondsBeforeRetryAllDown", "5");
-
+// --- PostgreSQL --
+        config.addDataSourceProperty("prepareThreshold", "5");
+        config.addDataSourceProperty("preparedStatementCacheQueries", "256");
+        config.addDataSourceProperty("preparedStatementCacheSizeMiB", "64");
+        config.addDataSourceProperty("prepareThreshold", "5");
+        config.addDataSourceProperty("binaryTransfer", "true");
+        config.addDataSourceProperty("reWriteBatchedInserts", "true");
+        config.addDataSourceProperty("tcpKeepAlive", "true");
         return new HikariDataSource(config);
     }
 
@@ -607,10 +608,12 @@ public class DataBaseImpl implements DataBase {
                     String columnName = col.getColumnName(i);
                     String columnDesc = col.getColumnLabel(i);
                     int columnSize = col.getColumnDisplaySize(i);
-
                     tableInfo.columnTypesDb.add(columnClassName);
                     if ("[B".equals(columnClassName)) {
                         columnClassName = "java.lang.Byte[]";
+                    }
+                    if ("java.sql.Timestamp".equals(columnClassName)) {
+                        columnClassName = "java.time.LocalDateTime";
                     }
                     tableInfo.columnDesc.add(map.get(columnName));
                     tableInfo.columnNames.add(columnName);

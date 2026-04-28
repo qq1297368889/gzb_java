@@ -54,6 +54,7 @@ public class TCPServer{
         start(port, Config.mainThreadNum, Config.ioThreadNum);
     }
 
+    TCPServerInitializer httpServerInitializer=new TCPServerInitializer();
     public void start(int port, int main_thread_num, int io_thread_num) throws Exception {
         if (main_thread_num < 1 || io_thread_num < 1) {
             log.e("线程数错误,请重新设置", "main", main_thread_num, "io", io_thread_num);
@@ -64,7 +65,6 @@ public class TCPServer{
             return;
         }
         ServerBootstrap bootstrap = null;
-        int backlog = Config.bizAwaitNum; // 监听队列大小（建议10240+）  
         try {
             if (Tools.isLinux()) {
                 bossGroup = new EpollEventLoopGroup(main_thread_num);
@@ -79,14 +79,14 @@ public class TCPServer{
                 bootstrap.group(bossGroup, workerGroup)
                         .channel(NioServerSocketChannel.class);
             }
-            bootstrap.option(ChannelOption.SO_REUSEADDR, true)        // 允许地址重用
-                    .option(ChannelOption.SO_BACKLOG, backlog)  // 监听队列大小
-                    // === 客户端Socket参数（Worker线程） ===
-                    .childHandler(new TCPHandler())
-                    .childOption(ChannelOption.TCP_NODELAY, true)     // Nagle算法
-                    .childOption(ChannelOption.SO_KEEPALIVE, true)    // TCP保活，清理空闲连接
-                    .childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000) // 已配置
+            bootstrap.option(ChannelOption.SO_REUSEADDR, true)
+                    .option(ChannelOption.SO_BACKLOG, 65535)
+                    .childHandler(httpServerInitializer)
+                    .childOption(ChannelOption.TCP_NODELAY, true)
+                    .childOption(ChannelOption.SO_KEEPALIVE, true)
+                    .childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
             ;
+
             log.i(
                     "start tcp server", port,
                     "netty main 线程数量", main_thread_num,

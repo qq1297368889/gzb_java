@@ -26,8 +26,8 @@ public class Template {
         zh_language[11] = "条";
         zh_language[12] = "耗时";
         zh_language[13] = "毫秒";
-        zh_language[14] = "异步执行成功,但回调失败，原因是回调函数抛出错误";
-        zh_language[15] = "异步执行成功,但回调失败，原因是回调队列满了";
+        zh_language[14] = "异步执行成功,但回调失败";
+        zh_language[15] = "异步执行成功,但回调失败";
         zh_language[16] = "关闭连接 无事物";
         zh_language[17] = "关闭连接 真实事务";
         zh_language[18] = "关闭连接 模拟事务";

@@ -29,8 +29,8 @@ public class DBCode extends Base {
     public void start(String dbKey, String dbName, boolean save) {
         String code = "package " + this.pkg + "." + Tools.lowStr_hump(dbName) + ";\n" +
                 "\n" +
-                "import gzb.frame.db.BaseDaoImpl;\n" +
-                "public class " + Tools.lowStr_d(Tools.lowStr_hump(dbName)) + "<T> extends BaseDaoImpl<T> {\n" +
+                "import gzb.frame.db.v2.BaseDaoAsync;\n" +  /// BaseDaoImpl  BaseDaoAsync
+                "public class " + Tools.lowStr_d(Tools.lowStr_hump(dbName)) + "<T> extends BaseDaoAsync<T> {\n" +  /// BaseDaoImpl BaseDaoAsync
                 "    //数据库信息 在这里指定\n" +
                 "    public " + Tools.lowStr_d(Tools.lowStr_hump(dbName)) + "() {\n" +
                 "        try {\n" +

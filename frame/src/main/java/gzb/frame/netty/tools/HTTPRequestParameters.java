@@ -19,7 +19,10 @@
 package gzb.frame.netty.tools;
 
 import gzb.entity.FileUploadEntity;
+import gzb.exception.GzbException0;
 import gzb.frame.factory.ClassTools;
+import gzb.frame.netty.entity.GzbFile;
+import gzb.frame.netty.entity.GzbFileImpl;
 import gzb.tools.Config;
 import gzb.tools.Tools;
 import gzb.tools.log.Log;
@@ -35,52 +38,7 @@ import java.io.File;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-class TempFile {
-    public File file;
-    public Long time;
-
-    public TempFile(File file, Long time) {
-        this.file = file;
-        this.time = time;
-    }
-}
-
 public class HTTPRequestParameters {
-    private static final ConcurrentLinkedQueue<TempFile> tempFile = new ConcurrentLinkedQueue<>();
-    private static final Logger log = LoggerFactory.getLogger(HTTPRequestParameters.class);
-
-    static {
-        Thread thread = new Thread(() -> {
-            int sleep0 = 1000 * 10;
-            int mm = 120 * 1000;
-            long max = 0;
-            while (true) {
-                try {
-                    TempFile tempFile1 = tempFile.peek();
-                    if (tempFile1 != null) {
-                        max = System.currentTimeMillis() - tempFile1.time;
-                        if (max >= mm) {
-                            tempFile.poll();
-                            //System.out.println("delete" + tempFile1.file.getPath());
-                            if (tempFile1.file.exists()) {
-                                tempFile1.file.delete();
-                            }
-                        } else {
-                            Tools.sleep(mm - max);
-                            continue;
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();//这玩意不允许出错
-                }
-                Tools.sleep(sleep0);
-            }
-        });
-        thread.setName("HTTPRequestParameters.TempFile-Cleaner");
-        thread.setDaemon(true);
-        thread.start();
-    }
-
     private final FullHttpRequest request;
     private byte[] body;
     private Map<String, List<Object>> parameters;
@@ -116,13 +74,7 @@ public class HTTPRequestParameters {
 
     public Map<String, List<Object>> getParameters() {
         if (parameters == null) {
-            GzbThreadLocal.Entity entity = GzbThreadLocal.context.get();
-            if (parameters == null) {
-                parameters = new HashMap<>();
-                entity.requestMap = parameters;
-            } else {
-                parameters.clear();
-            }
+            parameters = new HashMap<>();
             String url = request.uri();
             this.path = OptimizedParameterParser.parseUrlEncoded(url, parameters, false);
             String contentType = request.headers().get("Content-Type");
@@ -158,28 +110,40 @@ public class HTTPRequestParameters {
         }
     }
 
+    public HttpPostRequestDecoder bodyDecoder;
+    public List<GzbFile> gzbFiles = null;
+
     private void parseFormData(Map<String, List<Object>> params) {
-        HttpPostRequestDecoder bodyDecoder = null;
         try {
-            bodyDecoder = new HttpPostRequestDecoder(new DefaultHttpDataFactory(true), request);
+            DefaultHttpDataFactory factory = new DefaultHttpDataFactory(true);
+            bodyDecoder = new HttpPostRequestDecoder(factory, request);
             for (InterfaceHttpData data : bodyDecoder.getBodyHttpDatas()) {
                 if (data.getHttpDataType() == InterfaceHttpData.HttpDataType.Attribute) {
                     Attribute attribute = (Attribute) data;
-                    params.computeIfAbsent(attribute.getName(), k -> new ArrayList<>(2)).add(attribute.getValue());
+                    List<Object> list = params.get(attribute.getName());
+                    if (list == null) {
+                        list = new ArrayList<>();
+                        params.put(attribute.getName(), list);
+                    }
+                    list.add(attribute.getValue());
                 } else if (data.getHttpDataType() == InterfaceHttpData.HttpDataType.FileUpload) {
-                    FileUploadEntity fileUploadEntity = new FileUploadEntity((FileUpload) data);
-                    tempFile.add(new TempFile(fileUploadEntity.getFile(), System.currentTimeMillis()));
-                    params.computeIfAbsent(fileUploadEntity.getName(), k -> new ArrayList<>(2)).add(fileUploadEntity);
+                    FileUpload fileUpload= (FileUpload) data;
+                    GzbFile file=new GzbFileImpl(fileUpload.getName(),fileUpload.getFilename(),fileUpload.getContentType(),fileUpload.get());
+                    List<Object> list = params.get(file.getName());
+                    if (list == null) {
+                        list = new ArrayList<>();
+                        params.put(file.getName(), list);
+                    }
+                    list.add(file);
+                    if (gzbFiles==null) {
+                        gzbFiles=new ArrayList<>();
+                    }
+                    gzbFiles.add(file);
                 }
             }
         } catch (Exception e) {
-            Log.log.e("parseFormData 出现错误", e);
             params.clear();
-        } finally {
-            // 确保释放资源
-            if (bodyDecoder != null) {
-                bodyDecoder.destroy();
-            }
+            throw new GzbException0(e);
         }
     }
 }

@@ -93,7 +93,7 @@ public class HTTPHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
             Server.factory.startV2(request, request.getResponse(),entity);
         }
     }*/
-    public static FullHttpResponse response=null;
+/*    public static FullHttpResponse response=null;
     static{
          response = new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
@@ -106,15 +106,24 @@ public class HTTPHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
         headers.set(HttpHeaderNames.CONTENT_LENGTH, NettyTools.CONTENT_LENGTH);
         //headers.set(HttpHeaderNames.SERVER, NettyTools.SERVER_NAME);
         //headers.set(HttpHeaderNames.DATE, NettyTools.THIS_TIME);
-    }
+    }*/
    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) {
         if (req.uri().equals("/text")) {
-            ctx.write(response.retainedDuplicate());
+            FullHttpResponse response= new DefaultFullHttpResponse(
+                    HttpVersion.HTTP_1_1,
+                    HttpResponseStatus.OK,
+                    Unpooled.copiedBuffer(NettyTools.HELLO_WORD),
+                    false
+            );
+            HttpHeaders headers = response.headers();
+            headers.set(HttpHeaderNames.CONTENT_TYPE, NettyTools.CONTENT_TYPE);
+            headers.set(HttpHeaderNames.CONTENT_LENGTH, NettyTools.CONTENT_LENGTH);
+            ctx.writeAndFlush(response);
         } else {
             Request request = new RequestDefaultImpl(ctx, req);
             Server.factory.start(request, request.getResponse());
+            ctx.flush();
         }
-        ctx.flush();
     }
 
 }

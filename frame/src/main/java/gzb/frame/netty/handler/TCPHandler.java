@@ -4,6 +4,8 @@ import gzb.frame.netty.Server;
 import gzb.frame.netty.entity.Request;
 import gzb.frame.netty.entity.RequestDefaultImpl;
 import gzb.frame.netty.entity.RequestTcpImpl;
+import gzb.tools.NettyTools;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandler.Sharable;
 import gzb.frame.netty.entity.PacketPromise;
 import gzb.frame.netty.tools.TCPTools;
@@ -13,7 +15,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
 import java.util.List;
-@Sharable
+@ChannelHandler.Sharable
 public class TCPHandler extends ChannelInboundHandlerAdapter {
     /**
      * 1. 捕获连接打开事件（客户端成功连接到服务端时触发）
@@ -59,5 +61,10 @@ public class TCPHandler extends ChannelInboundHandlerAdapter {
         }
 
     }
-
+/*    ExceptionHandler exceptionHandler=new ExceptionHandler();
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+            throws Exception {
+        exceptionHandler.exceptionCaught(ctx,cause);
+    }*/
 }

@@ -63,7 +63,7 @@ public class ResponseUdpImpl implements Response {
      * @param chunk
      */
     @Override
-    public Response sendAndFlush(Object chunk) {
+    public Response sendData(Object chunk) {
         ctx.writeAndFlush(new DatagramPacket(TCPTools.createDataPacket(NettyTools.toByteBuf(chunk)),sender));
         return this;
     }
@@ -104,7 +104,7 @@ public class ResponseUdpImpl implements Response {
      */
     @Override
     public Response success(Object chunk) {
-        return sendAndFlush(chunk);
+        return sendData(chunk);
     }
 
 

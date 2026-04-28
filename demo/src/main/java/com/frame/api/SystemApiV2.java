@@ -5,7 +5,7 @@ import com.frame.entity.*;
 import gzb.entity.FileUploadEntity;
 import gzb.entity.TableInfo;
 import gzb.frame.annotation.*;
-import gzb.frame.db.DataBase;
+import gzb.frame.db.v2.DataBase;
 import gzb.frame.factory.ContentType;
 import gzb.frame.generate.GenerateJavaCode;
 import gzb.frame.netty.handler.HTTPHandler;
@@ -214,7 +214,7 @@ public class SystemApiV2 {
         for (SysRole sysRole : listSysRole) {
             for (TableInfo tableInfo : listTableInfo) {
                 Long id;
-                List<GzbMap> listGzbMap = dataBase.selectGzbMap(
+                List<GzbMap> listGzbMap = dataBase.queryMap(
                         "select sys_role_table_id from sys_role_table where sys_role_table_role=? and sys_role_table_name=?", new Object[]{sysRole.getSysRoleId(), tableInfo.nameHumpLowerCase});
                 if (listGzbMap.size() == 0) {
                     id = OnlyId.getDistributed();
@@ -223,13 +223,13 @@ public class SystemApiV2 {
                             "sys_role_table_update, sys_role_table_delete_sgin, sys_role_table_role, sys_role_table_width) VALUES " +
                             "(" + id + ", '" + tableInfo.nameHumpLowerCase + "', 1, 1, 1, " +
                             "1, 1, " + sysRole.getSysRoleId() + ", 150)";
-                    dataBase.runSqlAsync(sql, null);
+                    dataBase.execute(sql, null);
                 } else {
                     id = listGzbMap.get(0).getLong("sysRoleTableId");
                 }
                 for (int i = 0; i < tableInfo.columnNames.size(); i++) {
                     String name = tableInfo.columnNamesHumpLowerCase.get(i);
-                    listGzbMap = dataBase.selectGzbMap("select sys_role_column_id from sys_role_column where sys_role_column_table = ? and sys_role_column_name=?", new Object[]{id, name});
+                    listGzbMap = dataBase.queryMap("select sys_role_column_id from sys_role_column where sys_role_column_table = ? and sys_role_column_name=?", new Object[]{id, name});
                     if (listGzbMap.size() == 0) {
                         sql = "INSERT INTO sys_role_column(" +
                                 "sys_role_column_id, sys_role_column_table, sys_role_column_name, sys_role_column_table_show, sys_role_column_query, " +
@@ -238,7 +238,7 @@ public class SystemApiV2 {
                                 "(" + OnlyId.getDistributed() + ", " + id + ", '" + name + "', 1, 0, " +
                                 "1, 1, 1, NULL, 1, " +
                                 "1, NULL, NULL, " + sysRole.getSysRoleId() + ")";
-                        dataBase.runSqlAsync(sql, null);
+                        dataBase.execute(sql, null);
                     }
                 }
 
@@ -276,8 +276,7 @@ public class SystemApiV2 {
             // 配置表寻找
             if (sysMappingColumn.getSysMappingColumnOption() != null && sysMappingColumn.getSysMappingColumnOption().length() > 0) {
                 List<SysOption> list = sysOptionDao.query("select sys_option_value,sys_option_title from sys_option where sys_option_key=?",
-                        new Object[]{sysMappingColumn.getSysMappingColumnOption()}, null, null,
-                        0, 0, 10);
+                        new Object[]{sysMappingColumn.getSysMappingColumnOption()},10);
                 sysMappingColumn.putMap("sysMappingColumnOption", list);
                 sysMappingColumn.setSysMappingColumnOption(null);
                 if (list.size() == 0) {
@@ -294,7 +293,7 @@ public class SystemApiV2 {
                     if (sysOptionSql.getSysOptionSqlValName() == null) {
                         sysOptionSql.setSysOptionSqlValName("sysOptionValue");
                     }
-                    List<GzbMap> list = sysOptionDao.getDataBase().selectGzbMap(sysOptionSql.getSysOptionSqlSql());
+                    List<GzbMap> list = sysOptionDao.getDataBase().queryMap(sysOptionSql.getSysOptionSqlSql());
                     List<Map> list2 = new ArrayList<>(list.size());
                     for (GzbMap gzbMap : list) {
                         String title = gzbMap.getString(sysOptionSql.getSysOptionSqlTitleName());
@@ -491,7 +490,7 @@ public class SystemApiV2 {
         if (sysUsers.getSysUsersType() == 4L) {
             list = sysPermissionDao.query(new SysPermission().setSysPermissionType(1L), "sys_permission_sort,sys_permission_id", "asc", 0, 0, 10);
         } else {
-            list = sysPermissionDao.query(sql_read_per, new Object[]{sysUsers.getSysUsersRole(), 1}, "sys_permission_sort,sys_permission_id", "asc", 0, 0, 10);
+            list = sysPermissionDao.query(sql_read_per+" order by sys_permission_sort,sys_permission_id asc", new Object[]{sysUsers.getSysUsersRole(), 1},    10);
         }
         if (list.size() == 0) {
             return gzbJson.fail("未查询到已获取的权限");
@@ -520,7 +519,7 @@ public class SystemApiV2 {
         list_all = sysPermissionDao.query(new SysPermission(), "sys_permission_sort,sys_permission_id", "asc", 0, 0, -1);
         List<SysPermission> list_all2 = new ArrayList<>();
         Map<Object, SysPermission> map0 = new HashMap<>();
-        list_group = sysPermissionDao.query(sql_read_per2, new Object[]{gid}, "sys_permission_sort,sys_permission_id", "asc", 0, 0, -1);
+        list_group = sysPermissionDao.query(sql_read_per2+" order by sys_permission_sort,sys_permission_id asc", new Object[]{gid},-1);
         for (SysPermission sysPermission : list_group) {
             map0.put(sysPermission.getSysPermissionId(), sysPermission);
         }
@@ -593,8 +592,8 @@ public class SystemApiV2 {
         list_all = sysGroupDao.query(new SysGroup(), "sys_group_id", "asc", 0, 0, -1);
         List<SysGroup> list_all2 = new ArrayList<>();
         Map<Object, SysGroup> map0 = new HashMap<>();
-        list_group = sysGroupDao.query("select * from sys_group where sys_group_id in (select sys_role_group_gid from sys_role_group where sys_role_group_rid = ?)",
-                new Object[]{rid}, "sys_group_id", "asc", 0, 0, -1);
+        list_group = sysGroupDao.query("select * from sys_group where sys_group_id in (select sys_role_group_gid from sys_role_group where sys_role_group_rid = ?) order by sys_group_id asc",
+                new Object[]{rid}, -1);
         for (SysGroup sysGroup : list_group) {
             map0.put(sysGroup.getSysGroupId(), sysGroup);
         }

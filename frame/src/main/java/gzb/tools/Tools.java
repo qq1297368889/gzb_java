@@ -23,6 +23,7 @@ import com.alibaba.fastjson2.JSONReader;
 import com.alibaba.fastjson2.JSONWriter;
 import gzb.entity.ClassEntity;
 import gzb.entity.TableInfo;
+import gzb.exception.GzbException0;
 import gzb.frame.db.DataBase;
 import gzb.frame.factory.ClassTools;
 import gzb.frame.factory.Constant;
@@ -52,6 +53,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
@@ -95,6 +97,97 @@ public class Tools {
         }
     }
 
+    public void est() {
+        Tools.ThreadWakeUp wake = new Tools.ThreadWakeUp();
+        wake.waitActivation();
+
+        wake.notifyActivation();
+    }
+
+    public static class ThreadWakeUp {
+        public Thread currentThread = Thread.currentThread();
+        public AtomicInteger atomicInteger = null;
+        public volatile Object data = null;
+
+        public ThreadWakeUp(int num_0) {
+            atomicInteger = new AtomicInteger(num_0);
+        }
+
+        public ThreadWakeUp() {
+            this(1);
+        }
+
+        public void waitActivation() {
+            while (atomicInteger.get() > 0) {
+                // parkNanos park
+                java.util.concurrent.locks.LockSupport.park();
+                if (Thread.interrupted()) {
+                    if (this.data == null) {
+                        this.data = new GzbException0("work interrupted");
+                        atomicInteger.set(0);
+                    }
+                }
+            }
+        }
+
+        public void waitActivation(long ms) {
+            long deadline = System.currentTimeMillis()+ms;
+            while (atomicInteger.get() > 0) {
+                LockSupport.parkUntil(deadline);
+                if (System.currentTimeMillis() > deadline) {
+                    atomicInteger.set(0);
+                }
+                if (Thread.interrupted()) {
+                    if (this.data == null) {
+                        this.data = new GzbException0("work interrupted");
+                        atomicInteger.set(0);
+                    }
+                }
+            }
+        }
+
+        public <T> T waitActivationData(long ms) {
+            if (ms > 0) {
+                waitActivation(ms);
+            } else {
+                waitActivation();
+            }
+            if (this.data instanceof Throwable) {
+                throw new RuntimeException(getExceptionInfo((Throwable) this.data));
+            }
+            return (T) this.data;
+        }
+
+        public <T> T waitActivationData() {
+            return waitActivationData(-1);
+        }
+
+        public void notifyActivation(Object data) {
+            this.data = data;
+            notifyActivation();
+        }
+
+        public void notifyActivation() {
+            if (atomicInteger.decrementAndGet() == 0) {
+                java.util.concurrent.locks.LockSupport.unpark(currentThread);
+            }
+        }
+
+        public <T> T getData() {
+            if (this.data == null) {
+                return null;
+            }
+            return (T) this.data;
+        }
+
+    }
+
+    public static void printStackTraceElement() {
+        for (StackTraceElement stackTraceElement : getStackTrace()) {
+            System.out.println(stackTraceElement.getClassName() + " " + stackTraceElement.getMethodName() + " " + stackTraceElement.getLineNumber());
+        }
+    }
+
     private static Map<String, String> humpMap = new HashMap<>();
     public static String[] ss1 = "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm0123456789".split("|");
     public static Lock lock = new ReentrantLock();
@@ -117,11 +210,8 @@ public class Tools {
     };
 
     public static byte[] getResourceBytes(Class<?> clazz, String fileName) {
-        // 直接使用 clazz.getResourceAsStream(fileName)
-        // 它会自动查找 clazz 所在包目录下的文件，无需手动拼 packagePath
         try (InputStream in = clazz.getResourceAsStream(fileName)) {
             if (in == null) {
-                // 调试技巧：如果找不到，打印一下实际尝试读取的路径
                 // System.out.println("Resource not found: " + clazz.getPackage().getName().replace('.', '/') + "/" + fileName);
                 return null;
             }
@@ -176,6 +266,68 @@ public class Tools {
         return key.toString();
     }
 
+    public static String byteReadString(byte[] bytes, byte split, int[] start_and_end) {
+        for (int i = start_and_end[0]; i < bytes.length; i++) {
+            if (bytes[i] == split) {
+                start_and_end[1] = i;
+                break;
+            }
+        }
+        if (start_and_end[0] == start_and_end[1]) {
+            return null;
+        }
+        String data = new String(Arrays.copyOfRange(bytes, start_and_end[0], start_and_end[1]));
+        start_and_end[1]++;
+        start_and_end[0] = start_and_end[1];
+        return data;
+    }
+
+    public static int byteReadInt(byte[] bytes, byte split, int[] start_and_end) {
+        int size = 0;
+        int len = 0;
+        for (int i = start_and_end[0]; i < bytes.length; i++) {
+            if (bytes[i] == split) {
+                start_and_end[1] = i;
+                break;
+            }
+
+            byte b = bytes[i];
+            len++;
+            if (b < 48 || b > 57 || len > 10) {
+                break;
+            }
+            size = size * 10 + (b - 48);
+        }
+        if (start_and_end[0] == start_and_end[1]) {
+            return -1;
+        }
+        start_and_end[1]++;
+        start_and_end[0] = start_and_end[1];
+        return size;
+    }
+    public static long byteReadLong(byte[] bytes, byte split, int[] start_and_end) {
+        long size = 0;
+        int len = 0;
+        for (int i = start_and_end[0]; i < bytes.length; i++) {
+            if (bytes[i] == split) {
+                start_and_end[1] = i;
+                break;
+            }
+
+            byte b = bytes[i];
+            len++;
+            if (b < 48 || b > 57 || len > 13) {
+                break;
+            }
+            size = size * 10 + (b - 48);
+        }
+        if (start_and_end[0] == start_and_end[1]) {
+            return -1;
+        }
+        start_and_end[1]++;
+        start_and_end[0] = start_and_end[1];
+        return size;
+    }
     public static int textLength(String str) {
         return (str == null) ? 0 : str.length();
     }
@@ -211,7 +363,6 @@ public class Tools {
         try (JSONReader reader = JSONReader.of(json)) {
             if (reader.isArray()) {
                 List<Object> list = reader.readArray();
-                System.out.println("list " + list);
                 for (Object object : list) {
                     if (object instanceof Map) {
                         Map<String, Object> map0 = (Map<String, Object>) object;
@@ -855,7 +1006,6 @@ public class Tools {
     }
 
     public static <T> T deserialize(byte[] data) {
-        /// 类型 类名 分隔符 数据  也就是说最少4位
         if (data == null || data.length < 4) return null;
         byte mode = data[0];
         if (mode == MODE_JDK[0]) {
@@ -907,7 +1057,7 @@ public class Tools {
 
     public static String toJson0(Object obj) {
         if (obj instanceof GzbMap) {
-            obj=((GzbMap) obj).getMap();
+            obj = ((GzbMap) obj).getMap();
         }
         if (obj instanceof Exception) {
             return "\"" + escapeJsonString(getExceptionInfo((Exception) obj)) + "\"";
@@ -1011,7 +1161,7 @@ public class Tools {
         if (obj instanceof GzbMap) {//已知类处理
             return mapToJson(((GzbMap) obj).getMap());
         }
-        if (obj instanceof Exception) {
+        if (obj instanceof Throwable) {
             return "\"" + escapeJsonString(getExceptionInfo((Exception) obj)) + "\"";
         }
         if (obj instanceof Timestamp) {

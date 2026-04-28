@@ -11,14 +11,75 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class ThreadPoolV3 {
+    public static long x = 0;
+    public static AtomicLong atomicLong = new AtomicLong();
+
+    public static void main2(String[] args) {
+        long start = System.currentTimeMillis();
+        Tools.ThreadWakeUp wake = new Tools.ThreadWakeUp(10);
+        for (int i = 0; i < 10; i++) {
+            new Thread() {
+                @Override
+                public void run() {
+                    for (int i1 = 0; i1 < 10000 * 10000; i1++) {
+                        atomicLong.incrementAndGet();
+                    }
+                    wake.notifyActivation();
+                    System.out.println("end " + atomicLong.get());
+
+                }
+            }.start();
+        }
+        wake.waitActivation();
+        long end = System.currentTimeMillis();
+        long time = end - start;
+        x = atomicLong.get();
+        System.out.println(time);
+        System.out.println(x);
+        System.out.println("qps " + (x / time * 1000));
+        System.out.println("qps " + (x / time));
+    }
+
+    public static void main(String[] args) {
+        Lock lock = new ReentrantLock();
+        long start = System.currentTimeMillis();
+        Tools.ThreadWakeUp wake = new Tools.ThreadWakeUp(10);
+        for (int i = 0; i < 10; i++) {
+            new Thread() {
+                @Override
+                public void run() {
+                    for (int i1 = 0; i1 < 10000 * 1000; i1++) {
+                        lock.lock();
+                        try {
+                            x++;
+                        } finally {
+                            lock.unlock();
+                        }
+                    }
+                    wake.notifyActivation();
+                    System.out.println("end " + x);
+
+                }
+            }.start();
+        }
+        wake.waitActivation();
+        long end = System.currentTimeMillis();
+        long time = end - start;
+        System.out.println(time);
+        System.out.println(x);
+        System.out.println("qps " + (x / time * 1000));
+        System.out.println("qps " + (x / time));
+    }
 
     public Log log = Log.log;
     private boolean AUTO_MATIC = true;
     private double CPU_LOAD = 0.0;
-    private final int await_sec = 3;
+    private final int await_sec = 120;
     public LinkedBlockingQueue<Runnable> runnableQueue = null;
     AtomicInteger thrNum = new AtomicInteger(0);
     public int THREAD_MIN_NUM = 10;
@@ -75,12 +136,11 @@ public class ThreadPoolV3 {
             log.d(Template.THIS_LANGUAGE[51]);
             return;
         }
-        ThreadPoolV3 threadPoolV3 =this;
         Thread thread = new Thread() {
             @Override
             public void run() {
                 while (true) {
-                    if (stopNum.get()<0) {
+                    if (stopNum.get() < 0) {
                         stopNum.set(0);//防止扣除到小于-21亿
                     }
                     CPU_LOAD = OSUtils.getSystemCpuLoadPercentage();
@@ -89,39 +149,45 @@ public class ThreadPoolV3 {
                     }
                     int workNum = runnableQueue.size();
                     int threadNum = thrNum.get();
-                    log.t( Template.THIS_LANGUAGE[52], runnableQueue.size(), Template.THIS_LANGUAGE[53], thrNum.get(), Template.THIS_LANGUAGE[54],CPU_LOAD,threadPoolV3.toString());
-                    //积压小于线程数 不扩张
-                    if (workNum*1.5 < threadNum) {
-                        log.t(Template.THIS_LANGUAGE[55], Template.THIS_LANGUAGE[52], runnableQueue.size(), Template.THIS_LANGUAGE[53], thrNum.get());
-                        //目前 积压数量小于线程数量 并且线程数量大于cpu*2可以考虑缩容
-                        if (threadNum > Config.cpu * 2) {
-                            stopNum.set(1);
-                            log.t(Template.THIS_LANGUAGE[56], 1,thrNum.get(),runnableQueue.size());
-                            Tools.sleep(1000);
-                            continue;
+                    log.t("workNum",workNum,"threadNum",threadNum,"CPU_LOAD",CPU_LOAD);
+                    //积压小于1 并且 cpu占用大于设定值 缩容
+                    if (workNum < 1) {
+                        Tools.sleep(500);
+                        double cpu_1 = OSUtils.getSystemCpuLoadPercentage();//获取cpu变化
+                        workNum = runnableQueue.size();
+                        if (cpu_1 > MAX_CPU_JVM_LOAD && workNum < 1) {
+                            if (threadNum > THREAD_MIN_NUM) {
+                                stopNum.set(1);
+                                log.t(Template.THIS_LANGUAGE[56], 1, thrNum.get());
+                                Tools.sleep(1000);
+                                continue;
+                            }
                         }
+
                         Tools.sleep(1000);
                         continue;
                     }
-                    double cpu_1 = OSUtils.getSystemCpuLoadPercentage();//获取cpu变化
-                    if (workNum < threadNum*2) {
+                    /// 任务数量小于 线程数*2 不扩容
+                    if (workNum < threadNum * 2) {
                         continue;
                     }
-                    for (int i = 0; i < Config.cpu; i++) {
+                    double cpu_1 = OSUtils.getSystemCpuLoadPercentage();//获取cpu变化
+                    for (int i = 0; i < 5; i++) {
                         startWork();//启动一个线程
-                        log.t(Template.THIS_LANGUAGE[57], Template.THIS_LANGUAGE[54],CPU_LOAD,Template.THIS_LANGUAGE[52], runnableQueue.size(), Template.THIS_LANGUAGE[53], thrNum.get());
+                        log.t(Template.THIS_LANGUAGE[57], Template.THIS_LANGUAGE[54], cpu_1, Template.THIS_LANGUAGE[52], runnableQueue.size(), Template.THIS_LANGUAGE[53], thrNum.get());
                     }
+                    Tools.sleep(300);
                     double cpu_2 = OSUtils.getSystemCpuLoadPercentage();//获取cpu变化
 
                     int workNum2 = runnableQueue.size();
-                    int threadNum2 = thrNum.get();
                     //显著停止恶化 不扩张
                     if (workNum2 < workNum * 0.8) {
                         log.t(Template.THIS_LANGUAGE[58], Template.THIS_LANGUAGE[52], runnableQueue.size(), Template.THIS_LANGUAGE[53], thrNum.get());
                         continue;
                     }
+                    int threadNum2 = thrNum.get();
                     //积压小于线程数 不扩张
-                    if (workNum2 < threadNum2) {
+                    if (workNum2 < threadNum2 * 2) {
                         log.t(Template.THIS_LANGUAGE[59], Template.THIS_LANGUAGE[52], runnableQueue.size(), Template.THIS_LANGUAGE[53], thrNum.get());
                         continue;
                     }
@@ -135,9 +201,16 @@ public class ThreadPoolV3 {
                     //根据平均负载 启动新线程 激进 但是问题不大 因为是给io线程用的
                     while (cpu_2 < MAX_CPU_JVM_LOAD) {
                         startWork();//启动一个线程
-                        log.t(Template.THIS_LANGUAGE[57],Template.THIS_LANGUAGE[60], CPU_LOAD, Template.THIS_LANGUAGE[52], runnableQueue.size(), Template.THIS_LANGUAGE[53], thrNum.get()
+                        log.t(Template.THIS_LANGUAGE[57], Template.THIS_LANGUAGE[60], CPU_LOAD, Template.THIS_LANGUAGE[52], runnableQueue.size(), Template.THIS_LANGUAGE[53], thrNum.get()
                                 , Template.THIS_LANGUAGE[61], k01);
                         cpu_2 += k01;
+                        Tools.sleep(10);
+                        workNum2 = runnableQueue.size();
+                        threadNum2 = thrNum.get();
+                        if (workNum2 < threadNum2 * 2) {
+                            log.t(Template.THIS_LANGUAGE[59], Template.THIS_LANGUAGE[52], runnableQueue.size(), Template.THIS_LANGUAGE[53], thrNum.get());
+                            break;
+                        }
                     }
                 }
             }
@@ -147,6 +220,7 @@ public class ThreadPoolV3 {
     }
 
     Lock lock = LockFactory.getLock("thread-pool-startWork-exit");
+
     private void startWork() {
         if (thrNum.get() > THREAD_MAX_NUM) {
             return;
@@ -166,7 +240,7 @@ public class ThreadPoolV3 {
                             try {
                                 if (thrNum.get() > THREAD_MIN_NUM) {
                                     thrNum.decrementAndGet();
-                                    log.t(Template.THIS_LANGUAGE[62], Thread.currentThread().getName(),Template.THIS_LANGUAGE[53], thrNum.get());
+                                    log.t(Template.THIS_LANGUAGE[62], Thread.currentThread().getName(), Template.THIS_LANGUAGE[53], thrNum.get());
                                     break;
                                 }
                                 continue;
@@ -175,13 +249,13 @@ public class ThreadPoolV3 {
                             }
                         }
 
-                        Runnable runnable = runnableQueue.poll(await_sec, TimeUnit.SECONDS);
+                        Runnable runnable = runnableQueue.poll(await_sec * 1000,TimeUnit.MILLISECONDS);
                         if (runnable == null) {
                             lock.lock();
                             try {
                                 if (thrNum.get() > THREAD_MIN_NUM) {
                                     thrNum.decrementAndGet();
-                                    log.t(Template.THIS_LANGUAGE[63], Thread.currentThread().getName(),Template.THIS_LANGUAGE[53], thrNum.get());
+                                    log.t(Template.THIS_LANGUAGE[63], Thread.currentThread().getName(), Template.THIS_LANGUAGE[53], thrNum.get());
                                     break;
                                 }
                                 continue;
@@ -206,6 +280,7 @@ public class ThreadPoolV3 {
 
 
     public boolean execute(Runnable runnable) {
+
         return runnableQueue.offer(runnable);
     }
 

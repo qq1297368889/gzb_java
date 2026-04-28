@@ -79,7 +79,7 @@ public class SysUsersApi {
             montage= Tools.appendArray(montage,new String[]{},"1");
         }
         SqlTemplate sqlTemplate = sysUsersDao.getDataBase().toSelect("sys_users", field, symbol, value, montage, sortField, sortType);
-        List<SysUsers> listGzbMap1 = sysUsersDao.query(sqlTemplate.getSql(), sqlTemplate.getObjects(),null,null,0,0,-1);
+        List<SysUsers> listGzbMap1 = sysUsersDao.query(sqlTemplate.getSql(), sqlTemplate.getObjects());
         return result.paging(listGzbMap1, page, limit);
     }
 

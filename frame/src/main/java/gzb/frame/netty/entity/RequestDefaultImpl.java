@@ -40,6 +40,13 @@ public class RequestDefaultImpl implements Request {
     private FullHttpRequest request;
     private Response response;
     private Session session;
+    public void requestClose(){
+        if (httpRequestParameters.gzbFiles!=null) {
+            for (GzbFile gzbFile : httpRequestParameters.gzbFiles) {
+                gzbFile.deleteAllFile();
+            }
+        }
+    }
 
     public String getUri() {
         return httpRequestParameters.path;
@@ -89,7 +96,7 @@ public class RequestDefaultImpl implements Request {
         this.request = request;
         this.method = request.method().name();
         getParameter();
-        this.response = new ResponseDefaultImpl(ctx,request);
+        this.response = new ResponseDefaultImpl(ctx,request,this);
     }
 
     public Map<String, String> getHeaders() {

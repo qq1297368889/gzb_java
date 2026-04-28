@@ -83,7 +83,7 @@ public class ThreadFactoryImpl {
                 } catch (InterruptedException e) {
                     log.d("线程结束 被中断", entity.thread);
                     break;
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     log.e("线程执行错误,但不会被终止", entity.thread, e);
                 }
             }

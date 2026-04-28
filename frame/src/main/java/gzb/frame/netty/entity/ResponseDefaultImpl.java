@@ -39,12 +39,14 @@ public class ResponseDefaultImpl implements Response {
     private Set<Cookie> cookies; // Added cookies field
     private boolean isSendHeaders = false;
     private FullHttpRequest request = null;
+    private Request gzbRequest = null;
 
     boolean keepAlive = false;
 
-    public ResponseDefaultImpl(ChannelHandlerContext ctx, FullHttpRequest request) {
+    public ResponseDefaultImpl(ChannelHandlerContext ctx, FullHttpRequest request, Request gzbRequest) {
         this.ctx = ctx;
         this.request = request;
+        this.gzbRequest = gzbRequest;
         keepAlive = HttpUtil.isKeepAlive(request);
 
     }
@@ -94,7 +96,15 @@ public class ResponseDefaultImpl implements Response {
         }
         return this;
     }
-
+    ChannelFutureListener CLOSE = new ChannelFutureListener() {
+        @Override
+        public void operationComplete(ChannelFuture future) {
+            gzbRequest.requestClose();
+            if (!keepAlive) {
+                future.channel().close();
+            }
+        }
+    };
     /**
      * 结束响应流，并发送最后一个数据块和末尾标志。
      */
@@ -103,13 +113,11 @@ public class ResponseDefaultImpl implements Response {
             sendHeaders();
         }
         ChannelFuture future = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
-        if (!keepAlive) {
-            future.addListener(ChannelFutureListener.CLOSE);
-        }
+        future.addListener(CLOSE);
         return this;
     }
 
-    public Response sendAndFlush(Object chunk) {
+    public Response sendData(Object chunk) {
         ByteBuf buf = NettyTools.toByteBuf(chunk);
         FullHttpResponse response = new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
@@ -135,11 +143,8 @@ public class ResponseDefaultImpl implements Response {
                 response.headers().add("Set-Cookie", NettyTools.encodeSingleCookie(cookie));
             }
         }
-        //ChannelFuture future = ctx.writeAndFlush(response);
-        ChannelFuture future = ctx.write(response);
-        if (!keepAlive) {
-            future.addListener(ChannelFutureListener.CLOSE);
-        }
+        ChannelFuture future = ctx.writeAndFlush(response);
+        future.addListener(CLOSE);
         return this;
     }
     public Response setStatus(int status) {
@@ -196,7 +201,7 @@ public class ResponseDefaultImpl implements Response {
     }
 
     public Response success(Object chunk) {
-        return sendAndFlush(chunk);
+        return sendData(chunk);
     }
 
     public Response fail() {

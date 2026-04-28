@@ -2,11 +2,10 @@ package gzb.start;
 
 import gzb.entity.HttpMapping;
 import gzb.frame.PublicEntrance;
-import gzb.frame.db.DataBase;
-import gzb.frame.db.DataBaseFactory;
+import gzb.frame.db.v2.DataBase;
+import gzb.frame.db.v2.DataBaseFactory;
 import gzb.frame.factory.ClassLoadEvent;
 import gzb.frame.factory.Constant;
-import gzb.tools.Config;
 import gzb.tools.OnlyId;
 import gzb.tools.log.Log;
 
@@ -24,7 +23,7 @@ public class DemoStart {
                 super.eventEnd(mapHttpMapping0);
                 DataBase dataBase = null;
                 try {
-                    dataBase = DataBaseFactory.getDataBase("db002");
+                    dataBase = DataBaseFactory.getDataBase("db2");
                     exec(mapHttpMapping0, Constant.requestMethod, dataBase);
                 } catch (Exception e) {
                     Log.log.e("默认数据连接失败 请确保 配置项 db.frame.key 填写正确", e);
@@ -72,22 +71,41 @@ public class DemoStart {
             objects[5] = 0;
             objects[6] = 0;
             objects[7] = stringListEntry.getKey();
-            dataBase.runSqlAsync(sql, objects);
-            for (String string : stringListEntry.getValue()) {
-                Object[] objects0 = new Object[8];
-                objects0[0] = OnlyId.getDistributed();
-                objects0[1] = string;
-                objects0[2] = null;
-                objects0[3] = 2;
-                objects0[4] = null;
-                objects0[5] = s_id;
-                objects0[6] = 0;
-                objects0[7] = string;
-                dataBase.runSqlAsync(sql, objects0);
-            }
+            dataBase.execute(sql, objects,new DataBase.Cack(){
+                @Override
+                public void success(int row) {
+                    for (String string : stringListEntry.getValue()) {
+                        Object[] objects0 = new Object[8];
+                        objects0[0] = OnlyId.getDistributed();
+                        objects0[1] = string;
+                        objects0[2] = null;
+                        objects0[3] = 2;
+                        objects0[4] = null;
+                        objects0[5] = s_id;
+                        objects0[6] = 0;
+                        objects0[7] = string;
+                        dataBase.execute(sql, objects0,new DataBase.Cack(){
+                            @Override
+                            public void success(int row) {
+
+                            }
+                        });
+                    }
+                }
+            });
+
 
         }
 
     }
 
 }
+
+
+
+
+
+
+
+
+

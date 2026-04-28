@@ -42,5 +42,5 @@ public Object _gzb_call_x01(
         GzbJson _g_p_gzbJson,
         Log _g_p_log,
         Object[] arrayObject
-)throws Exception;
+)throws Throwable;
 }

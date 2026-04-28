@@ -39,14 +39,10 @@ public class GzbCacheMap implements GzbCache {
         }
     }
 
-    // 主缓存：key -> CacheEntry
     private final ConcurrentHashMap<String, CacheEntry> cache = new ConcurrentHashMap<>();
 
-    // Hash Map 缓存：key -> subMap<subKey, CacheEntry>
-    // 注意：AtomicLong 也必须是 Serializable
     private final ConcurrentHashMap<String, ConcurrentHashMap<String, CacheEntry>> mapCache = new ConcurrentHashMap<>();
 
-    // 持久化文件路径
     private final String persistenceFilePath;
 
     // --- 构造函数和持久化/清理 ---
@@ -341,12 +337,10 @@ public class GzbCacheMap implements GzbCache {
         // 1. 序列化 Object
         byte[] serializedVal = serialize(val);
         if (serializedVal == null) {
+            log.e("serializedVal==null");
             return;
         }
-
         try {
-            // 2. 存储到主 Cache (String 结构)
-            // CacheEntry 中存储的是 byte[]
             cache.put(key, new CacheEntry(serializedVal, second));
         } catch (Exception e) {
             log.e(e, "Error setting object to string cache.");

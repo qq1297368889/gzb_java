@@ -2,6 +2,8 @@ package gzb.frame.netty.entity;
 
 import gzb.frame.netty.tools.TCPTools;
 import gzb.tools.NettyTools;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
@@ -13,7 +15,6 @@ public class ResponseTcpImpl implements Response {
     public ResponseTcpImpl(ChannelHandlerContext ctx) {
         this.ctx = ctx;
     }
-
     /**
      * 写入状态码
      *
@@ -60,7 +61,7 @@ public class ResponseTcpImpl implements Response {
      * @param chunk
      */
     @Override
-    public Response sendAndFlush(Object chunk) {
+    public Response sendData(Object chunk) {
         ctx.writeAndFlush(TCPTools.createDataPacket(NettyTools.toByteBuf(chunk)));
         return this;
     }
@@ -101,7 +102,7 @@ public class ResponseTcpImpl implements Response {
      */
     @Override
     public Response success(Object chunk) {
-        return sendAndFlush(chunk);
+        return sendData(chunk);
     }
 
 

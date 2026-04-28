@@ -105,9 +105,43 @@ public class ClassLoadV4 {
         boolean compileSuccess = task.call();
 
         if (!compileSuccess) {
-            StringBuilder errorMsg = new StringBuilder("编译失败：\n");
-            diagnostics.getDiagnostics().forEach(d -> errorMsg.append(d.getMessage(null)).append("\n"));
-            throw new Exception(errorMsg.toString());
+            List<Diagnostic<? extends JavaFileObject>> allDiagnostics = diagnostics.getDiagnostics();
+            if (allDiagnostics != null && !allDiagnostics.isEmpty()) {
+                // 核心思路：只取第一个致命错误
+                Diagnostic<? extends JavaFileObject> firstError = allDiagnostics.get(0);
+                long lineNum = firstError.getLineNumber();
+                String sourceName = firstError.getSource().getName();
+
+                StringBuilder sb = new StringBuilder();
+                sb.append("\n[GZB-FRAME] 编译失败 ------------------------------------\n");
+                sb.append("文件: ").append(sourceName).append("\n");
+                sb.append("原因: ").append(firstError.getMessage(null)).append("\n");
+                sb.append("位置: 第 ").append(lineNum).append(" 行\n");
+                sb.append("-------------------------------------------------------\n");
+
+                try {
+                    // 获取源码并拆分
+                    String content = firstError.getSource().getCharContent(true).toString();
+                    String[] lines = content.split("\n");
+
+                    // 计算 -5 到 +5 的范围，同时处理边界（防止越界）
+                    int currentLine = (int) lineNum;
+                    int start = Math.max(1, currentLine - 5);
+                    int end = Math.min(lines.length, currentLine + 5);
+
+                    for (int i = start; i <= end; i++) {
+                        // 标记出错行，让视觉中心一秒入位
+                        String pointer = (i == currentLine) ? " >>> " : "     ";
+                        // 格式化输出：行号 | 代码
+                        sb.append(String.format("%s %4d | %s\n", pointer, i, lines[i - 1]));
+                    }
+                } catch (Exception e) {
+                    sb.append("无法读取源码片段: ").append(e.getMessage());
+                }
+
+                sb.append("-------------------------------------------------------");
+                throw new Exception(sb.toString());
+            }
         }
 
         Map<String, byte[]> byteMap = new HashMap<>();
@@ -177,20 +211,22 @@ public class ClassLoadV4 {
     }
 
     public static class HotSwapClassLoader extends ClassLoader {
-        Map<String, byte[]> byteMap=null;
+        Map<String, byte[]> byteMap = null;
+
         public HotSwapClassLoader(ClassLoader parent) {
             super(parent);
         }
 
         public HotSwapClassLoader(Map<String, byte[]> byteMap) {
             super(ClassLoader.getSystemClassLoader());
-            if (this.byteMap==null) {
-                this.byteMap=new HashMap<>();
+            if (this.byteMap == null) {
+                this.byteMap = new HashMap<>();
             }
             for (Map.Entry<String, byte[]> stringEntry : byteMap.entrySet()) {
                 this.byteMap.put(stringEntry.getKey(), stringEntry.getValue());
             }
         }
+
         public Class<?> loadFromBytes(String className, byte[] classBytes) {
             if (className == null || className.trim().isEmpty()) {
                 throw new IllegalArgumentException("类名不能为空");
@@ -200,6 +236,7 @@ public class ClassLoadV4 {
             }
             return defineClass(className, classBytes, 0, classBytes.length);
         }
+
         @Override
         protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
             Class<?> c = findLoadedClass(name);

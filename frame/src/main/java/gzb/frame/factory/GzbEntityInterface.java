@@ -18,27 +18,26 @@
 
 package gzb.frame.factory;
 
-import gzb.entity.SqlTemplate;
-
-import java.util.List;
-
-
 public interface GzbEntityInterface {
     String toJson(Object object) throws Exception;
 
     byte[] toJsonBytes(Object object) throws Exception;
 
-    Object[] loadObject(java.util.Map<String, List<Object>> map) throws Exception;
+    Object[] loadObject(java.util.Map<String, java.util.List<Object>> map) throws Exception;
 
-    SqlTemplate toDeleteSql(Object obj) throws Exception;
+    gzb.entity.SqlTemplate toDeleteSql(Object obj, int sql_type) throws Exception;
 
-    SqlTemplate toUpdateSql(Object obj) throws Exception;
+    gzb.entity.SqlTemplate toUpdateSql(Object obj, int sql_type) throws Exception;
 
-    SqlTemplate toSaveSql(Object obj, gzb.frame.db.DataBase dataBase, boolean reset) throws Exception;
-
-    SqlTemplate toSelectSql(Object obj) throws Exception;
+    gzb.entity.SqlTemplate toSaveSql(Object obj, gzb.frame.db.DataBase dataBase, boolean reset, int sql_type) throws Exception;
+    gzb.entity.SqlTemplate toSaveSql(Object obj0,gzb.frame.db.v2.DataBase dataBase,boolean reset,int sql_type) throws Exception;
+    gzb.entity.SqlTemplate toSelectSql(Object obj, int sql_type,String sortField,String sortType,Integer page,Integer size) throws Exception;
 
     Object loadResultSet(java.sql.ResultSet resultSet, java.util.Set<String> names) throws Exception;
+
+    Object loadRowSet(io.vertx.sqlclient.Row row, java.util.Set<String> names) throws Exception;
+
+    <T>java.util.List<T> loadRowSet(io.vertx.sqlclient.RowSet<io.vertx.sqlclient.Row> rowSet) throws Exception;
 
     void toJson(Object obj, StringBuilder stringBuilder) throws Exception;
 

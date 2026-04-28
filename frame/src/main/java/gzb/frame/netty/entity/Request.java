@@ -164,4 +164,5 @@ public interface Request {
     void close();
     /// 0http 1tcp 2udp
     int getImplType();
+    void requestClose();
 }

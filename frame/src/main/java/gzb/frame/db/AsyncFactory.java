@@ -20,11 +20,9 @@ package gzb.frame.db;
 
 import gzb.frame.language.Template;
 import gzb.tools.Config;
-import gzb.tools.Queue;
 import gzb.tools.Tools;
 import gzb.tools.log.Log;
 import gzb.tools.thread.ServiceThread;
-import gzb.tools.thread.ThreadPool;
 import gzb.tools.thread.ThreadPoolV3;
 
 import java.sql.Connection;
@@ -85,7 +83,7 @@ public class AsyncFactory{
     }
 
     public void startThread(int threadNum) {
-        ServiceThread.start(threadNum, "db-async-factory", () -> {
+        ServiceThread.start(threadNum, "db.jsp-async-factory", () -> {
             while (true) {
                 try {
                     if (!execMapSql(cacheMap)) {

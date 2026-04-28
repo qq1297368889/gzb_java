@@ -69,7 +69,7 @@ public class Test2{
 
     //调用 service对象
     @GetMapping("/get3")
-    public Object get3(String msg, TestService1 testService1, SysUsersDao sysUsersDao, Log log) throws Exception {
+    public Object get3(String msg, TestService1 testService1, SysUsersDao sysUsersDao, Log log) throws Throwable {
         SysFile sysFile = new SysFile();
         sysFile.setSysFileId(100L);
         sysFile.setSysFileMd5("md5_" + msg);
@@ -78,14 +78,9 @@ public class Test2{
         testService1.test1();
         String sql = "";
         List<Object[]> list_parameter = new ArrayList<>();
-        sysUsersDao.getDataBase().runSqlBatch(sql, list_parameter);
+        sysUsersDao.getDataBase().execute(sql, list_parameter,true);
         SysUsers sysUsers = new SysUsers().setSysUsersAcc("a01");
-        sysUsersDao.saveAsync(sysUsers, new Runnable() {
-            @Override
-            public void run() {
-                log.w("执行失败，触发回调", sysUsers);
-            }
-        },null);
+        sysUsersDao.save(sysUsers);
 
         return sysFile;
     }

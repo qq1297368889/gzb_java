@@ -129,7 +129,7 @@ public class RequestDecorator {
             }
         }
         log.d(sql + sql_p + "))", listData.toArray());
-        List<SysPermission> listSysPermissionDao = sysPermissionDao.query(sql + sql_p + "))", listData.toArray(), null, null, 1, 1, 5);
+        List<SysPermission> listSysPermissionDao = sysPermissionDao.query(sql + sql_p + "))", listData.toArray(),10);
         if (listSysPermissionDao.size() != 1) {
             return runRes.intercept(gzbJson.fail("无权限访问-非法访问"));
         }

@@ -11,6 +11,7 @@ import gzb.exception.GzbException0;
 import gzb.frame.DDOS;
 import gzb.frame.annotation.*;
 import gzb.frame.factory.GzbOneInterface;
+import gzb.frame.netty.entity.GzbFile;
 import gzb.tools.Config;
 import gzb.tools.DateTime;
 import gzb.tools.Tools;
@@ -20,6 +21,7 @@ import gzb.tools.json.GzbJson;
 import gzb.tools.json.GzbJsonImpl;
 import gzb.tools.log.Log;
 import gzb.tools.log.LogImpl;
+import gzb.tools.thread.GzbThreadLocal;
 
 import java.io.File;
 import java.sql.Timestamp;
@@ -39,9 +41,10 @@ public class TestApi {
         HTTP_V3 httpV3 = new HTTP_V3();
         List<File> list1 = new ArrayList<>();
         List<File> list2 = new ArrayList<>();
-        list1.add(new File("E:\\codes_20220814\\logo\\1.jpg"));
-        list2.add(new File("E:\\codes_20220814\\logo\\2.jpg"));
-        list2.add(new File("E:\\codes_20220814\\logo\\3.jpg"));
+        list1.add(new File("/media/gzb/文档/codes_20220814/logo/1.jpg"));
+        list2.add(new File("/media/gzb/文档/codes_20220814/logo/2.jpg"));
+        list2.add(new File("/media/gzb/文档/codes_20220814/logo/3.jpg"));
+
         String postData = "b=1&c=1&d=1&e=1.11&f=1.12&g=true" +
                 "&b1=1&c1=1&d1=1&e1=1.13&f1=1.14&g1=true" +
                 "&b2=1&b2=1&c2=1&c2=1&d2=1&d2=1&e2=1.15&e2=1.16&f2=1.17&f2=1.18&g2=true&g2=false" +
@@ -91,7 +94,10 @@ public class TestApi {
         System.out.println("find 1 " + httpV3.asString());
 
         //综合测试
+        long start=System.currentTimeMillis();
         httpV3.request("http://127.0.0.1:2080/test/api/post5", "POST", postData, null, files, 10000L);
+        long end=System.currentTimeMillis();
+        System.out.println(end-start);
         System.out.println("post 5 " + httpV3.asString());
 
 //传参测试 时间对象+ 时间数组对象
@@ -225,7 +231,7 @@ public class TestApi {
 
     //事务失败
     @Transaction(simulate = false)
-    @PostMapping("post1")
+    @RequestMapping("post1")
     public Object post1(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
         sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x"));
         throw new GzbException0("抛出错误 post1 预期中的错误");
@@ -233,7 +239,7 @@ public class TestApi {
 
     //事务成功
     @Transaction(simulate = false)
-    @PostMapping("post2")
+    @RequestMapping("post2")
     public Object post2(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
         sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x"));
         return gzbJson.success("OK");
@@ -241,7 +247,7 @@ public class TestApi {
 
     //事务失败 模拟
     @Transaction(simulate = true)
-    @PostMapping("post3")
+    @RequestMapping("post3")
     public Object post3(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
         sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x"));
         throw new GzbException0("抛出错误 post3 预期中的错误");
@@ -249,7 +255,7 @@ public class TestApi {
 
     //事务成功 模拟
     @Transaction(simulate = true)
-    @PostMapping("post4")
+    @RequestMapping("post4")
     public Object post4(SysUsersDao sysUsersDao, Log log, GzbJson gzbJson) throws Exception {
         sysUsersDao.save(new SysUsers().setSysUsersAcc("acc_001x"));
         return gzbJson.success("OK");
@@ -277,7 +283,7 @@ public class TestApi {
             , int b1, long c1, short d1, float e1, double f1, boolean g1,
             Integer[] b2, Long[] c2, Short[] d2, Float[] e2, Double[] f2, Boolean[] g2
             , int[] b3, long[] c3, short[] d3, float[] e3, double[] f3, boolean[] g3
-            , FileUploadEntity file, FileUploadEntity[] files
+            , GzbFile file, GzbFile[] files
             , String a, String[] a2, SysUsers sysUsers, SysFile[] sysFiles
             //对象注入
             , GzbJson gzbJson, Log log, SysUsersDao sysUsersDao, SysFileDao sysFileDao) throws Exception {
@@ -302,7 +308,7 @@ public class TestApi {
         if (files == null || files.length != 2 || !files[0].getFile().exists() || !files[1].getFile().exists()) {
             return gzbJson.fail("file 传值错误，请确认为 [文件,文件]");
         }
-        if (a == null || !a.toString().equals("1")) {
+        if (a == null || !a.equals("1")) {
             return gzbJson.fail("a 传值错误，请确认为 \"1\"");
         }
 
@@ -390,17 +396,19 @@ public class TestApi {
         }
         sysUsers.setSysUsersId(null);//重置ID 否则框架不会自动填入
         sysUsers.setSysUsersAcc(Tools.getRandomString(12));
-        if (sysUsersDao.save(sysUsers) < 0) {
-            return gzbJson.fail("数据库插入失败");
+        int res0=sysUsersDao.save(sysUsers);
+        if ( res0 < 0) {
+            return gzbJson.fail("数据库插入失败 "+res0);
         }
         //必然失败，不出错就是错  因为ID重复了
         try {
             sysUsersDao.save(sysUsers);
-            return gzbJson.fail("重复ID插入成功，数据库操作异常");
+            return gzbJson.fail("重复ID插入成功，数据库操作异常:"+sysUsers.getSysUsersId());
         } catch (Exception e0) {
             log.e("预期中 的错误", e0);
         }
         Semaphore semaphore = new Semaphore(0);
+        Tools.ThreadWakeUp wake=new Tools.ThreadWakeUp();
         sysUsersDao.saveAsync(sysUsers, new Runnable() {
             @Override
             public void run() {

@@ -34,7 +34,7 @@ public class LockFactory {
         return getCondition(key, defMM);
     }
 
-    public static final Condition getCondition(String key, int mm) {
+    public static final Condition getCondition(String key, int second) {
         String key2 = key + "_lock";
         String key3 = key + "_condition";
         Condition val = gzbCache.getObject(key3);
@@ -45,8 +45,8 @@ public class LockFactory {
                 if (val == null) {
                     Lock lock = new ReentrantLock();
                     val = lock.newCondition();
-                    gzbCache.setObject(key3, val, mm);
-                    gzbCache.setObject(key2, lock, mm);
+                    gzbCache.setObject(key3, val, second);
+                    gzbCache.setObject(key2, lock, second);
                 }
             } finally {
                 lock.unlock();
@@ -59,7 +59,7 @@ public class LockFactory {
         return getLock(key, defMM);
     }
 
-    public static final Lock getLock(String key, int mm) {
+    public static final Lock getLock(String key, int second) {
         String key2 = key + "_lock";
         String key3 = key + "_condition";
         Lock val = gzbCache.getObject(key2);
@@ -69,9 +69,9 @@ public class LockFactory {
                 val = gzbCache.getObject(key2);
                 if (val == null) {
                     val = new ReentrantLock();
-                    gzbCache.setObject(key2, val, mm);
+                    gzbCache.setObject(key2, val, second);
                     Condition condition = val.newCondition();
-                    gzbCache.setObject(key3, condition, mm);
+                    gzbCache.setObject(key3, condition, second);
                 }
             } finally {
                 lock.unlock();
@@ -80,13 +80,13 @@ public class LockFactory {
         return val;
     }
 
-    public static final void setLock(String key, Lock val, int mm) {
+    public static final void setLock(String key, Lock val, int second) {
         String key2 = key + "_lock";
         String key3 = key + "_condition";
         lock.lock();
         try {
-            gzbCache.setObject(key2, val, mm);
-            gzbCache.setObject(key3, val.newCondition(), mm);
+            gzbCache.setObject(key2, val, second);
+            gzbCache.setObject(key3, val.newCondition(), second);
         } finally {
             lock.unlock();
         }

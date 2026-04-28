@@ -39,5 +39,10 @@ public class UDPHandler extends ChannelInboundHandlerAdapter {
             ctx.close();
         }
     }
-
+    ExceptionHandler exceptionHandler=new ExceptionHandler();
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+            throws Exception {
+        exceptionHandler.exceptionCaught(ctx,cause);
+    }
 }

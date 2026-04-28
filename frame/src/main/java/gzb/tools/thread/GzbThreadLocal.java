@@ -10,6 +10,9 @@ import gzb.tools.cache.object.ByteBuffCache;
 import gzb.tools.cache.object.MapCache;
 import gzb.tools.cache.object.StringBuilderCache;
 import gzb.tools.log.Log;
+import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
+import io.vertx.sqlclient.SqlConnection;
+import io.vertx.sqlclient.Transaction;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
@@ -47,6 +50,14 @@ public class GzbThreadLocal {
     public static final ThreadLocal<Entity> context = ThreadLocal.withInitial(Entity::new);
 
     public static class Entity {
+        public Integer transaction_state_async;
+        public SqlConnection connection_async;
+        public Transaction transaction_async;
+        public Map<String, List<Object[]>> transaction_simulate= null;
+
+
+
+        /// ///////////////////////////////////
         public int depth = 0;
         public String open_transaction_key = null;
         public Map<String, List<Object>> requestMap = null;

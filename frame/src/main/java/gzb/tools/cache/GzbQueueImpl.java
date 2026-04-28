@@ -50,14 +50,14 @@ public class GzbQueueImpl implements GzbQueue {
             for (Map.Entry<Long, Entity> longEntityEntry : consumeMap0.entrySet()) {
                 Log.log.e("jvm被关闭，消费中未知状态", longEntityEntry.getValue());
             }
-            saveToFile(queueCache0, consumeMap0); // 程序关闭时最终保存一次
+            saveToFile(queueCache0); // 程序关闭时最终保存一次
         }));
     }
 
     /**
      * 将当前缓存数据（String 和 Map）保存到文件
      */
-    private synchronized void saveToFile(LinkedBlockingQueue<Entity> queueCache0, Map<Long, Entity> consumeMap0) {
+    private synchronized void saveToFile(LinkedBlockingQueue<Entity> queueCache0) {
         if (persistenceFilePath == null) return;
 
         try (FileOutputStream fos = new FileOutputStream(persistenceFilePath);
@@ -129,7 +129,7 @@ public class GzbQueueImpl implements GzbQueue {
                     }
 
                     Tools.sleep(timeSleep); //不会被线程中断影响
-                    saveToFile(queueCache, consumeMap);//日常保存 覆盖保存
+                    saveToFile(queueCache);//日常保存 覆盖保存
                 }
             }
         });

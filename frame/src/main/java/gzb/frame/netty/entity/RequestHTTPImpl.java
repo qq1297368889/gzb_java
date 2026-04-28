@@ -43,6 +43,9 @@ public class RequestHTTPImpl implements Request{
     private Response response;
     private Session session;
 
+    public void requestClose(){
+
+    }
     public String getUri() {
         return entity.getURL();
     }
@@ -92,7 +95,7 @@ public class RequestHTTPImpl implements Request{
         this.ctx = ctx;
         this.entity = entity;
         this.method = Constant.requestMethod[entity.method];
-        this.response = new ResponseHTTPImpl(ctx,entity.isKeep());
+        this.response = new ResponseHTTPImpl(ctx,entity.isKeep(),this);
     }
 
     public Map<String, String> getHeaders() {

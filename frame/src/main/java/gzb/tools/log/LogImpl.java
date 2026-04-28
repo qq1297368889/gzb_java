@@ -23,24 +23,42 @@ import gzb.frame.annotation.Service;
 
 @Service
 public class LogImpl implements Log {
-    Class<?>aClass;
+    Class<?> aClass;
 
     public LogImpl() {
     }
-    public LogImpl(Class<?>aClass) {
+
+    public LogImpl(Class<?> aClass) {
         this.aClass = aClass;
     }
 
+    public boolean isShowT() {
+        return LogConfig.lvConfig[0] != 2;
+    }
+    public boolean isShowD() {
+        return LogConfig.lvConfig[1] != 2;
+    }
+    public boolean isShowI() {
+        return LogConfig.lvConfig[2] != 2;
+    }
+    public boolean isShowW() {
+        return LogConfig.lvConfig[3] != 2;
+    }
+    public boolean isShowE() {
+        return LogConfig.lvConfig[4] != 2;
+    }
 
     @Override
     public void print(int index, Object... log) {
-        LogThread.logThread.addLog(index,this.aClass,log);
+
+        LogThread.logThread.addLog(index, this.aClass, log);
     }
 
     @Override
     public void t(Object... log) {
         print(0, log);
     }
+
     @Override
     public void d(Object... log) {
         print(1, log);
@@ -63,12 +81,12 @@ public class LogImpl implements Log {
 
     @Override
     public void s(Object sql, long start, long end) {
-        if (end - start < 100){
-            print(1, sql,"耗时",end-start,"毫秒");
-        }else if (end - start < 1000){
-            print(3, sql,"耗时",end-start,"毫秒");
-        }else{
-            print(4, sql,"耗时",end-start,"毫秒");
+        if (end - start < 100) {
+            print(1, sql, "耗时", end - start, "毫秒");
+        } else if (end - start < 1000) {
+            print(3, sql, "耗时", end - start, "毫秒");
+        } else {
+            print(4, sql, "耗时", end - start, "毫秒");
         }
     }
 }

@@ -38,8 +38,8 @@ public class GzbJsonImpl implements GzbJson {
         try {
             StringBuilder sb = entity0.stringBuilderCacheEntity.get(index0);
             sb.append("{\"").append(Config.stateName).append("\":\"").append(code).append("\"");
-
-            sb.append(",\"").append(Config.timeName).append("\":\"").append(System.currentTimeMillis()).append("\"");
+//Config.timeName
+            //sb.append(",\"").append(Config.timeName).append("\":\"").append(System.currentTimeMillis()).append("\"");
 
             if (msg != null) {
                 sb.append(",\"").append(Config.messageName).append("\":\"").append(Tools.escapeJsonString(msg)).append("\"");
@@ -58,11 +58,7 @@ public class GzbJsonImpl implements GzbJson {
             }
 
             if (data != null) {
-                try {
-                    sb.append(",\"").append(Config.dataName).append("\":").append(Tools.toJson(data));
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+                sb.append(",\"").append(Config.dataName).append("\":").append(Tools.toJson(data));
             }
             sb.append("}");
             return sb.toString();
@@ -120,9 +116,7 @@ public class GzbJsonImpl implements GzbJson {
         int index0 = entity0.stringBuilderCacheEntity.open();
         try {
             StringBuilder sb = entity0.stringBuilderCacheEntity.get(index0);
-            sb.append("{\"").append(Config.stateName).append("\":\"").append(code).append("\"")
-                    .append(",\"")
-                    .append(Config.timeName).append("\":\"").append(System.currentTimeMillis()).append("\"");
+            sb.append("{\"").append(Config.stateName).append("\":\"").append(code).append("\"");
 
             if (msg != null) {
                 sb.append(",\"").append(Config.messageName).append("\":\"").append(Tools.escapeJsonString(msg)).append("\"");
@@ -131,11 +125,7 @@ public class GzbJsonImpl implements GzbJson {
                 sb.append(",\"").append(Config.urlName).append("\":\"").append(Tools.escapeJsonString(url)).append("\"");
             }
             if (data != null) {
-                try {
-                    sb.append(",\"").append(Config.dataName).append("\":").append(Tools.toJson(data));
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+                sb.append(",\"").append(Config.dataName).append("\":").append(Tools.toJson(data));
             }
 
             sb.append("}");
@@ -163,6 +153,9 @@ public class GzbJsonImpl implements GzbJson {
      */
     @Override
     public String success(String msg, Object data) {
+        return response(Config.successVal, msg, null, data);
+    }
+    public String success(String msg, Object...data) {
         return response(Config.successVal, msg, null, data);
     }
 

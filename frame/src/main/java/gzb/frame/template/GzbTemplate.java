@@ -1,6 +1,7 @@
 package gzb.frame.template;
 
 import gzb.tools.FileTools;
+import gzb.tools.OnlyId;
 import gzb.tools.Tools;
 
 import java.io.File;
@@ -10,7 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class GzbTemplate {
-    public static class Entity  {
+    public static class Entity {
         public String importCode = "";
         public String classVariable = "";
         public String methodParar = ""; // 组装成: String acc, String pwd, com.frame.entity.SysUsers sysUsers
@@ -24,12 +25,12 @@ public class GzbTemplate {
 
     public static Entity parse(File file) {
         String raw = FileTools.readString(file);
-        return parse(raw,file);
+        return parse(raw, file);
     }
 
-    public static Entity parse(String templateCode,File file) {
+    public static Entity parse(String templateCode, File file) {
         Entity entity = new Entity();
-        entity.file=file;
+        entity.file = file;
         // 1. 提取 Import <%@ page import="..." %>
         String importRegex = "<%@\\s+page\\s+import\\s*=\\s*[\"']([^\"']*)[\"']\\s*%>";
         Pattern importPattern = Pattern.compile(importRegex);
@@ -103,18 +104,18 @@ public class GzbTemplate {
         code.append("import java.util.Map;\n");
         code.append("import java.util.List;\n");
         code.append(entity.importCode).append("\n");
-        if (entity.classAnno!=null) {
+        if (entity.classAnno != null) {
             code.append(entity.classAnno).append("\n");
         }
-        code.append("public class c_").append(Tools.textToMd5(entity.file.getPath().toLowerCase()), 0, 16);
-        if (entity.classExtend!=null) {
+        code.append("public class c_").append(Tools.textToMd5(entity.file == null ? OnlyId.getDistributedString() : entity.file.getPath().toLowerCase()), 0, 16);
+        if (entity.classExtend != null) {
             code.append(entity.classExtend);
         }
         code.append(" {\n\n");
 
         code.append("    // --- Class Variables ---\n");
         code.append("    ").append(entity.classVariable.replace("\n", "\n    ")).append("\n");
-        if (entity.methodAnno!=null) {
+        if (entity.methodAnno != null) {
             code.append(entity.methodAnno).append("\n");
         }
         code.append("    public String _gzb_tem_001(").append(entity.methodParar).append(") throws Exception {\n");
@@ -159,7 +160,7 @@ public class GzbTemplate {
                 "        }\n");
         code.append("    }\n\n");
 
-        if (entity.appendData!=null) {
+        if (entity.appendData != null) {
             code.append(entity.appendData);
         }
         code.append("}\n");
@@ -176,8 +177,13 @@ public class GzbTemplate {
                 .replace("\r", "\\r")
                 .replace("\n", "\\n");
     }
+
     public static String generate(File file) {
         return generate(parse(file), null);
+    }
+
+    public static String generate(String code) {
+        return generate(parse(code, null), null);
     }
 
     public static void main(String[] args) {

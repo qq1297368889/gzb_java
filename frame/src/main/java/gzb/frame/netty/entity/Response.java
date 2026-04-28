@@ -46,9 +46,9 @@ public interface Response {
     public Response flush() ;
 
     /**
-     * 写入数据并  提交 响应
+     * 写入数据并  提交 响应  sendData  sendAndFlush
      */
-    public Response sendAndFlush(Object chunk);
+    public Response sendData(Object chunk);
 
     /**
      * 设置 Cookie

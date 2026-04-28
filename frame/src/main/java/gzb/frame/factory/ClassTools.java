@@ -18,23 +18,24 @@
 
 package gzb.frame.factory;
 
-import com.alibaba.fastjson2.JSON;
-import gzb.entity.RunRes;
 import gzb.entity.SqlTemplate;
+import gzb.entity.TableInfo;
 import gzb.exception.GzbException0;
 import gzb.frame.PublicEntrance;
 import gzb.frame.annotation.*;
-import gzb.frame.db.BaseDao;
+import gzb.frame.db.v2.BaseDao;
 import gzb.entity.FileUploadEntity;
-import gzb.frame.db.DataBase;
+import gzb.frame.db.v2.DataBase;
 import gzb.frame.language.Template;
 import gzb.frame.netty.entity.Request;
 import gzb.frame.netty.entity.Response;
 import gzb.tools.*;
 import gzb.tools.json.GzbJson;
-import gzb.tools.json.Result;
+import gzb.tools.json.GzbJsonImpl;
 import gzb.tools.log.Log;
 import gzb.tools.thread.GzbThreadLocal;
+import io.vertx.sqlclient.Row;
+import io.vertx.sqlclient.RowSet;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
@@ -60,6 +61,7 @@ import java.util.regex.Pattern;
 public class ClassTools {
     public static void main(String[] args) throws InterruptedException {
         int urlCount = 10000;
+
         int loopCount = 1000000;
         Map<String, String> map = new ConcurrentHashMap<>(urlCount);
 
@@ -316,27 +318,29 @@ public class ClassTools {
     }
 
     public static <T extends Annotation> T getAnnotation(Parameter parameter, Class<T> annoClass) {
-        T t=parameter.getAnnotation(annoClass);
-        if (t!=null) {
+        T t = parameter.getAnnotation(annoClass);
+        if (t != null) {
             return t;
         }
-        t=parameter.getDeclaredAnnotation(annoClass);
+        t = parameter.getDeclaredAnnotation(annoClass);
         return t;
     }
+
     public static <T extends Annotation> T getAnnotation(Method method, Class<T> annoClass) {
-        T t=method.getAnnotation(annoClass);
-        if (t!=null) {
+        T t = method.getAnnotation(annoClass);
+        if (t != null) {
             return t;
         }
-        t=method.getDeclaredAnnotation(annoClass);
+        t = method.getDeclaredAnnotation(annoClass);
         return t;
     }
-    public static <T extends Annotation> T getAnnotation(Class<?>aClass, Class<T> annoClass) {
-        T t=aClass.getAnnotation(annoClass);
-        if (t!=null) {
+
+    public static <T extends Annotation> T getAnnotation(Class<?> aClass, Class<T> annoClass) {
+        T t = aClass.getAnnotation(annoClass);
+        if (t != null) {
             return t;
         }
-        t=aClass.getDeclaredAnnotation(annoClass);
+        t = aClass.getDeclaredAnnotation(annoClass);
         return t;
     }
 
@@ -471,6 +475,54 @@ public class ClassTools {
         //log.d("获取参数名", methodName, names);
         return names;
 
+    }
+
+    public static String updateCode1(String code, String name, String interfaceName, String appendCode) throws Exception {
+        // 1. 获取类头定义部分 tmp0
+        String tmp0 = Tools.textMid(code, name, "{", 1);
+        if (tmp0 == null) return null;
+
+        String tmp = tmp0;
+
+        // 2. 去除行内注释（保护代码不受注释干扰）
+        tmp = tmp.replaceFirst("//.*", "");
+
+        // 3. 检查是否已经包含了这个接口，防止重复添加
+        if (!tmp.contains(interfaceName)) {
+            // 使用正则单词边界匹配 implements
+            Matcher m = Pattern.compile("\\bimplements\\b").matcher(tmp);
+
+            if (m.find()) {
+                // 情况 A: 已经有 implements，在第一个 implements 后面插入新接口
+                // 比如：extends A implements B -> extends A implements interfaceName, B
+                int insertPos = m.end();
+                tmp = tmp.substring(0, insertPos) + " " + interfaceName + ", " + tmp.substring(insertPos).trim();
+            } else {
+                // 情况 B: 没有 implements
+                // 我们需要检查是否有 extends，如果有，要加在 extends 后面
+                if (tmp.contains("extends")) {
+                    // 保持原样，在末尾追加即可，确保前面有一个空格
+                    tmp = tmp.replaceAll("\\s+$", "") + " implements " + interfaceName;
+                } else {
+                    // 既没有 extends 也没有 implements
+                    tmp = " implements " + interfaceName + " " + tmp.trim();
+                }
+            }
+        }
+
+        // 4. 替换与追加逻辑（保持黑盒视角不变）
+        if (!code.contains("public Object _gzb_call_x01")) {
+            // 使用精准替换，保留原来的 tmp0 结构，只把修改后的 tmp 放回去
+            // 注意：这里保留了类名之后、大括号之前的原始间距
+            code = code.replace(name + tmp0 + "{", name + tmp + "{");
+
+            int lastBrace = code.lastIndexOf("}");
+            if (lastBrace > -1) {
+                code = code.substring(0, lastBrace) + appendCode + "\r\n}";
+            }
+        }
+
+        return code;
     }
 
     public static String updateCode(String code, String name, String interfaceName, String appendCode) throws Exception {
@@ -631,6 +683,7 @@ public class ClassTools {
         }
         return listObject;
     }
+
     public static GzbEntityInterface readObject(Class<?> aClass) {
         Object obj = mapLoadObjectObject.get(aClass);
         if (obj == null) {
@@ -654,7 +707,7 @@ public class ClassTools {
                     } catch (Exception e) {//预期内的可能错误 吞掉 真实编译的错误才有意义
                         if (aClass1.getName().startsWith("java.")) {
                             mapLoadObjectObject.put(aClass, "1");
-                        }else{
+                        } else {
                             code = ClassTools.gen_entity_load_code_v1(aClass1); //通过反射 生成新类
                             if (code != null) {
                                 aClass0 = ClassLoad.compileJavaCode(code);//编译新类
@@ -683,49 +736,72 @@ public class ClassTools {
         return (GzbEntityInterface) obj;
     }
 
-    public static SqlTemplate toSelectSql(Object object) {
+    public static SqlTemplate toSelectSql(Object object, int sql_type) {
         GzbEntityInterface gzbEntityInterface = readObject(object.getClass());
         if (gzbEntityInterface == null) {
             return null;
         }
         try {
-            return gzbEntityInterface.toSelectSql(object);
+            return gzbEntityInterface.toSelectSql(object, sql_type,null,null,null,null);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public static SqlTemplate toSelectSql(Object object, int sql_type,String sortField,String sortType,Integer page,Integer size) {
+        GzbEntityInterface gzbEntityInterface = readObject(object.getClass());
+        if (gzbEntityInterface == null) {
+            return null;
+        }
+        try {
+            return gzbEntityInterface.toSelectSql(object, sql_type,sortField,sortType,page,size);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static SqlTemplate toDeleteSql(Object object) {
+    public static SqlTemplate toDeleteSql(Object object, int sql_type) {
         GzbEntityInterface gzbEntityInterface = readObject(object.getClass());
         if (gzbEntityInterface == null) {
             return null;
         }
         try {
-            return gzbEntityInterface.toDeleteSql(object);
+            return gzbEntityInterface.toDeleteSql(object, sql_type);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static SqlTemplate toSaveSql(Object object, gzb.frame.db.DataBase dataBase, boolean reset) {
+    public static SqlTemplate toSaveSql(Object object, gzb.frame.db.DataBase dataBase, boolean reset, int sql_type) {
         GzbEntityInterface gzbEntityInterface = readObject(object.getClass());
         if (gzbEntityInterface == null) {
             return null;
         }
         try {
-            return gzbEntityInterface.toSaveSql(object, dataBase, reset);
+            return gzbEntityInterface.toSaveSql(object, dataBase, reset, sql_type);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static SqlTemplate toUpdateSql(Object object) {
+    public static SqlTemplate toSaveSql(Object object, gzb.frame.db.v2.DataBase dataBase, boolean reset, int sql_type) {
         GzbEntityInterface gzbEntityInterface = readObject(object.getClass());
         if (gzbEntityInterface == null) {
             return null;
         }
         try {
-            return gzbEntityInterface.toUpdateSql(object);
+            return gzbEntityInterface.toSaveSql(object, dataBase, reset, sql_type);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static SqlTemplate toUpdateSql(Object object, int sql_type) {
+        GzbEntityInterface gzbEntityInterface = readObject(object.getClass());
+        if (gzbEntityInterface == null) {
+            return null;
+        }
+        try {
+            return gzbEntityInterface.toUpdateSql(object, sql_type);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -755,6 +831,29 @@ public class ClassTools {
         }
     }
 
+    public static <T> T loadResultSet(Class<?> aClass, io.vertx.sqlclient.Row row, java.util.Set<String> names) {
+        GzbEntityInterface gzbEntityInterface = readObject(aClass);
+        if (gzbEntityInterface == null) {
+            return null;
+        }
+        try {
+            return (T) gzbEntityInterface.loadRowSet(row, names);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public static <T>java.util.List<T> loadResultSet(Class<?> aClass, io.vertx.sqlclient.RowSet<io.vertx.sqlclient.Row> rowSet) {
+        GzbEntityInterface gzbEntityInterface = readObject(aClass);
+        if (gzbEntityInterface == null) {
+            return null;
+        }
+        try {
+            return  gzbEntityInterface.loadRowSet(rowSet);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static String toJsonObject(Object obj) {
         if (obj == null) {
             return null;
@@ -766,7 +865,7 @@ public class ClassTools {
         try {
             return gzbEntityInterface.toJson(obj);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+           return Tools.toJson(obj.toString());
         }
     }
 
@@ -781,13 +880,13 @@ public class ClassTools {
         try {
             gzbEntityInterface.toJson(obj, stringBuilder);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            stringBuilder.append('"').append(obj.toString()).append('"');
         }
     }
 
     public static byte[] toJsonObjectByte(Object obj) {
         if (obj == null) {
-            log.d("1", obj);
+            log.d("1", null);
             return null;
         }
         GzbEntityInterface gzbEntityInterface = readObject(obj.getClass());
@@ -851,6 +950,7 @@ public class ClassTools {
         }
         String t_code = ClassTools.gen_call_code_v4(aClass, javaCode);
         String new_code = ClassTools.updateCode(javaCode, aClass.getSimpleName(), "gzb.frame.factory.GzbOneInterface", t_code);
+
         return new_code;
     }
 
@@ -1017,7 +1117,6 @@ public class ClassTools {
                 "        throw new RuntimeException(\"实体类->" + className + "转换JSON异常\",e);\n" +
                 "     }\n" +
                 "   }\n";
-        gzb.tools.thread.GzbThreadLocal.Entity entity0 = gzb.tools.thread.GzbThreadLocal.context.get();
 
         code += "   public String toJson(Object object) throws Exception{\n" +
                 "        gzb.tools.thread.GzbThreadLocal.Entity entity0 = gzb.tools.thread.GzbThreadLocal.context.get();\n" +
@@ -1111,7 +1210,7 @@ public class ClassTools {
                 "        throw new RuntimeException(\"实体类->" + className + "转换JSON异常\",e);\n" +
                 "   }finally {\n" +
                 "        entity0.stringBuilderCacheEntity.close(index0);" +
-                "   }\n"+
+                "   }\n" +
                 "   }\n";
 
 
@@ -1228,7 +1327,6 @@ public class ClassTools {
                 "        throw new RuntimeException(\"实体类->" + className + "转换JSON异常\",e);\n" +
                 "   }\n" +
                 "   }\n";
-
 
 
         code += "   public Object[] loadObject" +
@@ -1375,8 +1473,107 @@ public class ClassTools {
         }
         code += "        return obj;\n" +
                 "    }\n";
+
+
+        code += "    public Object loadRowSet(io.vertx.sqlclient.Row row,java.util.Set<String> names) throws Exception{\n";
+        if (classAttribute != null) {
+            try {
+                aClass.getDeclaredConstructor();
+                code += "        " + className + " obj = new " + className + "();\n";
+                for (Field field : fields) {
+                    if (field.getType() == byte.class || field.getType() == Byte.class
+                            || field.getType() == byte[].class || field.getType() == Byte[].class) {
+                        continue;
+                    }
+                    EntityAttribute fieldAttribute = field.getAnnotation(EntityAttribute.class);
+                    if (fieldAttribute == null) {
+                        continue;
+                    }
+                    String name = (field.getName());
+                    String name_d = Tools.lowStr_d(field.getName());
+                    if (Modifier.isPublic(field.getModifiers())) {
+                        num++;
+                        code += "        if (names.contains(\"" + fieldAttribute.name() + "\")) {\n" +
+                                "            obj." + name + " = row.get" + field.getType().getSimpleName() + "(\"" + fieldAttribute.name() + "\");\n" +
+                                "        }\n";
+
+                    } else {
+                        try {
+                            aClass.getMethod("set" + name_d, field.getType());
+                            code += "        if (names.contains(\"" + fieldAttribute.name() + "\")) {\n";
+                            code += "            obj.set" + name_d + "(row.get" + field.getType().getSimpleName() + "(\"" + fieldAttribute.name() + "\"));\n";
+                            code += "        }\n";
+
+                            num++;
+                        } catch (Exception e) {
+                            //e.printStackTrace();
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                code += "        " + className + " obj = null;\n";
+            }
+        } else {
+            code += "        " + className + " obj = null;\n";
+        }
+        code += "        return obj;\n" +
+                "    }\n";
+
+        code += "    public <T>java.util.List<T> loadRowSet(io.vertx.sqlclient.RowSet<io.vertx.sqlclient.Row>rowSet) throws Exception{\n";
+        code += "java.util.List<" + className + ">list=null;\n";
+        if (classAttribute != null) {
+            try {
+
+                aClass.getDeclaredConstructor();
+                code += "list=new java.util.ArrayList<>(rowSet.size());\n" +
+                        "java.util.Set<String> names=new java.util.HashSet<>(rowSet.columnsNames());\n";
+                code += "       for (io.vertx.sqlclient.Row row : rowSet) {";
+
+                code += "        " + className + " obj = new " + className + "();\n";
+                for (Field field : fields) {
+                    if (field.getType() == byte.class || field.getType() == Byte.class
+                            || field.getType() == byte[].class || field.getType() == Byte[].class) {
+                        continue;
+                    }
+                    EntityAttribute fieldAttribute = field.getAnnotation(EntityAttribute.class);
+                    if (fieldAttribute == null) {
+                        continue;
+                    }
+                    String name = (field.getName());
+                    String name_d = Tools.lowStr_d(field.getName());
+                    if (Modifier.isPublic(field.getModifiers())) {
+                        num++;
+                        code += "           if (names.contains(\"" + fieldAttribute.name() + "\")) {\n" +
+                                "                obj." + name + " = row.get" + field.getType().getSimpleName() + "(\"" + fieldAttribute.name() + "\");\n" +
+                                "           }\n";
+
+                    } else {
+                        try {
+                            aClass.getMethod("set" + name_d, field.getType());
+                            code += "        if (names.contains(\"" + fieldAttribute.name() + "\")) {\n";
+                            code += "            obj.set" + name_d + "(row.get" + field.getType().getSimpleName() + "(\"" + fieldAttribute.name() + "\"));\n";
+                            code += "        }\n";
+
+                            num++;
+                        } catch (Exception e) {
+                            //e.printStackTrace();
+                        }
+                    }
+                }
+                code += "        list.add(obj);\n";
+                code += "        }\n";
+            } catch (Exception e) {
+                /// code += "        " + className + " obj = null;\n"; //默认 null
+            }
+        } else {
+            /// code += "        " + className + " obj = null;\n"; //默认 null
+        }
+        code += "        return (java.util.List<T>)list;\n" +
+                "    }\n";
+
         //生成 sql 删除
-        code += "   public gzb.entity.SqlTemplate toDeleteSql(Object obj0) throws Exception {\n";
+        code += "   public gzb.entity.SqlTemplate toDeleteSql(Object obj0,int sql_type) throws Exception {\n";
+
         if (classAttribute != null) {
             code += "       " + aClass.getName() + " obj=(" + aClass.getName() + ")obj0;\n" +
                     "        String sql = \"delete from " + classAttribute.name() + "\";\n" +
@@ -1407,8 +1604,15 @@ public class ClassTools {
                     continue;
                 }
                 code += "        if (obj.get" + c_h_d_name + "() != null) {\n" +
-                        "            stringBuilder.append(\"" + c_name + "=? and \");\n" +
                         "            params.add(obj.get" + c_h_d_name + "());\n" +
+                        "            stringBuilder.append(\"" + c_name + "=\");" +
+                        "            if (sql_type==1) {\n" +
+                        "               stringBuilder.append(\"$\");" +
+                        "               stringBuilder.append(params.size());" +
+                        "            }else{\n" +
+                        "               stringBuilder.append(\"?\");" +
+                        "            }" +
+                        "            stringBuilder.append(\" and \");" +
                         "        }\n";
             }
             for (Field field : fields) {
@@ -1433,15 +1637,22 @@ public class ClassTools {
                     continue;
                 }
                 code += "        if (obj.get" + c_h_d_name + "() != null) {\n" +
-                        "            stringBuilder.append(\"" + c_name + "=? and \");\n" +
                         "            params.add(obj.get" + c_h_d_name + "());\n" +
+                        "            stringBuilder.append(\"" + c_name + "=\");" +
+                        "            if (sql_type==1) {\n" +
+                        "               stringBuilder.append(\"$\");" +
+                        "               stringBuilder.append(params.size());" +
+                        "            }else{\n" +
+                        "               stringBuilder.append(\"?\");" +
+                        "            }" +
+                        "            stringBuilder.append(\" and \");" +
                         "        }\n";
             }
             code += "        if (stringBuilder.length() > 0) {\n" +
                     "            stringBuilder.delete(stringBuilder.length() - 5, stringBuilder.length());\n" +
                     "            sql += \" where \";\n" +
                     "        }\n" +
-                    "        return new gzb.entity.SqlTemplate(sql + stringBuilder,params.toArray());\n"+
+                    "        return new gzb.entity.SqlTemplate(sql + stringBuilder,params.toArray());\n" +
 
                     "}finally {\n" +
                     "        entity0.stringBuilderCacheEntity.close(index0);" +
@@ -1453,7 +1664,7 @@ public class ClassTools {
 
 
         //生成 sql 修改
-        code += "   public gzb.entity.SqlTemplate toUpdateSql(Object obj0) throws Exception {\n";
+        code += "   public gzb.entity.SqlTemplate toUpdateSql(Object obj0,int sql_type) throws Exception {\n";
         if (classAttribute != null) {
             code += "       " + aClass.getName() + " obj=(" + aClass.getName() + ")obj0;\n";
             String ids1 = "";
@@ -1481,13 +1692,19 @@ public class ClassTools {
                     code += "        if (obj.get" + c_h_d_name + "()==null) {\n" +
                             "            throw new RuntimeException(\"生成SQL（update）时 发现ID为空 \"+obj);\n" +
                             "        }\n";
-                    ids1 += c_name + "=? and ";
                     ids2 += "        params.add(obj.get" + c_h_d_name + "());\n";
+                    ids1 += "               stringBuilder.append(\"" + c_name + "\").append(\"= \");" +
+                            "            if (sql_type==1) {\n" +
+                            "               stringBuilder.append(\"$\");" +
+                            "               stringBuilder.append(params.size());" +
+                            "            }else{\n" +
+                            "               stringBuilder.append(\"?\");" +
+                            "            }";
+
+
                 }
             }
-            if (ids1.length() > 5) {
-                ids1 = ids1.substring(0, ids1.length() - 5);
-            }
+
             code += "        String sql = \"update " + classAttribute.name() + " set \";\n" +
                     "        gzb.tools.thread.GzbThreadLocal.Entity entity0 = gzb.tools.thread.GzbThreadLocal.context.get();\n" +
                     "        int index0=entity0.stringBuilderCacheEntity.open();\n" +
@@ -1516,8 +1733,17 @@ public class ClassTools {
                     continue;
                 }
 
-                code += "            stringBuilder.append(\"" + c_name + "=?,\");\n" +
-                        "            params.add(obj.get" + c_h_d_name + "());\n";
+                code += "        if (obj.get"+ c_h_d_name +"()!=null) {\n" +
+                        "            params.add(obj.get" + c_h_d_name + "());\n" +
+                        "            stringBuilder.append(\"" + c_name + "=\");" +
+                        "            if (sql_type==1) {\n" +
+                        "               stringBuilder.append(\"$\");" +
+                        "               stringBuilder.append(params.size());" +
+                        "            }else{\n" +
+                        "               stringBuilder.append(\"?\");" +
+                        "            }" +
+                        "            stringBuilder.append(\",\");"+
+                        "        }";
             }
             code += "        if (stringBuilder.length() > 0) {\n" +
                     "            stringBuilder.delete(stringBuilder.length() - 1, stringBuilder.length());\n" +
@@ -1525,16 +1751,19 @@ public class ClassTools {
                     "            throw new RuntimeException(\"生成SQL（update）时 发现没有可修改的内容 \"+obj);\n" +
                     "        }\n" +
                     ids2 +
-                    "        return new gzb.entity.SqlTemplate(sql +stringBuilder +\" where " + ids1 + "\",params.toArray());\n" +
+                    "               stringBuilder.append(\" where \");" +
+                    ids1 +
+                    "        return new gzb.entity.SqlTemplate(sql +stringBuilder,params.toArray());\n" +
                     "}finally {\n" +
                     "        entity0.stringBuilderCacheEntity.close(index0);" +
-                    "            }\n";;
+                    "            }\n";
+            ;
         } else {
             code += "        return null;\n";
         }
         code += "    }\n";
         //生成 sql 保存
-        code += "   public gzb.entity.SqlTemplate toSaveSql(Object obj0,gzb.frame.db.DataBase dataBase,boolean reset) throws Exception {\n";
+        code += "   public gzb.entity.SqlTemplate toSaveSql(Object obj0,gzb.frame.db.DataBase dataBase,boolean reset,int sql_type) throws Exception {\n";
         if (classAttribute != null) {
             code += "       " + aClass.getName() + " obj=(" + aClass.getName() + ")obj0;\n";
             code += "        StringBuilder fields = new StringBuilder();\n" +
@@ -1601,9 +1830,15 @@ public class ClassTools {
                     continue;
                 }
                 code += "        if (obj.get" + c_h_d_name + "() != null) {\n" +
-                        "            values.append(\"?,\");\n" +
-                        "            fields.append(\"" + c_name + ",\");\n" +
                         "            params.add(obj.get" + c_h_d_name + "());\n" +
+                        "            if (sql_type==1) {\n" +
+                        "               values.append(\"$\");" +
+                        "               values.append(params.size());" +
+                        "            }else{\n" +
+                        "               values.append(\"?\");" +
+                        "            }" +
+                        "            values.append(\",\");" +
+                        "            fields.append(\"" + c_name + ",\");\n" +
                         "        }\n";
             }
             code += "        if (fields.length() > 0) {\n" +
@@ -1618,16 +1853,109 @@ public class ClassTools {
         }
         code += "    }\n";
 
-        //生成 sql 查询
-        code += "   public gzb.entity.SqlTemplate toSelectSql(Object obj0) throws Exception {\n";
+        code += "   public gzb.entity.SqlTemplate toSaveSql(Object obj0,gzb.frame.db.v2.DataBase dataBase,boolean reset,int sql_type) throws Exception {\n";
         if (classAttribute != null) {
             code += "       " + aClass.getName() + " obj=(" + aClass.getName() + ")obj0;\n";
-            code += "        String sql = \"select * from " + classAttribute.name() + "\";\n" +
-                    "        gzb.tools.thread.GzbThreadLocal.Entity entity0 = gzb.tools.thread.GzbThreadLocal.context.get();\n" +
-                    "        int index0=entity0.stringBuilderCacheEntity.open();\n" +
-                    "try {\n" +
-                    "        StringBuilder stringBuilder = entity0.stringBuilderCacheEntity.get(index0);\n" +
+            code += "        StringBuilder fields = new StringBuilder();\n" +
+                    "        StringBuilder values = new StringBuilder();\n" +
                     "        java.util.List<Object> params = new java.util.ArrayList<>();\n";
+            for (Field field : fields) {
+                if (field.getType() == byte.class || field.getType() == Byte.class
+                        || field.getType() == byte[].class || field.getType() == Byte[].class) {
+                    continue;
+                }
+                EntityAttribute fieldAttribute = field.getAnnotation(EntityAttribute.class);
+                if (fieldAttribute == null) {
+                    continue;
+                }
+                boolean key = fieldAttribute.key();
+                String c_name = fieldAttribute.name();
+                String c_h_name = field.getName();
+                String c_h_d_name = Tools.lowStr_d(c_h_name);
+                try {
+                    aClass.getMethod("set" + c_h_d_name, field.getType());
+                } catch (Exception e) {
+                    continue;
+                }
+                if (key) {
+                    //dataBase.getOnlyIdNumber(classAttribute.name(),fieldAttribute.name())
+                    if (field.getType() == Integer.class || field.getType() == int.class) {
+                        code += "        if (obj.get" + c_h_d_name + "()==null || reset) {\n" +
+                                "            obj.set" + c_h_d_name + "(dataBase.getOnlyIdNumber(\"" + classAttribute.name() + "\",\"" + fieldAttribute.name() + "\",reset));\n" +
+                                "        }\n";
+
+                    }
+                    if (field.getType() == Long.class || field.getType() == long.class) {
+                        code += "        if (obj.get" + c_h_d_name + "()==null) {\n" +
+                                "            obj.set" + c_h_d_name + "(dataBase.getOnlyIdDistributed());\n" +
+                                "        }\n";
+                    }
+                    if (field.getType() == String.class) {
+                        code += "        if (obj.get" + c_h_d_name + "()==null) {\n" +
+                                "            obj.set" + c_h_d_name + "(dataBase.getOnlyIdDistributedString());\n" +
+                                "        }\n";
+                    }
+
+                }
+
+            }
+
+            for (Field field : fields) {
+                if (field.getType() == byte.class || field.getType() == Byte.class
+                        || field.getType() == byte[].class || field.getType() == Byte[].class) {
+                    continue;
+                }
+                EntityAttribute fieldAttribute = field.getAnnotation(EntityAttribute.class);
+                if (fieldAttribute == null) {
+                    continue;
+                }
+                boolean key = fieldAttribute.key();
+
+                String c_name = fieldAttribute.name();
+                String c_h_name = field.getName();
+                String c_h_d_name = Tools.lowStr_d(c_h_name);
+                try {
+                    aClass.getMethod("get" + c_h_d_name);
+                } catch (Exception e) {
+                    continue;
+                }
+                code += "        if (obj.get" + c_h_d_name + "() != null) {\n" +
+                        "            params.add(obj.get" + c_h_d_name + "());\n" +
+                        "            if (sql_type==1) {\n" +
+                        "               values.append(\"$\");" +
+                        "               values.append(params.size());" +
+                        "            }else{\n" +
+                        "               values.append(\"?\");" +
+                        "            }" +
+                        "            values.append(\",\");" +
+                        "            fields.append(\"" + c_name + ",\");\n" +
+                        "        }\n";
+            }
+            code += "        if (fields.length() > 0) {\n" +
+                    "            fields.delete(fields.length() - 1, fields.length());\n" +
+                    "            values.delete(values.length() - 1, values.length());\n" +
+                    "        }else{\n" +
+                    "            throw new RuntimeException(\"生成SQL（save）时 发现没有可插入的内容 \"+obj);\n" +
+                    "        }\n" +
+                    "        return new gzb.entity.SqlTemplate(\"insert into " + classAttribute.name() + "(\" +fields +\")values(\"+values+\")\",params.toArray());\n";
+        } else {
+            code += "        return null;\n";
+        }
+        code += "    }\n";
+
+
+        //生成 sql 查询
+        code += "   public gzb.entity.SqlTemplate toSelectSql(Object obj0,int sql_type,String sortField,String sortType,Integer page,Integer size) throws Exception {\n";
+        if (classAttribute != null) {
+            code += "       " + aClass.getName() + " obj=(" + aClass.getName() + ")obj0;\n";
+            code +=
+                    "        gzb.tools.thread.GzbThreadLocal.Entity entity0 = gzb.tools.thread.GzbThreadLocal.context.get();\n" +
+                            "        int index0=entity0.stringBuilderCacheEntity.open();\n" +
+                            "try {\n" +
+                            "        StringBuilder stringBuilder = entity0.stringBuilderCacheEntity.get(index0);\n" +
+                            "        stringBuilder.append(\"select * from "+classAttribute.name()+" where \");\n" +
+                            "        int f_size=0;\n" +
+                            "        java.util.List<Object> params = new java.util.ArrayList<>();\n";
             for (Field field : fields) {
                 if (field.getType() == byte.class || field.getType() == Byte.class
                         || field.getType() == byte[].class || field.getType() == Byte[].class) {
@@ -1648,8 +1976,16 @@ public class ClassTools {
                 }
                 if (key) {
                     code += "        if (obj.get" + c_h_d_name + "() != null) {\n" +
-                            "            stringBuilder.append(\"" + c_name + "=? and \");\n" +
+                            "            f_size++;\n" +
                             "            params.add(obj.get" + c_h_d_name + "());\n" +
+                            "            stringBuilder.append(\"" + c_name + "=\");" +
+                            "            if (sql_type==1) {\n" +
+                            "               stringBuilder.append(\"$\");" +
+                            "               stringBuilder.append(params.size());" +
+                            "            }else{\n" +
+                            "               stringBuilder.append(\"?\");" +
+                            "            }" +
+                            "            stringBuilder.append(\" and \");" +
                             "        }\n";
                 }
             }
@@ -1676,18 +2012,57 @@ public class ClassTools {
                     continue;
                 }
                 code += "        if (obj.get" + c_h_d_name + "() != null) {\n" +
-                        "            stringBuilder.append(\"" + c_name + "=? and \");\n" +
+                        "            f_size++;\n" +
                         "            params.add(obj.get" + c_h_d_name + "());\n" +
+                        "            stringBuilder.append(\"" + c_name + "=\");" +
+                        "            if (sql_type==1) {\n" +
+                        "               stringBuilder.append(\"$\");" +
+                        "               stringBuilder.append(params.size());" +
+                        "            }else{\n" +
+                        "               stringBuilder.append(\"?\");" +
+                        "            }" +
+                        "            stringBuilder.append(\" and \");" +
                         "        }\n";
             }
-            code += "        if (stringBuilder.length() > 0) {\n" +
+            code += "        if (f_size==0) {\n" +
+                    "            stringBuilder.delete(stringBuilder.length() - 7, stringBuilder.length());\n" +
+                    "        }else{\n" +
                     "            stringBuilder.delete(stringBuilder.length() - 5, stringBuilder.length());\n" +
-                    "            sql += \" where \";\n" +
                     "        }\n" +
-                    "        return new gzb.entity.SqlTemplate(sql + stringBuilder,params.toArray());\n" +
-                    "}finally {\n" +
+                    "            if (sortField!=null){\n" +
+                    "                stringBuilder.append(\" order by \");\n" +
+                    "                stringBuilder.append(sortField);\n" +
+                    "                if (sortType!=null){\n" +
+                    "                    stringBuilder.append(\" \");\n" +
+                    "                    stringBuilder.append(sortType);\n" +
+                    "                }else{\n" +
+                    "                    stringBuilder.append(\" desc\");\n" +
+                    "                }\n" +
+                    "            }\n" +
+                    "            if (page!=null && size!=null && page > 0 && size > 0) {\n" +
+                    "                int start = 0;\n" +
+                    "                if (page > 1) {\n" +
+                    "                    start = (page - 1) * size;\n" +
+                    "                }\n" +
+                    "                int end = start + size;\n" +
+                    "                if (sql_type == 1) {\n" +
+                    "                    params.add(end);\n" +
+                    "                    stringBuilder.append(\" LIMIT $\");\n" +
+                    "                    stringBuilder.append(params.size());\n" +
+                    "                    params.add(start);\n" +
+                    "                    stringBuilder.append(\" OFFSET $\");\n" +
+                    "                    stringBuilder.append(params.size());\n" +
+                    "                } else {\n" +
+                    "                    stringBuilder.append(\"LIMIT ? OFFSET ?\");\n" +
+                    "                    params.add(end);\n" +
+                    "                    params.add(start);\n" +
+                    "                }\n" +
+                    "            }\n" +
+
+                    "        return new gzb.entity.SqlTemplate(stringBuilder.toString(),params.toArray());\n" +
+                    "       }finally {\n" +
                     "        entity0.stringBuilderCacheEntity.close(index0);" +
-                    "            }\n";
+                    "       }\n";
 
         } else {
             code += "        return null;\n";
@@ -1699,7 +2074,7 @@ public class ClassTools {
         if (num == 0) {
             return null;
         }
-       // System.out.println(code);
+        //System.out.println("classTools 1969 \n"+code);
         return code;
     }
 
@@ -1725,9 +2100,11 @@ public class ClassTools {
                 || aClass == DateTime.class
                 || aClass == Timestamp.class;
     }
+
     public static String gen_call_code_v4(Class<?> aClass) throws Exception {
-        return gen_call_code_v4(aClass,null);
+        return gen_call_code_v4(aClass, null);
     }
+
     //可维护性堪忧 不过应该不需要维护其实
     public static String gen_call_code_v4(Class<?> aClass, String javaCode) throws Exception {
         Method[] methods = ClassTools.getCombinedMethods(aClass);
@@ -1741,7 +2118,7 @@ public class ClassTools {
                 "gzb.tools.json.GzbJson _g_p_gzbJson," +
                 "gzb.tools.log.Log _g_p_log," +
                 "Object[] arrayObject" +
-                ") throws Exception {\n" +
+                ") throws Throwable {\n" +
                 "        Object object_return = null;\n";
 
 //不再需要注入 因为编译时注入了
@@ -1802,8 +2179,8 @@ public class ClassTools {
             String[] names = ClassTools.getParameterNamesByAsm(method, types).toArray(new String[0]);
 
             if (names.length != types.length) {
-                if (javaCode==null) {
-                    throw new RuntimeException("获取参数名失败:"+met_Sign);
+                if (javaCode == null) {
+                    throw new RuntimeException("获取参数名失败:" + met_Sign);
                 }
                 names = ClassTools.getParameterNames(javaCode, method.getName(), types).toArray(new String[0]);
             }
@@ -1811,13 +2188,13 @@ public class ClassTools {
                 Log.log.w("获取参数失败", method);
                 continue;
             }
-            Parameter[]parameter = method.getParameters();
+            Parameter[] parameter = method.getParameters();
             for (int i1 = 0; i1 < parameter.length; i1++) {
-                gzb.frame.annotation.Parameter parameter1= parameter[i1].getAnnotation(gzb.frame.annotation.Parameter.class);
-                if (parameter1==null) {
+                gzb.frame.annotation.Parameter parameter1 = parameter[i1].getAnnotation(gzb.frame.annotation.Parameter.class);
+                if (parameter1 == null) {
                     continue;
                 }
-                names[i1]=parameter1.value();
+                names[i1] = parameter1.value();
             }
             code += "        //方法ID匹配\n" +
                     "        if (_gzb_one_c_id == " + met_id + ") {\n";
@@ -2002,7 +2379,7 @@ public class ClassTools {
                                 code += "                                if (_c_u_" + names[i1] + " == null){\n" +
                                         "                                    gzb.tools.log.Log.log.d(\"参数:" + names[i1] + ",类型为：" + types[i1].getName() + ",不允许为 NULL\");\n" +
                                         "                                    return \"{\\\"\"+gzb.tools.Config.stateName+\"\\\":\\\"\"+gzb.tools.Config.failVal+\"\\\",\\\"\"+gzb.tools.Config.messageName+\"\\\":\\\"有必填参数不允许为空,请检查日志\\\"}\";\n" +
-                                        "                                }";
+                                        "                                }\n";
 
                             }
                         }
@@ -2026,28 +2403,34 @@ public class ClassTools {
                     }
                 }
                 code += ");\n";
-            } else if (transaction.simulate()) {
+            } else{
                 //开启模拟事务 仅保证 一起成功或一起失败 不保证原子性 但是性能更好
                 code += "            //如果 开启模拟事务 则添加事务处理  不存在不生成\n" +
-                        "            java.util.Map<String, java.sql.Connection> mapConnection = new java.util.HashMap<>();\n" +
-                        "            try {\n";
+                        "            gzb.tools.thread.GzbThreadLocal.Entity entity = gzb.tools.thread.GzbThreadLocal.context.get();\n" ;
+                int num0=0;
+                String code1="";
                 for (int i1 = 0; i1 < types.length; i1++) {
-                    String typeName = ClassTools.toName(types[i1]);
                     if (!types[i1].isArray() && BaseDao.class.isAssignableFrom(types[i1])) {
-                        code += "                //每个dao\n" +
-                                "           if(_c_u_" + names[i1] + "!=null && _c_u_" + names[i1] + ".getDataBase().readTransactionState()==null){\n" +
-                                "                    _c_u_" + names[i1] + ".getDataBase().openTransaction(true);\n" +
-                                "           }\n";
+                        code1 +="_c_u_"+ names[i1] +",";num0++;
                     }
                 }
                 for (int i1 = 0; i1 < fields.length; i1++) {
                     if (!fields[i1].getType().isArray() && BaseDao.class.isAssignableFrom(fields[i1].getType())) {
-                        code += "                //每个dao\n" +
-                                "           if(this." + fields[i1].getName() + "!=null && this." + fields[i1].getName() + ".getDataBase().readTransactionState()==null){\n" +
-                                "                    this." + fields[i1].getName() + ".getDataBase().openTransaction(true);\n" +
-                                "           }\n";
+                        code1 +=""+ fields[i1].getName() +",";num0++;
                     }
                 }
+
+                if (num0>0) {
+                    if (code1.endsWith(",")) {
+                        code1=code1.substring(0,code1.length()-1);
+                    }
+                    code+="               java.util.List<gzb.frame.db.v2.DataBase> list_data_base = gzb.frame.db.tools.DataBaseTools.readList("+code1+");\n";
+                }
+                if (num0>0) {
+                    code+="            try {\n"+
+                            "               gzb.frame.db.tools.DataBaseTools.openTransaction(list_data_base,entity,"+transaction.simulate()+");\n";
+                }
+
 
                 code += "                " + (method.getReturnType() == void.class ? "" : "object_return =") + " " + method.getName() + "(";
                 for (int i1 = 0; i1 < names.length; i1++) {
@@ -2057,145 +2440,25 @@ public class ClassTools {
                     }
                 }
                 code += ");\n";
-                for (int i1 = 0; i1 < types.length; i1++) {
-                    if (!types[i1].isArray() && BaseDao.class.isAssignableFrom(types[i1])) {
-                        code += "                //每个dao\n" +
-                                "           if(_c_u_" + names[i1] + "!=null){\n" +
-                                "                _c_u_" + names[i1] + ".getDataBase().commit();\n" +
-                                "           }\n";
-                    }
-                }
-                for (int i1 = 0; i1 < fields.length; i1++) {
-                    if (!fields[i1].getType().isArray() && BaseDao.class.isAssignableFrom(fields[i1].getType())) {
-                        code += "                //每个dao\n" +
-                                "           if(this." + fields[i1].getName() + "!=null){\n" +
-                                "                this." + fields[i1].getName() + ".getDataBase().commit();\n" +
-                                "           }\n";
-                    }
-                }
-                code += "            } catch (Exception e) {\n";
 
-                for (int i1 = 0; i1 < types.length; i1++) {
-                    if (!types[i1].isArray() && BaseDao.class.isAssignableFrom(types[i1])) {
-                        code += "                //每个dao\n" +
-                                "           if(_c_u_" + names[i1] + "!=null){\n" +
-                                "                try {_c_u_" + names[i1] + ".getDataBase().rollback();}catch (Exception e0){gzb.tools.log.Log.log.e(\"事物出现预料外错误\",e0);}\n" +
-                                "           }\n";
-                    }
-                }
-                for (int i1 = 0; i1 < fields.length; i1++) {
-                    if (!fields[i1].getType().isArray() && BaseDao.class.isAssignableFrom(fields[i1].getType())) {
-                        code += "                //每个dao\n" +
-                                "           if(this." + fields[i1].getName() + "!=null){\n" +
-                                "                try {this." + fields[i1].getName() + ".getDataBase().rollback();}catch (Exception e0){gzb.tools.log.Log.log.e(\"事物出现预料外错误\",e0);}\n" +
-                                "           }\n";
-                    }
+                if (num0>0) {
+                    code += "               gzb.frame.db.tools.DataBaseTools.commitTransaction(list_data_base,entity);\n";
+                    code += "            } catch (Exception e) {\n"+
+                            "               try{\n" +
+                            "                    gzb.frame.db.tools.DataBaseTools.rollbackTransaction(list_data_base,entity);\n" +
+                            "                }catch (Throwable e0){\n" +
+                            "                    gzb.tools.log.Log.log.e(\"事物回滚 出现预料外错误\",e0);\n" +
+                            "                }\n"+
+                            "                throw e;\n" +
+                            "            } finally {\n"+
+                            "               try{\n" +
+                            "                    gzb.frame.db.tools.DataBaseTools.endTransaction(list_data_base,entity);\n" +
+                            "                }catch (Throwable e0){\n" +
+                            "                    gzb.tools.log.Log.log.e(\"事物关闭 出现预料外错误\",e0);\n" +
+                            "                }\n"+
+                            "            }\n";
                 }
 
-                code += "                throw e;\n" +
-                        "            } finally {\n";
-                for (int i1 = 0; i1 < types.length; i1++) {
-                    if (!types[i1].isArray() && BaseDao.class.isAssignableFrom(types[i1])) {
-                        code += "                //每个dao\n" +
-                                "           if(_c_u_" + names[i1] + "!=null){\n" +
-                                "                try {_c_u_" + names[i1] + ".getDataBase().endTransaction();}catch (Exception e0){gzb.tools.log.Log.log.e(\"事物 回滚 出现预料外错误\",e0);}\n" +
-                                "           }\n";
-                    }
-                }
-                for (int i1 = 0; i1 < fields.length; i1++) {
-                    if (!fields[i1].getType().isArray() && BaseDao.class.isAssignableFrom(fields[i1].getType())) {
-                        code += "                //每个dao\n" +
-                                "           if(this." + fields[i1].getName() + "!=null){\n" +
-                                "                try {this." + fields[i1].getName() + ".getDataBase().endTransaction();}catch (Exception e0){gzb.tools.log.Log.log.e(\"事物 关闭连接 出现预料外错误\",e0);}\n" +
-                                "           }\n";
-                    }
-                }
-                code += "            }\n";
-            } else {
-                //开启真实事务
-                code += "            //如果开启事物 则添加事务处理  不存在不生成\n" +
-                        "            try {\n";
-                for (int i1 = 0; i1 < types.length; i1++) {
-                    String typeName = ClassTools.toName(types[i1]);
-                    if (!types[i1].isArray() && BaseDao.class.isAssignableFrom(types[i1])) {
-                        code += "                //每个dao\n" +
-                                "           if(_c_u_" + names[i1] + "!=null && _c_u_" + names[i1] + ".getDataBase().readTransactionState()==null){\n" +
-                                "                    _c_u_" + names[i1] + ".getDataBase().openTransaction(false);\n" +
-                                "           }\n";
-                    }
-                }
-                for (int i1 = 0; i1 < fields.length; i1++) {
-                    if (!fields[i1].getType().isArray() && BaseDao.class.isAssignableFrom(fields[i1].getType())) {
-                        code += "                //每个dao\n" +
-                                "           if(this." + fields[i1].getName() + "!=null && this." + fields[i1].getName() + ".getDataBase().readTransactionState()==null){\n" +
-                                "                    this." + fields[i1].getName() + ".getDataBase().openTransaction(false);\n" +
-                                "           }\n";
-                    }
-                }
-                code +=
-                        "                " + (method.getReturnType() == void.class ? "" : "object_return =") + " " + method.getName() + "(";
-                for (int i1 = 0; i1 < names.length; i1++) {
-                    code += "_c_u_" + names[i1];
-                    if (i1 < names.length - 1) {
-                        code += ",";
-                    }
-                }
-                code += ");\n";
-
-                for (int i1 = 0; i1 < types.length; i1++) {
-                    if (!types[i1].isArray() && BaseDao.class.isAssignableFrom(types[i1])) {
-                        code += "                //每个dao\n" +
-                                "           if(_c_u_" + names[i1] + "!=null){\n" +
-                                "                _c_u_" + names[i1] + ".getDataBase().commit();\n" +
-                                "           }\n";
-                    }
-                }
-                for (int i1 = 0; i1 < fields.length; i1++) {
-                    if (!fields[i1].getType().isArray() && BaseDao.class.isAssignableFrom(fields[i1].getType())) {
-                        code += "                //每个dao\n" +
-                                "           if(this." + fields[i1].getName() + "!=null){\n" +
-                                "                this." + fields[i1].getName() + ".getDataBase().commit();\n" +
-                                "           }\n";
-                    }
-                }
-                code += "            } catch (Exception e) {\n";
-
-                for (int i1 = 0; i1 < types.length; i1++) {
-                    if (!types[i1].isArray() && BaseDao.class.isAssignableFrom(types[i1])) {
-                        code += "                //每个dao\n" +
-                                "           if(_c_u_" + names[i1] + "!=null){\n" +
-                                "                try {_c_u_" + names[i1] + ".getDataBase().rollback();}catch (Exception e0){gzb.tools.log.Log.log.e(\"事物出现预料外错误\",e0);}\n" +
-                                "           }\n";
-                    }
-                }
-                for (int i1 = 0; i1 < fields.length; i1++) {
-                    if (!fields[i1].getType().isArray() && BaseDao.class.isAssignableFrom(fields[i1].getType())) {
-                        code += "                //每个dao\n" +
-                                "           if(this." + fields[i1].getName() + "!=null){\n" +
-                                "                try {this." + fields[i1].getName() + ".getDataBase().rollback();}catch (Exception e0){gzb.tools.log.Log.log.e(\"事物出现预料外错误\",e0);}\n" +
-                                "           }\n";
-                    }
-                }
-
-                code += "                throw e;\n" +
-                        "            } finally {\n";
-                for (int i1 = 0; i1 < types.length; i1++) {
-                    if (!types[i1].isArray() && BaseDao.class.isAssignableFrom(types[i1])) {
-                        code += "                //每个dao\n" +
-                                "           if(_c_u_" + names[i1] + "!=null){\n" +
-                                "                try {_c_u_" + names[i1] + ".getDataBase().endTransaction();}catch (Exception e0){gzb.tools.log.Log.log.e(\"事物 回滚 出现预料外错误\",e0);}\n" +
-                                "           }\n";
-                    }
-                }
-                for (int i1 = 0; i1 < fields.length; i1++) {
-                    if (!fields[i1].getType().isArray() && BaseDao.class.isAssignableFrom(fields[i1].getType())) {
-                        code += "                //每个dao\n" +
-                                "           if(this." + fields[i1].getName() + "!=null){\n" +
-                                "                try {this." + fields[i1].getName() + ".getDataBase().endTransaction();}catch (Exception e0){gzb.tools.log.Log.log.e(\"事物 关闭连接 出现预料外错误\",e0);}\n" +
-                                "           }\n";
-                    }
-                }
-                code += "            }\n";
             }
 
             //code+="long time_2=System.nanoTime();\n" +"gzb.tools.log.Log.log.t(\"组装变量耗时\",time_1-time_0,\"调用函数耗时\",time_2-time_1,\"总耗时\",time_2-start_0);\n";
@@ -2206,7 +2469,7 @@ public class ClassTools {
 
         code += "        gzb.tools.log.Log.log.t(\"miss v4\",_gzb_one_c_id,this);\n" +
                 "        return null;\n" +
-                "    }";
+                "    }\n";
         //自己调试用
         //System.out.println(code);
         return code;
@@ -2705,7 +2968,7 @@ public class ClassTools {
                     }
                 }
                 if (obj1 != null) {
-                    log.t( Template.THIS_LANGUAGE[83],  obj1, Template.THIS_LANGUAGE[84], object, Template.THIS_LANGUAGE[85], fields[i].getName(), Template.THIS_LANGUAGE[86], key);
+                    log.t(Template.THIS_LANGUAGE[83], obj1, Template.THIS_LANGUAGE[84], object, Template.THIS_LANGUAGE[85], fields[i].getName(), Template.THIS_LANGUAGE[86], key);
                     classInject(obj1, data, mapObjectAll);
                     fields[i].setAccessible(true);
                     fields[i].set(object, obj1);
@@ -2724,8 +2987,9 @@ public class ClassTools {
 
 
     public static String webPathFormat(String path) {
-         return webPathFormatV2(path);
+        return webPathFormatV2(path);
     }
+
     public static String webPathFormatV1(String path) {
         if (path == null || path.isEmpty()) {
             return PATH_SEPARATOR_STRING;
@@ -2763,11 +3027,12 @@ public class ClassTools {
                 sb.append(PATH_SEPARATOR_CHAR);
             }
             return sb.toString();
-        }finally {
+        } finally {
             entity0.stringBuilderCacheEntity.close(index0);
         }
 
     }
+
     public static String webPathFormatV2(String path) {
         if (path == null || path.isEmpty()) {
             return PATH_SEPARATOR_STRING;
@@ -2821,6 +3086,7 @@ public class ClassTools {
             entity0.stringBuilderCacheEntity.close(index0);
         }
     }
+
     /**
      * 根据 CrossDomain 注解和请求头信息生成对应的 HTTP 响应头。
      */

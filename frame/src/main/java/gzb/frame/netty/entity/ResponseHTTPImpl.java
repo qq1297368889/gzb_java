@@ -39,13 +39,25 @@ public class ResponseHTTPImpl implements Response {
     private Set<Cookie> cookies; // Added cookies field
     private boolean isSendHeaders = false;
     boolean keepAlive = false;
+    private Request gzbRequest = null;
 
-    public ResponseHTTPImpl(ChannelHandlerContext ctx, boolean keepAlive) {
+
+    public ResponseHTTPImpl(ChannelHandlerContext ctx, boolean keepAlive,Request gzbRequest) {
         this.ctx = ctx;
         this.keepAlive = keepAlive;
+        this.gzbRequest = gzbRequest;
 
     }
 
+    ChannelFutureListener CLOSE = new ChannelFutureListener() {
+        @Override
+        public void operationComplete(ChannelFuture future) {
+            gzbRequest.requestClose();
+            if (!keepAlive) {
+                future.channel().close();
+            }
+        }
+    };
     /**
      * 发送响应头。这个方法只会被调用一次。
      */
@@ -106,12 +118,12 @@ public class ResponseHTTPImpl implements Response {
         }
         ChannelFuture future = ctx.writeAndFlush(Unpooled.wrappedBuffer(NettyTools.send_end));
         if (!keepAlive) {
-            future.addListener(ChannelFutureListener.CLOSE);
+            future.addListener(CLOSE);
         }
         return this;
     }
 
-    public Response sendAndFlush(Object chunk) {
+    public Response sendData(Object chunk) {
         GzbThreadLocal.Entity entity0 = GzbThreadLocal.context.get();
         int index = entity0.stringBuilderCacheEntity.open();
         try {
@@ -126,7 +138,7 @@ public class ResponseHTTPImpl implements Response {
                     data.append("Set-Cookie: ").append(NettyTools.encodeSingleCookie(cookie)).append("\r\n");
                 }
             }
-            NettyTools.sendHTTP(ctx, chunk, 200, data.toString(), keepAlive);
+            NettyTools.sendHTTP(ctx, chunk, 200, data.toString(), keepAlive,CLOSE);
             return this;
         } finally {
             entity0.stringBuilderCacheEntity.close(index);
@@ -189,7 +201,7 @@ public class ResponseHTTPImpl implements Response {
     }
 
     public Response success(Object chunk) {
-        return sendAndFlush(chunk);
+        return sendData(chunk);
     }
 
     public Response fail() {

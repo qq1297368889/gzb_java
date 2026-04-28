@@ -1,9 +1,8 @@
 package gzb.start;
 
-import com.action.CacheData;
-import com.action.QueueData;
+import gzb.frame.netty.action.cache.tools.CacheData;
+import gzb.frame.netty.action.cache.tools.QueueData;
 
-/// 注意 玩具 demo  不要认真 只是验证主体逻辑
 public class Start {
     public static void main(String[] args) throws Exception {
         //创建两个缓存数据库

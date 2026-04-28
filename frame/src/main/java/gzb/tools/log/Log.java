@@ -27,6 +27,12 @@ public interface Log {
     }
     public static Log log = new LogImpl();
 
+    public boolean isShowT();
+    public boolean isShowD();
+    public boolean isShowI();
+    public boolean isShowW();
+    public boolean isShowE();
+
     public void print(int index, Object... log);
 
     public void d(Object... log);

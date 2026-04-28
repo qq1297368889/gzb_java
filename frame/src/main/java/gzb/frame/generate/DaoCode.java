@@ -35,7 +35,7 @@ public class DaoCode extends Base {
             code = "package " + this.pkg + "." + tableInfo.getDbNameLowerCase() + ".dao;\n" +
                     "\n" +
                     "import " + this.pkg + "." + tableInfo.getDbNameLowerCase() + ".entity." + tableInfo.getNameHumpUpperCase() + ";\n" +
-                    "import gzb.frame.db.BaseDao;\n" +
+                    "import gzb.frame.db.v2.BaseDao;\n" +
                     "\n" +
                     "public interface " + tableInfo.getNameHumpUpperCase() + "Dao extends BaseDao<" + tableInfo.getNameHumpUpperCase() + "> {\n" +
                     "}\n";

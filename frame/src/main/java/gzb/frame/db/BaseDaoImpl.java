@@ -306,7 +306,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (!PublicEntrance.eventFactory.eventSelect(t, true)) {
             return new JSONResult().fail("查询被拦截");
         }
-        SqlTemplate sqlTemplate = ClassTools.toSelectSql(t);
+        SqlTemplate sqlTemplate = ClassTools.toSelectSql(t,dataBase.getDataBaseConfig().sql_type);
         if (sqlTemplate == null) {
             return null;
         }
@@ -330,7 +330,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (!PublicEntrance.eventFactory.eventSelect(t, true)) {
             return null;
         }
-        SqlTemplate sqlTemplate = ClassTools.toSelectSql(t);
+        SqlTemplate sqlTemplate = ClassTools.toSelectSql(t,dataBase.getDataBaseConfig().sql_type);
         if (sqlTemplate == null) {
             return null;
         }
@@ -346,7 +346,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (!PublicEntrance.eventFactory.eventSelect(t, true)) {
             return -4;
         }
-        SqlTemplate sqlTemplate = ClassTools.toSelectSql(t);
+        SqlTemplate sqlTemplate = ClassTools.toSelectSql(t,dataBase.getDataBaseConfig().sql_type);
         if (sqlTemplate == null) {
             return -1;
         }
@@ -414,7 +414,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (!PublicEntrance.eventFactory.eventSelect(t, true)) {
             return null;
         }
-        SqlTemplate sqlTemplate = ClassTools.toSelectSql(t);
+        SqlTemplate sqlTemplate = ClassTools.toSelectSql(t,dataBase.getDataBaseConfig().sql_type);
         if (sqlTemplate == null) {
             return new ArrayList<>();
         }
@@ -433,7 +433,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (!PublicEntrance.eventFactory.eventSave(t, true)) {
             return -4;
         }
-        SqlTemplate sqlTemplate = ClassTools.toSaveSql(t, dataBase, false);
+        SqlTemplate sqlTemplate = ClassTools.toSaveSql(t, dataBase, false,dataBase.getDataBaseConfig().sql_type);
         if (sqlTemplate == null) {
             return -2;
         }
@@ -443,7 +443,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         } catch (SQLException e) {
             if (e.getMessage().endsWith("for key 'PRIMARY'")) {
                 //触发更新id
-                sqlTemplate = ClassTools.toSaveSql(t, dataBase, true);
+                sqlTemplate = ClassTools.toSaveSql(t, dataBase, true,dataBase.getDataBaseConfig().sql_type);
                 if (sqlTemplate == null) {
                     return -2;
                 }
@@ -466,7 +466,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (!PublicEntrance.eventFactory.eventUpdate(t, true)) {
             return -4;
         }
-        SqlTemplate sqlTemplate = ClassTools.toUpdateSql(t);
+        SqlTemplate sqlTemplate = ClassTools.toUpdateSql(t,dataBase.getDataBaseConfig().sql_type);
         if (sqlTemplate == null) {
             return -2;
         }
@@ -485,7 +485,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (!PublicEntrance.eventFactory.eventDelete(t, true)) {
             return -4;
         }
-        SqlTemplate sqlTemplate = ClassTools.toDeleteSql(t);
+        SqlTemplate sqlTemplate = ClassTools.toDeleteSql(t,dataBase.getDataBaseConfig().sql_type);
         if (sqlTemplate == null) {
             return -2;
         }
@@ -505,7 +505,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (t == null) {
             return -1;
         }
-        SqlTemplate sqlTemplate = ClassTools.toSaveSql(t, dataBase, false);
+        SqlTemplate sqlTemplate = ClassTools.toSaveSql(t, dataBase, false,dataBase.getDataBaseConfig().sql_type);
         if (sqlTemplate == null) {
             return -2;
         }
@@ -523,7 +523,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (t == null) {
             return -1;
         }
-        SqlTemplate sqlTemplate = ClassTools.toUpdateSql(t);
+        SqlTemplate sqlTemplate = ClassTools.toUpdateSql(t,dataBase.getDataBaseConfig().sql_type);
         if (sqlTemplate == null) {
             return -2;
         }
@@ -541,7 +541,7 @@ public abstract class BaseDaoImpl<T> implements BaseDao<T> {
         if (t == null) {
             return -1;
         }
-        SqlTemplate sqlTemplate = ClassTools.toDeleteSql(t);
+        SqlTemplate sqlTemplate = ClassTools.toDeleteSql(t,dataBase.getDataBaseConfig().sql_type);
         if (sqlTemplate == null) {
             return -2;
         }

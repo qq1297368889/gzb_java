@@ -59,12 +59,16 @@ public class EntityCode extends Base {
                     "@EntityAttribute(name=\"" + tableInfo.getName() + "\",desc=\"" + tableInfo.getNameHumpLowerCase() + "\")\n" +
                     "public class " + tableInfo.getNameUpperCase() + " implements Serializable, JsonSerializable{\n" +
                     "    private static final long serialVersionUID = 1000L;\n";
-                    int len=0;
+            int len=0;
             for (int i = 0; i < tableInfo.getColumnNames().size(); i++) {
+                String newName=tableInfo.getColumnNames().get(i);
+                if (!newName.toLowerCase().startsWith(tableInfo.name.toLowerCase())) {
+                    newName=tableInfo.name+"_"+tableInfo.getColumnNames().get(i);
+                }
                 code += "    @EntityAttribute(key=" + tableInfo.getColumnNames().get(i).equals(tableInfo.getId()) + ",size = " + tableInfo.getColumnSize().get(i) + "," +
                         "name=\"" + tableInfo.getColumnNames().get(i) + "\",desc=\"" + tableInfo.getColumnDesc().get(i) + "\",type=\""+tableInfo.columnTypesDb.get(i)+"\")\n" +
-                        "    private " + tableInfo.getColumnTypes().get(i) + " " + tableInfo.getColumnNamesHumpLowerCase().get(i) + ";\n";
-                len+=tableInfo.getColumnNamesHumpLowerCase().get(i).length()+10;
+                        "    private " + tableInfo.getColumnTypes().get(i) + " " + Tools.lowStr_hump(newName,true) + ";\n";
+                len+=Tools.lowStr_hump(newName,true).length()+10;
             }
             code += "    private Object data;\n" +
                     "   public " + tableInfo.getNameUpperCase() + "() {}\n" +
@@ -91,7 +95,7 @@ public class EntityCode extends Base {
                     "    public int update(" + tableInfo.getNameUpperCase() + "Dao " + tableInfo.getNameHumpLowerCase() + "Dao) throws Exception {\n" +
                     "        return " + tableInfo.getNameHumpLowerCase() + "Dao.update(this);\n" +
                     "    }\n" +
-                    "    public int saveAsync(" + tableInfo.getNameUpperCase() + "Dao " + tableInfo.getNameHumpLowerCase() + "Dao) throws Exception {\n" +
+/*                    "    public int saveAsync(" + tableInfo.getNameUpperCase() + "Dao " + tableInfo.getNameHumpLowerCase() + "Dao) throws Exception {\n" +
                     "        return " + tableInfo.getNameHumpLowerCase() + "Dao.saveAsync(this);\n" +
                     "    }\n" +
                     "    public int deleteAsync(" + tableInfo.getNameUpperCase() + "Dao " + tableInfo.getNameHumpLowerCase() + "Dao) throws Exception {\n" +
@@ -99,7 +103,7 @@ public class EntityCode extends Base {
                     "    }\n" +
                     "    public int updateAsync(" + tableInfo.getNameUpperCase() + "Dao " + tableInfo.getNameHumpLowerCase() + "Dao) throws Exception {\n" +
                     "        return " + tableInfo.getNameHumpLowerCase() + "Dao.updateAsync(this);\n" +
-                    "    }\n" +
+                    "    }\n" +*/
                     "    public List<" + tableInfo.getNameUpperCase() + "> query(" + tableInfo.getNameUpperCase() + "Dao " + tableInfo.getNameHumpLowerCase() + "Dao) throws Exception {\n" +
                     "        return " + tableInfo.getNameHumpLowerCase() + "Dao.query(this);\n" +
                     "    }\n" +
@@ -152,25 +156,29 @@ public class EntityCode extends Base {
                     "        sb.append(\"{\");\n";
 
             for (int i = 0; i < tableInfo.getColumnNames().size(); i++) {
+                String newName=tableInfo.getColumnNames().get(i);
+                if (!newName.toLowerCase().startsWith(tableInfo.name.toLowerCase())) {
+                    newName=tableInfo.name+"_"+tableInfo.getColumnNames().get(i);
+                }
                 //统一标准为 string  不再区分其他类型 因为遇到过各种实现差异导致的问题 比如 1意外转为1.0  长整数被科学计数法表示 等
-               if (tableInfo.getColumnTypes().get(i).contains("Boolean") ||tableInfo.getColumnTypes().get(i).contains("boolean") ||
+                if (tableInfo.getColumnTypes().get(i).contains("Boolean") ||tableInfo.getColumnTypes().get(i).contains("boolean") ||
                         tableInfo.getColumnTypes().get(i).contains("Byte") ||tableInfo.getColumnTypes().get(i).contains("byte") ||
                         tableInfo.getColumnTypes().get(i).contains("Short") ||tableInfo.getColumnTypes().get(i).contains("short") ||
                         tableInfo.getColumnTypes().get(i).contains("Integer") ||tableInfo.getColumnTypes().get(i).contains("int") ||
                         tableInfo.getColumnTypes().get(i).contains("Long") ||tableInfo.getColumnTypes().get(i).contains("long") ||
                         tableInfo.getColumnTypes().get(i).contains("Float") ||tableInfo.getColumnTypes().get(i).contains("float") ||
                         tableInfo.getColumnTypes().get(i).contains("Double") ||tableInfo.getColumnTypes().get(i).contains("double")) {
-                   code += "        if (this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + " != null) {\n" +
-                           "            if(app01){sb.append(\",\");}app01=true;\n" +
-                           "            sb.append(\"\\\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\\\":\\\"\")" +
-                           ".append("+ tableInfo.getColumnNamesHumpLowerCase().get(i) +").append(\"\\\"\");\n" +
-                           "        }\n";
+                    code += "        if (this." + Tools.lowStr_hump(newName,true) + " != null) {\n" +
+                            "            if(app01){sb.append(\",\");}app01=true;\n" +
+                            "            sb.append(\"\\\"" + Tools.lowStr_hump(newName,true) + "\\\":\\\"\")" +
+                            ".append("+ Tools.lowStr_hump(newName,true) +").append(\"\\\"\");\n" +
+                            "        }\n";
                 }else{
-                   code += "        if (this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + " != null) {\n" +
-                           "            if(app01){sb.append(\",\");}app01=true;\n" +
-                           "            sb.append(\"\\\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\\\":\");\n" +
-                           "            sb.append(Tools.toJson(" + tableInfo.getColumnNamesHumpLowerCase().get(i) +"));" +
-                           "        }\n";
+                    code += "        if (this." + Tools.lowStr_hump(newName,true) + " != null) {\n" +
+                            "            if(app01){sb.append(\",\");}app01=true;\n" +
+                            "            sb.append(\"\\\"" + Tools.lowStr_hump(newName,true) + "\\\":\");\n" +
+                            "            sb.append(Tools.toJson(" + Tools.lowStr_hump(newName,true) +"));" +
+                            "        }\n";
                 }
 
 
@@ -198,7 +206,11 @@ public class EntityCode extends Base {
                     "    public Result toJson() {\n" +
                     "        Result result=new ResultImpl();\n";
             for (int i = 0; i < tableInfo.getColumnNames().size(); i++) {
-                code += "        result.set(\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\", " + tableInfo.getColumnNamesHumpLowerCase().get(i) + ");\n";
+                String newName=tableInfo.getColumnNames().get(i);
+                if (!newName.toLowerCase().startsWith(tableInfo.name.toLowerCase())) {
+                    newName=tableInfo.name+"_"+tableInfo.getColumnNames().get(i);
+                }
+                code += "        result.set(\"" + Tools.lowStr_hump(newName,true) + "\", " + Tools.lowStr_hump(newName,true) + ");\n";
             }
             code += "        result.set(Config.entityDataListName, data);\n" +
                     "        return result;\n" +
@@ -211,26 +223,30 @@ public class EntityCode extends Base {
                     "    }\n" +
                     "    public void loadJson(Result result) {\n";
             for (int i = 0; i < tableInfo.getColumnNames().size(); i++) {
+                String newName=tableInfo.getColumnNames().get(i);
+                if (!newName.toLowerCase().startsWith(tableInfo.name.toLowerCase())) {
+                    newName=tableInfo.name+"_"+tableInfo.getColumnNames().get(i);
+                }
                 if (tableInfo.getColumnTypes().get(i).endsWith("Long")) {
-                    code += "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "=result.getLong(\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\", null);\n";
+                    code += "        this." + Tools.lowStr_hump(newName,true) + "=result.getLong(\"" + Tools.lowStr_hump(newName,true) + "\", null);\n";
                 } else if (tableInfo.getColumnTypes().get(i).endsWith("Integer")) {
-                    code += "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "=result.getInteger(\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\", null);\n";
+                    code += "        this." + Tools.lowStr_hump(newName,true) + "=result.getInteger(\"" + Tools.lowStr_hump(newName,true) + "\", null);\n";
                 } else if (tableInfo.getColumnTypes().get(i).endsWith("Short")) {
-                    code += "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "=result.getShort(\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\", null);\n";
+                    code += "        this." + Tools.lowStr_hump(newName,true) + "=result.getShort(\"" + Tools.lowStr_hump(newName,true) + "\", null);\n";
                 } else if (tableInfo.getColumnTypes().get(i).endsWith("String")) {
-                    code += "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "=result.getString(\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\", null);\n";
+                    code += "        this." + Tools.lowStr_hump(newName,true) + "=result.getString(\"" + Tools.lowStr_hump(newName,true) + "\", null);\n";
                 } else if (tableInfo.getColumnTypes().get(i).endsWith("Double")) {
-                    code += "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "=result.getDouble(\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\", null);\n";
+                    code += "        this." + Tools.lowStr_hump(newName,true) + "=result.getDouble(\"" + Tools.lowStr_hump(newName,true) + "\", null);\n";
                 } else if (tableInfo.getColumnTypes().get(i).endsWith("Boolean")) {
-                    code += "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "=result.getBoolean(\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\", null);\n";
+                    code += "        this." + Tools.lowStr_hump(newName,true) + "=result.getBoolean(\"" + Tools.lowStr_hump(newName,true) + "\", null);\n";
                 } else if (tableInfo.getColumnTypes().get(i).endsWith("Float")) {
-                    code += "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "=result.getFloat(\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\", null);\n";
+                    code += "        this." + Tools.lowStr_hump(newName,true) + "=result.getFloat(\"" + Tools.lowStr_hump(newName,true) + "\", null);\n";
                 } else if (tableInfo.getColumnTypes().get(i).endsWith("java.sql.Timestamp")) {
-                    code += "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "=result.getTimestamp(\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\", null);\n";
+                    code += "        this." + Tools.lowStr_hump(newName,true) + "=result.getTimestamp(\"" + Tools.lowStr_hump(newName,true) + "\", null);\n";
                 } else if (tableInfo.getColumnTypes().get(i).endsWith("java.time.LocalDateTime")) {
-                    code += "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "=result.getLocalDateTime(\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\", null);\n";
+                    code += "        this." + Tools.lowStr_hump(newName,true) + "=result.getLocalDateTime(\"" + Tools.lowStr_hump(newName,true) + "\", null);\n";
                 } else {
-                    code += "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "=result.getObject(\"" + tableInfo.getColumnNamesHumpLowerCase().get(i) + "\", null);\n";
+                    code += "        this." + Tools.lowStr_hump(newName,true) + "=result.getObject(\"" + Tools.lowStr_hump(newName,true) + "\", null);\n";
                 }
 
             }
@@ -242,28 +258,32 @@ public class EntityCode extends Base {
 
 
             for (int i = 0; i < tableInfo.getColumnNames().size(); i++) {
+                String newName=tableInfo.getColumnNames().get(i);
+                if (!newName.toLowerCase().startsWith(tableInfo.name.toLowerCase())) {
+                    newName=tableInfo.name+"_"+tableInfo.getColumnNames().get(i);
+                }
                 if (!tableInfo.getColumnTypes().get(i).contains("String")) {
-                    code += "    public " + tableInfo.getColumnTypes().get(i) + " get" + tableInfo.getColumnNamesHumpUpperCase().get(i) + "() {\n" +
-                            "        return " + tableInfo.getColumnNamesHumpLowerCase().get(i) + ";\n" +
+                    code += "    public " + tableInfo.getColumnTypes().get(i) + " get" + Tools.lowStr_d(Tools.lowStr_hump(newName,true)) + "() {\n" +
+                            "        return " +Tools.lowStr_hump(newName,true)+ ";\n" +
                             "    }\n" +
-                            "    public " + tableInfo.getNameHumpUpperCase() + " set" + tableInfo.getColumnNamesHumpUpperCase().get(i) + "(" + tableInfo.getColumnTypes().get(i) + " " + tableInfo.getColumnNamesHumpLowerCase().get(i) + ") {\n" +
-                            "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + " = " + tableInfo.getColumnNamesHumpLowerCase().get(i) + ";\n" +
+                            "    public " + tableInfo.getNameHumpUpperCase() + " set" +Tools.lowStr_d( Tools.lowStr_hump(newName,true)) + "(" + tableInfo.getColumnTypes().get(i) + " " +Tools.lowStr_hump(newName,true) + ") {\n" +
+                            "        this." + Tools.lowStr_hump(newName,true) + " = " +Tools.lowStr_hump(newName,true)+ ";\n" +
                             "        return this;\n" +
                             "    }\n";
                 } else {
-                    code += "    public " + tableInfo.getColumnTypes().get(i) + " get" + tableInfo.getColumnNamesHumpUpperCase().get(i) + "() {\n" +
-                            "        return " + tableInfo.getColumnNamesHumpLowerCase().get(i) + ";\n" +
+                    code += "    public " + tableInfo.getColumnTypes().get(i) + " get" + Tools.lowStr_d(Tools.lowStr_hump(newName,true)) + "() {\n" +
+                            "        return " +Tools.lowStr_hump(newName,true) + ";\n" +
                             "    }\n" +
-                            "    public " + tableInfo.getNameHumpUpperCase() + " set" + tableInfo.getColumnNamesHumpUpperCase().get(i) + "(" + tableInfo.getColumnTypes().get(i) + " " + tableInfo.getColumnNamesHumpLowerCase().get(i) + ") {\n" +
-                            "        int size0 = Tools.textLength(" + tableInfo.getColumnNamesHumpLowerCase().get(i) + ");\n" +
+                            "    public " + tableInfo.getNameHumpUpperCase() + " set" + Tools.lowStr_d(Tools.lowStr_hump(newName,true)) + "(" + tableInfo.getColumnTypes().get(i) + " " +Tools.lowStr_hump(newName,true)+ ") {\n" +
+                            "        int size0 = Tools.textLength(" +Tools.lowStr_hump(newName,true)+ ");\n" +
                             "        if (size0 > " + tableInfo.getColumnSize().get(i) + ") {\n" +
-                            "            throw new gzb.exception.GzbException0(\"" + tableInfo.getNameHumpUpperCase() + "." + tableInfo.getColumnNamesHumpLowerCase().get(i) + "最大长度为:" + tableInfo.getColumnSize().get(i) + ",实际长度为:\"+ size0 +\",数据为:\"+" + tableInfo.getColumnNamesHumpLowerCase().get(i) + ");\n" +
+                            "            throw new gzb.exception.GzbException0(\"" +tableInfo.getNameHumpUpperCase() + "." + Tools.lowStr_hump(newName,true) + "最大长度为:" + tableInfo.getColumnSize().get(i) + ",实际长度为:\"+ size0 +\",数据为:\"+" + Tools.lowStr_hump(newName,true) + ");\n" +
                             "        }\n" +
-                            "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + " = " + tableInfo.getColumnNamesHumpLowerCase().get(i) + ";\n" +
+                            "        this." + Tools.lowStr_hump(newName,true)+ " = " + Tools.lowStr_hump(newName,true) + ";\n" +
                             "        return this;\n" +
                             "    }\n" +
-                            "    public " + tableInfo.getNameHumpUpperCase() + " set" + tableInfo.getColumnNamesHumpUpperCase().get(i) + "Unsafe(" + tableInfo.getColumnTypes().get(i) + " " + tableInfo.getColumnNamesHumpLowerCase().get(i) + ") {\n" +
-                            "        this." + tableInfo.getColumnNamesHumpLowerCase().get(i) + " = " + tableInfo.getColumnNamesHumpLowerCase().get(i) + ";\n" +
+                            "    public " + tableInfo.getNameHumpUpperCase() + " set" +  Tools.lowStr_d(Tools.lowStr_hump(newName,true)) + "Unsafe(" + tableInfo.getColumnTypes().get(i) + " " + Tools.lowStr_hump(newName,true)+ ") {\n" +
+                            "        this." +Tools.lowStr_hump(newName,true) + " = " + Tools.lowStr_hump(newName,true) + ";\n" +
                             "        return this;\n" +
                             "    }\n";
                 }

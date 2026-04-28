@@ -34,8 +34,8 @@ public class DataBaseEventCode extends Base {
         for (final TableInfo tableInfo : list) {
             code = "package " + this.pkg + "." + tableInfo.getDbNameLowerCase() + ".event;\n" +
                     "\n" +
-                    "import com."+ tableInfo.getDbNameLowerCase() +".dao.*;\n" +
-                    "import com."+ tableInfo.getDbNameLowerCase() +".entity.*;\n" +
+                    "import "+this.pkg+"."+ tableInfo.getDbNameLowerCase() +".dao.*;\n" +
+                    "import "+this.pkg+"."+ tableInfo.getDbNameLowerCase() +".entity.*;\n" +
                     "import gzb.frame.annotation.*;\n" +
                     "import gzb.frame.netty.entity.Request;\n" +
                     "import gzb.tools.Tools;\n" +

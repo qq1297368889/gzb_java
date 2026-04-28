@@ -21,10 +21,6 @@ import java.util.Random;
 @Controller
 @RequestMapping("test/api0")
 public class TestApi0 {
-    public TestApi0() {
-        System.out.println("1002");
-        System.err.println("104");
-    }
 
     ///  127.0.0.1:2080/test/api0/test1
     @EventLoop
@@ -33,9 +29,9 @@ public class TestApi0 {
     public void test1(SysFileDao sysFileDao, Response response, GzbJson gzbJson) throws Exception {
         SysFile sysFile = new SysFile();
         sysFileDao.saveAsync(sysFile.setSysFileMd5(Tools.getRandomString(32)), () -> {
-            response.sendAndFlush(gzbJson.fail("on", sysFile));
+            response.sendData(gzbJson.fail("on", sysFile));
         }, () -> {
-            response.sendAndFlush(gzbJson.success("ok", sysFile));
+            response.sendData(gzbJson.success("ok", sysFile));
         });
     }
     @EventLoop
@@ -73,6 +69,7 @@ public class TestApi0 {
     @Resource
     SysLogDao sysLogDao;
 
+    ///  127.0.0.1:2080/test/api0/get2
     /// value={xx,xx} xx对应请求参数  最终会生成 key 两次请求 同key 将会命中缓存(前提未过期) second 缓存时间 单位秒
     //@CacheRequest(value={"p1","p2","xxx"},second=10)
     @GetMapping("get2")

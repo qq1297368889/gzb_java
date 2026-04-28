@@ -457,7 +457,7 @@ public class FileTools {
     public static boolean save(File file, byte[] data) {
         if (file == null || data == null) return false;
         try {
-            // 使用 Files.write 简化代码，并利用 NIO 优化
+            createFile(file);
             Files.write(file.toPath(), data);
             return true;
         } catch (IOException e) {

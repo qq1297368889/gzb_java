@@ -74,13 +74,13 @@ public class ClassLoad {
             long end = System.currentTimeMillis();
             log.d(Template.THIS_LANGUAGE[8], end - start, map);
             return map.get(className);
-
         }
     }
 
     public static Map<String, Class<?>> compileJavaCode(Map<String, String> sourcesMap) throws Exception {
         Map<String, Class<?>> map = new ConcurrentHashMap<>();
         for (Map.Entry<String, String> stringStringEntry : sourcesMap.entrySet()) {
+           // System.out.println(stringStringEntry.getValue());
             Class<?>ac01=compileJavaCode(stringStringEntry.getValue(), stringStringEntry.getKey());
             map.put(stringStringEntry.getKey(), ac01);
         }

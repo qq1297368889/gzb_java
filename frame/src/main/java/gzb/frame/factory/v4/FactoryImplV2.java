@@ -18,18 +18,14 @@
 
 package gzb.frame.factory.v4;
 
+import gzb.entity.*;
 import gzb.frame.PublicEntrance;
 import gzb.frame.annotation.*;
 import gzb.frame.db.EventFactory;
 import gzb.frame.factory.*;
-import gzb.entity.ClassEntity;
-import gzb.entity.DecoratorEntity;
-import gzb.entity.HttpMapping;
-import gzb.entity.ThreadEntity;
 import gzb.frame.language.Template;
 import gzb.frame.netty.entity.*;
 import gzb.frame.netty.HTTPServer;
-import gzb.entity.RunRes;
 import gzb.frame.netty.tools.HTTPTools;
 import gzb.tools.*;
 import gzb.tools.cache.Cache;
@@ -42,6 +38,7 @@ import gzb.tools.thread.ThreadPoolV3;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
+import io.netty.util.AsciiString;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -118,18 +115,22 @@ public class FactoryImplV2 implements Factory {
     public void loadJavaDir(String classDir, String pwd, String iv) throws Exception {
         File file = new File(Config.thisPath + "/className.config");
         if (file.exists()) {
-            loadClassName(FileTools.readArray(file));
+            try {
+                loadClassName(FileTools.readArray(file));
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
             return;
         }
         loadPublicClass();
-        ServiceThread.start("hot-update-file-listening",()->{
+        ServiceThread.start("hot-update-file-listening", () -> {
             while (true) {
                 try {
                     List<ClassEntity> listClassEntity = loadFiles(classDir, pwd, iv, mapClassEntity);
                     if (listClassEntity.size() > 0) {
                         load(listClassEntity);
                     }
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     log.e(e);
                 }
                 serverState = 1;
@@ -192,7 +193,7 @@ public class FactoryImplV2 implements Factory {
                     if (miao > 12000) {
                         miao = 0;
                     }
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     log.e(e);
                 }
                 serverState = 1;
@@ -209,7 +210,7 @@ public class FactoryImplV2 implements Factory {
         //System.gc();
     }
 
-    public void loadClassName(String[] classNames) throws Exception {
+    public void loadClassName(String[] classNames) throws Throwable {
         loadPublicClass();
         List<ClassEntity> listClassEntity = new ArrayList<>();
         for (int i = 0; i < classNames.length; i++) {
@@ -229,7 +230,7 @@ public class FactoryImplV2 implements Factory {
     }
 
 
-    public void load(List<ClassEntity> listClassEntity) throws Exception {
+    public void load(List<ClassEntity> listClassEntity) throws Throwable {
         if (!listClassEntity.isEmpty()) {
             //有线程安全问题,不过真出问题了 请从自身找原因 总不能我在这都加个锁吧
             if (PublicEntrance.classLoadEvent != null) {
@@ -281,13 +282,14 @@ public class FactoryImplV2 implements Factory {
             }
         }
     }
-    public void load(ClassEntity classEntity) throws Exception {
-        List<ClassEntity>list=new ArrayList<>();
+
+    public void load(ClassEntity classEntity) throws Throwable {
+        List<ClassEntity> list = new ArrayList<>();
         list.add(classEntity);
         load(list);
     }
 
-    public void load(Map<String, String> sourcesMap, String pwd, String iv) throws Exception {
+    public void load(Map<String, String> sourcesMap, String pwd, String iv) throws Throwable {
         if (sourcesMap == null || sourcesMap.size() == 0) {
             return;
         }
@@ -296,7 +298,7 @@ public class FactoryImplV2 implements Factory {
         load(listClassEntity);
     }
 
-    public List<ClassEntity> loadFiles(String classDir, String pwd, String iv, Map<String, ClassEntity> mapClassEntity) throws Exception {
+    public List<ClassEntity> loadFiles(String classDir, String pwd, String iv, Map<String, ClassEntity> mapClassEntity) throws Throwable {
         List<File> listFile = new ArrayList<>();
         String[] arr1 = classDir.split(",");
         Map<String, File> fileMap = new HashMap<>();
@@ -337,13 +339,13 @@ public class FactoryImplV2 implements Factory {
             String code;
             if (pwd != null && iv != null) {
                 byte[] bytes = FileTools.readByte(file);
-                if (bytes==null||bytes.length==0) {
+                if (bytes == null || bytes.length == 0) {
                     continue;
                 }
-                byte[] bytes1=AES_CBC_128.aesDe(bytes, pwd, iv);
-                if (bytes1==null||bytes1.length==0) {
+                byte[] bytes1 = AES_CBC_128.aesDe(bytes, pwd, iv);
+                if (bytes1 == null || bytes1.length == 0) {
                     code = new String(bytes, Config.encoding);
-                }else{
+                } else {
                     code = new String(bytes1, Config.encoding);
                 }
 
@@ -419,18 +421,18 @@ public class FactoryImplV2 implements Factory {
             95.0,
             Config.bizThreadNum < 1);
 
-    public void start(Request request, Response response,HTTPTools.Entity entity) {
+    public void start(Request request, Response response, HTTPTools.Entity entity) {
         String metName = request.getMethod();
         String key = request.getUri();
         HttpMapping[] httpMappings = mapHttpMapping0.get(key);
         if (httpMappings == null) {
-            key=request.webPathFormat();
+            key = request.webPathFormat();
             httpMappings = mapHttpMapping0.get(key);
             if (httpMappings == null) {
                 if (request.getImplType() == 0) {
-                    HTTPServer.HTTPStaticFileHandler.channelRead0(request.getCtx(),entity);
+                    HTTPServer.HTTPStaticFileHandler.channelRead0(request.getCtx(), entity);
                 } else {
-                    response.sendAndFlush(gzbJson.fail("没找到对应处理器"));
+                    response.sendData(gzbJson.fail("没找到对应处理器"));
                     request.close();
                 }
                 return;
@@ -440,7 +442,7 @@ public class FactoryImplV2 implements Factory {
         for (int i = 0; i < httpMappings.length; i++) {
             if (metName.equals(met[i])) {
                 if (httpMappings[i] == null) {
-                    response.sendAndFlush(gzbJson.fail("对应处理器不存在"));
+                    response.sendData(gzbJson.fail("对应处理器不存在"));
                     request.close();
                     return;
                 }
@@ -449,10 +451,10 @@ public class FactoryImplV2 implements Factory {
             }
         }
         if (index == -1) {
-            if (request.getImplType() == 0) { 
-                HTTPServer.HTTPStaticFileHandler.channelRead0(request.getCtx(),entity);
+            if (request.getImplType() == 0) {
+                HTTPServer.HTTPStaticFileHandler.channelRead0(request.getCtx(), entity);
             } else {
-                response.sendAndFlush(gzbJson.fail("没找到对应处理器-2"));
+                response.sendData(gzbJson.fail("没找到对应处理器-2"));
                 request.close();
             }
             return;
@@ -464,24 +466,28 @@ public class FactoryImplV2 implements Factory {
                 exec(httpMapping, request, response);
                 response.getCtx().flush();
             })) {
-                response.sendAndFlush(gzbJson.fail("服务器繁忙"));
+                response.sendData(gzbJson.fail("服务器繁忙"));
             }
         } else {
             exec(httpMapping, request, response);
         }
     }
+
+    String content_html = ContentType.html + ";charset=" + Config.encoding.name();
+
     public void start(Request request, Response response) {
         String metName = request.getMethod();
         String key = request.getUri();
+        response.setContentType(content_html);
         HttpMapping[] httpMappings = mapHttpMapping0.get(key);
         if (httpMappings == null) {
-            key=request.webPathFormat();
+            key = request.webPathFormat();
             httpMappings = mapHttpMapping0.get(key);
             if (httpMappings == null) {
                 if (request.getImplType() == 0) {
                     HTTPServer.HTTPStaticFileHandler.channelRead0(request.getCtx(), request.getRequest());
                 } else {
-                    response.sendAndFlush(gzbJson.fail("没找到对应处理器"));
+                    response.sendData(gzbJson.fail("没找到对应处理器"));
                     request.close();
                 }
                 return;
@@ -491,7 +497,7 @@ public class FactoryImplV2 implements Factory {
         for (int i = 0; i < httpMappings.length; i++) {
             if (metName.equals(met[i])) {
                 if (httpMappings[i] == null) {
-                    response.sendAndFlush(gzbJson.fail("对应处理器不存在"));
+                    response.sendData(gzbJson.fail("对应处理器不存在"));
                     request.close();
                     return;
                 }
@@ -503,7 +509,7 @@ public class FactoryImplV2 implements Factory {
             if (request.getImplType() == 0) {
                 HTTPServer.HTTPStaticFileHandler.channelRead0(request.getCtx(), request.getRequest());
             } else {
-                response.sendAndFlush(gzbJson.fail("没找到对应处理器-2"));
+                response.sendData(gzbJson.fail("没找到对应处理器-2"));
                 request.close();
             }
             return;
@@ -515,7 +521,7 @@ public class FactoryImplV2 implements Factory {
                 exec(httpMapping, request, response);
                 response.getCtx().flush();
             })) {
-                response.sendAndFlush(gzbJson.fail("服务器繁忙"));
+                response.sendData(gzbJson.fail("服务器繁忙"));
             }
         } else {
             exec(httpMapping, request, response);
@@ -536,30 +542,31 @@ public class FactoryImplV2 implements Factory {
                 response.setHeader("access-control-allow-origin", host);
             }
             if (httpMapping.semaphore != null && !httpMapping.semaphore.tryAcquire()) {
-                response.sendAndFlush(_fail_json);
+                response.sendData(_fail_json);
                 return;
             }
-            Map<String, List<Object>> parar = request.getParameter();
             boolean openCache = httpMapping.cacheSecond != null && httpMapping.cacheKey != null;
             String key = null;
+            Map<String, List<Object>> parar = request.getParameter();
             if (!httpMapping.manualRespond && openCache) {
                 key = toKey(httpMapping.cacheKey, parar);
                 byte[] bytes = Cache.gzbCache.getByte(key);
                 if (bytes != null) {
-                    response.sendAndFlush(bytes);
+                    response.sendData(bytes);
                     return;
                 }
             }
             entity = GzbThreadLocal.context.get();
-            entity.request=request;
-            entity.response=response;
+            entity.request = request;
+            entity.response = response;
+            entity.requestMap = parar;
             RunRes runRes = entity.runRes;
             for (DecoratorEntity decoratorEntity : httpMapping.start) {
                 RunRes runRes1 = (RunRes) decoratorEntity.call._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log,
                         entity.objects);
                 if (runRes1 != null) {
                     if (runRes1.getState() != 200) {
-                        response.sendAndFlush(runRes1.getData());
+                        response.sendData(runRes1.getData());
                         return;
                     } else {
                         if (runRes1.getData() != null) {
@@ -577,7 +584,7 @@ public class FactoryImplV2 implements Factory {
                         ._gzb_call_x01(decoratorEntity.id, mapObject0, request, response, parar, gzbJson, log, entity.objects);
                 if (runRes1 != null) {
                     if (runRes1.getState() != 200) {
-                        response.sendAndFlush(runRes1.getData());
+                        response.sendData(runRes1.getData());
                         return;
                     } else {
                         entity.runRes.setData(runRes1.getData());
@@ -595,16 +602,16 @@ public class FactoryImplV2 implements Factory {
             }
             //到这里其实已经执行完毕了 发送的时间不算
             if (!httpMapping.manualRespond) {
-                response.sendAndFlush(runRes.getData());
+                response.sendData(runRes.getData());
             }
-        } catch (Exception e) {
-            long id=OnlyId.getDistributed();
-            log.e(id,"框架捕获到错误",
+        } catch (Throwable e) {
+            long id = OnlyId.getDistributed();
+            log.e(id, "框架捕获到错误",
                     request.getUri(),
                     request.getMethod(),
                     request.getParameter(),
                     e);
-            response.sendAndFlush(gzbJson.error("server error / 服务器 异常;request id = "+id));
+            response.sendData(gzbJson.error("server error / 服务器 异常;request id = " + id));
         } finally {
             //限流如果开启 解除占用
             if (httpMapping.semaphore != null) {
@@ -615,13 +622,11 @@ public class FactoryImplV2 implements Factory {
                     entity.runRes.setState(200);
                     entity.runRes.setData(null);
                 }
-                if (entity.objects.length>1) {
-                    entity.objects=new Object[]{entity.runRes};
+                if (entity.objects.length > 1) {
+                    entity.objects = new Object[]{entity.runRes};
                 }
-            /*    if (entity.requestMap.size()>16) {
-                    entity.requestMap=null;
-                }*/
             }
+
         }
     }
 
@@ -903,7 +908,6 @@ public class FactoryImplV2 implements Factory {
                     log.t(Template.THIS_LANGUAGE[78], id, path, met[index], httpMapping2.sign);
                 }
                 httpMapping2.header = new HashMap<>();
-                httpMapping2.header.put("content-type", ContentType.html);
                 if (entityAnnotation.header != null) {
                     for (HeaderItem headerItem : entityAnnotation.header.item()) {
                         if (headerItem.key().isEmpty() || headerItem.val().isEmpty()) {
@@ -938,10 +942,10 @@ public class FactoryImplV2 implements Factory {
                         httpMapping2.isCrossDomainOrigin = true;
                     }
                 }
-                String header0=httpMapping2.header.get("content-type");
-                if (!header0.toLowerCase().contains("charset")) {
-                    header0=header0.split(";")[0]+";charset="+Config.encoding.name();
-                    httpMapping2.header.put("content-type",header0);
+                String header0 = httpMapping2.header.get("content-type");
+                if (header0 != null && !header0.toLowerCase().contains("charset")) {
+                    header0 = header0.split(";")[0] + ";charset=" + Config.encoding.name();
+                    httpMapping2.header.put("content-type", header0);
                 }
                 httpMappings[index] = httpMapping2;
                 mapHttpMapping.put(path, httpMappings);
@@ -1025,7 +1029,7 @@ public class FactoryImplV2 implements Factory {
     }
 
     //返回对象 并且加入缓存
-    public List<ClassEntity> loadObjects(List<ClassEntity> listClassEntity, Map<String, Object> mapObject, Class aClass) throws Exception {
+    public List<ClassEntity> loadObjects(List<ClassEntity> listClassEntity, Map<String, Object> mapObject, Class aClass) throws Throwable {
         if (listClassEntity.size() < 1) {
             return listClassEntity;
         }
@@ -1240,7 +1244,7 @@ public class FactoryImplV2 implements Factory {
                             threadEntity0.thread.set(finalI, null);
                             break;
                         }
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
                         log.e("线程出现错误，但不会中断", key, e);
                     }
                 }

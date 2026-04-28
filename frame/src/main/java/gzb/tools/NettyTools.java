@@ -75,7 +75,7 @@ public class NettyTools {
     public static byte[] send_end =new byte[]{ '0', '\r', '\n', '\r', '\n' };
     public static String content_type_text ="content-type: text/plain; charset="+Config.encoding+"\r\n";
 
-    public static void sendHTTP(ChannelHandlerContext ctx, Object body, int code, String header, boolean keepAlive) {
+    public static void sendHTTP(ChannelHandlerContext ctx, Object body, int code, String header, boolean keepAlive,ChannelFutureListener CLOSE) {
         byte[] bytes = toByte(body);
         GzbThreadLocal.Entity entity = GzbThreadLocal.context.get();
         int index = entity.byteBuffCacheEntity.open();
@@ -103,9 +103,10 @@ public class NettyTools {
             byteBuff.write(bytes);
             //Log.log.i(new String(byteBuff.get()));
             ChannelFuture future = ctx.channel().write(Unpooled.wrappedBuffer(byteBuff.get()));
-            if (!keepAlive) {
-                future.addListener(ChannelFutureListener.CLOSE);
+            if (CLOSE!=null) {
+                future.addListener(CLOSE);
             }
+
         } finally {
             entity.byteBuffCacheEntity.close(index);
         }
@@ -125,6 +126,8 @@ public class NettyTools {
             return Unpooled.wrappedBuffer((byte[]) chunk);
         } else if (chunk == null) {
             return Unpooled.EMPTY_BUFFER;
+        } else if (chunk.getClass() == JSONResult.class) {
+            return Unpooled.wrappedBuffer(chunk.toString().getBytes(Config.encoding));
         } else {
             return Unpooled.wrappedBuffer(JSON.toJSONBytes(chunk, "yyyy-MM-dd HH:mm:ss", JSONWriter.Feature.WriteNonStringValueAsString));
         }

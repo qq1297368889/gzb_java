@@ -7,6 +7,7 @@ import java.io.IOException;
 
 public class DataBaseConfig {
     String type;
+    int sql_type;
     String key;
     String clz;
     String ip;
@@ -67,6 +68,9 @@ public class DataBaseConfig {
     public DataBaseConfig(String type, String key, String clz, String ip, int port, String name, String acc, String pwd, int threadMax, int overtime, int asyncSleepMilli, int asyncBatchSize,
                           int asyncThreadNum,int asyncQueueSize, String parar, String sign) {
         setType(type);
+        if (type.equals("postgresql")) {
+            sql_type=1;
+        }
         setKey(key);
         setClz(clz);
         setThreadMax(threadMax);

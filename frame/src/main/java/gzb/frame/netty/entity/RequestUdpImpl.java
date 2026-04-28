@@ -27,6 +27,9 @@ public class RequestUdpImpl implements Request {
         this.response = new ResponseUdpImpl(ctx,sender);
     }
 
+    public void requestClose(){
+
+    }
     /**
      * 获取 协议头MAP
      */

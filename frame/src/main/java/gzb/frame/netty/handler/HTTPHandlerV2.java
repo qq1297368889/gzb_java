@@ -40,7 +40,7 @@ public class HTTPHandlerV2 extends SimpleChannelInboundHandler<HTTPTools.Entity>
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, HTTPTools.Entity entity) {
         if (entity.getURL().equals("/text")) {
-            NettyTools.sendHTTP(ctx, NettyTools.HELLO_WORD, 200, NettyTools.content_type_text, true);
+            NettyTools.sendHTTP(ctx, NettyTools.HELLO_WORD, 200, NettyTools.content_type_text, true,null);
         } else {
             Request request = new RequestHTTPImpl(ctx, entity);
             Server.factory.start(request, request.getResponse(), entity);

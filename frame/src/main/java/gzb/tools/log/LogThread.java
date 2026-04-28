@@ -27,16 +27,17 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class LogThread {
     public static final LogThread logThread = new LogThread();
-    private static final List<ConcurrentLinkedQueue<byte[]>> logQueues = new ArrayList<>();
+    private static final List<LinkedBlockingQueue<byte[]>> logQueues = new ArrayList<>();
     public static File[] logFile = new File[]{null, null, null, null, null};
     public static byte[] BYTES_RN = "\r\n".getBytes();
     public static int buff_size = 1024 * 1024;
     public static void installHOOK() {
-        //System.setOut(new HOOK(1));
-        //System.setErr(new HOOK(4));
+        System.setOut(new HOOK(1));
+        System.setErr(new HOOK(4));
     }
     static {
         installHOOK();
@@ -44,7 +45,7 @@ public class LogThread {
         LogConfig.loadConfig(logFile);
         //初始化 日志队列
         for (int i = 0; i < logFile.length; i++) {
-            logQueues.add(new ConcurrentLinkedQueue<>());
+            logQueues.add(new LinkedBlockingQueue<>(65536));
         }
         //启动保存线程
         startSave();
@@ -160,13 +161,13 @@ public class LogThread {
             int index0=ENTITY.stringBuilderCacheEntity.open();
             StringBuilder sb=ENTITY.stringBuilderCacheEntity.get(index0);
             try {
-                HOOK.out0.println(sb.append(LogConfig.lvColour[index]).append(msg).append(LogConfig.lvColour[LogConfig.lvColour.length - 1]).toString());
+                HOOK.out0.println(sb.append(LogConfig.lvColour[index]).append(msg).append(LogConfig.lvColour[LogConfig.lvColour.length - 1]));
             }finally {
                 ENTITY.stringBuilderCacheEntity.close(index0);
             }
         }
         if (configValue == 1 || configValue == 3) {
-            logQueues.get(index).add(msg.getBytes(Config.encoding));
+            logQueues.get(index).offer(msg.getBytes(Config.encoding));
         }
     }
 
@@ -198,6 +199,9 @@ public class LogThread {
                             continue;
                         }
                         if (stackTrace[i].getClassName().startsWith("gzb.tools.log")) {
+                            continue;
+                        }
+                        if (stackTrace[i].getMethodName().startsWith("print")) {
                             continue;
                         }
                         index2 = i;

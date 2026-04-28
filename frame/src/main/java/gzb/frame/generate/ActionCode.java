@@ -20,6 +20,7 @@ package gzb.frame.generate;
 
 import gzb.entity.TableInfo;
 import gzb.tools.Config;
+import gzb.tools.Tools;
 
 import java.util.List;
 
@@ -33,6 +34,10 @@ public class ActionCode extends Base {
     public void start(List<TableInfo> list, boolean save) {
         String code;
         for (final TableInfo tableInfo : list) {
+            String newName=tableInfo.getId();
+            if (!newName.toLowerCase().startsWith(tableInfo.name.toLowerCase())) {
+                newName=tableInfo.name+"_"+tableInfo.getId();
+            }
             if (tableInfo.getName().equals("sys_users")) {
                 continue;
             }
@@ -122,7 +127,7 @@ public class ActionCode extends Base {
                     "    @DecoratorOpen\n" +
                     "    @PostMapping(\"update\")\n" +
                     "    public Object update(GzbJson result, " + tableInfo.getNameHumpUpperCase() + " " + tableInfo.getNameHumpLowerCase() + ") throws Exception {\n" +
-                    "        if (" + tableInfo.getNameHumpLowerCase() + " == null || " + tableInfo.getNameHumpLowerCase() + ".toString().equals(\"{}\") || " + tableInfo.getNameHumpLowerCase() + ".get" + tableInfo.getIdHumpUpperCase() + "() == null) {\n" +
+                    "        if (" + tableInfo.getNameHumpLowerCase() + " == null || " + tableInfo.getNameHumpLowerCase() + ".toString().equals(\"{}\") || " + tableInfo.getNameHumpLowerCase() + ".get" + Tools.lowStr_d(Tools.lowStr_hump(newName,true)) + "() == null) {\n" +
                     "            return result.fail(\"update 输入参数错误\");\n" +
                     "        }\n" +
                     "        if (" + tableInfo.getNameHumpLowerCase() + "Dao.update(" + tableInfo.getNameHumpLowerCase() + ") < 0) {\n" +
@@ -138,7 +143,7 @@ public class ActionCode extends Base {
                     "    @DecoratorOpen\n" +
                     "    @DeleteMapping(\"delete\")\n" +
                     "    public Object delete(GzbJson result, " + tableInfo.getNameHumpUpperCase() + " " + tableInfo.getNameHumpLowerCase() + ") throws Exception {\n" +
-                    "        if (" + tableInfo.getNameHumpLowerCase() + " == null || " + tableInfo.getNameHumpLowerCase() + ".toString().equals(\"{}\") || " + tableInfo.getNameHumpLowerCase() + ".get" + tableInfo.getIdHumpUpperCase() + "() == null) {\n" +
+                    "        if (" + tableInfo.getNameHumpLowerCase() + " == null || " + tableInfo.getNameHumpLowerCase() + ".toString().equals(\"{}\") || " + tableInfo.getNameHumpLowerCase() + ".get" + Tools.lowStr_d(Tools.lowStr_hump(newName,true))  + "() == null) {\n" +
                     "            return result.fail(\"delete 输入参数错误\");\n" +
                     "        }\n" +
                     "        if (" + tableInfo.getNameHumpLowerCase() + "Dao.delete(" + tableInfo.getNameHumpLowerCase() + ") < 0) {\n" +
@@ -160,7 +165,7 @@ public class ActionCode extends Base {
                     "        int num = 0;\n" +
                     "        " + tableInfo.getNameHumpUpperCase() + " " + tableInfo.getDbNameLowerCase() + " = new " + tableInfo.getNameHumpUpperCase() + "();\n" +
                     "        for ("+tableInfo.getIdType()+" _id : " + tableInfo.getIdHumpLowerCase() + ") {\n" +
-                    "            " + tableInfo.getNameHumpLowerCase() + "Dao.delete(" + tableInfo.getDbNameLowerCase() + ".set" + tableInfo.getIdHumpUpperCase() + "(_id));\n" +
+                    "            " + tableInfo.getNameHumpLowerCase() + "Dao.delete(" + tableInfo.getDbNameLowerCase() + ".set" + Tools.lowStr_d(Tools.lowStr_hump(newName,true))  + "(_id));\n" +
                     "            num++;\n" +
                     "        }\n" +
                     "        return result.success(\"成功删除[\" + num + \"]条数据\");\n" +

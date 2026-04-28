@@ -17,6 +17,8 @@ gzb@gzb-System-Product-Name:~$ cat /sys/devices/system/cpu/cpu*/topology/thread_
 2,8
 3,9
 
+
+2,8,1,7,5,11
 # server:4,10,5,11
 
 gzb@gzb-System-Product-Name:~/gzb/test$ uname -a

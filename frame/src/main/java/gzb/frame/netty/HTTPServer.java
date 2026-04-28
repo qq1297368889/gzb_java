@@ -85,7 +85,6 @@ public class HTTPServer{
             return;
         }
         ServerBootstrap bootstrap = null;
-        int backlog = Config.bizAwaitNum;
         try {
             if (Tools.isLinux()) {
                 bossGroup = new EpollEventLoopGroup(main_thread_num);
@@ -102,11 +101,10 @@ public class HTTPServer{
             }
 
             bootstrap.option(ChannelOption.SO_REUSEADDR, true)
-                    .option(ChannelOption.SO_BACKLOG, backlog)
-                    .childHandler(httpServerInitializer)
                     .childOption(ChannelOption.TCP_NODELAY, true)
-                    .childOption(ChannelOption.SO_KEEPALIVE, true)
-                    .childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000);
+                    .option(ChannelOption.SO_BACKLOG, 65535)
+                    .childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
+                    .childHandler(httpServerInitializer);
 
             log.i(
                     Template.THIS_LANGUAGE[72],
