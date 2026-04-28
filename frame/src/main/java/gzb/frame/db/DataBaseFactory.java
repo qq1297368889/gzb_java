@@ -40,8 +40,9 @@ public class DataBaseFactory {
         try {
             DataBase db = mapDataBase.get(dataBaseConfig.sign);
             if (db == null) {
-                db = new DataBaseImpl(dataBaseConfig);
-                mapDataBase.put(dataBaseConfig.sign, db);
+                /// db = new DataBaseImpl(dataBaseConfig);
+                //mapDataBase.put(dataBaseConfig.sign, db);
+            throw new GzbException0("error stop sync jdbc");
             }
             return db;
         } finally {

@@ -14,7 +14,8 @@
  *  * See the License for the specific language governing permissions and
  *  * limitations under the License.
  *
- */
+ *//*
+
 
 package gzb.frame.db;
 
@@ -177,11 +178,13 @@ public class DataBaseImpl implements DataBase {
     }
 
 
-    /**
+    */
+/**
      * 创建并配置 HikariCP 数据库连接池
      *
      * @return 配置好的 HikariDataSource 实例
-     */
+     *//*
+
     private HikariDataSource getHikariDataSource() {
         HikariConfig config = new HikariConfig();
 
@@ -759,20 +762,24 @@ public class DataBaseImpl implements DataBase {
         }
     }
 
-    /**
+    */
+/**
      * @param runnable
      * @throws SQLException
-     */
+     *//*
+
     @Override
     public void transaction(Runnable runnable) throws SQLException {
         transaction(runnable, false);
     }
 
-    /**
+    */
+/**
      * @param runnable
      * @param simulation
      * @throws SQLException
-     */
+     *//*
+
     @Override
     public void transaction(Runnable runnable, boolean simulation) throws SQLException {
         openTransaction(simulation);
@@ -786,9 +793,11 @@ public class DataBaseImpl implements DataBase {
         }
     }
 
-    /**
+    */
+/**
      * 事务开启情况 不会close 数据库连接  正常情况会close
-     */
+     *//*
+
     //关闭链接 非自动提交状态例外
     @Override
     public void close(ResultSet resultSet, PreparedStatement preparedStatement) {
@@ -1139,4 +1148,4 @@ public class DataBaseImpl implements DataBase {
         return asyncFactory.add(result);
     }
 
-}
+}*/

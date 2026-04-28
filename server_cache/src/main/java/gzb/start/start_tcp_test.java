@@ -9,13 +9,13 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class start_tcp_test {
-    static AtomicLong qps_queue = new AtomicLong(0);
-    static AtomicLong queue = new AtomicLong(0);
+    static AtomicLong qps = new AtomicLong(0);
+    static AtomicLong state = new AtomicLong(0);
     static AtomicLong test_type = new AtomicLong(0);
 
     public static void main(String[] args) throws IOException {
         TCP_SDK cacheSDK = new TCP_SDK("127.0.0.1", 8081, 0,1);
-        queue.set(20);
+        state.set(20);
         Log.log.i(cacheSDK.del(0 + "-key"));
         Log.log.i(cacheSDK.put(0 + "-key", "123456", 100));
         Log.log.i(cacheSDK.get(0 + "-key"));
@@ -41,7 +41,7 @@ public class start_tcp_test {
             new Thread() {
                 @Override
                 public void run() {
-                    while (queue.get() == size) {
+                    while (state.get() == size) {
                         Tools.sleep(1);
                     }
                     try {
@@ -52,29 +52,29 @@ public class start_tcp_test {
                                 //cacheSDK.ping();
                                 if (test_type.get() == 0) {
                                     cacheSDK.ping();
-                                    qps_queue.incrementAndGet();
+                                    qps.incrementAndGet();
                                 } else if (test_type.get() == 1) {
                                     if (!cacheSDK.get(i + "-key").equals(i + "-val")) {
                                         throw new RuntimeException();
                                     }
-                                    qps_queue.incrementAndGet();
+                                    qps.incrementAndGet();
                                 } else if (test_type.get() == 2) {
                                     cacheSDK.produce(i+"-queue");
-                                    qps_queue.incrementAndGet();
+                                    qps.incrementAndGet();
                                     Message message = cacheSDK.consume(-1);
-                                    qps_queue.incrementAndGet();
+                                    qps.incrementAndGet();
                                     cacheSDK.confirm(message.id);
-                                    qps_queue.incrementAndGet();
+                                    qps.incrementAndGet();
                                 } else if (test_type.get() == 11) {
                                     cacheSDK.get(i + "-key",i +1 + "-key",i +2+ "-key",i+3 + "-key",i+4 + "-key",i +5+ "-key",i+6 + "-key",i +7+ "-key",i +8+ "-key",i +9+ "-key");
-                                    qps_queue.addAndGet(1);
+                                    qps.addAndGet(1);
                                 }
                             }
-                            if (qps_queue.get() >= max_qps) {
+                            if (qps.get() >= max_qps) {
                                 break;
                             }
                         }
-                        queue.incrementAndGet();
+                        state.incrementAndGet();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -84,17 +84,17 @@ public class start_tcp_test {
         }
 
         Tools.sleep(1000);
-        qps_queue.set(0);
-        queue.set(0);
+        qps.set(0);
+        state.set(0);
         test_type.set(1);
         //test_type.set(0);
         start = System.currentTimeMillis();
-        while (queue.get() != size) {
+        while (state.get() != size) {
             Tools.sleep(1000);
             long end = System.currentTimeMillis();
-            Log.log.i("qps", qps_queue.get() / ((end - start) / 1000));
+            Log.log.i("qps", qps.get() / ((end - start) / 1000));
         }
-        Log.log.i("qps end request num", qps_queue.get());
+        Log.log.i("qps end request num", qps.get());
 
     }
 }

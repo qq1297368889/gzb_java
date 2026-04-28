@@ -80,7 +80,6 @@ public class SystemCacheAction {
         }
         return ResponseData.send(sid, 1, (Object[]) arr);
     }
-
     @EventLoop
     @RequestMapping("/del")
     public String del(String[] k, Integer i, long sid) throws Exception {

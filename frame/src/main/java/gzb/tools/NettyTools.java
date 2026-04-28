@@ -2,6 +2,7 @@ package gzb.tools;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONWriter;
+import gzb.frame.factory.ContentType;
 import gzb.tools.cache.object.ByteBuff;
 import gzb.tools.log.Log;
 import gzb.tools.thread.GzbThreadLocal;
@@ -24,7 +25,7 @@ public class NettyTools {
     public static final byte[] HELLO_WORD = "Hello, World!".getBytes(Config.encoding);
 
     public static final AsciiString SERVER_NAME = AsciiString.cached(Config.frameName);
-    public static final AsciiString CONTENT_TYPE = AsciiString.cached("text/plain");
+    public static final AsciiString CONTENT_TYPE = AsciiString.cached(ContentType.html);
     public static final AsciiString CONTENT_LENGTH = AsciiString.cached(String.valueOf(HELLO_WORD.length));
 
     public static AsciiString THIS_TIME = null;

@@ -5,22 +5,29 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>gzb</groupId>
-    <artifactId>demo</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <artifactId>server_cache</artifactId>
+    <version>1.0.0</version>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-
+    <repositories>
+        <repository>
+            <id>my-remote-jar</id>
+            <url>file:///${project.basedir}/lib</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
     <dependencies>
         <dependency>
             <groupId>gzb</groupId>
             <artifactId>gzb.one</artifactId>
             <version>1.0.18</version>
         </dependency>
-
     </dependencies>
 
     <build>
@@ -55,6 +62,11 @@
                         <configuration>
                             <!-- 阻止 Shade 插件创建额外的依赖精简 POM 文件 -->
                             <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <artifactSet>
+                                <includes>
+                                    <include>*:*</include>
+                                </includes>
+                            </artifactSet>
                             <filters>
                                 <!-- 过滤掉不需要的文件，例如签名文件，避免冲突 -->
                                 <filter>
@@ -68,10 +80,12 @@
                             </filters>
                             <transformers>
                                 <!-- 指定主类 -->
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>gzb.start.DemoStart</mainClass>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>gzb.start.Start</mainClass>
                                 </transformer>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                             </transformers>
                         </configuration>
                     </execution>

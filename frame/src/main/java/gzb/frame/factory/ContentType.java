@@ -21,6 +21,7 @@ package gzb.frame.factory;
 import gzb.tools.Config;
 
 public class ContentType {
+    public final static String name = "content-type";
     /// charset = xx 自动追加
     public final static String json = "application/json";
     public final static String from = "application/x-www-form-urlencoded";

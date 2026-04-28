@@ -13,16 +13,6 @@ import gzb.tools.http.HTTP_V3;
 /// 提供 tcp服务 三个接口 /queue/produce  /queue/consume  /queue/confirm
 
 public class SystemQueueAction {
-    public static void main(String[] args) throws Exception {
-        String work="";
-        HTTP_V3 httpV3=new  HTTP_V3();
-       httpV3.post("http://127.0.0.1:8080/queue/produce","d=1001&i=0");
-        System.out.println(httpV3.asString());
-        httpV3.post("http://127.0.0.1:8080/queue/consume","s=-1&i=0");
-        System.out.println(httpV3.asString());
-        httpV3.post("http://127.0.0.1:8080/queue/confirm","id=2&i=0");
-        System.out.println(httpV3.asString());
-    }
     ///  8080/queue/produce?d=1001&i=10
     /// 返回码说明
     /// 11 生产者 data为空

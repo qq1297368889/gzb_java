@@ -12,7 +12,7 @@ import gzb.tools.log.Log;
 
 import java.io.UnsupportedEncodingException;
 
-/// 提供 tcp服务 三个接口 /queue/produce  /queue/consume  /queue/confirm
+/// api: /queue/produce  /queue/consume  /queue/confirm
 @Controller
 @RequestMapping("queue")
 public class QueueAction extends SystemQueueAction {

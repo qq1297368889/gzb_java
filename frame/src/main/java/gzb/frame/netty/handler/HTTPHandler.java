@@ -108,7 +108,7 @@ public class HTTPHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
         //headers.set(HttpHeaderNames.DATE, NettyTools.THIS_TIME);
     }*/
    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) {
-        if (req.uri().equals("/text")) {
+        if (req.uri().equals("/")) {
             FullHttpResponse response= new DefaultFullHttpResponse(
                     HttpVersion.HTTP_1_1,
                     HttpResponseStatus.OK,

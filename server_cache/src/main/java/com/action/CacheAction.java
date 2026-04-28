@@ -7,15 +7,9 @@ import gzb.tools.cache.GzbCache;
 import gzb.tools.log.Log;
 import gzb.tools.thread.GzbThreadLocal;
 
+/// api: cache/ping cache/get cache/set cache/get/all cache/del
 @Controller
 @RequestMapping("cache")
 public class CacheAction extends SystemCacheAction {
 
-    public static final byte[] BYTES = "Hello, World!".getBytes(Config.encoding);
-
-    @EventLoop
-    @RequestMapping("hello")
-    public byte[] hello(){
-        return BYTES;
-    }
 }
