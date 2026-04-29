@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>gzb</groupId>
-    <artifactId>server_cache</artifactId>
+    <artifactId>demo</artifactId>
     <version>1.0.0</version>
 
     <properties>
@@ -16,7 +16,7 @@
     <repositories>
         <repository>
             <id>my-remote-jar</id>
-            <url>file:///${project.basedir}/../lib</url>
+            <url>file:///${project.basedir}/lib</url>
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
