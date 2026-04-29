@@ -17,5 +17,6 @@ out/
 *.class
 *.log
 *.cache
+.gitignore
 README0.md
 doc0.md
