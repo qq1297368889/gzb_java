@@ -1,9 +1,7 @@
 .idea/
-.run/
 /.run/
 nodeimage/
 colorimage/
-hot_update_system/
 META-INF/
 gzbClassCache/
 tmp/
@@ -12,6 +10,7 @@ logs/
 jar/
 lib/
 files/
+server/
 out/
 *.mp4
 *.class
