@@ -1,0 +1,7 @@
+C:\work\graalvm-jdk-21.0.6\bin\java.exe
+
+native-image -jar xxx.jar \
+-H:AllowUnresolvedSymbols=yes \
+-H:AllowUnsupportedClasses=yes \
+--no-fallback \
+-o 你的应用

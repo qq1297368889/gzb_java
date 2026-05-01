@@ -1,0 +1,402 @@
+package com.frame.entity;
+import gzb.tools.*;
+import com.frame.dao.SysMappingColumnDao;
+import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
+import gzb.frame.annotation.EntityAttribute;
+import gzb.tools.json.JsonSerializable;
+import gzb.tools.json.Result;
+import gzb.tools.json.ResultImpl;
+@EntityAttribute(name="sys_mapping_column",desc="sysMappingColumn")
+public class SysMappingColumn implements Serializable, JsonSerializable{
+    private static final long serialVersionUID = 1000L;
+    @EntityAttribute(key=true,size = 0,name="sys_mapping_column_id",desc="映射ID",type="bigint")
+    private Long sysMappingColumnId;
+    @EntityAttribute(key=false,size = 100,name="sys_mapping_column_name",desc="列名驼峰",type="varchar(100)")
+    private String sysMappingColumnName;
+    @EntityAttribute(key=false,size = 100,name="sys_mapping_column_title",desc="标题",type="varchar(100)")
+    private String sysMappingColumnTitle;
+    @EntityAttribute(key=false,size = 0,name="sys_mapping_column_width",desc="宽度",type="bigint")
+    private Long sysMappingColumnWidth;
+    @EntityAttribute(key=false,size = 255,name="sys_mapping_column_file",desc="文件模板",type="varchar(255)")
+    private String sysMappingColumnFile;
+    @EntityAttribute(key=false,size = 255,name="sys_mapping_column_image",desc="图片模板",type="varchar(255)")
+    private String sysMappingColumnImage;
+    @EntityAttribute(key=false,size = 255,name="sys_mapping_column_date",desc="时间模板",type="varchar(255)")
+    private String sysMappingColumnDate;
+    @EntityAttribute(key=false,size = 0,name="sys_mapping_column_number",desc="是否数字",type="bigint")
+    private Long sysMappingColumnNumber;
+    @EntityAttribute(key=false,size = 0,name="sys_mapping_column_text",desc="是否文本",type="bigint")
+    private Long sysMappingColumnText;
+    @EntityAttribute(key=false,size = 0,name="sys_mapping_column_table",desc="表ID",type="bigint")
+    private Long sysMappingColumnTable;
+    @EntityAttribute(key=false,size = 100,name="sys_mapping_column_request",desc="引用模板",type="varchar(100)")
+    private String sysMappingColumnRequest;
+    @EntityAttribute(key=false,size = 100,name="sys_mapping_column_option",desc="选项模板",type="varchar(100)")
+    private String sysMappingColumnOption;
+    @EntityAttribute(key=false,size = 100,name="sys_mapping_column_sql",desc="sql模板",type="varchar(100)")
+    private String sysMappingColumnSql;
+    private Object data;
+   public SysMappingColumn() {}
+
+    public SysMappingColumn(GzbMap gzbMap) {
+        this(gzbMap.map);
+    }
+
+    public SysMappingColumn(Map<String, Object> map) {
+        Result result = new ResultImpl(map);
+        loadJson(result);
+    }
+
+    public SysMappingColumn(String jsonString) {
+        Result result = new ResultImpl(jsonString);
+        loadJson(result);
+    }
+    public int save(SysMappingColumnDao sysMappingColumnDao) throws Exception {
+        return sysMappingColumnDao.save(this);
+    }
+    public int delete(SysMappingColumnDao sysMappingColumnDao) throws Exception {
+        return sysMappingColumnDao.delete(this);
+    }
+    public int update(SysMappingColumnDao sysMappingColumnDao) throws Exception {
+        return sysMappingColumnDao.update(this);
+    }
+    public List<SysMappingColumn> query(SysMappingColumnDao sysMappingColumnDao) throws Exception {
+        return sysMappingColumnDao.query(this);
+    }
+    public List<SysMappingColumn> query(SysMappingColumnDao sysMappingColumnDao,int page,int size) throws Exception {
+        return sysMappingColumnDao.query(this,page,size);
+    }
+    public List<SysMappingColumn> query(SysMappingColumnDao sysMappingColumnDao,String sortField,String sortType,int page,int size) throws Exception {
+        return sysMappingColumnDao.query(this,sortField,sortType,page,size);
+    }
+    public JSONResult queryPage(SysMappingColumnDao sysMappingColumnDao, String sortField, String sortType, int page, int size) throws Exception {
+        return sysMappingColumnDao.queryPage(this,sortField,sortType,page,size,100,100);
+    }
+    public JSONResult queryPage(SysMappingColumnDao sysMappingColumnDao, String sortField, String sortType, int page, int size, int maxPage, int maxSize) throws Exception {
+        return sysMappingColumnDao.queryPage(this,sortField,sortType,page,size,maxPage,maxSize);
+    }
+    public SysMappingColumn find(SysMappingColumnDao sysMappingColumnDao) throws Exception {
+        return sysMappingColumnDao.find(this);
+    }
+    @Override
+    public String toString() {
+        gzb.tools.thread.GzbThreadLocal.Entity entity0 = gzb.tools.thread.GzbThreadLocal.context.get();
+        int index0=entity0.stringBuilderCacheEntity.open();
+            try {
+                StringBuilder sb = entity0.stringBuilderCacheEntity.get(index0);
+       boolean app01=false;
+        sb.append("{");
+        if (this.sysMappingColumnId != null) {
+            if(app01){sb.append(",");}app01=true;
+            sb.append("\"sysMappingColumnId\":\"").append(sysMappingColumnId).append("\"");
+        }
+        if (this.sysMappingColumnName != null) {
+            if(app01){sb.append(",");}app01=true;
+            sb.append("\"sysMappingColumnName\":");
+            sb.append(Tools.toJson(sysMappingColumnName));        }
+        if (this.sysMappingColumnTitle != null) {
+            if(app01){sb.append(",");}app01=true;
+            sb.append("\"sysMappingColumnTitle\":");
+            sb.append(Tools.toJson(sysMappingColumnTitle));        }
+        if (this.sysMappingColumnWidth != null) {
+            if(app01){sb.append(",");}app01=true;
+            sb.append("\"sysMappingColumnWidth\":\"").append(sysMappingColumnWidth).append("\"");
+        }
+        if (this.sysMappingColumnFile != null) {
+            if(app01){sb.append(",");}app01=true;
+            sb.append("\"sysMappingColumnFile\":");
+            sb.append(Tools.toJson(sysMappingColumnFile));        }
+        if (this.sysMappingColumnImage != null) {
+            if(app01){sb.append(",");}app01=true;
+            sb.append("\"sysMappingColumnImage\":");
+            sb.append(Tools.toJson(sysMappingColumnImage));        }
+        if (this.sysMappingColumnDate != null) {
+            if(app01){sb.append(",");}app01=true;
+            sb.append("\"sysMappingColumnDate\":");
+            sb.append(Tools.toJson(sysMappingColumnDate));        }
+        if (this.sysMappingColumnNumber != null) {
+            if(app01){sb.append(",");}app01=true;
+            sb.append("\"sysMappingColumnNumber\":\"").append(sysMappingColumnNumber).append("\"");
+        }
+        if (this.sysMappingColumnText != null) {
+            if(app01){sb.append(",");}app01=true;
+            sb.append("\"sysMappingColumnText\":\"").append(sysMappingColumnText).append("\"");
+        }
+        if (this.sysMappingColumnTable != null) {
+            if(app01){sb.append(",");}app01=true;
+            sb.append("\"sysMappingColumnTable\":\"").append(sysMappingColumnTable).append("\"");
+        }
+        if (this.sysMappingColumnRequest != null) {
+            if(app01){sb.append(",");}app01=true;
+            sb.append("\"sysMappingColumnRequest\":");
+            sb.append(Tools.toJson(sysMappingColumnRequest));        }
+        if (this.sysMappingColumnOption != null) {
+            if(app01){sb.append(",");}app01=true;
+            sb.append("\"sysMappingColumnOption\":");
+            sb.append(Tools.toJson(sysMappingColumnOption));        }
+        if (this.sysMappingColumnSql != null) {
+            if(app01){sb.append(",");}app01=true;
+            sb.append("\"sysMappingColumnSql\":");
+            sb.append(Tools.toJson(sysMappingColumnSql));        }
+        if (this.data instanceof Map) {
+            for (Map.Entry<?, ?> entry : ((Map<?, ?>) this.data).entrySet()) {
+                if(app01){sb.append(",");}app01=true;
+                sb.append("\"").append(entry.getKey()).append("\":");
+                sb.append(Tools.toJson(entry.getValue()));
+            }
+        }else if(this.data != null){
+            if(app01){sb.append(",");}app01=true;
+            sb.append("\"").append(Config.entityDataListName).append("\":");
+            sb.append(Tools.toJson(this.data));
+        }
+       return sb.append("}").toString();
+            }finally {
+                entity0.stringBuilderCacheEntity.close(index0);
+            }    }
+
+    public Result toJson() {
+        Result result=new ResultImpl();
+        result.set("sysMappingColumnId", sysMappingColumnId);
+        result.set("sysMappingColumnName", sysMappingColumnName);
+        result.set("sysMappingColumnTitle", sysMappingColumnTitle);
+        result.set("sysMappingColumnWidth", sysMappingColumnWidth);
+        result.set("sysMappingColumnFile", sysMappingColumnFile);
+        result.set("sysMappingColumnImage", sysMappingColumnImage);
+        result.set("sysMappingColumnDate", sysMappingColumnDate);
+        result.set("sysMappingColumnNumber", sysMappingColumnNumber);
+        result.set("sysMappingColumnText", sysMappingColumnText);
+        result.set("sysMappingColumnTable", sysMappingColumnTable);
+        result.set("sysMappingColumnRequest", sysMappingColumnRequest);
+        result.set("sysMappingColumnOption", sysMappingColumnOption);
+        result.set("sysMappingColumnSql", sysMappingColumnSql);
+        result.set(Config.entityDataListName, data);
+        return result;
+    }
+
+    @Override
+    public void loadJson(String json) {
+        Result result=new ResultImpl(json);
+        loadJson(result);
+    }
+    public void loadJson(Result result) {
+        this.sysMappingColumnId=result.getLong("sysMappingColumnId", null);
+        this.sysMappingColumnName=result.getString("sysMappingColumnName", null);
+        this.sysMappingColumnTitle=result.getString("sysMappingColumnTitle", null);
+        this.sysMappingColumnWidth=result.getLong("sysMappingColumnWidth", null);
+        this.sysMappingColumnFile=result.getString("sysMappingColumnFile", null);
+        this.sysMappingColumnImage=result.getString("sysMappingColumnImage", null);
+        this.sysMappingColumnDate=result.getString("sysMappingColumnDate", null);
+        this.sysMappingColumnNumber=result.getLong("sysMappingColumnNumber", null);
+        this.sysMappingColumnText=result.getLong("sysMappingColumnText", null);
+        this.sysMappingColumnTable=result.getLong("sysMappingColumnTable", null);
+        this.sysMappingColumnRequest=result.getString("sysMappingColumnRequest", null);
+        this.sysMappingColumnOption=result.getString("sysMappingColumnOption", null);
+        this.sysMappingColumnSql=result.getString("sysMappingColumnSql", null);
+        Object obj = result.get(Config.entityDataListName,null);
+        if (obj instanceof Map) {
+            this.data = (Map<String, Object>) obj;
+        }
+    }
+    public Long getSysMappingColumnId() {
+        return sysMappingColumnId;
+    }
+    public SysMappingColumn setSysMappingColumnId(Long sysMappingColumnId) {
+        this.sysMappingColumnId = sysMappingColumnId;
+        return this;
+    }
+    public String getSysMappingColumnName() {
+        return sysMappingColumnName;
+    }
+    public SysMappingColumn setSysMappingColumnName(String sysMappingColumnName) {
+        int size0 = Tools.textLength(sysMappingColumnName);
+        if (size0 > 100) {
+            throw new gzb.exception.GzbException0("SysMappingColumn.sysMappingColumnName最大长度为:100,实际长度为:"+ size0 +",数据为:"+sysMappingColumnName);
+        }
+        this.sysMappingColumnName = sysMappingColumnName;
+        return this;
+    }
+    public SysMappingColumn setSysMappingColumnNameUnsafe(String sysMappingColumnName) {
+        this.sysMappingColumnName = sysMappingColumnName;
+        return this;
+    }
+    public String getSysMappingColumnTitle() {
+        return sysMappingColumnTitle;
+    }
+    public SysMappingColumn setSysMappingColumnTitle(String sysMappingColumnTitle) {
+        int size0 = Tools.textLength(sysMappingColumnTitle);
+        if (size0 > 100) {
+            throw new gzb.exception.GzbException0("SysMappingColumn.sysMappingColumnTitle最大长度为:100,实际长度为:"+ size0 +",数据为:"+sysMappingColumnTitle);
+        }
+        this.sysMappingColumnTitle = sysMappingColumnTitle;
+        return this;
+    }
+    public SysMappingColumn setSysMappingColumnTitleUnsafe(String sysMappingColumnTitle) {
+        this.sysMappingColumnTitle = sysMappingColumnTitle;
+        return this;
+    }
+    public Long getSysMappingColumnWidth() {
+        return sysMappingColumnWidth;
+    }
+    public SysMappingColumn setSysMappingColumnWidth(Long sysMappingColumnWidth) {
+        this.sysMappingColumnWidth = sysMappingColumnWidth;
+        return this;
+    }
+    public String getSysMappingColumnFile() {
+        return sysMappingColumnFile;
+    }
+    public SysMappingColumn setSysMappingColumnFile(String sysMappingColumnFile) {
+        int size0 = Tools.textLength(sysMappingColumnFile);
+        if (size0 > 255) {
+            throw new gzb.exception.GzbException0("SysMappingColumn.sysMappingColumnFile最大长度为:255,实际长度为:"+ size0 +",数据为:"+sysMappingColumnFile);
+        }
+        this.sysMappingColumnFile = sysMappingColumnFile;
+        return this;
+    }
+    public SysMappingColumn setSysMappingColumnFileUnsafe(String sysMappingColumnFile) {
+        this.sysMappingColumnFile = sysMappingColumnFile;
+        return this;
+    }
+    public String getSysMappingColumnImage() {
+        return sysMappingColumnImage;
+    }
+    public SysMappingColumn setSysMappingColumnImage(String sysMappingColumnImage) {
+        int size0 = Tools.textLength(sysMappingColumnImage);
+        if (size0 > 255) {
+            throw new gzb.exception.GzbException0("SysMappingColumn.sysMappingColumnImage最大长度为:255,实际长度为:"+ size0 +",数据为:"+sysMappingColumnImage);
+        }
+        this.sysMappingColumnImage = sysMappingColumnImage;
+        return this;
+    }
+    public SysMappingColumn setSysMappingColumnImageUnsafe(String sysMappingColumnImage) {
+        this.sysMappingColumnImage = sysMappingColumnImage;
+        return this;
+    }
+    public String getSysMappingColumnDate() {
+        return sysMappingColumnDate;
+    }
+    public SysMappingColumn setSysMappingColumnDate(String sysMappingColumnDate) {
+        int size0 = Tools.textLength(sysMappingColumnDate);
+        if (size0 > 255) {
+            throw new gzb.exception.GzbException0("SysMappingColumn.sysMappingColumnDate最大长度为:255,实际长度为:"+ size0 +",数据为:"+sysMappingColumnDate);
+        }
+        this.sysMappingColumnDate = sysMappingColumnDate;
+        return this;
+    }
+    public SysMappingColumn setSysMappingColumnDateUnsafe(String sysMappingColumnDate) {
+        this.sysMappingColumnDate = sysMappingColumnDate;
+        return this;
+    }
+    public Long getSysMappingColumnNumber() {
+        return sysMappingColumnNumber;
+    }
+    public SysMappingColumn setSysMappingColumnNumber(Long sysMappingColumnNumber) {
+        this.sysMappingColumnNumber = sysMappingColumnNumber;
+        return this;
+    }
+    public Long getSysMappingColumnText() {
+        return sysMappingColumnText;
+    }
+    public SysMappingColumn setSysMappingColumnText(Long sysMappingColumnText) {
+        this.sysMappingColumnText = sysMappingColumnText;
+        return this;
+    }
+    public Long getSysMappingColumnTable() {
+        return sysMappingColumnTable;
+    }
+    public SysMappingColumn setSysMappingColumnTable(Long sysMappingColumnTable) {
+        this.sysMappingColumnTable = sysMappingColumnTable;
+        return this;
+    }
+    public String getSysMappingColumnRequest() {
+        return sysMappingColumnRequest;
+    }
+    public SysMappingColumn setSysMappingColumnRequest(String sysMappingColumnRequest) {
+        int size0 = Tools.textLength(sysMappingColumnRequest);
+        if (size0 > 100) {
+            throw new gzb.exception.GzbException0("SysMappingColumn.sysMappingColumnRequest最大长度为:100,实际长度为:"+ size0 +",数据为:"+sysMappingColumnRequest);
+        }
+        this.sysMappingColumnRequest = sysMappingColumnRequest;
+        return this;
+    }
+    public SysMappingColumn setSysMappingColumnRequestUnsafe(String sysMappingColumnRequest) {
+        this.sysMappingColumnRequest = sysMappingColumnRequest;
+        return this;
+    }
+    public String getSysMappingColumnOption() {
+        return sysMappingColumnOption;
+    }
+    public SysMappingColumn setSysMappingColumnOption(String sysMappingColumnOption) {
+        int size0 = Tools.textLength(sysMappingColumnOption);
+        if (size0 > 100) {
+            throw new gzb.exception.GzbException0("SysMappingColumn.sysMappingColumnOption最大长度为:100,实际长度为:"+ size0 +",数据为:"+sysMappingColumnOption);
+        }
+        this.sysMappingColumnOption = sysMappingColumnOption;
+        return this;
+    }
+    public SysMappingColumn setSysMappingColumnOptionUnsafe(String sysMappingColumnOption) {
+        this.sysMappingColumnOption = sysMappingColumnOption;
+        return this;
+    }
+    public String getSysMappingColumnSql() {
+        return sysMappingColumnSql;
+    }
+    public SysMappingColumn setSysMappingColumnSql(String sysMappingColumnSql) {
+        int size0 = Tools.textLength(sysMappingColumnSql);
+        if (size0 > 100) {
+            throw new gzb.exception.GzbException0("SysMappingColumn.sysMappingColumnSql最大长度为:100,实际长度为:"+ size0 +",数据为:"+sysMappingColumnSql);
+        }
+        this.sysMappingColumnSql = sysMappingColumnSql;
+        return this;
+    }
+    public SysMappingColumn setSysMappingColumnSqlUnsafe(String sysMappingColumnSql) {
+        this.sysMappingColumnSql = sysMappingColumnSql;
+        return this;
+    }
+    public SysMappingColumn setList(List<?> data) {
+        this.data = data;
+        return this;
+    }
+
+    public List<?> getList() {
+          if (data instanceof List) {
+                return (List<?>) data;
+          }
+        return null;
+    }
+    public Map<String, Object> getMap() {
+          if (data instanceof Map) {
+                return (Map<String, Object>) data;
+          }
+        return null;
+    }
+
+    public SysMappingColumn setMap(Map<String, Object> data) {
+        this.data = data;
+        return this;
+    }
+
+    public SysMappingColumn putMap(String key, Object value) {
+        if (this.data == null) {
+            // 自动初始化
+            this.data = new HashMap<>();
+        } else if (!(this.data instanceof Map)) {
+            // 无法转换，抛出业务异常
+            throw new gzb.exception.GzbException0("无法将"+this.data+" 转换为MAP");
+        }
+        // 安全地进行 put 操作 (可能需要抑制一下警告)
+        @SuppressWarnings("unchecked")
+        Map<String, Object> mapData = (Map<String, Object>) this.data;
+        mapData.put(key, value);
+        return this;
+    }
+    public Object getData() {
+        return data;
+    }
+    public SysMappingColumn setData(Object data) {
+        this.data = data;
+        return this;
+    }
+}
