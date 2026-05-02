@@ -20,6 +20,7 @@ public class LogConfig {
     public static void loadConfig(File []logFile) {
         String path=Config.get("gzb.log.path");
         if (path==null) {
+            System.out.println(Config.config);
             throw new NullPointerException("log path is null");
         }
         if (!path.endsWith("/")) {

@@ -132,12 +132,8 @@ public class GzbQueueImpl implements GzbQueue {
         });
     }
 
-    // ----------------------------------------------------
-    // 1. 生产 (Produce) - O(1)
-    // ----------------------------------------------------
     @Override
     public void produce(String val) {
-        //这里确保不能为空 避免后续判断
         if (val == null || val.isEmpty()) return;
         Entity cacheEntity = new Entity();
         cacheEntity.id = idGenerator.incrementAndGet();
@@ -145,13 +141,8 @@ public class GzbQueueImpl implements GzbQueue {
         queueCache.add(cacheEntity);
     }
 
-    // ----------------------------------------------------
-    // 2. 消费 (Consume) - O(1) 原子操作
-    // ----------------------------------------------------
-
     @Override
     public Entity consume(int second) {
-        //queueCache 本身是线程安全的 后续操作 也是安全的无需加锁
         Entity entity = null;
         try {
             if (second < 0) {
@@ -171,10 +162,6 @@ public class GzbQueueImpl implements GzbQueue {
         consumeMap.put(entity.id, entity);
         return entity;
     }
-
-    // ----------------------------------------------------
-    // 3. 确认与自动确认 (Confirm)
-    // ----------------------------------------------------
 
     @Override
     public String consumeAndConfirm(int second) {
@@ -201,13 +188,8 @@ public class GzbQueueImpl implements GzbQueue {
         return consumeMap.remove(messageId) != null;
     }
 
-    // ----------------------------------------------------
-    // 4. 工具方法 (Size, Read)
-    // ----------------------------------------------------
-
     @Override
     public Entity read() {
-        // 尝试从 readyQueue 中获取 ID (O(1) 操作)
         return queueCache.peek();
     }
 

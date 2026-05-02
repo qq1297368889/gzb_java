@@ -35,10 +35,7 @@ import gzb.tools.log.Log;
 import gzb.tools.thread.GzbThreadLocal;
 import gzb.tools.thread.ServiceThread;
 import gzb.tools.thread.ThreadPoolV3;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.*;
-import io.netty.util.AsciiString;
+import gzb.tools.thread.GzbVT;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -414,13 +411,25 @@ public class FactoryImplV2 implements Factory {
     public static final byte[] _intercept_400 = ("{\"" + Config.stateName + "\":\"" + Config.failVal + "\",\"" + Config.messageName + "\":\"server the resource does not exist / 服务器 资源不存在\"}").getBytes(Config.encoding);
 
     //public static final ThreadPool THREAD_POOL = new ThreadPool(Config.bizThreadNum, Config.bizAwaitNum);
-    public static final ThreadPoolV3 THREAD_POOL = new ThreadPoolV3(
+    public static  ThreadPoolV3 THREAD_POOL = new ThreadPoolV3(
             Config.cpu * 1000,
             Config.bizThreadNum < 1 ? Config.cpu * 2 : Config.bizThreadNum,
             Config.bizAwaitNum < 1 ? Config.cpu * 2000 : Config.bizAwaitNum,
             95.0,
             Config.bizThreadNum < 1);
+static{
+    if (GzbVT.vt) {
 
+    }else{
+        THREAD_POOL = new ThreadPoolV3(
+                Config.cpu * 1000,
+                Config.bizThreadNum < 1 ? Config.cpu * 2 : Config.bizThreadNum,
+                Config.bizAwaitNum < 1 ? Config.cpu * 2000 : Config.bizAwaitNum,
+                95.0,
+                Config.bizThreadNum < 1);
+
+    }
+}
     public void start(Request request, Response response, HTTPTools.Entity entity) {
         String metName = request.getMethod();
         String key = request.getUri();
@@ -462,11 +471,20 @@ public class FactoryImplV2 implements Factory {
         HttpMapping httpMapping = httpMappings[index];
         //同步会在事件循环线程执行
         if (httpMapping.eventLoop) {
-            if (!THREAD_POOL.execute(() -> {
-                exec(httpMapping, request, response);
-                response.getCtx().flush();
-            })) {
-                response.sendData(gzbJson.fail("服务器繁忙"));
+            if (GzbVT.vt) {
+                if (!GzbVT.execute(() -> {
+                    exec(httpMapping, request, response);
+                    response.getCtx().flush();
+                })) {
+                    response.sendData(gzbJson.fail("服务器繁忙"));
+                }
+            }else{
+                if (!THREAD_POOL.execute(() -> {
+                    exec(httpMapping, request, response);
+                    response.getCtx().flush();
+                })) {
+                    response.sendData(gzbJson.fail("服务器繁忙"));
+                }
             }
         } else {
             exec(httpMapping, request, response);
@@ -517,11 +535,20 @@ public class FactoryImplV2 implements Factory {
         HttpMapping httpMapping = httpMappings[index];
         //同步会在事件循环线程执行
         if (httpMapping.eventLoop) {
-            if (!THREAD_POOL.execute(() -> {
-                exec(httpMapping, request, response);
-                response.getCtx().flush();
-            })) {
-                response.sendData(gzbJson.fail("服务器繁忙"));
+            if (GzbVT.vt) {
+                if (!GzbVT.execute(() -> {
+                    exec(httpMapping, request, response);
+                    response.getCtx().flush();
+                })) {
+                    response.sendData(gzbJson.fail("服务器繁忙"));
+                }
+            }else{
+                if (!THREAD_POOL.execute(() -> {
+                    exec(httpMapping, request, response);
+                    response.getCtx().flush();
+                })) {
+                    response.sendData(gzbJson.fail("服务器繁忙"));
+                }
             }
         } else {
             exec(httpMapping, request, response);

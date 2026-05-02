@@ -16,66 +16,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class ThreadPoolV3 {
-    public static long x = 0;
-    public static AtomicLong atomicLong = new AtomicLong();
-
-    public static void main2(String[] args) {
-        long start = System.currentTimeMillis();
-        Tools.ThreadWakeUp wake = new Tools.ThreadWakeUp(10);
-        for (int i = 0; i < 10; i++) {
-            new Thread() {
-                @Override
-                public void run() {
-                    for (int i1 = 0; i1 < 10000 * 10000; i1++) {
-                        atomicLong.incrementAndGet();
-                    }
-                    wake.notifyActivation();
-                    System.out.println("end " + atomicLong.get());
-
-                }
-            }.start();
-        }
-        wake.waitActivation();
-        long end = System.currentTimeMillis();
-        long time = end - start;
-        x = atomicLong.get();
-        System.out.println(time);
-        System.out.println(x);
-        System.out.println("qps " + (x / time * 1000));
-        System.out.println("qps " + (x / time));
-    }
-
-    public static void main(String[] args) {
-        Lock lock = new ReentrantLock();
-        long start = System.currentTimeMillis();
-        Tools.ThreadWakeUp wake = new Tools.ThreadWakeUp(10);
-        for (int i = 0; i < 10; i++) {
-            new Thread() {
-                @Override
-                public void run() {
-                    for (int i1 = 0; i1 < 10000 * 1000; i1++) {
-                        lock.lock();
-                        try {
-                            x++;
-                        } finally {
-                            lock.unlock();
-                        }
-                    }
-                    wake.notifyActivation();
-                    System.out.println("end " + x);
-
-                }
-            }.start();
-        }
-        wake.waitActivation();
-        long end = System.currentTimeMillis();
-        long time = end - start;
-        System.out.println(time);
-        System.out.println(x);
-        System.out.println("qps " + (x / time * 1000));
-        System.out.println("qps " + (x / time));
-    }
-
     public Log log = Log.log;
     private boolean AUTO_MATIC = true;
     private double CPU_LOAD = 0.0;

@@ -4,6 +4,7 @@ import gzb.frame.annotation.EventLoop;
 import gzb.frame.annotation.PostMapping;
 import com.system.tools.QueueData;
 import com.system.tools.ResponseData;
+import gzb.frame.annotation.RequestMapping;
 import gzb.tools.cache.GzbQueue;
 
 /// 提供 tcp服务 三个接口 /queue/produce  /queue/consume  /queue/confirm
@@ -18,7 +19,7 @@ public class SystemQueueAction {
     /// 15 消费者返回数据为空
     /// 16 消费后确认时 id为空
     @EventLoop
-    @PostMapping("/produce")
+    @RequestMapping("/produce")
     public String produce(String d, Integer i,long sid) throws Exception {
         if (i == null) {
             return ResponseData.send(sid, 12);
@@ -34,7 +35,7 @@ public class SystemQueueAction {
         return ResponseData.send(sid, 1);
     }
     // @EventLoop //允许 阻塞 所以不能占用事件循环
-    @PostMapping("/consume")
+    @RequestMapping("/consume")
     public String consume(Integer i,Integer s,long sid) throws Exception {
         if (i == null) {
             return ResponseData.send(sid, 12);
@@ -50,10 +51,12 @@ public class SystemQueueAction {
         if (entity==null) {
             return ResponseData.send(sid, 15);
         }
-        return ResponseData.send(sid, 1,entity.id+","+entity.data);
+
+        //return ResponseData.send(sid, 1, String.valueOf(entity.id),entity.data);
+        return ResponseData.send(sid, 1, entity.id,entity.data);
     }
     @EventLoop
-    @PostMapping("/confirm")
+    @RequestMapping("/confirm")
     public String confirm(Long id, Integer i,long sid) throws Exception {
         if (i == null) {
             return ResponseData.send(sid, 12);

@@ -24,29 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class GzbThreadLocal {
-    /*    public static final  AtomicLong atomicLong1 = new AtomicLong(0);
-        public static final  AtomicLong atomicLong2 = new AtomicLong(0);
-        static{
-            new Thread(()->{
-                while (true){
-                    Tools.sleep(1000);
-                    System.out.println(atomicLong1.get()+"   "+atomicLong2.get());
-                }
-            }).start();
-        }*/
-  /*      public StringBuilderCache.Entity stringBuilderCacheEntity=new StringBuilderCache.Entity(){
-            @Override
-            public int open() {
-                atomicLong1.incrementAndGet();
-                return super.open();
-            }
-
-            @Override
-            public void close(int index) {
-                atomicLong2.incrementAndGet();
-                super.close(index);
-            }
-        };*/
     public static final ThreadLocal<Entity> context = ThreadLocal.withInitial(Entity::new);
 
     public static class Entity {
@@ -56,20 +33,16 @@ public class GzbThreadLocal {
         public Map<String, List<Object[]>> transaction_simulate= null;
 
 
-
-        /// ///////////////////////////////////
-        public int depth = 0;
-        public String open_transaction_key = null;
-        public Map<String, List<Object>> requestMap = null;
-        public byte[] byte_buff_32 = new byte[32];
-        public Connection connection;
-        public TransactionEntity transactionEntity;
         public ByteBuffCache.Entity byteBuffCacheEntity = new ByteBuffCache.Entity();
         public StringBuilderCache.Entity stringBuilderCacheEntity = new StringBuilderCache.Entity();
-        public Request request;
-        public Response response;
         public RunRes runRes = new RunRes();
         public Object[] objects = new Object[]{runRes};
+        public byte[] byte_buff_32 = new byte[32];
+        public int depth = 0;
+        public Map<String, List<Object>> requestMap = null;
+        public Request request;
+        public Response response;
+
     }
 
     static Map<Long, Object> data = new ConcurrentHashMap<>();

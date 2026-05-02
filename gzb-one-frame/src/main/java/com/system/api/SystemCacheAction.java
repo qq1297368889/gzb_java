@@ -6,8 +6,11 @@ import com.system.tools.CacheData;
 import com.system.tools.ResponseData;
 import gzb.tools.cache.GzbCache;
 
-/// 写个小玩具
-/// 性能报告: 同机器测试 大量请求下 平均响应延迟 50-60微秒  同机器测试redis 也是50-60微秒
+/// 性能报告:
+/// cpu r5 3600
+/// 1线程服务端 流水线 qps：TCP协议70w http协议 35万
+/// 2线程服务端 流水线 qps：TCP协议130w http协议 60万
+/// ..............
 
 public class SystemCacheAction {
 

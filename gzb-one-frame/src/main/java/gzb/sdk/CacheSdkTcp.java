@@ -1,6 +1,5 @@
-package gzb.tools.cache;
+package gzb.sdk;
 
-import gzb.exception.GzbException0;
 import gzb.frame.netty.tools.TCPTools;
 import gzb.tools.Tools;
 import gzb.tools.log.Log;
@@ -13,44 +12,21 @@ import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class CacheSdkTcp {
-    public static class Message {
-        public long id;
-        public String data;
-        public Message(long id,String data){
-            this.id=id;
-            this.data=data;
-        }
-
-        public long getId() {
-            return id;
-        }
-
-        public void setId(long id) {
-            this.id = id;
-        }
-
-        public String getData() {
-            return data;
-        }
-
-        public void setData(String data) {
-            this.data = data;
-        }
-    }
+public class CacheSdkTcp implements CacheSdk{
 
 
     public static Log log = Log.log;
     private int IO_THREADS = 1;
     /// Runtime.getRuntime().availableProcessors();
     private EventLoopGroup group = null;
-    private final Map<Long, Call> requests = new ConcurrentHashMap<>();
+    private final Map<Long, BaseSdk.Call> requests = new ConcurrentHashMap<>();
     //private final Map<Long, CompletableFuture<byte[]>> requests = new ConcurrentHashMap<>();
     private final AtomicLong sidGenerator = new AtomicLong(1);
     private final byte[] state = "1234567890".getBytes();
@@ -83,7 +59,7 @@ public class CacheSdkTcp {
         }
     }
 
-    private class SdkHandler extends ChannelInboundHandlerAdapter {
+    public class SdkHandler extends ChannelInboundHandlerAdapter {
 
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
@@ -109,13 +85,13 @@ public class CacheSdkTcp {
                         if (sid > 0) {
                             byte[] bytes1 = Arrays.copyOfRange(bytes, end + 1, bytes.length);
                             /*
-                            Call call = requests2.remove(sid);
+                            BaseSdk.Call call = requests2.remove(sid);
                             call.run(bytes1);
 
                             CompletableFuture<byte[]>completableFuture= requests.remove(sid);
                             completableFuture.complete(bytes1);
                             */
-                            Call call = requests.remove(sid);
+                            BaseSdk.Call call = requests.remove(sid);
                             call.run(bytes1);
                         }
 
@@ -128,85 +104,60 @@ public class CacheSdkTcp {
     }
 
 
-    public static class Call {
-        public void run(Object obj) {
-
-        }
+    public void sendSync(String url, String params, BaseSdk.Call call) {
+        sendSync(url, params, call, true);
     }
 
-
-    private void sendSync(String url, String params, Call call) {
+    public void sendSync(String url, String params, BaseSdk.Call call, boolean flush) {
         long sid = sidGenerator.incrementAndGet();
         requests.put(sid, call);
-        channel.writeAndFlush(TCPTools.createDataPacketPromise(url, 1, 0, params == null ? "sid=" + sid : params + "&sid=" + sid
-        ));
-    }
-
-    private byte[] sendSync(String url, String params) {
-        Tools.ThreadWakeUp threadWakeUp = new Tools.ThreadWakeUp();
-        sendSync(url, params, new Call() {
-            @Override
-            public void run(Object obj) {
-                try {
-                    if (obj instanceof Throwable) {
-                        threadWakeUp.notifyActivation(new RuntimeException((Throwable) obj));
-                    } else {
-                        byte[] bytes = (byte[]) obj;
-                        threadWakeUp.notifyActivation(bytes);
-                    }
-                } catch (Exception e) {
-                    threadWakeUp.notifyActivation(new GzbException0("Exception", e));
-                }
-            }
-        });
-        return threadWakeUp.waitActivationData(1000 * 10);
-    }
-
- /*
-    private void sendSync(String url, String params, Call call) {
-        long sid = sidGenerator.incrementAndGet();
-        requests2.put(sid, call);
-        channel.writeAndFlush(TCPTools.createDataPacketPromise(url, 1, 0, params == null ? "sid=" + sid : params + "&sid=" + sid
-        ));
-    }
-       private byte[] sendSync(String url, String params) {
-        Tools.ThreadWakeUp threadWakeUp = new Tools.ThreadWakeUp();
-        sendSync(url, params, new Call() {
-            @Override
-            public void run(Object obj) {
-                try {
-                    if (obj instanceof Throwable) {
-                        threadWakeUp.notifyActivation(new RuntimeException((Throwable) obj));
-                    } else {
-                        byte[] bytes = (byte[]) obj;
-                        threadWakeUp.notifyActivation(bytes);
-                    }
-                } catch (Exception e) {
-                    threadWakeUp.notifyActivation(new GzbException0("Exception", e));
-                }
-            }
-        });
-        return threadWakeUp.waitActivationData(1000 * 10);
-    }
-    */
-
-    /*
-        private byte[] sendSync(String url, String params) throws IOException {
-            long sid = sidGenerator.incrementAndGet();
-            CompletableFuture<byte[]> future = new CompletableFuture<>();
-            requests.put(sid, future);
+        if (flush) {
             channel.writeAndFlush(TCPTools.createDataPacketPromise(url, 1, 0, params == null ? "sid=" + sid : params + "&sid=" + sid
             ));
+        } else {
+            channel.write(TCPTools.createDataPacketPromise(url, 1, 0, params == null ? "sid=" + sid : params + "&sid=" + sid
+            ));
+        }
 
-            try {
-                // 阻塞等待结果，可设置超时防止死锁
-                return future.get(10, TimeUnit.SECONDS);
-            } catch (Exception e2) {
-                requests.remove(sid);
-                Log.log.e("请求超时或异常", e2);
-                return null;
-            }
-        }*/
+    }
+
+    public List<byte[]> sendSync(String url, String params, int pip) {
+        List<byte[]> list = new ArrayList<>(pip);
+        Tools.ThreadWakeUp threadWakeUp = new Tools.ThreadWakeUp(pip);
+        for (int i = 0; i < pip; i++) {
+            sendSync(url, params, new BaseSdk.Call() {
+                @Override
+                public void run(Object obj) {
+                    try {
+                        if (obj instanceof Throwable) {
+                            threadWakeUp.notifyActivation();
+                            throw new RuntimeException((Throwable) obj);
+                        } else {
+                            byte[] bytes = (byte[]) obj;
+                            list.add(bytes);
+                            threadWakeUp.notifyActivation();
+                        }
+                    } catch (Exception e) {
+                        threadWakeUp.notifyActivation();
+                        throw e;
+                    }
+                }
+            }, false);
+        }
+        channel.flush();
+        threadWakeUp.waitActivation(1000 * 10);
+
+        return list;
+    }
+
+    public byte[] sendSync(String url, String params) {
+        List<byte[]> list = sendSync(url, params, 1);
+        if (list.size() != 1) {
+            return null;
+        }
+        return list.get(0);
+    }
+
     public boolean ping() throws IOException {
         byte[] res = sendSync("/cache/ping", null);
         return res != null && res[0] == state[0];
@@ -245,8 +196,56 @@ public class CacheSdkTcp {
             }
             byte[] res = sendSync("/cache/get", stringBuilder.toString());
             if (res == null || res[0] != state[0]) return null;
+            int[] xy = new int[]{2, 2};
+            return Tools.byteReadSizeString(res, split, xy);
+        } finally {
+            entity.stringBuilderCacheEntity.close(index);
+        }
+    }
 
-            return new String(res, 2, res.length - 2);
+    public List<String> getAll(String... key) throws IOException {
+        GzbThreadLocal.Entity entity = GzbThreadLocal.context.get();
+        int index = entity.stringBuilderCacheEntity.open();
+        try {
+            StringBuilder stringBuilder = entity.stringBuilderCacheEntity.get(index);
+            stringBuilder.append("i=").append(index);
+            for (String s : key) {
+                stringBuilder.append("&k=").append(s);
+            }
+            byte[] res = sendSync("/cache/get/all", stringBuilder.toString());
+            if (res == null || res[0] != state[0]) return null;
+            List<String> list = new ArrayList<>(key.length);
+            int[] xy = new int[]{2, 2};
+            String val = Tools.byteReadSizeString(res, split, xy);
+            while (val != null) {
+                list.add(val);
+                val = Tools.byteReadSizeString(res, split, xy);
+            }
+            return list;
+        } finally {
+            entity.stringBuilderCacheEntity.close(index);
+        }
+    }
+
+    public List<String> get(int pip, String key) throws IOException {
+        GzbThreadLocal.Entity entity = GzbThreadLocal.context.get();
+        int index = entity.stringBuilderCacheEntity.open();
+        try {
+            StringBuilder stringBuilder = entity.stringBuilderCacheEntity.get(index);
+            stringBuilder.append("i=").append(index);
+            stringBuilder.append("&k=").append(key);
+            List<byte[]> res0 = sendSync("/cache/get", stringBuilder.toString(), pip);
+            List<String> res_str = new ArrayList<>(res0.size());
+            for (int i = 0; i < res0.size(); i++) {
+                byte[] res = res0.get(i);
+                if (res == null || res[0] != state[0]) {
+                    res_str.add(null);
+                } else {
+                    int[] xy = new int[]{2, 2};
+                    res_str.add(Tools.byteReadSizeString(res, split, xy));
+                }
+            }
+            return res_str;
         } finally {
             entity.stringBuilderCacheEntity.close(index);
         }
@@ -259,23 +258,24 @@ public class CacheSdkTcp {
 
     public static byte split = ",".getBytes()[0];
 
-    public Message consume(int time) throws IOException {
+    public BaseSdk.Message consume(int time) throws IOException {
         byte[] res = sendSync("/queue/consume", "s=" + time + "&i=" + index);
         if (res == null || res[0] != state[0]) return null;
-        int[] xy = new int[]{0, 0};
-        int state = Tools.byteReadInt(res, split, xy);
+        int[] xy = new int[]{2, 2};
         long idx = Tools.byteReadLong(res, split, xy);
         if (idx < 1) {
             return null;
         }
-        return new Message(idx, new String(res, xy[0], res.length - xy[0]));
+        String val = Tools.byteReadSizeString(res, split, xy);
+        return new BaseSdk.Message(idx, val);
     }
 
 
     public String confirm(long id) throws IOException {
         byte[] res = sendSync("/queue/confirm", "id=" + id + "&i=" + index);
         if (res == null || res[0] != state[0]) return null;
-        return new String(res, 2, res.length - 2);
+        int[] xy = new int[]{2, 2};
+        return Tools.byteReadSizeString(res, split, xy);
     }
 
     public void close() {

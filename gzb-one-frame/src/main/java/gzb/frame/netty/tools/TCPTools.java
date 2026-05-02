@@ -72,7 +72,7 @@ public class TCPTools {
 
     }
     // 核心解析逻辑设为私有，不对外暴露 ByteBuf
-    private static List<ByteBuf> readDataPacket(int sessionSign, ByteBuf newData) {
+    private static List<ByteBuf> readDataPacket0(int sessionSign, ByteBuf newData) {
         PacketEntity entity = sessionMap.remove(sessionSign);
         ByteBuf cumulation = null;
         if (entity != null) {
@@ -125,7 +125,7 @@ public class TCPTools {
                 break;
             }
         }
-        if (cumulation.readerIndex()<cumulation.readableBytes()-1) {
+        if (cumulation.readerIndex()<cumulation.readableBytes()) {
             sessionMap.put(sessionSign, entity);
         }else{
             cumulation.release();
@@ -133,7 +133,70 @@ public class TCPTools {
 
         return list;
     }
+    private static List<ByteBuf> readDataPacket(int sessionSign, ByteBuf newData) {
+        PacketEntity entity = sessionMap.remove(sessionSign);
+        ByteBuf cumulation;
 
+        if (entity != null) {
+            cumulation = Unpooled.wrappedBuffer(entity.buffer, newData);
+            entity.buffer = cumulation;
+        } else {
+            cumulation = newData;
+            entity = new PacketEntity(cumulation);
+        }
+
+        List<ByteBuf> list = null;
+
+        while (cumulation.isReadable()) {
+            cumulation.markReaderIndex();
+
+            int dataSize = 0;
+            boolean foundComma = false;
+            int digitCount = 0;
+
+            while (cumulation.isReadable()) {
+                byte b = cumulation.readByte();
+                digitCount++;
+                if (b == ',') {
+                    foundComma = true;
+                    break;
+                }
+                if (b < 48 || b > 57 || digitCount > 10) {
+                    break;
+                }
+                dataSize = dataSize * 10 + (b - 48);
+            }
+
+            if (!foundComma) {
+                cumulation.resetReaderIndex();
+                break;
+            }
+
+            if (Config.maxPostSize > 0 && dataSize > Config.maxPostSize) {
+                cumulation.release();
+                return null;
+            }
+
+            if (cumulation.readableBytes() >= dataSize) {
+                if (list == null) {
+                    list = new ArrayList<>();
+                }
+                list.add(cumulation.readRetainedSlice(dataSize));
+                cumulation.markReaderIndex();
+            } else {
+                cumulation.resetReaderIndex();
+                break;
+            }
+        }
+
+        if (cumulation.isReadable()) {
+            sessionMap.put(sessionSign, entity);
+        } else {
+            cumulation.release();
+        }
+
+        return list;
+    }
     public static List<byte[]> readDataPacketByteArray(int sessionSign, ByteBuf newData) {
         List<ByteBuf> result0 = readDataPacket(sessionSign, newData);
         if (result0 == null) {
@@ -259,7 +322,7 @@ public class TCPTools {
             }
         }
         if (url_index == -1) {
-            Log.log.d("解析失败：格式异常，格式必须为url,met,type,数据体");
+            Log.log.d("解析失败：格式异常，格式必须为url,met,type,数据体  "+new String(data));
             return null;
         }
         int met_index = -1;

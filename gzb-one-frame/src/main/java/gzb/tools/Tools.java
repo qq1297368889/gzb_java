@@ -62,7 +62,7 @@ import java.util.jar.JarFile;
 
 
 public class Tools {
-    public static void main(String[] args) {
+  /*  public static void main(String[] args) {
         ClassEntity classEntity = new ClassEntity();
         classEntity.sign = "1";
         classEntity.code = "2";
@@ -96,7 +96,7 @@ public class Tools {
             System.out.println("2 " + (end - start));
         }
     }
-
+*/
     public void est() {
         ThreadWakeUp wake = new ThreadWakeUp();
         wake.waitActivation();
@@ -266,6 +266,27 @@ public class Tools {
         return key.toString();
     }
 
+    public static void main(String[] args) {
+        byte  split=",".getBytes()[0];
+        byte[]bytes="5,12345,5,12345,5,12345".getBytes();
+        int []xy=new int[]{0,0};
+        String res=byteReadSizeString(bytes,split,xy);
+        System.out.println(res);
+         res=byteReadSizeString(bytes,split,xy);
+        System.out.println(res);
+         res=byteReadSizeString(bytes,split,xy);
+        System.out.println(res);
+    }
+    public static String byteReadSizeString(byte[] bytes, byte split, int[] start_and_end) {
+        int len=byteReadInt(bytes,split,start_and_end);
+        if (len < 1) {
+            return null;
+        }
+        String data = new String(Arrays.copyOfRange(bytes, start_and_end[1], start_and_end[1]+len));
+        start_and_end[1]=start_and_end[1]+len+1;
+        start_and_end[0] = start_and_end[1];
+        return data;
+    }
     public static String byteReadString(byte[] bytes, byte split, int[] start_and_end) {
         for (int i = start_and_end[0]; i < bytes.length; i++) {
             if (bytes[i] == split) {

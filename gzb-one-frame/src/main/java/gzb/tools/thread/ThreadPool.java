@@ -57,6 +57,7 @@ public class ThreadPool {
         };
         thread.setName("thread-pool-v2");
         thread.start();
+
         threads[index] = thread;
     }
 
